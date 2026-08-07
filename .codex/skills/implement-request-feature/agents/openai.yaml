@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement NPC Feature"
+  short_description: "Plan, build, review, and record NPC features"
+  default_prompt: "Use $implement-npc-feature to plan and implement the requested NPC feature after approval."

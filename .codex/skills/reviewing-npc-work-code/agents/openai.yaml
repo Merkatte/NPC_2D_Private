@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review NPC Work Code"
+  short_description: "Audit Unity worker code against project conventions."
+  default_prompt: "Use $reviewing-npc-work-code to audit the current Unity worker code and update PublicMD/Code_Evaluation_Result.md."
