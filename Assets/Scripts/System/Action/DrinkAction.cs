@@ -26,9 +26,11 @@ public class DrinkAction : DefaultAction
 
     protected override void UpdateCompletion()
     {
+        var stat = actionContext.Stat;
+        
         if (currentDrinkTime >= drinkTime)
         {
-            _stat.ChangeThirst(-_stat.GetThirst);
+            stat.ChangeThirst(-stat.GetThirst);
             Complete();
         }
     }

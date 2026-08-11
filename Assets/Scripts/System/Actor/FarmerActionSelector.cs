@@ -33,7 +33,14 @@ public class FarmerActionSelector : BaseNPCActionSelector
 
         foreach (NPCDecisionStep step in decision.Steps)
         {
-            ActionContext actionContext = new ActionContext(component, stat, step.DestinationPos);
+            ActionContext actionContext;
+            if (step.Intent == NPCIntent.Work)
+            {
+                bool getSuccess = dataManager.TryGetWorkCostInfo(NPCType.Farmer, out var info);
+                actionContext = new ActionContext(component, stat, cost: info);
+            }
+            else
+                actionContext = new ActionContext(component, stat, destination: step.DestinationPos);
 
             if (!TryEnqueueMove(queue, actionContext))
                 continue;

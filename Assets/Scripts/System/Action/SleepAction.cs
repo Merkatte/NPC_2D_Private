@@ -28,9 +28,11 @@ public sealed class SleepAction : DefaultAction
 
     protected override void UpdateCompletion()
     {
+        var stat = actionContext.Stat;
+        
         if (currentRestTime >= sleepTime)
         {
-            _stat.ChangeFatigue(-_stat.GetHunger);
+            stat.ChangeFatigue(-stat.GetHunger);
             Complete();
         }
     }

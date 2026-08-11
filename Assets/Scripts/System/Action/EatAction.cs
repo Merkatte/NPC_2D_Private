@@ -26,9 +26,11 @@ public class EatAction : DefaultAction
 
     protected override void UpdateCompletion()
     {
+        var stat = actionContext.Stat;
+        
         if (currentEatTime >= eatTime)
         {
-            _stat.ChangeHunger(-_stat.GetHunger);
+            stat.ChangeHunger(-stat.GetHunger);
             Complete();
         }
     }

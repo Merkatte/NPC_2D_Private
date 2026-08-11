@@ -701,6 +701,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe1059bb7d64d8947a9b01f526f43047, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FarmerActionSelector
+  dataManager: {fileID: 1535132394}
   actionPool: {fileID: 248930735}
   _destinationDB: {fileID: 1967539807}
 --- !u!1 &976368785
@@ -967,6 +968,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5552b6414a0f56347bd3b4ceca4e88f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DataManager
+  _costInfos:
+  - npcType: 0
+    actionCost: {fileID: 11400000, guid: e36b0e7d145a9f2429e606c57cef7586, type: 2}
+  _statInfo: {fileID: 0}
 --- !u!1 &1686571057
 GameObject:
   m_ObjectHideFlags: 0
@@ -1142,6 +1147,7 @@ MonoBehaviour:
   - {fileID: 825924306}
   - {fileID: 825924306}
   - {fileID: 825924306}
+  _defaultStatContext: {fileID: 0}
 --- !u!4 &1748550658
 Transform:
   m_ObjectHideFlags: 0

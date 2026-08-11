@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class BaseNPCActionSelector : MonoBehaviour
 {
+    [SerializeField] protected DataManager dataManager;
     [SerializeField] protected ActionPool actionPool;
 
     protected virtual void Start()

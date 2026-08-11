@@ -28,18 +28,20 @@ public sealed class MoveAction : DefaultAction
 
     public override void Tick()
     {
+        var component = actionContext.Component;
+        
         if (!_isRunning || _isPaused || _isComplete)
         {
             return;
         }
 
-        if (!_component)
+        if (!component)
         {
             Stop();
             return;
         }
 
-        Vector3 toDestination = _destination - _component.Position;
+        Vector3 toDestination = _destination - component.Position;
         toDestination.z = 0f;
 
         if (toDestination.sqrMagnitude <= _stoppingDistance * _stoppingDistance)
@@ -49,10 +51,10 @@ public sealed class MoveAction : DefaultAction
         }
         
         if(toDestination.x > 0f)
-            _component.Flip(false);
-        else _component.Flip(true);
+            component.Flip(false);
+        else component.Flip(true);
         
-        _component.Move(toDestination.normalized);
+        component.Move(toDestination.normalized);
         UpdateCompletion();
     }
     
@@ -65,12 +67,14 @@ public sealed class MoveAction : DefaultAction
 
     protected override void UpdateCompletion()
     {
-        if (!_component)
+        var component = actionContext.Component;
+        
+        if (!component)
         {
             return;
         }
 
-        Vector3 toDestination = _destination - _component.Position;
+        Vector3 toDestination = _destination - component.Position;
         toDestination.z = 0f;
 
         if (toDestination.sqrMagnitude <= _stoppingDistance * _stoppingDistance)

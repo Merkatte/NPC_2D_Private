@@ -46,6 +46,8 @@ Immediate next actions:
 5. Keep `WorkerNPC` narrow; do not make it the dependency bucket for every NPC concern.
 
 ## Current Status
+IMP-023 completed on 2026-08-11: `DefaultStatContext` ScriptableObject를 현재 `NPCStat` 정보의 기본값 source로 구현했다. 에셋은 이름, 현재/최대 체력, 이동 속도, 피로/허기/갈증 현재값과 최대값만 소유하며 runtime state를 저장하지 않고 `CreateStat()`로 새 `NPCStat` 인스턴스를 생성한다. `NPCStat`에는 need 현재/최대값을 받는 생성자 overload를 추가하고 입력값을 각 max 기준으로 clamp한다. `NPCManager`와 `DataManager.GetStat()`은 연결된 `DefaultStatContext`가 있으면 에셋 기반 stat을 사용하고, 없으면 기존 임시 하드코딩 fallback을 유지한다. 빌드 오류 0, 경고 0. Codex 리뷰 에이전트 런치(비동기, run id `20260811-175130-135`).
+
 IMP-022 completed on 2026-08-02: `DestinationDecider`/`FarmerActionSelector`의 판단 계층과 큐 조립 계층을 분리했다. `DestinationDecider`(순수 C#, `System/Lib`, 직업 공용)는 `Decide(NPCStat, NPCType, Vector3) -> NPCDecision`을 반환하며, 순서 있는 `NPCDecisionStep[]`으로 "이동→보급→이동→작업" 체인을 표현한다. 보급 후보(Drink/Eat/Sleep)는 순열 전체 열거 대신 탐욕적 한계이득 체인으로 하나씩 선택하고, critical 임계값(95%) 초과 시 즉시 해당 need로 단락한다. `FarmerActionSelector`는 `NPCDecision.Steps`를 순회하며 `Queue<IAction>`을 조립하기만 하고 계산식을 갖지 않는다(grep으로 확인). `ActionType.Drink`/`DrinkAction`(EatAction과 동일한 스텁 스타일) 추가, `ActionPool`에 배선. `NPCStat`의 `Current*Percentage`에 0 나눗셈 방어(`GetPercentage`) 추가. `DestinationDB.DestinationInfo`에 `[System.Serializable]` 추가(이전에는 Inspector에 노출되지 않아 런타임 딕셔너리가 항상 비어 있었음). 설계 근거는 `PublicMD/NPC_Decision_System_Plan.md`에 별도 기록. 빌드 오류 0, 경고 0. Codex 리뷰 에이전트 런치(비동기).
 IMP-021 completed on 2026-07-22: ScriptableObject asset instances were moved out of `Assets/Scripts` into `Assets/Data` while keeping their `.meta` files with the assets so Unity GUID references remain stable. ScriptableObject class definitions remain in their owning script folders.
 IMP-020 completed on 2026-07-03: popup infrastructure now supports lazy Instantiate, inactive caching, LRU trimming, and a PopupManager-compatible component name. Command-line C# build passed with 0 warnings and 0 errors.
@@ -54,6 +56,7 @@ IMP-020 completed on 2026-07-03: popup infrastructure now supports lazy Instanti
 ## Completed Tasks
 | Task ID | Date | Summary | Evidence | Related REQs |
 |---|---|---|---|---|
+| IMP-023 | 2026-08-11 | `DefaultStatContext` ScriptableObject 구현 및 `NPCManager`/`DataManager.GetStat()` 기본 stat 생성 경로 연결. `NPCStat`은 health/move speed/need 현재값과 max를 생성자에서 clamp해 runtime 인스턴스로 보관한다. | `dotnet build Assembly-CSharp.csproj --no-restore` 오류 0, 경고 0. Codex review agent launched asynchronously, run id `20260811-175130-135`. | REQ-NF-002, REQ-NF-005 |
 | IMP-022 | 2026-08-02 | `DestinationDecider`/`NPCDecision`/`NPCIntent` 신설, `FarmerActionSelector` 재작성. 판단(거리·need 예측·작업 가능 횟수·점수)은 decider가, 큐 조립(Move 선행 + `ActionPool` 조회)은 selector가 전담하도록 경계를 확정. 탐욕적 한계이득 체인으로 "나온 김에" 보급을 몰아서 처리하는 판단 도입(순열 열거 대비 평가 6회로 축소). `ActionType.Drink`+`DrinkAction` 스텁 추가, `ActionPool` Awake/Create/ReturnAction 배선(ReturnAction switch는 딕셔너리 조회 1줄로 정리). `NPCStat` percentage 0 나눗셈 방어. `DestinationDB.DestinationInfo`에 `[System.Serializable]` 추가(직렬화 버그 수정). 런타임 `using NUnit.*` 2건 제거. | 아래 검증 행 참조. | 사용자 요청: DestinationDecider/FarmerActionSelector 책임 분리 |
 | IMP-022 | 2026-08-02 | Command-line C# build | `dotnet build Assembly-CSharp.csproj --no-restore` — 오류 0, 경고 0. (Assembly-CSharp.csproj가 새 파일 2개를 아직 반영하지 못해 최초 빌드가 CS0246으로 실패 — Unity 백그라운드 재생성 대기 후 수동 2줄 패치로 재확인. Unity가 다음 애셋 리프레시에서 정확한 버전으로 덮어쓸 것.) |  |
 | IMP-022 | 2026-08-02 | 경계 확인 (grep) | `FarmerActionSelector.cs`에 `Distance`/`Percentage`/`Threshold`/`Score`/`DestinationDB` 조회 0건. `DestinationDecider.cs`에 `IAction`/`Queue`/`ActionPool` 참조는 doc-comment 1건뿐, 실제 코드 참조 0건. |  |
@@ -87,6 +90,10 @@ IMP-020 completed on 2026-07-03: popup infrastructure now supports lazy Instanti
 ## Files Changed
 | Path | Change Summary | Reason |
 |---|---|---|
+| Assets/Data/ScriptableObject/Script/DefaultStatContext.cs | 빈 ScriptableObject를 NPC 기본 stat 정의 에셋으로 구현. `CreateStat()`로 새 `NPCStat` runtime 인스턴스를 생성. | 기본 NPC stat 수치를 코드 변경 없이 Inspector 에셋에서 조정하기 위해. |
+| Assets/Scripts/System/Actor/NPCStat.cs | need 현재/최대값까지 받는 생성자 overload 추가 및 health/move speed/need clamp 적용. 기존 4인자 생성자는 유지. | `DefaultStatContext`에서 현재 `NPCStat`이 가진 모든 stat 정보를 안전하게 주입하기 위해. |
+| Assets/Scripts/Manager/NPCManager.cs | `_defaultStatContext` serialized reference 추가. 연결되어 있으면 에셋 기반 stat 생성, 없으면 기존 fallback 유지. | NPC 생성 시 하드코딩된 기본 stat 대신 ScriptableObject 기본값을 사용할 수 있게 하기 위해. |
+| Assets/Scripts/Manager/DataManager.cs | `GetStat()`을 `_statInfo.CreateStat()` 기반으로 구현하고 fallback stat을 유지. | 기존 `IDataManager`/`DefaultStatContext` 연결 의도를 완성하고 빌드 오류를 제거하기 위해. |
 | Assets/Scripts/Recruitment/ResidentCandidateKind.cs | 신규. 일반/네임드 주민 구분 enum. | 도메인 enum은 도메인 폴더에 배치(CodeConvention). |
 | Assets/Scripts/Recruitment/CandidateStatPreview.cs | 신규. `CandidateStatLine`(label+value) + `CandidateStatPreview`(IReadOnlyList 노출). | 스탯 표시 데이터는 balance 수치 없이 디자이너 정의 쌍으로만 구성. |
 | Assets/Scripts/Recruitment/IResidentCandidateView.cs | 신규. 후보 읽기 전용 뷰 계약(DisplayName, Kind, StatPreview, RecruitCost, Portrait). | UI는 이 인터페이스만 의존; 뮤테이션 경로 없음. |
@@ -228,6 +235,8 @@ IMP-011: `GuardActionSet` class was not created; instead `WorkerActionSet` was e
 ## Verification Performed
 | Task ID | Check | Result | Notes |
 |---|---|---|---|
+| IMP-023 | Command-line C# build | Passed | `dotnet build Assembly-CSharp.csproj --no-restore` completed with 0 warnings and 0 errors. |
+| IMP-023 | Codex review agent | Launched | Asynchronous run started, run id `20260811-175130-135`; result will be written by the launcher to `PublicMD/Code_Evaluation_Result.md`. |
 | IMP-020 | Command-line C# build | Passed | `dotnet build Assembly-CSharp.csproj --no-restore` completed with 0 warnings and 0 errors. |
 | IMP-001 | Command-line C# build | Passed | 0 warnings, 0 errors. |
 | IMP-001 | Static reference check | Passed | Action hardcoded stat values were removed; WorkerAI has no result stat data reference. |
@@ -280,6 +289,7 @@ IMP-011: `GuardActionSet` class was not created; instead `WorkerActionSet` was e
 ## Next Actions
 
 ### IMP-022 이후 남은 작업 (Unity Editor 배선 필요)
+0. **`DefaultStatContext` asset 생성 및 연결**: Project 창에서 `Scriptable Objects/DefaultStatContext` 메뉴로 기본 stat asset을 만들고, `NPCManager._defaultStatContext`와 `DataManager._statInfo`에 연결해야 한다. 연결 전에는 기존 hardcoded fallback stat이 사용된다.
 1. **`DestinationDB` GameObject가 씬에 아예 없음**: `SampleScene.unity`를 grep한 결과 `DestinationDB` 참조가 0건. GameObject를 만들고 `DestinationDB` 컴포넌트를 부착한 뒤, `farmerWorkingPlace`/`sleepPlace`/`drinkPlace`/`eatPlace` 4개 키에 대응하는 목적지 Transform을 Inspector에서 채워야 한다. `[System.Serializable]`이 이번에 추가되었으므로 이 리스트가 처음으로 Inspector에 노출된다.
 2. **`FarmerActionSelector`에 새로 생긴 `_destinationDB` 슬롯 연결**: 씬의 `FarmerActionSelector` 오브젝트(라인 543 부근)에서 위 `DestinationDB`를 드래그해 연결해야 한다.
 3. **need 증가/최대치 시스템**: `NPCStat`의 `_fatigueMax/_hungerMax/_thirstMax`가 생성자에서 설정되지 않아 0이다. 방어 로직만 있는 지금은 세 percentage가 항상 0%이고, `DestinationDecider`는 런타임에서 항상 Work만 선택한다. 사용자가 이 시스템을 별도로 구현할 예정(계획 확정 사항). 완료되면 `DestinationDecider`의 `const` 튜닝 값들을 데이터 에셋으로 이관하는 작업이 뒤따른다 (`PublicMD/NPC_Decision_System_Plan.md` 참고).

@@ -11,11 +11,31 @@ public class FarmingAction : DefaultAction
 
     public override void Tick()
     {
-        throw new System.NotImplementedException();
+        if (!_isRunning || _isPaused || _isComplete)
+        {
+            return;
+        }
+
+        if (!actionContext.Component)
+        {
+            Stop();
+            return;
+        }
+
+        _currentWorkingTime += Time.deltaTime;
+        if(_currentWorkingTime >= _workingTime)
+            UpdateCompletion();
     }
 
     protected override void UpdateCompletion()
     {
-        throw new System.NotImplementedException();
+        var _stat = actionContext.Stat;
+        var actionCost = actionContext.CostInfo.actionCost as FarmingActionCost;
+        
+        _stat.ChangeFatigue(actionCost.FarmingActionPerFatigue);
+        _stat.ChangeHunger(actionCost.FarmingActionPerHunger);
+        _stat.ChangeThirst(actionCost.FarmingActionPerThirst);
+
+        Complete();
     }
 }

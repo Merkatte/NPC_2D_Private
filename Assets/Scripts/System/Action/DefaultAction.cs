@@ -4,8 +4,7 @@ public abstract class DefaultAction : IAction
 {
     private readonly ActionType _actionType;
     
-    protected NPCComponent _component;
-    protected NPCStat _stat;
+    protected ActionContext actionContext;
     protected bool _isPaused;
     protected bool _isRunning;
     protected bool _isComplete;
@@ -16,8 +15,7 @@ public abstract class DefaultAction : IAction
     }
     public virtual void Init(ActionContext context)
     {
-        _component = context.Component;
-        _stat = context.Stat;
+        actionContext = context;
         
         _isPaused = false;
         _isRunning = false;
@@ -28,7 +26,7 @@ public abstract class DefaultAction : IAction
 
     public virtual void Start()
     {
-        if (!_component)
+        if (!actionContext.Component)
         {
             _isComplete = true;
             _isRunning = false;
@@ -70,7 +68,6 @@ public abstract class DefaultAction : IAction
 
     public virtual void Clear()
     {
-        _component = null;
         _isPaused = false;
         _isRunning = false;
         _isComplete = false;

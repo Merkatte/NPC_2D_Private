@@ -3,11 +3,23 @@ using UnityEngine;
 public class NPCStat : IStatView
 {
     public NPCStat(string name, float health, float healthMax, float moveSpeed)
+        : this(name, health, healthMax, moveSpeed, 1f, 50f, 10f, 100f, 100f, 100f)
+    {
+    }
+
+    public NPCStat(string name, float health, float healthMax, float moveSpeed,
+        float fatigue, float hunger, float thirst, float fatigueMax, float hungerMax, float thirstMax)
     {
         _name = name;
-        _health = health;
-        _healthMax = healthMax;
-        _moveSpeed = moveSpeed;
+        _healthMax = Mathf.Max(0f, healthMax);
+        _health = Mathf.Clamp(health, 0f, _healthMax);
+        _moveSpeed = Mathf.Max(0f, moveSpeed);
+        _fatigueMax = Mathf.Max(0f, fatigueMax);
+        _hungerMax = Mathf.Max(0f, hungerMax);
+        _thirstMax = Mathf.Max(0f, thirstMax);
+        _fatigue = Mathf.Clamp(fatigue, 0f, _fatigueMax);
+        _hunger = Mathf.Clamp(hunger, 0f, _hungerMax);
+        _thirst = Mathf.Clamp(thirst, 0f, _thirstMax);
     }
     
     private string _name;

@@ -2,210 +2,217 @@
 
 ## Purpose
 
-Lead-programmer review of the current NPC action structure after introducing `ActionContext` and `DefaultAction`, using `PublicMD/ProjectStructure.md`, `PublicMD/CodeConvention.md`, and `.codex/skills/reviewing-npc-work-code/references/review-workflow.md` as standards. Production code was not modified.
+Lead-programmer review of the current NPC/stat/action skeleton after the `DefaultStatContext` work. Standards used:
+
+- `PublicMD/CodeConvention.md`
+- `PublicMD/ProjectStructure.md`
+- `.codex/skills/reviewing-npc-work-code/references/review-workflow.md`
 
 ## Review Snapshot
 
-- Date: 2026-08-03
+- Date: 2026-08-11
 - Scope:
-  - All current `.cs` files under `Assets/Scripts`
-  - `PublicMD/ProjectStructure.md`
-  - `PublicMD/CodeConvention.md`
-  - Current action lifecycle files: `IAction`, `ActionContext`, `DefaultAction`, `MoveAction`, `ActionPool`, `FarmerActionSelector`, `WorkerNPC`
+  - All relevant C# scripts under `Assets/Scripts`
+  - `DefaultStatContext` ScriptableObject definition and asset under `Assets/Data/ScriptableObject`
+  - `Assets/Scenes/SampleScene.unity` serialized wiring for managers, selectors, stat assets, and destination data
+  - `Assets/BehaviorGraph/CustomActionNode` checked; path is absent
 - Sources:
-  - `rg --files Assets/Scripts`
-  - Targeted `rg -n` and `Select-String` checks for action inheritance, pool creation, queue ownership, completion handling, stubs, and stale APIs
-  - Direct source reads of relevant C# files
+  - `git status --short`
+  - `git diff --stat`
+  - Direct reads of manager, stat, selector, action, data, interface, and provider scripts
+  - Targeted `rg` searches for `DefaultStatContext`, `_statInfo`, `_defaultStatContext`, `DataManager.instance`, `GetStat`, action cost fields, and scene GUID references
 - Verification:
-  - `Assets/BehaviorGraph/CustomActionNode` is absent.
-  - `dotnet build Assembly-CSharp.csproj --no-restore` was run.
-  - Build failed with 6 compile errors because `EatAction`, `DrinkAction`, and `SleepAction` no longer implement `IAction` while `ActionPool` still enqueues them into `Queue<IAction>`.
+  - `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 warnings and 0 errors
 
 ## Executive Summary
 
-The `DefaultAction : IAction` direction is a strong improvement for this codebase. It removes duplicated lifecycle state from concrete actions and keeps `IAction` focused on the external action contract. Keeping `Complete()` as a protected method on `DefaultAction`, not on `IAction`, is also the right boundary.
+The data-backed stat direction is sound: `DefaultStatContext.CreateStat()` creates a fresh `NPCStat`, and `NPCStat` keeps stat invariants in the runtime state object. That matches the project rule that ScriptableObjects must not hold mutable runtime state.
 
-The current implementation is not yet in a usable state because the action hierarchy is only partially migrated. `MoveAction` now follows the intended pattern, but `EatAction`, `DrinkAction`, and `SleepAction` are plain empty classes, `FarmingAction` still directly implements `IAction` with throwing stubs, and `ActionPool` expects all action classes to be assignable to `IAction`.
+The main runtime risk is now wiring and ownership drift around stat creation. `NPCManager.CreateNPC()` no longer uses its own `_defaultStatContext` or fallback method; it directly calls `DataManager.instance.GetStat()`. In the checked scene, `DataManager` has no `_statInfo` reference serialized, so the first NPC spawn through this path will null-reference.
 
-There is also a confirmed queue construction bug in `FarmerActionSelector`: it initializes one action instance, then enqueues a different uninitialized instance.
+There are also confirmed behavior mismatches in the need/action loop: `FarmingAction` applies need costs that do not match `DestinationDecider` predictions, and `SleepAction` reduces fatigue using hunger instead of fatigue.
 
 ## Improvements Since Previous Review
 
-- `ActionContext` now gives actions a single initialization parameter instead of requiring type-specific public init signatures everywhere.
-- `DefaultAction` now owns common action state and lifecycle methods: component reference, pause/running/complete flags, `Init`, `Start`, `Pause`, `Resume`, `Stop`, `Clear`, `CheckComplete`, and protected `Complete`.
-- `MoveAction` no longer duplicates the common lifecycle fields and correctly uses `override` for `Init`, `Start`, `Tick`, and `Clear`.
-- `MoveAction` keeps movement-specific state, such as `_destination` and `_stoppingDistance`, in the concrete class instead of forcing all actions to carry destination data.
-- `DestinationDB` has improved from the earlier malformed `List<DestinationDB>` shape to a serialized `List<DestinationInfo>`.
-- `NPCStat` now assigns `_moveSpeed` in the constructor.
+- `NPCStat` now initializes and clamps move speed, health, and need current/max values in its constructor.
+- `DefaultStatContext` now exists as a concrete ScriptableObject asset source and creates per-NPC runtime `NPCStat` instances.
+- `DestinationDB` is now wired in `SampleScene` and contains `eatPlace`, `sleepPlace`, `drinkPlace`, and `farmPlace`.
+- The command-line C# build currently passes.
 
 ## Findings By Severity
 
 ### Critical
 
-#### Finding 1: Project currently does not compile after partial action migration
-
-- Severity: Critical
-- Files:
-  - `Assets/Scripts/System/Lib/ActionPool.cs:26`
-  - `Assets/Scripts/System/Lib/ActionPool.cs:29`
-  - `Assets/Scripts/System/Lib/ActionPool.cs:35`
-  - `Assets/Scripts/System/Lib/ActionPool.cs:72`
-  - `Assets/Scripts/System/Lib/ActionPool.cs:75`
-  - `Assets/Scripts/System/Lib/ActionPool.cs:81`
-  - `Assets/Scripts/System/Action/EatAction.cs:3`
-  - `Assets/Scripts/System/Action/DrinkAction.cs:3`
-  - `Assets/Scripts/System/Action/SleepAction.cs:3`
-- Evidence:
-  - `ActionPool` enqueues `new EatAction()`, `new DrinkAction()`, and `new SleepAction()` into `Queue<IAction>`.
-  - Those classes are currently plain classes and do not implement `IAction` or inherit `DefaultAction`.
-  - `dotnet build Assembly-CSharp.csproj --no-restore` fails with CS1503 conversion errors for those three action types.
-- Recommendation:
-  - Make every pooled action inherit `DefaultAction`, even if `Tick()` is temporarily a no-op or immediate `Complete()`.
+None found.
 
 ### High
 
-#### Finding 2: `FarmerActionSelector` initializes one action but enqueues another
+#### Finding 1: NPC spawn path can null-reference because it depends on an unwired global `DataManager`
 
 - Severity: High
-- File: `Assets/Scripts/System/Actor/FarmerActionSelector.cs:44`
+- File: `Assets/Scripts/Manager/NPCManager.cs:34`, `Assets/Scripts/Manager/DataManager.cs:8`, `Assets/Scripts/Manager/DataManager.cs:28`, `Assets/Scripts/Manager/DataManager.cs:30`, `Assets/Scenes/SampleScene.unity:958`, `Assets/Scenes/SampleScene.unity:970`
 - Evidence:
-  - `IAction action = GetAction(actionType);`
-  - `action.Init(new ActionContext(component, stat, step.DestinationPos));`
-  - `queue.Enqueue(GetAction(actionType));`
+  - `NPCManager.CreateNPC()` calls `DataManager.instance.GetStat()`.
+  - `DataManager.GetStat()` directly calls `_statInfo.CreateStat()`.
+  - The `DataManager` scene block serializes `_costInfos`, but no `_statInfo` field is present.
+  - `rg` found the `DefaultStatContext` asset GUID only in the asset itself, not in `SampleScene`.
 - Why it matters:
-  - The initialized action is discarded.
-  - The queued action has not received `Init`, so it can run with missing context or default state.
-  - It also rents twice from the pool per loop iteration.
-- Recommendation:
-  - Enqueue the same initialized instance: `queue.Enqueue(action);`.
-
-#### Finding 3: `WorkerNPC.SetNextAction()` leaves `_currentAction` null for a frame after queue creation
-
-- Severity: High
-- File: `Assets/Scripts/Actor/WorkerNPC.cs:36`
-- Evidence:
-  - When the queue is null or empty, `SetNextAction()` requests a queue and immediately returns without dequeuing the first action.
-  - `Update()` then returns as well.
-- Why it matters:
-  - The worker idles for at least one frame after every queue request.
-  - If the selector returns an empty queue repeatedly, `_currentAction` remains stale or null with no explicit failed/idle state.
-- Recommendation:
-  - After requesting a non-empty queue, immediately dequeue the first action in the same method.
-  - If the queue is empty, set `_currentAction = null` and leave a clear idle path.
-
-#### Finding 4: Non-move actions still have unsafe lifecycle behavior
-
-- Severity: High
-- File: `Assets/Scripts/System/Action/FarmingAction.cs:3`
-- Evidence:
-  - `FarmingAction` directly implements `IAction` and every lifecycle method throws `NotImplementedException`.
-- Why it matters:
-  - Any selected work action will crash when initialized, ticked, cleared, or returned to the pool.
-- Recommendation:
-  - Convert `FarmingAction` to `DefaultAction` and implement safe placeholder behavior until real farming logic exists.
+  - In the current scene, calling `CreateNPC()` reaches an unassigned `_statInfo` and throws before a worker can initialize.
+  - This also bypasses `NPCManager.CreateStat()`, so the fallback path in `NPCManager` is currently dead code.
+- Recommended fix:
+  - Choose one stat creation owner.
+  - If `DataManager` owns stat creation, wire `_statInfo` in the scene and make `NPCManager` depend on an explicit serialized/service reference with validation.
+  - If `NPCManager` owns spawn composition, call `CreateStat()` and remove the global `DataManager.instance` dependency from the spawn path.
 
 ### Medium
 
-#### Finding 5: `DefaultAction.Init()` starts actions immediately
+#### Finding 2: `NPCManager._defaultStatContext` and `CreateStat()` are now unused dead composition code
 
 - Severity: Medium
-- File: `Assets/Scripts/System/Action/DefaultAction.cs:10`
+- File: `Assets/Scripts/Manager/NPCManager.cs:9`, `Assets/Scripts/Manager/NPCManager.cs:38`
 - Evidence:
-  - `Init(ActionContext context)` ends by calling `Start()`.
+  - `_defaultStatContext` is serialized but never read by `CreateNPC()`.
+  - `CreateStat()` is private and has no callers after `CreateNPC()` was changed to `DataManager.instance.GetStat()`.
 - Why it matters:
-  - It merges configuration and execution lifecycle.
-  - A selector that only builds a queue now starts every action during queue construction, before the runner makes it current.
-  - This weakens the intended single action runner ownership described in `ProjectStructure.md`.
-- Recommendation:
-  - Prefer `Init()` for data setup only.
-  - Let `WorkerNPC` or a future `NPCActionRunner` call `Start()` when the action becomes current.
+  - The Inspector now exposes a stat asset slot that cannot affect spawned NPCs.
+  - This contradicts the progress note that `NPCManager._defaultStatContext` should be connected.
+- Recommended fix:
+  - Remove `_defaultStatContext` and `CreateStat()` from `NPCManager` if `DataManager` is the intended source.
+  - Or restore `CreateNPC()` to use `CreateStat()` and keep `DataManager` out of NPC spawning.
 
-#### Finding 6: `ActionContext.HasComponent` should use Unity truthiness for `NPCComponent`
+#### Finding 3: Work need costs differ between planning and execution
 
 - Severity: Medium
-- File: `Assets/Scripts/System/Lib/ActionContext.cs:9`
+- File: `Assets/Scripts/System/Action/FarmingAction.cs:32`, `Assets/Scripts/System/Action/FarmingAction.cs:33`, `Assets/Scripts/System/Action/FarmingAction.cs:34`, `Assets/Scripts/System/Lib/DestinationDecider.cs:20`, `Assets/Scripts/System/Lib/DestinationDecider.cs:21`, `Assets/Scripts/System/Lib/DestinationDecider.cs:22`
 - Evidence:
-  - `HasComponent => Component != null`
+  - `FarmingAction` applies fatigue/hunger/thirst deltas of `8f/8f/8f`.
+  - `DestinationDecider` predicts work deltas of `8f/5f/7f`.
 - Why it matters:
-  - `NPCComponent` is a `MonoBehaviour`. Unity destroyed-object semantics are handled more accurately by Unity truthiness.
-- Recommendation:
-  - Use `public bool HasComponent => Component;` if this compiles cleanly with the project Unity version.
+  - The selector can enqueue a work count based on a lower predicted hunger/thirst cost than the action actually applies.
+  - Need-based behavior will drift from the plan once the loop runs.
+- Recommended fix:
+  - Put work need costs in one source, preferably a data asset/provider, and have both the decider and action read the same values.
 
-#### Finding 7: `NPCComponent` methods assume optional serialized references are assigned
+#### Finding 4: `SleepAction` restores fatigue using hunger
 
 - Severity: Medium
-- File: `Assets/Scripts/System/Actor/NPCComponent.cs:29`
+- File: `Assets/Scripts/System/Action/SleepAction.cs:33`
 - Evidence:
-  - `Flip()` calls `_spriteRenderer.flipX` without checking `_spriteRenderer`.
-  - `EnableObject()` calls `_gameObject.SetActive()` without checking `_gameObject`.
+  - `SleepAction.UpdateCompletion()` calls `_stat.ChangeFatigue(-_stat.GetHunger)`.
+  - `EatAction` and `DrinkAction` use their matching need values (`GetHunger`, `GetThirst`) for recovery.
 - Why it matters:
-  - Missing inspector references cause runtime `NullReferenceException`.
-- Recommendation:
-  - Validate required references in `Awake()` or guard optional references before use.
+  - A hungry but rested NPC can lose fatigue incorrectly.
+  - A fatigued NPC with low hunger may barely recover from sleep.
+- Recommended fix:
+  - Change the recovery expression to use fatigue, e.g. `_stat.ChangeFatigue(-_stat.GetFatigue)`, or a data-driven sleep recovery amount.
 
 ### Low
 
-#### Finding 8: `DefaultAction` is the right structure, but it should stay minimal
+#### Finding 5: `DefaultStatContext` script definition lives under the data asset tree
 
 - Severity: Low
-- File: `Assets/Scripts/System/Action/DefaultAction.cs:3`
+- File: `Assets/Data/ScriptableObject/Script/DefaultStatContext.cs:3`
 - Evidence:
-  - The base class currently contains only genuinely common lifecycle state and behavior.
-- Recommendation:
-  - Keep it this way. Do not move movement-only fields like destination or stopping distance back into the base class unless all actions truly need them.
+  - `CodeConvention.md` says ScriptableObject asset instances belong under `Assets/Data/<Domain>`, while class definitions should stay under the owning script domain.
+  - The `.asset` and the `.cs` definition both live under `Assets/Data/ScriptableObject`.
+- Recommended fix:
+  - Keep `DefaultStatContext.asset` under `Assets/Data`, but move the class definition to the NPC/stat script domain.
 
-#### Finding 9: Style cleanup remains before the skeleton grows
+#### Finding 6: Default stat values are duplicated across constructor defaults, asset defaults, and fallback code
 
 - Severity: Low
-- Files:
-  - `Assets/Scripts/System/Lib/ActionPool.cs:10`
-  - `Assets/Scripts/System/Actor/BaseNPCActionSelector.cs:6`
-  - `Assets/Scripts/System/Lib/DestinationDB.cs:6`
-  - `Assets/Scripts/System/Lib/CONST.cs:7`
+- File: `Assets/Scripts/System/Actor/NPCStat.cs:5`, `Assets/Scripts/System/Actor/NPCStat.cs:6`, `Assets/Data/ScriptableObject/Script/DefaultStatContext.cs:6`, `Assets/Scripts/Manager/NPCManager.cs:43`
 - Evidence:
-  - `_actionDictionary` lacks explicit `private`.
-  - `actionPool` is a protected serialized field but does not follow `_camelCase`.
-  - `_destionations` and `destionationName` are misspelled.
-  - `COSNT_ASDF` appears to be placeholder/dead constant data.
-- Recommendation:
-  - Clean these now while the skeleton is small.
+  - Need defaults appear in the four-argument `NPCStat` constructor.
+  - Matching defaults appear in `DefaultStatContext`.
+  - Another fallback default appears in `NPCManager.CreateStat()`.
+- Recommended fix:
+  - Once the stat asset is mandatory, remove silent code fallbacks.
+  - If fallback is required, centralize it in one named factory/default definition.
+
+#### Finding 7: Existing `NPCStat.ChangeMoveSpeed()` still cannot increase speed
+
+- Severity: Low
+- File: `Assets/Scripts/System/Actor/NPCStat.cs:80`, `Assets/Scripts/System/Actor/NPCStat.cs:82`
+- Evidence:
+  - The method clamps `_moveSpeed + val` with `_moveSpeed` as the maximum.
+- Recommended fix:
+  - Add a separate max/current speed model, or rename the method if speed increases are intentionally unsupported.
+
+#### Finding 8: Several touched scripts have convention cleanup issues
+
+- Severity: Low
+- File: `Assets/Scripts/Manager/NPCManager.cs:2`, `Assets/Scripts/Actor/WorkerNPC.cs:4`, `Assets/Scripts/System/Action/EatAction.cs:2`, `Assets/Scripts/Manager/DataManager.cs:13`
+- Evidence:
+  - `Unity.VisualScripting`, `UnityEngine.UIElements`, and `UnityEngine.PlayerLoop` are imported but not used.
+  - `DataManager.instance` is public static state, which conflicts with the architecture direction of explicit references over hidden global lookup.
+- Recommended fix:
+  - Remove unused usings.
+  - Replace global access with serialized references or explicit initialization before more systems consume `IDataManager`.
 
 ## Findings By File
 
-- `Assets/Scripts/Interface/IAction.cs`: Good external contract shape. Keep internal helper methods like `Complete()` out of this interface.
-- `Assets/Scripts/System/Lib/ActionContext.cs`: Reasonable `readonly struct` context. Consider Unity truthiness for `HasComponent`.
-- `Assets/Scripts/System/Action/DefaultAction.cs`: Good base-class direction. The main concern is `Init()` calling `Start()`.
-- `Assets/Scripts/System/Action/MoveAction.cs`: Much cleaner after moving common lifecycle state to `DefaultAction`. Movement-specific state is now correctly local to `MoveAction`.
-- `Assets/Scripts/System/Action/EatAction.cs`: Does not compile with `ActionPool` because it is not an `IAction`.
-- `Assets/Scripts/System/Action/DrinkAction.cs`: Does not compile with `ActionPool` because it is not an `IAction`.
-- `Assets/Scripts/System/Action/SleepAction.cs`: Does not compile with `ActionPool` because it is not an `IAction`.
-- `Assets/Scripts/System/Action/FarmingAction.cs`: Still uses the old direct-`IAction` stub style and throws from lifecycle methods.
-- `Assets/Scripts/System/Lib/ActionPool.cs`: Pool responsibility is correct, but it currently assumes action types that no longer implement the required interface.
-- `Assets/Scripts/System/Actor/FarmerActionSelector.cs`: Correctly uses `ActionContext` for `MoveAction`, but has a concrete bug where the initialized action is not the action enqueued.
-- `Assets/Scripts/Actor/WorkerNPC.cs`: The queue runner direction is reasonable, but queue creation and first-action dequeue should happen as one lifecycle step.
-- `Assets/Scripts/System/Actor/NPCComponent.cs`: Thin Unity-facing capability holder is appropriate. Needs null validation for serialized references.
-- `Assets/Scripts/System/Actor/NPCStat.cs`: Move speed constructor issue is fixed. Existing `Get...` property naming remains a style mismatch.
-- `Assets/Scripts/System/Lib/DestinationDB.cs`: Better destination storage shape than before. Still has spelling/style cleanup.
+### `Assets/Scripts/Manager/NPCManager.cs`
+
+- High: `CreateNPC()` depends on `DataManager.instance.GetStat()` without validating `DataManager.instance`.
+- Medium: `_defaultStatContext` and `CreateStat()` are currently unused.
+- Low: unused `Unity.VisualScripting` import and large commented-out switch block.
+
+### `Assets/Scripts/Manager/DataManager.cs`
+
+- High: `GetStat()` dereferences `_statInfo` with no scene wiring and no null guard.
+- Low: `public static IDataManager instance` introduces hidden global dependency.
+- Low: `_itemInfos` is initialized but unused in the reviewed code.
+
+### `Assets/Data/ScriptableObject/Script/DefaultStatContext.cs`
+
+- Low: class definition is under the data asset folder rather than the owning script domain.
+- Positive: `CreateStat()` creates a new runtime object and does not mutate the asset.
+
+### `Assets/Scripts/System/Actor/NPCStat.cs`
+
+- Low: `ChangeMoveSpeed()` still cannot increase speed.
+- Low: constructor defaults duplicate asset defaults.
+- Positive: constructor clamping belongs in `NPCStat` and is implemented there.
+
+### `Assets/Scripts/System/Action/FarmingAction.cs`
+
+- Medium: runtime work need deltas do not match the decider's predicted work deltas.
+- Low: `_workingTime` and need costs are hardcoded while action cost assets already exist.
+
+### `Assets/Scripts/System/Action/SleepAction.cs`
+
+- Medium: fatigue recovery uses hunger instead of fatigue.
+
+### `Assets/Scenes/SampleScene.unity`
+
+- High: `DataManager` has no serialized `_statInfo` reference.
+- Medium: `NPCManager` has no serialized `_defaultStatContext` reference, and that field is currently unused anyway.
+- Positive: `FarmerActionSelector._destinationDB` is assigned, and `DestinationDB` has supply/farm destinations serialized.
 
 ## Cross-Cutting Findings
 
-- The action inheritance direction is sound: `IAction` as the public contract, `DefaultAction` as reusable lifecycle implementation, concrete actions as behavior-specific logic.
-- The migration must be completed consistently. A mixed state where some actions inherit `DefaultAction`, some implement `IAction` directly, and some do neither breaks both compile safety and readability.
-- Queue ownership is close but not fully clean yet. Selectors should build initialized action requests or initialized action instances, while the runner should decide when an action actually starts.
-- Placeholder actions should be safe no-ops or immediate-complete actions, not throwing stubs, once they can be selected or pooled.
+- Stat runtime ownership is mostly correct: `NPCStat` remains plain state and `DefaultStatContext` remains definition data.
+- Spawn composition is now split ambiguously between `NPCManager` and `DataManager`; this should be resolved before adding more NPC creation paths.
+- Need behavior is not yet single-source-of-truth: the decider, actions, action cost assets, and stat defaults all carry related numbers independently.
+- The project is still in a skeleton phase, but now that actions can run through `WorkerNPC`, confirmed need/action bugs should be fixed before tuning.
 
 ## Positive Notes
 
-- `Complete()` being protected on `DefaultAction` is the right encapsulation.
-- Removing `_destination` from `DefaultAction` and keeping it in `MoveAction` is a good correction.
-- `ActionContext` is a reasonable small value type because it mostly carries references and optional request data.
-- `MoveAction` now reads much closer to a focused behavior implementation.
+- The project builds with 0 warnings and 0 errors.
+- `DestinationDB` is now scene-wired for the farmer selector.
+- `DefaultStatContext` does not store runtime state and correctly creates a separate `NPCStat`.
+- Selector/action responsibility remains mostly intact: the decider chooses, the selector builds queues, and actions mutate stats.
 
 ## Recommended Next Actions
 
-1. Make `EatAction`, `DrinkAction`, `SleepAction`, and `FarmingAction` inherit `DefaultAction`.
-2. Fix `FarmerActionSelector` to enqueue the initialized `action` instance.
-3. Separate `Init()` from `Start()` so actions begin only when the runner makes them current.
-4. Update `WorkerNPC.SetNextAction()` to dequeue immediately after creating a non-empty queue.
-5. Add null validation or guards for `NPCComponent` serialized references.
-6. Clean small naming/style issues while the codebase is still small.
+1. Fix the spawn stat source: either wire and validate `DataManager._statInfo`, or restore `NPCManager.CreateStat()` usage and remove `DataManager.instance` from spawn.
+2. Remove the unused `NPCManager._defaultStatContext` path or make it the actual spawn path.
+3. Correct `SleepAction` to recover fatigue from fatigue, not hunger.
+4. Unify farming need costs between `DestinationDecider`, `FarmingAction`, and the existing action cost data.
+5. Move `DefaultStatContext.cs` out of `Assets/Data` into the owning NPC/stat script domain.
+6. Remove unused imports, dead commented code, and duplicated fallback stat constants.
+
+## Final Verdict
+
+Build passes, but the current runtime spawn path is not safe in the checked scene. The `DefaultStatContext` model itself is architecturally acceptable; the main required fix is deciding who owns stat creation and wiring that dependency explicitly. After that, fix the need-cost mismatch and `SleepAction` recovery bug before relying on autonomous need-based NPC behavior.
