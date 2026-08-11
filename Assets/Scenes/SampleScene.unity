@@ -969,9 +969,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DataManager
   _costInfos:
-  - npcType: 0
-    actionCost: {fileID: 11400000, guid: e36b0e7d145a9f2429e606c57cef7586, type: 2}
-  _statInfo: {fileID: 0}
+  - actionCost: {fileID: 11400000, guid: e36b0e7d145a9f2429e606c57cef7586, type: 2}
+  _statInfo: {fileID: 11400000, guid: 8bfe8a7e097b9fb4096bcbc93499c8be, type: 2}
 --- !u!1 &1686571057
 GameObject:
   m_ObjectHideFlags: 0
@@ -1142,12 +1141,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fdcad2b26eb7489438f75d1cef29c8de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCManager
+  dataManager: {fileID: 1535132394}
   _workerPool: {fileID: 1698803130}
   _selectors:
   - {fileID: 825924306}
   - {fileID: 825924306}
   - {fileID: 825924306}
-  _defaultStatContext: {fileID: 0}
 --- !u!4 &1748550658
 Transform:
   m_ObjectHideFlags: 0
@@ -1217,7 +1216,7 @@ MonoBehaviour:
   - DestinationName: drinkPlace
     DestinationLoc: {fileID: 2104496463}
     DestinationObject: {fileID: 2104496462}
-  - DestinationName: farmPlace
+  - DestinationName: farmerWorkingPlace
     DestinationLoc: {fileID: 1373381417}
     DestinationObject: {fileID: 1373381415}
 --- !u!1 &2074886626

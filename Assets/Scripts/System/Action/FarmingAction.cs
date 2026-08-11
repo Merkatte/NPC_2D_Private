@@ -30,7 +30,9 @@ public class FarmingAction : DefaultAction
     protected override void UpdateCompletion()
     {
         var _stat = actionContext.Stat;
-        var actionCost = actionContext.CostInfo.actionCost as FarmingActionCost;
+        var actionCost = actionContext.CostInfo as FarmingActionCost;
+        Debug.Log("Casting Success +" + actionCost.name);
+        
         
         _stat.ChangeFatigue(actionCost.FarmingActionPerFatigue);
         _stat.ChangeHunger(actionCost.FarmingActionPerHunger);

@@ -4,9 +4,10 @@ using UnityEngine;
 
 public class NPCManager : MonoBehaviour
 {
+    [SerializeField] DataManager dataManager;
+    
     [SerializeField] WorkerPool _workerPool;
     [SerializeField] List<BaseNPCActionSelector> _selectors;
-    [SerializeField] private DefaultStatContext _defaultStatContext;
     
     private Dictionary<NPCType, List<WorkerNPC>> _workers;
 
@@ -31,15 +32,7 @@ public class NPCManager : MonoBehaviour
         // }
         WorkerNPC newWorker = _workerPool.GetWorker(Vector2.zero);
 
-        var newStat = DataManager.instance.GetStat();
+        var newStat = dataManager.GetStat();
         newWorker.Init(newStat, _selectors[(int)npcType]);
-    }
-
-    NPCStat CreateStat()
-    {
-        if (_defaultStatContext)
-            return _defaultStatContext.CreateStat();
-
-        return new NPCStat("something", 100, 100, UnityEngine.Random.Range(1f, 2f));
     }
 }

@@ -8,7 +8,7 @@ public class DataManager : MonoBehaviour, IDataManager
     [SerializeField] private DefaultStatContext _statInfo;
     
     Dictionary<ItemCategory, List<ItemInfo>> _itemInfos = new Dictionary<ItemCategory, List<ItemInfo>>();
-    Dictionary<NPCType, CostInfo> _costInfoDict = new Dictionary<NPCType, CostInfo>();
+    Dictionary<ActionType, CostInfo> _costInfoDict = new Dictionary<ActionType, CostInfo>();
     
     public static IDataManager instance;
 
@@ -21,7 +21,8 @@ public class DataManager : MonoBehaviour, IDataManager
     {
         foreach (var item in _costInfos)
         {
-            _costInfoDict.Add(item.npcType, item);
+            Debug.Log(item.actionCost.MyType);
+            _costInfoDict.Add(item.actionCost.MyType, item);
         }
     }
     
@@ -30,15 +31,19 @@ public class DataManager : MonoBehaviour, IDataManager
         return _statInfo.CreateStat();
     }
 
-    public bool TryGetWorkCostInfo(NPCType npcType, out CostInfo costInfo)
+    public bool TryGetActionCostInfo<T>(ActionType actionType, out T costInfo) where T : DefaultActionCost
     {
         costInfo = null;
-        if (!_costInfoDict.TryGetValue(npcType, out var info))
+        if (!_costInfoDict.TryGetValue(actionType, out var info))
+            return false;
+
+        costInfo = info.actionCost as T;
+        if (costInfo == null)
         {
+            Debug.LogError($"CostInfo for {actionType} is not of type {typeof(T).Name}.");
             return false;
         }
-        
-        costInfo = info;
+
         return true;
     }
 }
@@ -46,6 +51,5 @@ public class DataManager : MonoBehaviour, IDataManager
 [Serializable]
 public class CostInfo
 {
-    [SerializeField] public NPCType npcType;
     [SerializeField] public DefaultActionCost actionCost;
 }

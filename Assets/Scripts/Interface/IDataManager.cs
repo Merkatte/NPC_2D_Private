@@ -2,5 +2,5 @@
 public interface IDataManager
 {
     NPCStat GetStat();
-    bool TryGetWorkCostInfo(NPCType npcType, out CostInfo costInfo);
+    bool TryGetActionCostInfo<T>(ActionType actionType, out T costInfo) where T : DefaultActionCost;
 }

@@ -26,6 +26,7 @@ public abstract class DefaultAction : IAction
 
     public virtual void Start()
     {
+        Debug.Log("Action Start" + _actionType);
         if (!actionContext.Component)
         {
             _isComplete = true;
