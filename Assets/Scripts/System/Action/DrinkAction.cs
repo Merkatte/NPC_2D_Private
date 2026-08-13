@@ -8,6 +8,16 @@ public class DrinkAction : DefaultAction
     {
     }
 
+    public override void Start()
+    {
+        base.Start();
+        if (!actionContext.InteractionProvider.CanInteract(GetMyActionType()))
+        {
+            Debug.LogError("Current InteractionProvider does not support this action");
+            Complete();
+        }
+    }
+
     public override void Tick()
     {
         if (!_isRunning || _isPaused || _isComplete)
@@ -30,7 +40,10 @@ public class DrinkAction : DefaultAction
         
         if (currentDrinkTime >= drinkTime)
         {
-            stat.ChangeThirst(-stat.GetThirst);
+            if (actionContext.InteractionProvider.TryInteraction(GetMyActionType(), out var result))
+            {
+                stat.ApplyStatEffect(result.Effect);
+            }
             Complete();
         }
     }

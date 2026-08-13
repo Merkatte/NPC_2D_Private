@@ -100,4 +100,12 @@ public class NPCStat : IStatView
         _thirst = Mathf.Clamp(_thirst + val, 0, _thirstMax);
         return _thirst;
     }
+
+    public void ApplyStatEffect(StatEffect effect)
+    {
+        ChangeHealth(effect.HealthDelta);
+        ChangeHunger(effect.HungerDelta);
+        ChangeThirst(effect.ThirstDelta);
+        ChangeFatigue(effect.FatigueDelta);
+    }
 }
