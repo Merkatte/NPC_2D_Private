@@ -32,7 +32,7 @@ public sealed class SleepAction : DefaultAction
         
         if (currentRestTime >= sleepTime)
         {
-            stat.ChangeFatigue(-stat.GetHunger);
+            stat.ChangeFatigue(-stat.GetFatigue);
             Complete();
         }
     }

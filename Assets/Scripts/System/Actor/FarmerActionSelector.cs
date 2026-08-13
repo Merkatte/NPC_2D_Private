@@ -36,7 +36,6 @@ public class FarmerActionSelector : BaseNPCActionSelector
             ActionContext actionContext;
             if (step.Intent == NPCIntent.Work)
             {
-                Debug.Log("intent is work!");
                 bool getSuccess = dataManager.TryGetActionCostInfo<FarmingActionCost>(ActionType.Farming, out var info);
                 if (!getSuccess)
                 {
@@ -47,8 +46,8 @@ public class FarmerActionSelector : BaseNPCActionSelector
             }
             else
             {
-                Debug.Log("intent is not work!");
-                actionContext = new ActionContext(component, stat, destination: step.DestinationPos);
+                _destinationDB.TryGetInteractionProvider(step.DestinationKey, out var provider);
+                actionContext = new ActionContext(component, stat, step.DestinationPos, provider: provider);
             }
 
             if (!TryEnqueueMove(queue, actionContext))
@@ -70,11 +69,10 @@ public class FarmerActionSelector : BaseNPCActionSelector
 
     private bool TryEnqueueMove(Queue<IAction> queue, ActionContext context)
     {
-        Debug.Log("Trying to enqueue move action");
         MoveAction moveAction = GetAction(ActionType.Move) as MoveAction;
         if (moveAction == null)
         {
-            Debug.Log("Somehow action cost not found");
+            Debug.LogError("MoveAction not found in ActionPool");
             return false;
         }
 

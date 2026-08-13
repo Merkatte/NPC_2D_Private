@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class DataManager : MonoBehaviour, IDataManager
 {
     [SerializeField] private CostInfo[] _costInfos;
-    [SerializeField] private DefaultStatContext _statInfo;
-    
-    Dictionary<ItemCategory, List<ItemInfo>> _itemInfos = new Dictionary<ItemCategory, List<ItemInfo>>();
+    [FormerlySerializedAs("_statInfo")] [SerializeField] private DefaultStatContext _defaultStatContext;
+    [SerializeField] private ItemDataContext _itemDataContext;
+
     Dictionary<ActionType, CostInfo> _costInfoDict = new Dictionary<ActionType, CostInfo>();
     
     public static IDataManager instance;
@@ -21,14 +22,18 @@ public class DataManager : MonoBehaviour, IDataManager
     {
         foreach (var item in _costInfos)
         {
-            Debug.Log(item.actionCost.MyType);
             _costInfoDict.Add(item.actionCost.MyType, item);
         }
     }
-    
+
     public NPCStat GetStat()
     {
-        return _statInfo.CreateStat();
+        return _defaultStatContext.CreateStat();
+    }
+
+    public Dictionary<ItemCategory, List<ItemInfo>> GetItemInfos()
+    {
+        return _itemDataContext.ItemInfos();
     }
 
     public bool TryGetActionCostInfo<T>(ActionType actionType, out T costInfo) where T : DefaultActionCost

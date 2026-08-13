@@ -17,16 +17,14 @@ public class WorkerNPC : MonoBehaviour
         _component.Init(_stat);
         _selector = selector;
         SetNextAction();
-        //Temp_CreateNewActionMove();
     }
-    
+
     void Update()
     {
         if (_currentAction == null || _currentAction.CheckComplete())
         {
             SetNextAction();
             return;
-            //Temp_CreateNewActionMove();
         }
 
         _currentAction.Tick();
@@ -45,15 +43,4 @@ public class WorkerNPC : MonoBehaviour
         
         _currentAction = _actionQueue.Dequeue();
     }
-
-    // void Temp_CreateNewActionMove()
-    // {
-    //     _currentAction = null;
-    //     _currentAction = new MoveAction();
-    //     float randX = UnityEngine.Random.Range(-9, 9);
-    //     float randY = UnityEngine.Random.Range(-5, 5);
-    //     
-    //     _currentAction.Init(_component, new Vector3(randX, randY, 0), 0.1f);
-    //     _currentAction.Start();
-    // }
 }

@@ -576,6 +576,7 @@ GameObject:
   m_Component:
   - component: {fileID: 797661895}
   - component: {fileID: 797661896}
+  - component: {fileID: 797661897}
   m_Layer: 0
   m_Name: Eat
   m_TagString: Untagged
@@ -657,6 +658,18 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &797661897
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 797661894}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95b5a9e6ed9fdac43a4ec42f9aa909e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Pub
 --- !u!1 &825924304
 GameObject:
   m_ObjectHideFlags: 0
@@ -970,7 +983,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DataManager
   _costInfos:
   - actionCost: {fileID: 11400000, guid: e36b0e7d145a9f2429e606c57cef7586, type: 2}
-  _statInfo: {fileID: 11400000, guid: 8bfe8a7e097b9fb4096bcbc93499c8be, type: 2}
+  _defaultStatContext: {fileID: 11400000, guid: 8bfe8a7e097b9fb4096bcbc93499c8be, type: 2}
+  _itemDataContext: {fileID: 11400000, guid: df1cde6d9ea68634494a9967845fe8ad, type: 2}
 --- !u!1 &1686571057
 GameObject:
   m_ObjectHideFlags: 0
@@ -1207,18 +1221,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DestinationDB
   _destionations:
-  - DestinationName: eatPlace
+  - BuildingType: 1
     DestinationLoc: {fileID: 797661895}
     DestinationObject: {fileID: 797661894}
-  - DestinationName: sleepPlace
+    InteractProvider: {fileID: 797661897}
+  - BuildingType: 3
     DestinationLoc: {fileID: 1686571058}
     DestinationObject: {fileID: 1686571057}
-  - DestinationName: drinkPlace
+    InteractProvider: {fileID: 0}
+  - BuildingType: 2
     DestinationLoc: {fileID: 2104496463}
     DestinationObject: {fileID: 2104496462}
-  - DestinationName: farmerWorkingPlace
+    InteractProvider: {fileID: 2104496465}
+  - BuildingType: 4
     DestinationLoc: {fileID: 1373381417}
     DestinationObject: {fileID: 1373381415}
+    InteractProvider: {fileID: 0}
 --- !u!1 &2074886626
 GameObject:
   m_ObjectHideFlags: 0
@@ -1261,6 +1279,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2104496463}
   - component: {fileID: 2104496464}
+  - component: {fileID: 2104496465}
   m_Layer: 0
   m_Name: Drink
   m_TagString: Untagged
@@ -1342,6 +1361,18 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &2104496465
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2104496462}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95b5a9e6ed9fdac43a4ec42f9aa909e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Pub
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -1,0 +1,4 @@
+id,category,itemName,itemDescription,healthDelta,hungerDelta,thirstDelta,fatigueDelta,moodDelta
+1,Drink,Water,Cold well water,0,0,-30,0,0
+2,Drink,Beer,Cheap tavern beer,-2,0,-20,0,10
+3,Food,Bread,Freshly baked bread,0,-25,0,0,0

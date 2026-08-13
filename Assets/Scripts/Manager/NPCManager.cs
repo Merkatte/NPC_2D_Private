@@ -20,16 +20,8 @@ public class NPCManager : MonoBehaviour
     {
         if(!_workers.ContainsKey(npcType))
             _workers.Add(npcType, new List<WorkerNPC>());
-        
-        //추후 NPC 다양화 시
-        // switch (npcType)
-        // {
-        //     case NPCType.Farmer:
-        //         newWorker = _workerPool.GetWorker(npcType);
-        //         break;
-        //     default:
-        //         return;
-        // }
+
+        // TODO: NPC 다양화 시 npcType별로 다른 워커 풀/프리팹을 선택하도록 확장.
         WorkerNPC newWorker = _workerPool.GetWorker(Vector2.zero);
 
         var newStat = dataManager.GetStat();

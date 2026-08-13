@@ -32,10 +32,10 @@ public class DestinationDB : MonoBehaviour
         if (!_destinationDB.TryGetValue(destinationName, out var info))
             return false;
 
-        if (info.InteractionProvider == null)
+        if (info.InteractProvider == null)
             return false;
         
-        provider = info.InteractionProvider;
+        provider = info.InteractProvider;
         return true;
     }
 
@@ -63,5 +63,5 @@ public class DestinationInfo
     public BuildingType BuildingType;
     public Transform DestinationLoc;
     public GameObject DestinationObject;
-    public IInteractionProvider InteractionProvider;
+    public BaseInteractable InteractProvider;
 }

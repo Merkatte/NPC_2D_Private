@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 
 public class EatAction : DefaultAction
 {
@@ -7,13 +6,23 @@ public class EatAction : DefaultAction
     private float currentEatTime = 0f;
     public EatAction() : base(ActionType.Eat) { }
 
+    public override void Start()
+    {
+        base.Start();
+        if (actionContext.InteractionProvider == null || !actionContext.InteractionProvider.CanInteract(GetMyActionType()))
+        {
+            Debug.LogError("Current InteractionProvider does not support this action");
+            Complete();
+        }
+    }
+
     public override void Tick()
     {
         if (!_isRunning || _isPaused || _isComplete)
         {
             return;
         }
-        
+
         currentEatTime += Time.deltaTime;
         UpdateCompletion();
     }
@@ -27,10 +36,14 @@ public class EatAction : DefaultAction
     protected override void UpdateCompletion()
     {
         var stat = actionContext.Stat;
-        
+
         if (currentEatTime >= eatTime)
         {
-            stat.ChangeHunger(-stat.GetHunger);
+            if (actionContext.InteractionProvider != null &&
+                actionContext.InteractionProvider.TryInteraction(GetMyActionType(), out var result))
+            {
+                stat.ApplyStatEffect(result.Effect);
+            }
             Complete();
         }
     }
