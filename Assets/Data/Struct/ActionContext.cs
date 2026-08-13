@@ -6,16 +6,18 @@ public readonly struct ActionContext
     public NPCStat Stat { get; }
     public Vector3? Destination { get; }
     public DefaultActionCost CostInfo { get; }
+    public IInteractionProvider InteractionProvider { get; }
 
     public bool HasComponent => Component != null;
     public bool HasStat => Stat != null;
     public bool HasDestination => Destination.HasValue;
 
-    public ActionContext(NPCComponent component, NPCStat stat, Vector3? destination = null, DefaultActionCost cost = null)
+    public ActionContext(NPCComponent component, NPCStat stat, Vector3? destination = null, DefaultActionCost cost = null, IInteractionProvider provider = null)
     {
         Component = component;
         Stat = stat;
         Destination = destination;
         CostInfo = cost;
+        InteractionProvider = provider;
     }
 }

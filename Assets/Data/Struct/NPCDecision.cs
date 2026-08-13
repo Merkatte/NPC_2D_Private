@@ -6,7 +6,7 @@ using UnityEngine;
 /// </summary>
 public readonly struct NPCDecisionStep
 {
-    public NPCDecisionStep(NPCIntent intent, string destinationKey, Vector3 destinationPos, int repeatCount)
+    public NPCDecisionStep(NPCIntent intent, BuildingType destinationKey, Vector3 destinationPos, int repeatCount)
     {
         Intent = intent;
         DestinationKey = destinationKey;
@@ -15,7 +15,7 @@ public readonly struct NPCDecisionStep
     }
 
     public NPCIntent Intent { get; }
-    public string DestinationKey { get; }
+    public BuildingType DestinationKey { get; }
     public Vector3 DestinationPos { get; }
     public int RepeatCount { get; }
 }

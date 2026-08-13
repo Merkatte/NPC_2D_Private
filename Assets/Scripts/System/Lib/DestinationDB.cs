@@ -5,13 +5,13 @@ public class DestinationDB : MonoBehaviour
 {
     [SerializeField] private List<DestinationInfo> _destionations;
 
-    Dictionary<string, DestinationInfo> _destinationDB;
+    Dictionary<BuildingType, DestinationInfo> _destinationDB;
     void Awake()
     {
         Convert2Dict();
     }
 
-    public bool TryGetDestinationPos(string destionationName, out Vector3 destination)
+    public bool TryGetDestinationPos(BuildingType destionationName, out Vector3 destination)
     {
         destination = Vector3.zero;
 
@@ -25,20 +25,34 @@ public class DestinationDB : MonoBehaviour
         return true;
     }
 
+    public bool TryGetInteractionProvider(BuildingType destinationName, out IInteractionProvider provider)
+    {
+        provider = null;
+        
+        if (!_destinationDB.TryGetValue(destinationName, out var info))
+            return false;
+
+        if (info.InteractionProvider == null)
+            return false;
+        
+        provider = info.InteractionProvider;
+        return true;
+    }
+
     private void Convert2Dict()
     {
         if(_destinationDB == null) 
-            _destinationDB = new Dictionary<string, DestinationInfo>();
+            _destinationDB = new Dictionary<BuildingType, DestinationInfo>();
 
         foreach (var info in _destionations)
         {
-            if (info == null || string.IsNullOrWhiteSpace(info.DestinationName))
+            if (info == null)
                 continue;
 
             if (!info.DestinationLoc)
                 continue;
 
-            _destinationDB[info.DestinationName] = info;
+            _destinationDB[info.BuildingType] = info;
         }
     }
 }
@@ -46,7 +60,8 @@ public class DestinationDB : MonoBehaviour
 [System.Serializable]
 public class DestinationInfo
 {
-    public string DestinationName;
+    public BuildingType BuildingType;
     public Transform DestinationLoc;
     public GameObject DestinationObject;
+    public IInteractionProvider InteractionProvider;
 }

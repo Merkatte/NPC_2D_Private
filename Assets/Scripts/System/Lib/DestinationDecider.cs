@@ -7,12 +7,6 @@ using UnityEngine;
 /// </summary>
 public class DestinationDecider
 {
-    // Destination keys.
-    private const string FarmerWorkPlaceKey = "farmerWorkingPlace";
-    private const string SleepPlaceKey = "sleepPlace";
-    private const string DrinkPlaceKey = "drinkPlace";
-    private const string EatPlaceKey = "eatPlace";
-
     // TODO: need 증가 시스템이 추가되면 이 튜닝 값들을 데이터 에셋으로 옮긴다. (PublicMD/NPC_Decision_System_Plan.md 참고)
     private const float FatiguePerTravelSecond = 0.1f;
     private const float HungerPerTravelSecond = 0.15f;
@@ -44,7 +38,7 @@ public class DestinationDecider
     private struct SupplyCandidate
     {
         public NPCIntent Intent;
-        public string Key;
+        public BuildingType Key;
         public Vector3 Pos;
     }
 
@@ -58,22 +52,22 @@ public class DestinationDecider
         if (!_destinationDB || stat == null)
             return NPCDecision.None;
 
-        bool hasDrink = _destinationDB.TryGetDestinationPos(DrinkPlaceKey, out Vector3 drinkPos);
-        bool hasEat = _destinationDB.TryGetDestinationPos(EatPlaceKey, out Vector3 eatPos);
-        bool hasSleep = _destinationDB.TryGetDestinationPos(SleepPlaceKey, out Vector3 sleepPos);
+        bool hasDrink = _destinationDB.TryGetDestinationPos(BuildingType.Well, out Vector3 drinkPos);
+        bool hasEat = _destinationDB.TryGetDestinationPos(BuildingType.Pub, out Vector3 eatPos);
+        bool hasSleep = _destinationDB.TryGetDestinationPos(BuildingType.Inn, out Vector3 sleepPos);
 
-        string workKey = GetWorkPlaceKey(npcType);
+        BuildingType workKey = GetWorkPlaceKey(npcType);
         Vector3 workPos = Vector3.zero;
-        bool hasWork = !string.IsNullOrEmpty(workKey) && _destinationDB.TryGetDestinationPos(workKey, out workPos);
+        bool hasWork = _destinationDB.TryGetDestinationPos(workKey, out workPos);
 
         SupplyCandidate[] supplies = new SupplyCandidate[3];
         int supplyCount = 0;
         if (hasDrink)
-            supplies[supplyCount++] = new SupplyCandidate { Intent = NPCIntent.Drink, Key = DrinkPlaceKey, Pos = drinkPos };
+            supplies[supplyCount++] = new SupplyCandidate { Intent = NPCIntent.Drink, Key = BuildingType.Well, Pos = drinkPos };
         if (hasEat)
-            supplies[supplyCount++] = new SupplyCandidate { Intent = NPCIntent.Eat, Key = EatPlaceKey, Pos = eatPos };
+            supplies[supplyCount++] = new SupplyCandidate { Intent = NPCIntent.Eat, Key = BuildingType.Pub, Pos = eatPos };
         if (hasSleep)
-            supplies[supplyCount++] = new SupplyCandidate { Intent = NPCIntent.Sleep, Key = SleepPlaceKey, Pos = sleepPos };
+            supplies[supplyCount++] = new SupplyCandidate { Intent = NPCIntent.Sleep, Key = BuildingType.Inn, Pos = sleepPos };
 
         NeedSnapshot state = new NeedSnapshot
         {
@@ -121,7 +115,7 @@ public class DestinationDecider
     /// re-evaluating from the new position each time, until no remaining stop clears
     /// MinChainGain. Then append the Work step. See PublicMD/NPC_Decision_System_Plan.md.
     /// </summary>
-    private NPCDecision BuildWorkPlan(NeedSnapshot state, Vector3 npcLoc, string workKey, Vector3 workPos,
+    private NPCDecision BuildWorkPlan(NeedSnapshot state, Vector3 npcLoc, BuildingType workKey, Vector3 workPos,
         float moveSpeed, SupplyCandidate[] supplies, int supplyCount)
     {
         bool[] used = new bool[supplyCount];
@@ -221,15 +215,15 @@ public class DestinationDecider
         return false;
     }
 
-    private static string GetWorkPlaceKey(NPCType npcType)
+    private static BuildingType GetWorkPlaceKey(NPCType npcType)
     {
         switch (npcType)
         {
             case NPCType.Farmer:
-                return FarmerWorkPlaceKey;
+                return BuildingType.Farm;
             default:
                 // TODO: Guard/Cook 등 다른 직업의 작업장 키가 정해지면 매핑을 추가한다.
-                return string.Empty;
+                return BuildingType.None;
         }
     }
 
