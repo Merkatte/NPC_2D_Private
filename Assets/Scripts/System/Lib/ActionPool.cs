@@ -63,6 +63,9 @@ public class ActionPool : MonoBehaviour
             case ActionType.Sleep:
                 _actionDictionary[actionType].Enqueue(new SleepAction());
                 break;
+            case ActionType.Idle:
+                _actionDictionary[actionType].Enqueue(new IdleAction());
+                break;
         }
     }
 }

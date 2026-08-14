@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class FarmingAction : DefaultAction
 {
-    private float _workingTime = 10f;
+    private float _workingTime = 3f;
     private float _currentWorkingTime = 0f;
     
     public FarmingAction() : base(ActionType.Farming)
@@ -27,17 +27,29 @@ public class FarmingAction : DefaultAction
             UpdateCompletion();
     }
 
+    public override void Clear()
+    {
+        _currentWorkingTime = 0f;
+        base.Clear();
+    }
+
     protected override void UpdateCompletion()
     {
-        var _stat = actionContext.Stat;
+        var stat = actionContext.Stat;
         var actionCost = actionContext.CostInfo as FarmingActionCost;
-        Debug.Log("Casting Success +" + actionCost.name);
-        
-        
-        _stat.ChangeFatigue(actionCost.FarmingActionPerFatigue);
-        _stat.ChangeHunger(actionCost.FarmingActionPerHunger);
-        _stat.ChangeThirst(actionCost.FarmingActionPerThirst);
 
+        if (actionCost == null)
+        {
+            Debug.LogError("FarmingAction has no valid FarmingActionCost in ActionContext");
+            Complete();
+            return;
+        }
+
+        stat.ChangeFatigue(actionCost.FarmingActionPerFatigue);
+        stat.ChangeHunger(actionCost.FarmingActionPerHunger);
+        stat.ChangeThirst(actionCost.FarmingActionPerThirst);
+        
+        Debug.Log("Work is done!");
         Complete();
     }
 }

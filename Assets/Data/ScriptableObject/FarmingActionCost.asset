@@ -16,5 +16,5 @@ MonoBehaviour:
   MovePerHunger: 3
   MovePerFatigue: 3
   FarmingActionPerHunger: 10
-  FarmingAcitonPerThirst: 10
+  FarmingActionPerThirst: 10
   FarmingActionPerFatigue: 10

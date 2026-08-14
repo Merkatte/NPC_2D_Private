@@ -12,5 +12,7 @@ public abstract class BaseInteractable : MonoBehaviour, IInteractionProvider
 
     public abstract bool CanInteract(ActionType type);
 
-    public abstract bool TryInteraction(ActionType type, out InteractResult interactResult);
+    public abstract void AppendOptions(ActionType type, List<InteractionOption> buffer);
+
+    public abstract bool TryInteraction(InteractRequest request, out InteractResult interactResult);
 }

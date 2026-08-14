@@ -16,10 +16,7 @@ public class DataManager : MonoBehaviour, IDataManager
     void Awake()
     {
         instance = this;
-    }
 
-    void Start()
-    {
         foreach (var item in _costInfos)
         {
             _costInfoDict.Add(item.actionCost.MyType, item);

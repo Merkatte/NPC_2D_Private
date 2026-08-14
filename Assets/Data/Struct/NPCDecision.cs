@@ -1,43 +1,26 @@
 using UnityEngine;
 
 /// <summary>
-/// One step in an NPC's decided action chain: where to go, what to do there,
-/// and how many times to repeat it (used for repeated Work steps).
+/// Result of <see cref="DestinationDecider.Decide"/>. One decision is one semantic step:
+/// go to one destination and do one thing there (or repeat Work up to RepeatCount times).
+/// A selector converts this directly into a queue without re-deriving any decision logic.
 /// </summary>
-public readonly struct NPCDecisionStep
+public readonly struct NPCDecision
 {
-    public NPCDecisionStep(NPCIntent intent, BuildingType destinationKey, Vector3 destinationPos, int repeatCount)
+    public NPCIntent Intent { get; }
+    public BuildingType DestinationKey { get; }
+    public Vector3 DestinationPos { get; }
+    public int RepeatCount { get; }
+    public InteractRequest? Request { get; }
+
+    public NPCDecision(NPCIntent intent, BuildingType destinationKey, Vector3 destinationPos, int repeatCount, InteractRequest? request = null)
     {
         Intent = intent;
         DestinationKey = destinationKey;
         DestinationPos = destinationPos;
         RepeatCount = repeatCount;
+        Request = request;
     }
 
-    public NPCIntent Intent { get; }
-    public BuildingType DestinationKey { get; }
-    public Vector3 DestinationPos { get; }
-    public int RepeatCount { get; }
-}
-
-/// <summary>
-/// Result of <see cref="DestinationDecider.Decide"/>. Carries an ordered chain of steps
-/// so a selector can build a queue without re-deriving any decision logic.
-/// </summary>
-public readonly struct NPCDecision
-{
-    public NPCDecision(NPCDecisionStep[] steps, int estimatedWorkCount, NPCIntent nextRequiredIntent)
-    {
-        Steps = steps ?? System.Array.Empty<NPCDecisionStep>();
-        EstimatedWorkCount = estimatedWorkCount;
-        NextRequiredIntent = nextRequiredIntent;
-    }
-
-    public NPCDecisionStep[] Steps { get; }
-    public int EstimatedWorkCount { get; }
-    public NPCIntent NextRequiredIntent { get; }
-
-    public NPCIntent PrimaryIntent => Steps.Length > 0 ? Steps[0].Intent : NPCIntent.None;
-
-    public static NPCDecision None => new NPCDecision(System.Array.Empty<NPCDecisionStep>(), 0, NPCIntent.None);
+    public static NPCDecision Idle(Vector3 pos) => new NPCDecision(NPCIntent.Idle, BuildingType.None, pos, 1);
 }

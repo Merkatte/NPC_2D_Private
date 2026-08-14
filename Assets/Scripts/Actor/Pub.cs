@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEngine;
 
 public class Pub : BaseInteractable
 {
@@ -13,25 +12,57 @@ public class Pub : BaseInteractable
         };
     }
 
-    public override bool TryInteraction(ActionType type, out InteractResult interactResult)
+    public override void AppendOptions(ActionType type, List<InteractionOption> buffer)
     {
-        List<ItemInfo> itemList;
-        switch (type)
+        if (_itemInfos == null)
+            return;
+
+        ItemCategory? category = ToCategory(type);
+        if (category == null)
+            return;
+
+        if (!_itemInfos.TryGetValue(category.Value, out var itemList))
+            return;
+
+        foreach (var item in itemList)
         {
-            case ActionType.Drink:
-                itemList = _itemInfos[ItemCategory.Drink];
-                break;
-            case ActionType.Eat:
-                itemList = _itemInfos[ItemCategory.Food];
-                break;
-            default:
-                interactResult = default;
-                return false;
+            buffer.Add(new InteractionOption(type, item.ID, item.Effect));
         }
-        
-        int randomIndex = UnityEngine.Random.Range(0, itemList.Count);
-        StatEffect statEffect = itemList[randomIndex].Effect;
-        interactResult = new InteractResult(true, statEffect);
-        return true;
+    }
+
+    public override bool TryInteraction(InteractRequest request, out InteractResult interactResult)
+    {
+        interactResult = default;
+
+        if (_itemInfos == null)
+            return false;
+
+        ItemCategory? category = ToCategory(request.Type);
+        if (category == null)
+            return false;
+
+        if (!_itemInfos.TryGetValue(category.Value, out var itemList))
+            return false;
+
+        foreach (var item in itemList)
+        {
+            if (item.ID != request.ItemId)
+                continue;
+
+            interactResult = new InteractResult(true, item.Effect);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static ItemCategory? ToCategory(ActionType type)
+    {
+        return type switch
+        {
+            ActionType.Drink => ItemCategory.Drink,
+            ActionType.Eat => ItemCategory.Food,
+            _ => null
+        };
     }
 }

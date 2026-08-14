@@ -1,12 +1,12 @@
 public readonly struct InteractRequest
 {
     public ActionType Type { get; }
-    public WorkerNPC Worker { get; }
+    public int ItemId { get; }
 
-    public InteractRequest(ActionType type, WorkerNPC worker)
+    public InteractRequest(ActionType type, int itemId)
     {
         Type = type;
-        Worker = worker;
+        ItemId = itemId;
     }
 }
 

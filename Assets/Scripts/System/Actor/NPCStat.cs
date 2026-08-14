@@ -107,5 +107,9 @@ public class NPCStat : IStatView
         ChangeHunger(effect.HungerDelta);
         ChangeThirst(effect.ThirstDelta);
         ChangeFatigue(effect.FatigueDelta);
+        Debug.Log("Current Health = " + _health);
+        Debug.Log("Current Hunger = " + _hunger);
+        Debug.Log("Current Thirst = " + _thirst);
+        Debug.Log("Current Fatigue = " + _fatigue);
     }
 }

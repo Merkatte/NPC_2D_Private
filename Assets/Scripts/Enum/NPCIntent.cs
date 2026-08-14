@@ -4,5 +4,6 @@ public enum NPCIntent
     Work,
     Drink,
     Eat,
-    Sleep
+    Sleep,
+    Idle
 }

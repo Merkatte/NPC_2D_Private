@@ -35,9 +35,9 @@ public class WorkerNPC : MonoBehaviour
         if (_actionQueue == null || _actionQueue.Count == 0)
         {
             _actionQueue = _selector.RequestNewActionQueue(_stat, NPCType.Farmer, _component);
+            Debug.Log(_actionQueue.Count);
             return;
         }
-        
         if(_currentAction != null)
             _selector.ReturnAction(_currentAction);
         

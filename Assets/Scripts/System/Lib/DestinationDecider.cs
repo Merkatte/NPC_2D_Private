@@ -1,219 +1,479 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Job-neutral NPC decision layer. Decides what an NPC should do next (work, or supply a
-/// need first and then work) without knowing about IAction, ActionPool, or action queues.
-/// See PublicMD/NPC_Decision_System_Plan.md for the reasoning behind this design.
+/// Job-neutral NPC decision layer. Chooses exactly one destination and one concrete
+/// action for the caller to turn into a queue (or Work for a bounded repeat batch).
+/// See PublicMD/NPC_Decision_System_Plan.md for background on the job-neutral design,
+/// and PublicMD/DestinationDecider_Refactor_Plan.md for why the previous multi-destination
+/// greedy chain and category-only Eat/Drink prediction were replaced with single-step,
+/// item-accurate decisions.
 /// </summary>
 public class DestinationDecider
 {
-    // TODO: need 증가 시스템이 추가되면 이 튜닝 값들을 데이터 에셋으로 옮긴다. (PublicMD/NPC_Decision_System_Plan.md 참고)
-    private const float FatiguePerTravelSecond = 0.1f;
-    private const float HungerPerTravelSecond = 0.15f;
-    private const float ThirstPerTravelSecond = 0.25f;
-    private const float FatiguePerWork = 8f;
-    private const float HungerPerWork = 5f;
-    private const float ThirstPerWork = 7f;
-    private const float DangerThreshold = 85f;
-    private const float CriticalThreshold = 95f;
-    private const float WorkValue = 100f;
-    private const float TravelCost = 3f;
-    private const float SupplyActionCost = 10f;
-    private const float DangerPenaltyMultiplier = 5f;
     private const float MinMoveSpeed = 0.01f;
-    private const float MaxNeed = 100f;
-
-    // 이 문턱을 넘는 한계이득이 없으면 보급을 포기하고 바로 일하러 간다.
-    private const float MinChainGain = 30f;
 
     private DestinationDB _destinationDB;
+    private NPCDecisionTuning _tuning;
 
     private struct NeedSnapshot
     {
+        public float Health;
+        public float HealthMax;
         public float Fatigue;
+        public float FatigueMax;
         public float Hunger;
+        public float HungerMax;
         public float Thirst;
+        public float ThirstMax;
     }
 
-    private struct SupplyCandidate
+    private struct Candidate
     {
         public NPCIntent Intent;
         public BuildingType Key;
         public Vector3 Pos;
+        public ActionType ActionType;
+        public int ItemId;
+        public int RepeatCount;
+        public float TravelTime;
+        public NeedSnapshot After;
+        public float Utility;
     }
 
-    public void Init(DestinationDB destinationDB)
+    private readonly List<InteractionOption> _optionBuffer = new List<InteractionOption>();
+    private readonly List<Candidate> _supplyCandidates = new List<Candidate>();
+
+    public void Init(DestinationDB destinationDB, NPCDecisionTuning tuning)
     {
         _destinationDB = destinationDB;
+        _tuning = tuning;
     }
 
-    public NPCDecision Decide(IStatView stat, NPCType npcType, Vector3 npcLoc)
+    public NPCDecision Decide(IStatView stat, NPCType npcType, Vector3 npcLoc, StatEffect workCost)
     {
-        if (!_destinationDB || stat == null)
-            return NPCDecision.None;
+        if (!_destinationDB || !_tuning || stat == null)
+            return NPCDecision.Idle(npcLoc);
 
-        bool hasDrink = _destinationDB.TryGetDestinationPos(BuildingType.Well, out Vector3 drinkPos);
-        bool hasEat = _destinationDB.TryGetDestinationPos(BuildingType.Pub, out Vector3 eatPos);
-        bool hasSleep = _destinationDB.TryGetDestinationPos(BuildingType.Inn, out Vector3 sleepPos);
-
-        BuildingType workKey = GetWorkPlaceKey(npcType);
-        Vector3 workPos = Vector3.zero;
-        bool hasWork = _destinationDB.TryGetDestinationPos(workKey, out workPos);
-
-        SupplyCandidate[] supplies = new SupplyCandidate[3];
-        int supplyCount = 0;
-        if (hasDrink)
-            supplies[supplyCount++] = new SupplyCandidate { Intent = NPCIntent.Drink, Key = BuildingType.Well, Pos = drinkPos };
-        if (hasEat)
-            supplies[supplyCount++] = new SupplyCandidate { Intent = NPCIntent.Eat, Key = BuildingType.Pub, Pos = eatPos };
-        if (hasSleep)
-            supplies[supplyCount++] = new SupplyCandidate { Intent = NPCIntent.Sleep, Key = BuildingType.Inn, Pos = sleepPos };
-
-        NeedSnapshot state = new NeedSnapshot
-        {
-            Fatigue = stat.CurrentFatiguePercentage,
-            Hunger = stat.CurrentHungerPercentage,
-            Thirst = stat.CurrentThirstPercentage,
-        };
+        NeedSnapshot before = ToSnapshot(stat);
         float moveSpeed = stat.GetMoveSpeed;
 
-        // Critical priority: if the most limiting need would blow past CriticalThreshold,
-        // resolve it immediately instead of running the marginal-gain chain.
-        NeedSnapshot criticalCheckState = state;
+        _supplyCandidates.Clear();
+        BuildSupplyCandidates(before, npcLoc, moveSpeed);
+
+        bool hasWorkCost = workCost != null;
+        int safeWorkBefore = 0;
+        NeedSnapshot afterWorkBatch = before;
+        if (hasWorkCost)
+            safeWorkBefore = EstimateWorkCount(before, workCost, out afterWorkBatch);
+
+        ScoreSupplyCandidates(before, workCost, hasWorkCost, safeWorkBefore);
+
+        bool[] criticalMask =
+        {
+            Normalize(before.Fatigue, before.FatigueMax) > _tuning.CriticalNeedThreshold,
+            Normalize(before.Hunger, before.HungerMax) > _tuning.CriticalNeedThreshold,
+            Normalize(before.Thirst, before.ThirstMax) > _tuning.CriticalNeedThreshold,
+        };
+        bool isCritical = criticalMask[0] || criticalMask[1] || criticalMask[2];
+
+        if (isCritical)
+        {
+            return TryPickCriticalCandidate(before, criticalMask, out Candidate picked)
+                ? ToDecision(picked)
+                : NPCDecision.Idle(npcLoc);
+        }
+
+        Candidate workCandidate = default;
+        bool hasWork = hasWorkCost && TryBuildWorkCandidate(
+            npcType, npcLoc, moveSpeed, before, afterWorkBatch, safeWorkBefore, workCost, out workCandidate);
+        bool hasSupply = TryPickBestSupply(out Candidate bestSupply);
+
+        if (hasWork && hasSupply)
+        {
+            return bestSupply.Utility >= workCandidate.Utility + _tuning.SwitchMargin
+                ? ToDecision(bestSupply)
+                : ToDecision(workCandidate);
+        }
+
         if (hasWork)
-        {
-            float travelToWork = GetTravelTime(npcLoc, workPos, moveSpeed);
-            criticalCheckState = ApplyWork(ApplyTravel(state, travelToWork));
-        }
+            return ToDecision(workCandidate);
 
-        NPCIntent criticalIntent = GetLimitingNeedAboveThreshold(criticalCheckState, CriticalThreshold);
-        if (criticalIntent != NPCIntent.None && TryFindSupply(supplies, supplyCount, criticalIntent, out SupplyCandidate criticalSupply))
-        {
-            NPCDecisionStep[] criticalSteps = { new NPCDecisionStep(criticalIntent, criticalSupply.Key, criticalSupply.Pos, 1) };
-            return new NPCDecision(criticalSteps, 0, hasWork ? NPCIntent.Work : NPCIntent.None);
-        }
+        if (hasSupply)
+            return ToDecision(bestSupply);
 
-        if (!hasWork)
-        {
-            // 작업장 키를 얻을 수 없는 직업(Farmer 외)은 아직 Work 판단을 지원하지 않는다.
-            // TODO: Guard/Cook 등 다른 직업의 작업장 키가 정해지면 위 hasWork 분기에 합류시킨다.
-            NPCIntent mostLimiting = GetMostLimitingNeed(state);
-            if (TryFindSupply(supplies, supplyCount, mostLimiting, out SupplyCandidate fallbackSupply))
-            {
-                NPCDecisionStep[] fallbackSteps = { new NPCDecisionStep(mostLimiting, fallbackSupply.Key, fallbackSupply.Pos, 1) };
-                return new NPCDecision(fallbackSteps, 0, NPCIntent.None);
-            }
-
-            return NPCDecision.None;
-        }
-
-        return BuildWorkPlan(state, npcLoc, workKey, workPos, moveSpeed, supplies, supplyCount);
+        return NPCDecision.Idle(npcLoc);
     }
 
-    /// <summary>
-    /// Greedy marginal-gain chain ("나온 김에" 판단): pick supply stops one at a time,
-    /// re-evaluating from the new position each time, until no remaining stop clears
-    /// MinChainGain. Then append the Work step. See PublicMD/NPC_Decision_System_Plan.md.
-    /// </summary>
-    private NPCDecision BuildWorkPlan(NeedSnapshot state, Vector3 npcLoc, BuildingType workKey, Vector3 workPos,
-        float moveSpeed, SupplyCandidate[] supplies, int supplyCount)
+    // ---- Candidate construction ----
+
+    private void BuildSupplyCandidates(NeedSnapshot before, Vector3 npcLoc, float moveSpeed)
     {
-        bool[] used = new bool[supplyCount];
-        NeedSnapshot chainState = state;
-        Vector3 chainPos = npcLoc;
+        IReadOnlyList<BuildingType> keys = _destinationDB.RegisteredKeys;
 
-        NPCDecisionStep[] steps = new NPCDecisionStep[supplyCount + 1];
-        int stepCount = 0;
-
-        for (int iteration = 0; iteration < supplyCount; ++iteration)
+        for (int i = 0; i < keys.Count; ++i)
         {
-            float baseScore = ScoreGoWorkNow(chainState, chainPos, workPos, moveSpeed);
+            BuildingType key = keys[i];
 
-            float bestGain = MinChainGain;
-            int bestIndex = -1;
-            NeedSnapshot bestState = default;
+            if (!_destinationDB.TryGetDestinationPos(key, out Vector3 pos))
+                continue;
 
-            for (int i = 0; i < supplyCount; ++i)
+            float travelTime = GetTravelTime(npcLoc, pos, moveSpeed);
+
+            if (_destinationDB.TryGetInteractionProvider(key, out IInteractionProvider provider))
             {
-                if (used[i])
-                    continue;
-
-                SupplyCandidate candidate = supplies[i];
-                float travel = GetTravelTime(chainPos, candidate.Pos, moveSpeed);
-                NeedSnapshot afterMove = ApplyTravel(chainState, travel);
-                NeedSnapshot afterSupply = ApplySupply(afterMove, candidate.Intent);
-                float score = ScoreGoWorkNow(afterSupply, candidate.Pos, workPos, moveSpeed) - travel * TravelCost - SupplyActionCost;
-                float gain = score - baseScore;
-
-                if (gain > bestGain)
-                {
-                    bestGain = gain;
-                    bestIndex = i;
-                    bestState = afterSupply;
-                }
+                AddItemCandidates(provider, ActionType.Eat, key, pos, travelTime, before);
+                AddItemCandidates(provider, ActionType.Drink, key, pos, travelTime, before);
             }
 
-            if (bestIndex < 0)
+            // TODO: Inn 전용 BaseInteractable이 생기면 SleepAction과 마찬가지로 provider 기반으로 옮긴다.
+            if (key == BuildingType.Inn)
+                AddSleepCandidate(key, pos, travelTime, before);
+        }
+    }
+
+    private void AddItemCandidates(IInteractionProvider provider, ActionType type, BuildingType key, Vector3 pos, float travelTime, NeedSnapshot before)
+    {
+        if (!provider.CanInteract(type))
+            return;
+
+        _optionBuffer.Clear();
+        provider.AppendOptions(type, _optionBuffer);
+
+        for (int i = 0; i < _optionBuffer.Count; ++i)
+        {
+            InteractionOption option = _optionBuffer[i];
+
+            _supplyCandidates.Add(new Candidate
+            {
+                Intent = type == ActionType.Eat ? NPCIntent.Eat : NPCIntent.Drink,
+                Key = key,
+                Pos = pos,
+                ActionType = type,
+                ItemId = option.ItemId,
+                RepeatCount = 1,
+                TravelTime = travelTime,
+                After = ApplyEffect(before, option.Effect),
+            });
+        }
+    }
+
+    private void AddSleepCandidate(BuildingType key, Vector3 pos, float travelTime, NeedSnapshot before)
+    {
+        // Mirrors SleepAction's own full-recovery calculation (stat.ChangeFatigue(-stat.GetFatigue)).
+        StatEffect sleepEffect = new StatEffect(fatigueDelta: -before.Fatigue);
+
+        _supplyCandidates.Add(new Candidate
+        {
+            Intent = NPCIntent.Sleep,
+            Key = key,
+            Pos = pos,
+            ActionType = ActionType.Sleep,
+            ItemId = -1,
+            RepeatCount = 1,
+            TravelTime = travelTime,
+            After = ApplyEffect(before, sleepEffect),
+        });
+    }
+
+    private void ScoreSupplyCandidates(NeedSnapshot before, StatEffect workCost, bool hasWorkCost, int safeWorkBefore)
+    {
+        for (int i = 0; i < _supplyCandidates.Count; ++i)
+        {
+            Candidate c = _supplyCandidates[i];
+            int safeWorkAfter = hasWorkCost ? EstimateWorkCount(c.After, workCost, out _) : 0;
+            c.Utility = ComputeUtility(before, c, safeWorkBefore, safeWorkAfter, 0);
+            _supplyCandidates[i] = c;
+        }
+    }
+
+    private bool TryBuildWorkCandidate(NPCType npcType, Vector3 npcLoc, float moveSpeed, NeedSnapshot before,
+        NeedSnapshot afterWorkBatch, int safeWorkBefore, StatEffect workCost, out Candidate candidate)
+    {
+        candidate = default;
+
+        if (safeWorkBefore < _tuning.MinimumWorkBatch)
+            return false;
+
+        BuildingType workKey = GetWorkPlaceKey(npcType);
+        if (workKey == BuildingType.None)
+            return false;
+
+        if (!_destinationDB.TryGetDestinationPos(workKey, out Vector3 workPos))
+            return false;
+
+        float travelTime = GetTravelTime(npcLoc, workPos, moveSpeed);
+        int safeWorkAfter = EstimateWorkCount(afterWorkBatch, workCost, out _);
+
+        candidate = new Candidate
+        {
+            Intent = NPCIntent.Work,
+            Key = workKey,
+            Pos = workPos,
+            ActionType = ActionType.Farming,
+            ItemId = -1,
+            RepeatCount = safeWorkBefore,
+            TravelTime = travelTime,
+            After = afterWorkBatch,
+        };
+        candidate.Utility = ComputeUtility(before, candidate, safeWorkBefore, safeWorkAfter, safeWorkBefore);
+        return true;
+    }
+
+    // ---- Selection ----
+
+    private bool TryPickCriticalCandidate(NeedSnapshot before, bool[] criticalMask, out Candidate picked)
+    {
+        picked = default;
+        bool found = false;
+
+        // Tier 1: strictly safe - none of the critical needs worsen, at least one improves.
+        for (int i = 0; i < _supplyCandidates.Count; ++i)
+        {
+            Candidate c = _supplyCandidates[i];
+            if (!IsStrictlySafeImprovement(before, c.After, criticalMask))
+                continue;
+
+            if (!found || CompareForSelection(c, picked) < 0)
+            {
+                picked = c;
+                found = true;
+            }
+        }
+        if (found)
+            return true;
+
+        // Tier 2 fallback: the worst critical need's peak value strictly decreases.
+        float beforeMax = MaxCriticalNeed(before, criticalMask);
+        for (int i = 0; i < _supplyCandidates.Count; ++i)
+        {
+            Candidate c = _supplyCandidates[i];
+            if (MaxCriticalNeed(c.After, criticalMask) >= beforeMax)
+                continue;
+
+            if (!found || CompareForSelection(c, picked) < 0)
+            {
+                picked = c;
+                found = true;
+            }
+        }
+        if (found)
+            return true;
+
+        // Tier 3 fallback: peak doesn't get worse, and total critical risk decreases.
+        float beforeRiskSum = SumCriticalRisk(before, criticalMask);
+        for (int i = 0; i < _supplyCandidates.Count; ++i)
+        {
+            Candidate c = _supplyCandidates[i];
+            if (MaxCriticalNeed(c.After, criticalMask) > beforeMax)
+                continue;
+            if (SumCriticalRisk(c.After, criticalMask) >= beforeRiskSum)
+                continue;
+
+            if (!found || CompareForSelection(c, picked) < 0)
+            {
+                picked = c;
+                found = true;
+            }
+        }
+
+        return found;
+    }
+
+    private bool TryPickBestSupply(out Candidate best)
+    {
+        best = default;
+        bool found = false;
+
+        for (int i = 0; i < _supplyCandidates.Count; ++i)
+        {
+            Candidate c = _supplyCandidates[i];
+            if (!found || CompareForSelection(c, best) < 0)
+            {
+                best = c;
+                found = true;
+            }
+        }
+
+        return found;
+    }
+
+    // Ascending: lower is better. utility desc -> travelTime asc -> ItemId asc -> ActionType asc -> BuildingType asc.
+    private static int CompareForSelection(Candidate a, Candidate b)
+    {
+        int byUtility = b.Utility.CompareTo(a.Utility);
+        if (byUtility != 0)
+            return byUtility;
+
+        int byTravel = a.TravelTime.CompareTo(b.TravelTime);
+        if (byTravel != 0)
+            return byTravel;
+
+        int byItem = a.ItemId.CompareTo(b.ItemId);
+        if (byItem != 0)
+            return byItem;
+
+        int byAction = ((int)a.ActionType).CompareTo((int)b.ActionType);
+        if (byAction != 0)
+            return byAction;
+
+        return ((int)a.Key).CompareTo((int)b.Key);
+    }
+
+    private static NPCDecision ToDecision(Candidate c)
+    {
+        InteractRequest? request = c.ItemId >= 0 ? new InteractRequest(c.ActionType, c.ItemId) : (InteractRequest?)null;
+        return new NPCDecision(c.Intent, c.Key, c.Pos, c.RepeatCount, request);
+    }
+
+    // ---- Work batch simulation ----
+
+    private int EstimateWorkCount(NeedSnapshot snapshot, StatEffect workCost, out NeedSnapshot finalState)
+    {
+        int count = 0;
+        NeedSnapshot state = snapshot;
+
+        while (count < _tuning.MaximumWorkBatch)
+        {
+            NeedSnapshot next = ApplyEffect(state, workCost);
+            if (IsAnyNeedAboveCritical(next))
                 break;
 
-            SupplyCandidate chosen = supplies[bestIndex];
-            steps[stepCount++] = new NPCDecisionStep(chosen.Intent, chosen.Key, chosen.Pos, 1);
-            used[bestIndex] = true;
-            chainState = bestState;
-            chainPos = chosen.Pos;
+            state = next;
+            count++;
         }
 
-        float finalTravel = GetTravelTime(chainPos, workPos, moveSpeed);
-        NeedSnapshot beforeWork = ApplyTravel(chainState, finalTravel);
-        int workCount = EstimateWorkCount(beforeWork);
-        steps[stepCount++] = new NPCDecisionStep(NPCIntent.Work, workKey, workPos, Mathf.Max(1, workCount));
-
-        if (stepCount < steps.Length)
-            System.Array.Resize(ref steps, stepCount);
-
-        NeedSnapshot afterWork = workCount > 0 ? ApplyWork(beforeWork) : beforeWork;
-        NPCIntent nextRequired = GetMostLimitingNeed(afterWork);
-
-        return new NPCDecision(steps, workCount, nextRequired);
+        finalState = state;
+        return count;
     }
 
-    /// <summary>
-    /// Score of "go to the work place from here and work as many times as possible",
-    /// including the travel cost of that leg. Used as the common yardstick every
-    /// marginal-gain comparison is measured against.
-    /// </summary>
-    private static float ScoreGoWorkNow(NeedSnapshot state, Vector3 from, Vector3 workPos, float moveSpeed)
+    private bool IsAnyNeedAboveCritical(NeedSnapshot s)
     {
-        float travelToWork = GetTravelTime(from, workPos, moveSpeed);
-        NeedSnapshot afterTravel = ApplyTravel(state, travelToWork);
-        int workCount = EstimateWorkCount(afterTravel);
-        NeedSnapshot workState = workCount > 0 ? ApplyWork(afterTravel) : afterTravel;
-        return ScorePlan(workState, workCount, travelToWork, 0);
+        return Normalize(s.Fatigue, s.FatigueMax) > _tuning.CriticalNeedThreshold
+            || Normalize(s.Hunger, s.HungerMax) > _tuning.CriticalNeedThreshold
+            || Normalize(s.Thirst, s.ThirstMax) > _tuning.CriticalNeedThreshold;
     }
 
-    private static float ScorePlan(NeedSnapshot finalState, int workCount, float travelTime, int supplyActionCount)
-    {
-        float score = workCount * WorkValue;
-        score -= travelTime * TravelCost;
-        score -= supplyActionCount * SupplyActionCost;
-        score -= GetDangerPenalty(finalState);
-        return score;
-    }
+    // ---- Need snapshot math ----
 
-    private static bool TryFindSupply(SupplyCandidate[] supplies, int count, NPCIntent intent, out SupplyCandidate found)
+    private static NeedSnapshot ToSnapshot(IStatView stat)
     {
-        for (int i = 0; i < count; ++i)
+        return new NeedSnapshot
         {
-            if (supplies[i].Intent == intent)
-            {
-                found = supplies[i];
-                return true;
-            }
-        }
-
-        found = default;
-        return false;
+            Health = stat.GetCurrentHealth,
+            HealthMax = stat.GetMaxHealth,
+            Fatigue = stat.GetFatigue,
+            FatigueMax = stat.GetFatigueMax,
+            Hunger = stat.GetHunger,
+            HungerMax = stat.GetHungerMax,
+            Thirst = stat.GetThirst,
+            ThirstMax = stat.GetThirstMax,
+        };
     }
+
+    // Mirrors NPCStat.ApplyStatEffect's order and clamp rules exactly, on a snapshot copy.
+    // MoodDelta is intentionally ignored: NPCStat has no mood field yet.
+    private static NeedSnapshot ApplyEffect(NeedSnapshot s, StatEffect effect)
+    {
+        s.Health = Mathf.Clamp(s.Health + effect.HealthDelta, 0f, s.HealthMax);
+        s.Hunger = Mathf.Clamp(s.Hunger + effect.HungerDelta, 0f, s.HungerMax);
+        s.Thirst = Mathf.Clamp(s.Thirst + effect.ThirstDelta, 0f, s.ThirstMax);
+        s.Fatigue = Mathf.Clamp(s.Fatigue + effect.FatigueDelta, 0f, s.FatigueMax);
+        return s;
+    }
+
+    private static float Normalize(float value, float max)
+    {
+        return max <= 0f ? 0f : Mathf.Clamp01(value / max);
+    }
+
+    private static float NormalizedNeed(NeedSnapshot s, int criticalIndex)
+    {
+        switch (criticalIndex)
+        {
+            case 0: return Normalize(s.Fatigue, s.FatigueMax);
+            case 1: return Normalize(s.Hunger, s.HungerMax);
+            default: return Normalize(s.Thirst, s.ThirstMax);
+        }
+    }
+
+    private static float MaxCriticalNeed(NeedSnapshot s, bool[] criticalMask)
+    {
+        float max = 0f;
+        for (int i = 0; i < criticalMask.Length; ++i)
+        {
+            if (!criticalMask[i])
+                continue;
+
+            float v = NormalizedNeed(s, i);
+            if (v > max)
+                max = v;
+        }
+        return max;
+    }
+
+    private float SumCriticalRisk(NeedSnapshot s, bool[] criticalMask)
+    {
+        float sum = 0f;
+        for (int i = 0; i < criticalMask.Length; ++i)
+        {
+            if (!criticalMask[i])
+                continue;
+
+            sum += NeedRisk(NormalizedNeed(s, i));
+        }
+        return sum;
+    }
+
+    private static bool IsStrictlySafeImprovement(NeedSnapshot before, NeedSnapshot after, bool[] criticalMask)
+    {
+        bool improvedAny = false;
+        for (int i = 0; i < criticalMask.Length; ++i)
+        {
+            if (!criticalMask[i])
+                continue;
+
+            float b = NormalizedNeed(before, i);
+            float a = NormalizedNeed(after, i);
+            if (a > b)
+                return false;
+            if (a < b)
+                improvedAny = true;
+        }
+        return improvedAny;
+    }
+
+    // ---- Risk / utility ----
+
+    private float NeedRisk(float n)
+    {
+        if (n <= _tuning.DangerThreshold)
+            return n;
+
+        float over = n - _tuning.DangerThreshold;
+        return n + over * over * _tuning.DangerPenaltyMultiplier;
+    }
+
+    private float ComputeRisk(NeedSnapshot s)
+    {
+        return NeedRisk(Normalize(s.Fatigue, s.FatigueMax))
+             + NeedRisk(Normalize(s.Hunger, s.HungerMax))
+             + NeedRisk(Normalize(s.Thirst, s.ThirstMax))
+             + (1f - Normalize(s.Health, s.HealthMax)) * _tuning.HealthWeight;
+    }
+
+    private float ComputeUtility(NeedSnapshot before, Candidate c, int safeWorkBefore, int safeWorkAfter, int producedWorkCount)
+    {
+        float riskBefore = ComputeRisk(before);
+        float riskAfter = ComputeRisk(c.After);
+
+        return (riskBefore - riskAfter) * _tuning.RiskWeight
+             + (safeWorkAfter - safeWorkBefore) * _tuning.WorkCapacityWeight
+             + producedWorkCount * _tuning.WorkValue
+             - c.TravelTime * _tuning.TravelWeight;
+    }
+
+    // ---- Misc ----
 
     private static BuildingType GetWorkPlaceKey(NPCType npcType)
     {
@@ -232,124 +492,5 @@ public class DestinationDecider
         float distance = Vector2.Distance(from, to);
         float speed = Mathf.Max(MinMoveSpeed, moveSpeed);
         return distance / speed;
-    }
-
-    private static NeedSnapshot ApplyTravel(NeedSnapshot state, float travelTime)
-    {
-        return new NeedSnapshot
-        {
-            Fatigue = Mathf.Min(MaxNeed, state.Fatigue + FatiguePerTravelSecond * travelTime),
-            Hunger = Mathf.Min(MaxNeed, state.Hunger + HungerPerTravelSecond * travelTime),
-            Thirst = Mathf.Min(MaxNeed, state.Thirst + ThirstPerTravelSecond * travelTime),
-        };
-    }
-
-    private static NeedSnapshot ApplyWork(NeedSnapshot state)
-    {
-        return new NeedSnapshot
-        {
-            Fatigue = Mathf.Min(MaxNeed, state.Fatigue + FatiguePerWork),
-            Hunger = Mathf.Min(MaxNeed, state.Hunger + HungerPerWork),
-            Thirst = Mathf.Min(MaxNeed, state.Thirst + ThirstPerWork),
-        };
-    }
-
-    private static NeedSnapshot ApplySupply(NeedSnapshot state, NPCIntent supply)
-    {
-        switch (supply)
-        {
-            case NPCIntent.Drink:
-                return ApplyDrink(state);
-            case NPCIntent.Eat:
-                return ApplyEat(state);
-            case NPCIntent.Sleep:
-                return ApplySleep(state);
-            default:
-                return state;
-        }
-    }
-
-    private static NeedSnapshot ApplyDrink(NeedSnapshot state)
-    {
-        state.Thirst = 0f;
-        return state;
-    }
-
-    private static NeedSnapshot ApplyEat(NeedSnapshot state)
-    {
-        state.Hunger = 0f;
-        return state;
-    }
-
-    private static NeedSnapshot ApplySleep(NeedSnapshot state)
-    {
-        state.Fatigue = 0f;
-        return state;
-    }
-
-    private static int EstimateWorkCount(NeedSnapshot state)
-    {
-        int byFatigue = Mathf.FloorToInt((MaxNeed - state.Fatigue) / FatiguePerWork);
-        int byHunger = Mathf.FloorToInt((MaxNeed - state.Hunger) / HungerPerWork);
-        int byThirst = Mathf.FloorToInt((MaxNeed - state.Thirst) / ThirstPerWork);
-
-        return Mathf.Max(0, Mathf.Min(byFatigue, Mathf.Min(byHunger, byThirst)));
-    }
-
-    private static NPCIntent GetMostLimitingNeed(NeedSnapshot state)
-    {
-        NPCIntent result = NPCIntent.Sleep;
-        float maxValue = state.Fatigue;
-
-        if (state.Hunger > maxValue)
-        {
-            maxValue = state.Hunger;
-            result = NPCIntent.Eat;
-        }
-
-        if (state.Thirst > maxValue)
-        {
-            result = NPCIntent.Drink;
-        }
-
-        return result;
-    }
-
-    private static NPCIntent GetLimitingNeedAboveThreshold(NeedSnapshot state, float threshold)
-    {
-        NPCIntent limiting = GetMostLimitingNeed(state);
-        float value = GetNeedValue(state, limiting);
-        return value > threshold ? limiting : NPCIntent.None;
-    }
-
-    private static float GetNeedValue(NeedSnapshot state, NPCIntent intent)
-    {
-        switch (intent)
-        {
-            case NPCIntent.Sleep:
-                return state.Fatigue;
-            case NPCIntent.Eat:
-                return state.Hunger;
-            case NPCIntent.Drink:
-                return state.Thirst;
-            default:
-                return 0f;
-        }
-    }
-
-    private static float GetDangerPenalty(NeedSnapshot state)
-    {
-        return GetSingleDangerPenalty(state.Fatigue)
-            + GetSingleDangerPenalty(state.Hunger)
-            + GetSingleDangerPenalty(state.Thirst);
-    }
-
-    private static float GetSingleDangerPenalty(float value)
-    {
-        if (value <= DangerThreshold)
-            return 0f;
-
-        float over = value - DangerThreshold;
-        return over * over * DangerPenaltyMultiplier;
     }
 }

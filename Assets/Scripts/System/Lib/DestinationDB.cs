@@ -5,14 +5,26 @@ public class DestinationDB : MonoBehaviour
 {
     [SerializeField] private List<DestinationInfo> _destionations;
 
-    Dictionary<BuildingType, DestinationInfo> _destinationDB;
+    private Dictionary<BuildingType, DestinationInfo> _destinationDB;
+    private List<BuildingType> _registeredKeys;
+
+    public IReadOnlyList<BuildingType> RegisteredKeys
+    {
+        get
+        {
+            EnsureInitialized();
+            return _registeredKeys;
+        }
+    }
+
     void Awake()
     {
-        Convert2Dict();
+        EnsureInitialized();
     }
 
     public bool TryGetDestinationPos(BuildingType destionationName, out Vector3 destination)
     {
+        EnsureInitialized();
         destination = Vector3.zero;
 
         if (!_destinationDB.TryGetValue(destionationName, out var info))
@@ -27,22 +39,34 @@ public class DestinationDB : MonoBehaviour
 
     public bool TryGetInteractionProvider(BuildingType destinationName, out IInteractionProvider provider)
     {
+        EnsureInitialized();
         provider = null;
-        
+
         if (!_destinationDB.TryGetValue(destinationName, out var info))
             return false;
 
         if (info.InteractProvider == null)
             return false;
-        
+
         provider = info.InteractProvider;
         return true;
     }
 
+    private void EnsureInitialized()
+    {
+        if (_destinationDB != null)
+            return;
+
+        Convert2Dict();
+    }
+
     private void Convert2Dict()
     {
-        if(_destinationDB == null) 
-            _destinationDB = new Dictionary<BuildingType, DestinationInfo>();
+        _destinationDB = new Dictionary<BuildingType, DestinationInfo>();
+        _registeredKeys = new List<BuildingType>();
+
+        if (_destionations == null)
+            return;
 
         foreach (var info in _destionations)
         {
@@ -51,6 +75,9 @@ public class DestinationDB : MonoBehaviour
 
             if (!info.DestinationLoc)
                 continue;
+
+            if (!_destinationDB.ContainsKey(info.BuildingType))
+                _registeredKeys.Add(info.BuildingType);
 
             _destinationDB[info.BuildingType] = info;
         }

@@ -4,13 +4,29 @@ using UnityEngine;
 public class FarmerActionSelector : BaseNPCActionSelector
 {
     [SerializeField] private DestinationDB _destinationDB;
+    [SerializeField] private NPCDecisionTuning _decisionTuning;
 
     private DestinationDecider _decider;
+    private FarmingActionCost _farmingActionCostInfo;
+    private StatEffect _workCost;
 
     protected override void Start()
     {
         _decider = new DestinationDecider();
-        _decider.Init(_destinationDB);
+        _decider.Init(_destinationDB, _decisionTuning);
+
+        if (dataManager.TryGetActionCostInfo<FarmingActionCost>(ActionType.Farming, out var farmingCost))
+        {
+            _farmingActionCostInfo = farmingCost;
+            _workCost = new StatEffect(
+                hungerDelta: farmingCost.FarmingActionPerHunger,
+                thirstDelta: farmingCost.FarmingActionPerThirst,
+                fatigueDelta: farmingCost.FarmingActionPerFatigue);
+        }
+        else
+        {
+            Debug.LogError("FarmingActionCost not found; DestinationDecider will never offer Work.");
+        }
     }
 
     /// <summary>
@@ -26,46 +42,61 @@ public class FarmerActionSelector : BaseNPCActionSelector
     {
         Queue<IAction> queue = new Queue<IAction>();
 
-        if (_decider == null || stat == null || !component)
+        if (!component)
             return queue;
 
-        NPCDecision decision = _decider.Decide(stat, npcType, component.Position);
-
-        foreach (NPCDecisionStep step in decision.Steps)
+        NPCDecision decision;
+        if (_decider == null || _decisionTuning == null || stat == null)
         {
-            ActionContext actionContext;
-            if (step.Intent == NPCIntent.Work)
-            {
-                bool getSuccess = dataManager.TryGetActionCostInfo<FarmingActionCost>(ActionType.Farming, out var info);
-                if (!getSuccess)
-                {
-                    Debug.LogError("Farming action cost not found");
-                    return queue;
-                }
-                actionContext = new ActionContext(component, stat, step.DestinationPos, info);
-            }
-            else
-            {
-                _destinationDB.TryGetInteractionProvider(step.DestinationKey, out var provider);
-                actionContext = new ActionContext(component, stat, step.DestinationPos, provider: provider);
-            }
+            Debug.LogError("FarmerActionSelector is missing required setup (decider/tuning/stat); falling back to Idle.");
+            decision = NPCDecision.Idle(component.Position);
+        }
+        else
+        {
+            decision = _decider.Decide(stat, npcType, component.Position, _workCost);
+        }
 
+        ActionContext actionContext = BuildContext(decision, component, stat);
+
+        if (decision.DestinationKey != BuildingType.None)
+        {
             if (!TryEnqueueMove(queue, actionContext))
-                continue;
+                return queue;
+        }
 
-            ActionType actionType = ToActionType(step.Intent);
-            for (int i = 0; i < step.RepeatCount; ++i)
-            {
-                IAction action = GetAction(actionType);
-                
-                action.Init(actionContext);
-                queue.Enqueue(action);
-            }
+        ActionType actionType = ToActionType(decision.Intent);
+        int repeatCount = Mathf.Max(1, decision.RepeatCount);
+        for (int i = 0; i < repeatCount; ++i)
+        {
+            IAction action = GetAction(actionType);
+            action.Init(actionContext);
+            queue.Enqueue(action);
         }
 
         return queue;
     }
-    
+
+    private ActionContext BuildContext(NPCDecision decision, NPCComponent component, NPCStat stat)
+    {
+        switch (decision.Intent)
+        {
+            case NPCIntent.Work:
+                return new ActionContext(component, stat, decision.DestinationPos, _farmingActionCostInfo);
+
+            case NPCIntent.Eat:
+            case NPCIntent.Drink:
+            {
+                _destinationDB.TryGetInteractionProvider(decision.DestinationKey, out var provider);
+                return new ActionContext(component, stat, decision.DestinationPos, provider: provider, request: decision.Request);
+            }
+
+            case NPCIntent.Sleep:
+                return new ActionContext(component, stat, decision.DestinationPos);
+
+            default:
+                return new ActionContext(component, stat);
+        }
+    }
 
     private bool TryEnqueueMove(Queue<IAction> queue, ActionContext context)
     {
@@ -94,7 +125,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
             case NPCIntent.Sleep:
                 return ActionType.Sleep;
             default:
-                return ActionType.Move;
+                return ActionType.Idle;
         }
     }
 }

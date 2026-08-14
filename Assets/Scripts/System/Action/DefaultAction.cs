@@ -1,5 +1,3 @@
-using UnityEngine;
-
 public abstract class DefaultAction : IAction
 {
     private readonly ActionType _actionType;
@@ -26,7 +24,6 @@ public abstract class DefaultAction : IAction
 
     public virtual void Start()
     {
-        Debug.Log("Action Start" + _actionType);
         if (!actionContext.Component)
         {
             _isComplete = true;
@@ -69,6 +66,7 @@ public abstract class DefaultAction : IAction
 
     public virtual void Clear()
     {
+        actionContext = default;
         _isPaused = false;
         _isRunning = false;
         _isComplete = false;

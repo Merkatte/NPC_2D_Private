@@ -5,4 +5,5 @@ public enum ActionType
     Eat,
     Drink,
     Farming,
+    Idle,
 }

@@ -46,6 +46,22 @@ Immediate next actions:
 5. Keep `WorkerNPC` narrow; do not make it the dependency bucket for every NPC concern.
 
 ## Current Status
+IMP-024 completed on 2026-08-14 (코드 구현 완료 / 런타임 검증 blocked): `PublicMD/DestinationDecider_Refactor_Plan.md`(Codex 작성)를 검토해 Phase A~D를 구현했다(Phase E 정식 문서 개정과 자동 테스트 도입은 사용자와 합의해 범위 제외, 아래 후속 과제로 기록). 목표는 판단(`DestinationDecider`)과 실행(`Pub`/`DrinkAction`/`EatAction`)이 서로 다른 결과를 예측·적용하던 문제(카테고리만 보고 랜덤 아이템 지급, 퍼센트 vs 절대값 need 예측 불일치, 안전 작업 0회에도 강제 1회 작업)를 없애는 것이었다.
+
+Phase 0(선행 버그): `FarmingActionCost.asset`의 `FarmingAcitonPerThirst` 오타로 인해 런타임 갈증 작업비용이 항상 0이었던 버그를 수정(`FormerlySerializedAs`로 마이그레이션 병행). `DataManager`의 비용 딕셔너리 구성을 `Start()`→`Awake()`로 옮겨 `FarmerActionSelector.Start()`와의 초기화 순서 경쟁을 제거. `FarmingAction.Clear()` 부재(재사용 시 진행시간 미초기화)와 캐스팅 실패 시 큐가 멈추는 문제를 수정.
+
+Phase A(아이템 선택-실행 일치): `IInteractionProvider`를 `AppendOptions(type, buffer)`(조회) + `TryInteraction(request)`(지정 실행) 계약으로 재정의. `Pub`은 `UnityEngine.Random`을 완전히 제거하고 요청받은 `ItemId`를 그대로 실행하며, 아이템을 못 찾으면 스탯 변화 없이 실패한다. `ActionContext`에 `InteractRequest? Request`를 추가하고, `DefaultAction.Clear()`에서 `actionContext`를 초기화해 풀 재사용 시 이전 요청이 새는 것을 막았다. `EatAction`/`DrinkAction`은 이제 지정된 아이템만 실행한다.
+
+Phase B: `NPCDecisionTuning` ScriptableObject 신설(`DangerThreshold`/`CriticalNeedThreshold`는 0~1 정규화 값, `MinimumWorkBatch` 기본 2, `MaximumWorkBatch`, `SwitchMargin`, 각종 utility weight). `OnValidate()`로 필드 간 관계(Danger≤Critical, Min≤Max, 가중치 음수 불가)를 강제한다.
+
+Phase C: `DestinationDB`에 중복 제거된 `RegisteredKeys` 캐시와 `EnsureInitialized()` 지연 초기화를 추가해 `Awake` 순서 의존 NRE와 `_destionations == null` 크래시를 제거. `NPCDecision`을 다단계 배열에서 "한 결정 = 한 목적지" 단일 구조체로 축소(`NPCDecisionStep`/`EstimatedWorkCount`/`NextRequiredIntent`/`PrimaryIntent` 삭제, 사용처 0건 확인 후 제거)하고 `Idle()` 정적 팩토리를 추가. `ActionType.Idle`/`NPCIntent.Idle`을 enum 끝에 추가하고 `IdleAction`+`ActionPool` 배선을 신설해, 빈 결정이 나와도 `WorkerNPC`가 매 프레임 재판단 스핀에 빠지지 않게 했다. `DestinationDecider`는 전면 재작성: need를 퍼센트가 아닌 원본값+max로 예측, 등록된 모든 provider에서 구체 아이템 옵션을 수집, 안전 작업 횟수를 나눗셈이 아닌 반복 시뮬레이션으로 계산(`Mathf.Max(1,workCount)` 제거), `MinimumWorkBatch` 미만이면 Work 후보 자체를 배제, critical 상태는 판단 시작 시점에 critical이었던 need 집합 기준 3단계 정책(1순위 엄격 무악화+개선 / 2순위 최댓값 감소 / 3순위 risk 합 감소)으로 선택해 부작용 있는 아이템 때문에 영구 Idle에 빠지지 않게 했고, utility·거리·ItemId·ActionType·BuildingType 순의 완전 결정적 타이브레이크를 적용했다.
+
+Phase D: `FarmerActionSelector`는 단일 `NPCDecision`으로부터 `ActionContext` 하나를 구성한다(Work는 `FarmingActionCost`, Eat/Drink는 provider+`InteractRequest`, Sleep은 둘 다 없음 — `SleepAction`이 자체 전량 회복 계산을 갖고 있으므로). `_decider`/`_decisionTuning`/`stat` 중 하나라도 없으면 빈 큐 대신 명시적 `Idle` 결정으로 낮춘다(빈 큐 반환 시 매 프레임 재요청 스핀 재발 방지). `WorkerNPC.cs`, `Assets/Scenes/SampleScene.unity`는 계획대로 수정하지 않았다.
+
+**런타임 Blocker (기능 미완료 사유)**: (1) `InteractableManager`가 `SampleScene.unity`에 배치돼 있지 않아 `BaseInteractable.Init`이 호출되지 않고 모든 provider의 아이템 딕셔너리가 `null`이다. (2) `FarmerActionSelector._decisionTuning`이 새로 만든 `NPCDecisionTuning.asset`에 연결돼 있지 않다. 두 가지 모두 Unity 에디터에서 사용자가 직접 연결해야 하며, 연결 전까지 드링크/이트/작업 배치 흐름이 Play Mode에서 실제로 동작하지 않는다.
+
+**미실행 수동 스모크 테스트**: `Assets/TestOnly/DecisionSmokeItemData.csv`(체력/갈증 트레이드오프 아이템 2종 추가)를 `ItemDataContext._itemTextData`에 임시 연결해 (a) 요청한 아이템이 실제 실행되는지, (b) 체력에 따라 `SpringWater`/`StrongLiquor` 선택이 뒤집히는지, (c) `MinimumWorkBatch` 미만에서 강제 1회 작업이 없는지, (d) 작업 배치 N회 전부 실행되는지, (e) critical 상태에서 부작용 아이템이 있어도 Idle에 고착되지 않는지, (f) 보급·작업 모두 불가할 때 매 프레임 재판단 스핀이 없는지 검증 예정.
+
 IMP-023 completed on 2026-08-11: `DefaultStatContext` ScriptableObject를 현재 `NPCStat` 정보의 기본값 source로 구현했다. 에셋은 이름, 현재/최대 체력, 이동 속도, 피로/허기/갈증 현재값과 최대값만 소유하며 runtime state를 저장하지 않고 `CreateStat()`로 새 `NPCStat` 인스턴스를 생성한다. `NPCStat`에는 need 현재/최대값을 받는 생성자 overload를 추가하고 입력값을 각 max 기준으로 clamp한다. `NPCManager`와 `DataManager.GetStat()`은 연결된 `DefaultStatContext`가 있으면 에셋 기반 stat을 사용하고, 없으면 기존 임시 하드코딩 fallback을 유지한다. 빌드 오류 0, 경고 0. Codex 리뷰 에이전트 런치(비동기, run id `20260811-175130-135`).
 
 IMP-022 completed on 2026-08-02: `DestinationDecider`/`FarmerActionSelector`의 판단 계층과 큐 조립 계층을 분리했다. `DestinationDecider`(순수 C#, `System/Lib`, 직업 공용)는 `Decide(NPCStat, NPCType, Vector3) -> NPCDecision`을 반환하며, 순서 있는 `NPCDecisionStep[]`으로 "이동→보급→이동→작업" 체인을 표현한다. 보급 후보(Drink/Eat/Sleep)는 순열 전체 열거 대신 탐욕적 한계이득 체인으로 하나씩 선택하고, critical 임계값(95%) 초과 시 즉시 해당 need로 단락한다. `FarmerActionSelector`는 `NPCDecision.Steps`를 순회하며 `Queue<IAction>`을 조립하기만 하고 계산식을 갖지 않는다(grep으로 확인). `ActionType.Drink`/`DrinkAction`(EatAction과 동일한 스텁 스타일) 추가, `ActionPool`에 배선. `NPCStat`의 `Current*Percentage`에 0 나눗셈 방어(`GetPercentage`) 추가. `DestinationDB.DestinationInfo`에 `[System.Serializable]` 추가(이전에는 Inspector에 노출되지 않아 런타임 딕셔너리가 항상 비어 있었음). 설계 근거는 `PublicMD/NPC_Decision_System_Plan.md`에 별도 기록. 빌드 오류 0, 경고 0. Codex 리뷰 에이전트 런치(비동기).
@@ -56,6 +72,11 @@ IMP-020 completed on 2026-07-03: popup infrastructure now supports lazy Instanti
 ## Completed Tasks
 | Task ID | Date | Summary | Evidence | Related REQs |
 |---|---|---|---|---|
+| IMP-024 | 2026-08-14 | `DestinationDecider_Refactor_Plan.md` Phase A~D 구현. `IInteractionProvider`를 옵션 조회+지정 실행 계약으로 재정의하고 `Pub`에서 `UnityEngine.Random` 제거, `DestinationDecider` 전면 재작성(원본값 예측, 반복 시뮬레이션 안전 작업 횟수, 3단계 critical 정책, 결정적 타이브레이크), `NPCDecision` 단일 스텝화, `IdleAction` 신설, `FarmerActionSelector` 단일 결정→큐 변환. 상세는 위 Current Status 참고. | 아래 검증 행 참조. | 사용자 요청: Codex DestinationDecider 리팩터링 계획 검토·구현 |
+| IMP-024 | 2026-08-14 | Command-line C# build | `dotnet build Assembly-CSharp.csproj --no-restore` — 오류 0, 경고 0. (신규 파일 `IdleAction.cs`가 Unity 미실행 상태에서 `Assembly-CSharp.csproj`에 즉시 반영되지 않아 최초 빌드가 CS0246으로 실패 — 수동 1줄 패치로 재확인. Unity가 다음 애셋 리프레시에서 정확한 버전으로 덮어쓸 것.) |  |
+| IMP-024 | 2026-08-14 | `UnityEngine.Random` 제거 확인 (grep) | `Assets/Scripts` 전체에서 `UnityEngine.Random`/`Random.Range` 0건. | |
+| IMP-024 | 2026-08-14 | 런타임 Blocker (미해결) | `InteractableManager`가 `SampleScene.unity`에 없음(참조 0건) → provider 아이템 딕셔너리가 항상 null. `FarmerActionSelector._decisionTuning`이 `NPCDecisionTuning.asset`에 미연결. 계획에 따라 씬 배선은 이번 구현 범위에서 의도적으로 제외했고, 사용자가 Unity 에디터에서 직접 연결해야 한다. | |
+| IMP-024 | 2026-08-14 | Codex review agent | 에이전트 런치 성공(비동기, PID 50108). 결과는 `PublicMD/Code_Evaluation_Result.md`에 기록됨(아직 미수신 — 수신된 리뷰 결과는 이 표에 기록하지 않음). |  |
 | IMP-023 | 2026-08-11 | `DefaultStatContext` ScriptableObject 구현 및 `NPCManager`/`DataManager.GetStat()` 기본 stat 생성 경로 연결. `NPCStat`은 health/move speed/need 현재값과 max를 생성자에서 clamp해 runtime 인스턴스로 보관한다. | `dotnet build Assembly-CSharp.csproj --no-restore` 오류 0, 경고 0. Codex review agent launched asynchronously, run id `20260811-175130-135`. | REQ-NF-002, REQ-NF-005 |
 | IMP-022 | 2026-08-02 | `DestinationDecider`/`NPCDecision`/`NPCIntent` 신설, `FarmerActionSelector` 재작성. 판단(거리·need 예측·작업 가능 횟수·점수)은 decider가, 큐 조립(Move 선행 + `ActionPool` 조회)은 selector가 전담하도록 경계를 확정. 탐욕적 한계이득 체인으로 "나온 김에" 보급을 몰아서 처리하는 판단 도입(순열 열거 대비 평가 6회로 축소). `ActionType.Drink`+`DrinkAction` 스텁 추가, `ActionPool` Awake/Create/ReturnAction 배선(ReturnAction switch는 딕셔너리 조회 1줄로 정리). `NPCStat` percentage 0 나눗셈 방어. `DestinationDB.DestinationInfo`에 `[System.Serializable]` 추가(직렬화 버그 수정). 런타임 `using NUnit.*` 2건 제거. | 아래 검증 행 참조. | 사용자 요청: DestinationDecider/FarmerActionSelector 책임 분리 |
 | IMP-022 | 2026-08-02 | Command-line C# build | `dotnet build Assembly-CSharp.csproj --no-restore` — 오류 0, 경고 0. (Assembly-CSharp.csproj가 새 파일 2개를 아직 반영하지 못해 최초 빌드가 CS0246으로 실패 — Unity 백그라운드 재생성 대기 후 수동 2줄 패치로 재확인. Unity가 다음 애셋 리프레시에서 정확한 버전으로 덮어쓸 것.) |  |
@@ -287,6 +308,16 @@ IMP-011: `GuardActionSet` class was not created; instead `WorkerActionSet` was e
 | IMP-019 | Codex review agent | Launched | 에이전트 런치(비동기). 결과는 PublicMD/Code_Evaluation_Result.md에 기록됨. |
 
 ## Next Actions
+
+### IMP-024 이후 남은 작업 (기능 완료를 위한 필수 blocker)
+1. **`InteractableManager`를 `SampleScene.unity`에 배치**하고 `_dataManager`, `_interactables`(Pub 오브젝트 + Well 오브젝트에 붙은 `Pub` 컴포넌트)를 연결. 현재 씬에 이 매니저가 없어 `BaseInteractable.Init`이 호출되지 않고 아이템 옵션이 하나도 생성되지 않는다.
+2. **`FarmerActionSelector._decisionTuning`에 `Assets/Data/ScriptableObject/NPCDecisionTuning.asset` 연결**.
+3. 위 두 가지 연결 후 `PublicMD/robust-wiggling-corbato.md`(세션 plan 파일) 검증 섹션의 수동 스모크 테스트를 수행하고 결과를 PROGRESS.md에 추가로 기록할 것.
+
+### IMP-024 후속 과제 (범위 제외, 별도 작업으로 필요)
+- **자동 Edit Mode 테스트 부재**: 프로젝트에 `.asmdef`가 0개라 테스트 어셈블리를 추가할 수 없었다(테스트 asmdef는 `Assembly-CSharp`을 참조 불가). `DestinationDecider`의 utility/critical 선택 로직은 회귀 위험이 높으므로, asmdef 마이그레이션과 함께 Edit Mode 테스트 도입을 별도 작업으로 진행해야 한다.
+- **`NPC_Decision_System_Plan.md` 정식 개정**: "나온 김에" 탐욕적 체인 절이 이번에 폐기된 설계와 맞지 않는다. 문서를 새 단일 결정 구조에 맞게 다시 쓸 것.
+- `NPCStat.ChangeMoveSpeed`의 자기 상한 clamp 버그, `Pub.cs` 관련 기존 이슈들은 이번 범위에 포함되지 않았다.
 
 ### IMP-022 이후 남은 작업 (Unity Editor 배선 필요)
 0. **`DefaultStatContext` asset 생성 및 연결**: Project 창에서 `Scriptable Objects/DefaultStatContext` 메뉴로 기본 stat asset을 만들고, `NPCManager._defaultStatContext`와 `DataManager._statInfo`에 연결해야 한다. 연결 전에는 기존 hardcoded fallback stat이 사용된다.

@@ -9,7 +9,8 @@ public class EatAction : DefaultAction
     public override void Start()
     {
         base.Start();
-        if (actionContext.InteractionProvider == null || !actionContext.InteractionProvider.CanInteract(GetMyActionType()))
+        if (actionContext.InteractionProvider == null || actionContext.Request == null ||
+            !actionContext.InteractionProvider.CanInteract(GetMyActionType()))
         {
             Debug.LogError("Current InteractionProvider does not support this action");
             Complete();
@@ -39,8 +40,8 @@ public class EatAction : DefaultAction
 
         if (currentEatTime >= eatTime)
         {
-            if (actionContext.InteractionProvider != null &&
-                actionContext.InteractionProvider.TryInteraction(GetMyActionType(), out var result))
+            if (actionContext.InteractionProvider != null && actionContext.Request != null &&
+                actionContext.InteractionProvider.TryInteraction(actionContext.Request.Value, out var result))
             {
                 stat.ApplyStatEffect(result.Effect);
             }

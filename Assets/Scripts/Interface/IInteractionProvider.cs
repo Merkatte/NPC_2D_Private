@@ -1,7 +1,8 @@
-using UnityEngine;
+using System.Collections.Generic;
 
 public interface IInteractionProvider
 {
     bool CanInteract(ActionType type);
-    bool TryInteraction(ActionType type, out InteractResult result);
+    void AppendOptions(ActionType type, List<InteractionOption> buffer);
+    bool TryInteraction(InteractRequest request, out InteractResult result);
 }
