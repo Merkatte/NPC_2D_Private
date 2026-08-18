@@ -78,7 +78,9 @@ public abstract class DefaultAction : IAction
 
     public ActionType GetMyActionType() => _actionType;
 
-    protected abstract void UpdateCompletion();
+    protected virtual void UpdateCompletion()
+    {
+    }
 
     protected virtual void Complete()
     {

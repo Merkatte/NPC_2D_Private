@@ -59,7 +59,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
 
         if (decision.DestinationKey != BuildingType.None)
         {
-            if (!TryEnqueueMove(rented, actionContext))
+            if (!TryRentAction(ActionType.Move, actionContext, rented))
             {
                 ReturnAll(rented);
                 return new Queue<IAction>();
@@ -70,25 +70,14 @@ public class FarmerActionSelector : BaseNPCActionSelector
         int repeatCount = Mathf.Max(1, decision.RepeatCount);
         for (int i = 0; i < repeatCount; ++i)
         {
-            IAction action = GetAction(actionType);
-            if (action == null)
+            if (!TryRentAction(actionType, actionContext, rented))
             {
-                Debug.LogError($"ActionPool could not provide {actionType}");
                 ReturnAll(rented);
                 return new Queue<IAction>();
             }
-
-            action.Init(actionContext);
-            rented.Add(action);
         }
 
         return new Queue<IAction>(rented);
-    }
-
-    private void ReturnAll(List<IAction> rented)
-    {
-        for (int i = 0; i < rented.Count; ++i)
-            ReturnAction(rented[i]);
     }
 
     private ActionContext BuildContext(NPCDecision decision, NPCComponent component, NPCStat stat)
@@ -111,20 +100,6 @@ public class FarmerActionSelector : BaseNPCActionSelector
             default:
                 return new ActionContext(component, stat);
         }
-    }
-
-    private bool TryEnqueueMove(List<IAction> rented, ActionContext context)
-    {
-        MoveAction moveAction = GetAction(ActionType.Move) as MoveAction;
-        if (moveAction == null)
-        {
-            Debug.LogError("MoveAction not found in ActionPool");
-            return false;
-        }
-
-        moveAction.Init(context);
-        rented.Add(moveAction);
-        return true;
     }
 
     private static ActionType ToActionType(NPCIntent intent)

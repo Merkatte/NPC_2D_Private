@@ -11,4 +11,15 @@ public class AttackActionCost : DefaultActionCost
     {
         AttackRange = Mathf.Max(0.01f, AttackRange);
     }
+
+    /// <summary>
+    /// Single source of truth for the attack-range check, shared by GuardActionSelector
+    /// (replan-time Move-vs-Attack decision) and AttackAction (per-hit range recheck).
+    /// </summary>
+    public bool IsInRange(Vector3 from, Vector3 targetPosition)
+    {
+        Vector3 offset = targetPosition - from;
+        offset.z = 0f;
+        return offset.sqrMagnitude <= AttackRange * AttackRange;
+    }
 }

@@ -37,4 +37,26 @@ public class GuardActionCost : DefaultActionCost
         ThirstInterruptThreshold = Mathf.Clamp01(ThirstInterruptThreshold);
         FatigueInterruptThreshold = Mathf.Clamp01(FatigueInterruptThreshold);
     }
+
+    /// <summary>
+    /// Single source of truth for "is this need above Guard's own interrupt threshold".
+    /// Shared by GuardAction (per-tick check) and GuardActionSelector (replan-time check)
+    /// so the two never drift out of sync.
+    /// </summary>
+    public bool ShouldInterrupt(IStatView stat)
+    {
+        if (Normalize(stat.GetHunger, stat.GetHungerMax) >= HungerInterruptThreshold)
+            return true;
+        if (Normalize(stat.GetThirst, stat.GetThirstMax) >= ThirstInterruptThreshold)
+            return true;
+        if (Normalize(stat.GetFatigue, stat.GetFatigueMax) >= FatigueInterruptThreshold)
+            return true;
+
+        return false;
+    }
+
+    private static float Normalize(float value, float max)
+    {
+        return max <= 0f ? 0f : value / max;
+    }
 }

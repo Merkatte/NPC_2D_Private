@@ -79,9 +79,7 @@ public class AttackAction : DefaultAction
                 break;
             }
 
-            Vector3 toTarget = handle.Target.Position - component.Position;
-            toTarget.z = 0f;
-            if (toTarget.sqrMagnitude > cost.AttackRange * cost.AttackRange)
+            if (!cost.IsInRange(component.Position, handle.Target.Position))
             {
                 outOfRange = true;
                 break;
@@ -120,10 +118,5 @@ public class AttackAction : DefaultAction
     {
         _timer = 0f;
         base.Clear();
-    }
-
-    protected override void UpdateCompletion()
-    {
-        // AttackAction only exits through RequestReplan/Fail; it never completes on its own.
     }
 }

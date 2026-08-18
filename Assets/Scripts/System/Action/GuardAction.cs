@@ -52,7 +52,7 @@ public class GuardAction : DefaultAction
             return;
         }
 
-        if (IsInterruptThresholdReached(stat, cost))
+        if (cost.ShouldInterrupt(stat))
         {
             RequestReplan();
             return;
@@ -66,23 +66,6 @@ public class GuardAction : DefaultAction
         stat.ChangeHunger(cost.HungerPerSecond * Time.deltaTime);
         stat.ChangeThirst(cost.ThirstPerSecond * Time.deltaTime);
         stat.ChangeFatigue(cost.FatiguePerSecond * Time.deltaTime);
-    }
-
-    private static bool IsInterruptThresholdReached(NPCStat stat, GuardActionCost cost)
-    {
-        if (Normalize(stat.GetHunger, stat.GetHungerMax) >= cost.HungerInterruptThreshold)
-            return true;
-        if (Normalize(stat.GetThirst, stat.GetThirstMax) >= cost.ThirstInterruptThreshold)
-            return true;
-        if (Normalize(stat.GetFatigue, stat.GetFatigueMax) >= cost.FatigueInterruptThreshold)
-            return true;
-
-        return false;
-    }
-
-    private static float Normalize(float value, float max)
-    {
-        return max <= 0f ? 0f : value / max;
     }
 
     private void TickPatrol(NPCComponent component, GuardActionCost cost)
@@ -114,10 +97,5 @@ public class GuardAction : DefaultAction
         _center = Vector3.zero;
         _patrolIndex = 0;
         base.Clear();
-    }
-
-    protected override void UpdateCompletion()
-    {
-        // GuardAction never completes on its own; it only exits via RequestReplan/Fail.
     }
 }

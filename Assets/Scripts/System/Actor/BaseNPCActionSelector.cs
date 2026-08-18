@@ -26,4 +26,29 @@ public class BaseNPCActionSelector : MonoBehaviour
     {
         return null;
     }
+
+    /// <summary>
+    /// Rents one action of the given type, initializes it, and appends it to the caller's
+    /// in-progress rental list. Callers must roll back via ReturnAll on any failure so a
+    /// partially built queue never leaks rented actions back to the pool.
+    /// </summary>
+    protected bool TryRentAction(ActionType type, ActionContext context, List<IAction> rented)
+    {
+        IAction action = GetAction(type);
+        if (action == null)
+        {
+            Debug.LogError($"ActionPool could not provide {type}");
+            return false;
+        }
+
+        action.Init(context);
+        rented.Add(action);
+        return true;
+    }
+
+    protected void ReturnAll(List<IAction> rented)
+    {
+        for (int i = 0; i < rented.Count; ++i)
+            ReturnAction(rented[i]);
+    }
 }

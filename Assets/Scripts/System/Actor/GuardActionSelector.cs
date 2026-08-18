@@ -50,7 +50,7 @@ public class GuardActionSelector : BaseNPCActionSelector
         if (TryBuildCombatQueue(component, stat, out Queue<IAction> combatQueue))
             return combatQueue;
 
-        if (IsNeedAboveGuardThreshold(stat))
+        if (_guardActionCostInfo.ShouldInterrupt(stat))
         {
             NPCDecision needDecision = _decider.Decide(stat, npcType, component.Position, workCost: null);
             if (IsSupplyIntent(needDecision.Intent))
@@ -115,15 +115,12 @@ public class GuardActionSelector : BaseNPCActionSelector
         List<IAction> rented = new List<IAction>();
         CombatTargetHandle handle = runtimeState.TargetHandle;
 
-        Vector3 toTarget = handle.Target.Position - component.Position;
-        toTarget.z = 0f;
-
-        if (toTarget.sqrMagnitude > _attackActionCostInfo.AttackRange * _attackActionCostInfo.AttackRange)
+        if (!_attackActionCostInfo.IsInRange(component.Position, handle.Target.Position))
         {
             float stoppingDistance = _attackActionCostInfo.AttackRange * 0.9f;
             ActionContext moveContext = new ActionContext(component, stat, moveRequest: MoveRequest.Dynamic(handle, stoppingDistance));
 
-            if (!TryRent(ActionType.Move, moveContext, rented))
+            if (!TryRentAction(ActionType.Move, moveContext, rented))
             {
                 ReturnAll(rented);
                 return new Queue<IAction>();
@@ -131,7 +128,7 @@ public class GuardActionSelector : BaseNPCActionSelector
         }
 
         ActionContext attackContext = new ActionContext(component, stat, cost: _attackActionCostInfo);
-        if (!TryRent(ActionType.Attack, attackContext, rented))
+        if (!TryRentAction(ActionType.Attack, attackContext, rented))
         {
             ReturnAll(rented);
             return new Queue<IAction>();
@@ -140,21 +137,9 @@ public class GuardActionSelector : BaseNPCActionSelector
         return new Queue<IAction>(rented);
     }
 
-    private bool IsNeedAboveGuardThreshold(NPCStat stat)
-    {
-        return Normalize(stat.GetHunger, stat.GetHungerMax) >= _guardActionCostInfo.HungerInterruptThreshold
-            || Normalize(stat.GetThirst, stat.GetThirstMax) >= _guardActionCostInfo.ThirstInterruptThreshold
-            || Normalize(stat.GetFatigue, stat.GetFatigueMax) >= _guardActionCostInfo.FatigueInterruptThreshold;
-    }
-
     private static bool IsSupplyIntent(NPCIntent intent)
     {
         return intent == NPCIntent.Eat || intent == NPCIntent.Drink || intent == NPCIntent.Sleep;
-    }
-
-    private static float Normalize(float value, float max)
-    {
-        return max <= 0f ? 0f : value / max;
     }
 
     private Queue<IAction> BuildNeedQueue(NPCDecision decision, NPCComponent component, NPCStat stat)
@@ -162,7 +147,7 @@ public class GuardActionSelector : BaseNPCActionSelector
         List<IAction> rented = new List<IAction>();
 
         ActionContext moveContext = new ActionContext(component, stat, decision.DestinationPos);
-        if (!TryRent(ActionType.Move, moveContext, rented))
+        if (!TryRentAction(ActionType.Move, moveContext, rented))
         {
             ReturnAll(rented);
             return new Queue<IAction>();
@@ -171,7 +156,7 @@ public class GuardActionSelector : BaseNPCActionSelector
         _destinationDB.TryGetInteractionProvider(decision.DestinationKey, out var provider);
         ActionContext interactContext = new ActionContext(component, stat, decision.DestinationPos, provider: provider, request: decision.Request);
 
-        if (!TryRent(ToActionType(decision.Intent), interactContext, rented))
+        if (!TryRentAction(ToActionType(decision.Intent), interactContext, rented))
         {
             ReturnAll(rented);
             return new Queue<IAction>();
@@ -195,14 +180,14 @@ public class GuardActionSelector : BaseNPCActionSelector
         toPost.z = 0f;
         if (toPost.sqrMagnitude > _guardActionCostInfo.GuardRadius * _guardActionCostInfo.GuardRadius)
         {
-            if (!TryRent(ActionType.Move, context, rented))
+            if (!TryRentAction(ActionType.Move, context, rented))
             {
                 ReturnAll(rented);
                 return new Queue<IAction>();
             }
         }
 
-        if (!TryRent(ActionType.Guard, context, rented))
+        if (!TryRentAction(ActionType.Guard, context, rented))
         {
             ReturnAll(rented);
             return new Queue<IAction>();
@@ -216,33 +201,13 @@ public class GuardActionSelector : BaseNPCActionSelector
         List<IAction> rented = new List<IAction>();
         ActionContext context = new ActionContext(component, stat);
 
-        if (!TryRent(ActionType.Idle, context, rented))
+        if (!TryRentAction(ActionType.Idle, context, rented))
         {
             ReturnAll(rented);
             return new Queue<IAction>();
         }
 
         return new Queue<IAction>(rented);
-    }
-
-    private bool TryRent(ActionType type, ActionContext context, List<IAction> rented)
-    {
-        IAction action = GetAction(type);
-        if (action == null)
-        {
-            Debug.LogError($"ActionPool could not provide {type}");
-            return false;
-        }
-
-        action.Init(context);
-        rented.Add(action);
-        return true;
-    }
-
-    private void ReturnAll(List<IAction> rented)
-    {
-        for (int i = 0; i < rented.Count; ++i)
-            ReturnAction(rented[i]);
     }
 
     private static ActionType ToActionType(NPCIntent intent)
