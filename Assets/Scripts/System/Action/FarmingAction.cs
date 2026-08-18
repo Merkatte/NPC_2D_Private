@@ -11,14 +11,14 @@ public class FarmingAction : DefaultAction
 
     public override void Tick()
     {
-        if (!_isRunning || _isPaused || _isComplete)
+        if (!_isRunning || _isPaused || IsFinished)
         {
             return;
         }
 
         if (!actionContext.Component)
         {
-            Stop();
+            Fail("FarmingAction lost its NPCComponent reference");
             return;
         }
 
@@ -40,8 +40,7 @@ public class FarmingAction : DefaultAction
 
         if (actionCost == null)
         {
-            Debug.LogError("FarmingAction has no valid FarmingActionCost in ActionContext");
-            Complete();
+            Fail("FarmingAction has no valid FarmingActionCost in ActionContext");
             return;
         }
 

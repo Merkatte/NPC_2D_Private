@@ -40,10 +40,8 @@ public class FarmerActionSelector : BaseNPCActionSelector
 
     public override Queue<IAction> RequestNewActionQueue(NPCStat stat, NPCType npcType, NPCComponent component)
     {
-        Queue<IAction> queue = new Queue<IAction>();
-
         if (!component)
-            return queue;
+            return new Queue<IAction>();
 
         NPCDecision decision;
         if (_decider == null || _decisionTuning == null || stat == null)
@@ -57,11 +55,15 @@ public class FarmerActionSelector : BaseNPCActionSelector
         }
 
         ActionContext actionContext = BuildContext(decision, component, stat);
+        List<IAction> rented = new List<IAction>();
 
         if (decision.DestinationKey != BuildingType.None)
         {
-            if (!TryEnqueueMove(queue, actionContext))
-                return queue;
+            if (!TryEnqueueMove(rented, actionContext))
+            {
+                ReturnAll(rented);
+                return new Queue<IAction>();
+            }
         }
 
         ActionType actionType = ToActionType(decision.Intent);
@@ -69,11 +71,24 @@ public class FarmerActionSelector : BaseNPCActionSelector
         for (int i = 0; i < repeatCount; ++i)
         {
             IAction action = GetAction(actionType);
+            if (action == null)
+            {
+                Debug.LogError($"ActionPool could not provide {actionType}");
+                ReturnAll(rented);
+                return new Queue<IAction>();
+            }
+
             action.Init(actionContext);
-            queue.Enqueue(action);
+            rented.Add(action);
         }
 
-        return queue;
+        return new Queue<IAction>(rented);
+    }
+
+    private void ReturnAll(List<IAction> rented)
+    {
+        for (int i = 0; i < rented.Count; ++i)
+            ReturnAction(rented[i]);
     }
 
     private ActionContext BuildContext(NPCDecision decision, NPCComponent component, NPCStat stat)
@@ -98,7 +113,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
         }
     }
 
-    private bool TryEnqueueMove(Queue<IAction> queue, ActionContext context)
+    private bool TryEnqueueMove(List<IAction> rented, ActionContext context)
     {
         MoveAction moveAction = GetAction(ActionType.Move) as MoveAction;
         if (moveAction == null)
@@ -108,7 +123,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
         }
 
         moveAction.Init(context);
-        queue.Enqueue(moveAction);
+        rented.Add(moveAction);
         return true;
     }
 

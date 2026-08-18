@@ -12,7 +12,7 @@ public sealed class SleepAction : DefaultAction
 
     public override void Tick()
     {
-        if (!_isRunning || _isPaused || _isComplete)
+        if (!_isRunning || _isPaused || IsFinished)
         {
             return;
         }

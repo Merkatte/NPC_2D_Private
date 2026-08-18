@@ -46,6 +46,27 @@ Immediate next actions:
 5. Keep `WorkerNPC` narrow; do not make it the dependency bucket for every NPC concern.
 
 ## Current Status
+IMP-025 completed on 2026-08-19 (코드 구현 완료 / Play Mode 검증은 씬 배선 대기): `PublicMD/Guard_Action_Implementation_Plan.md`(rev 3, Codex 2회 계획 리뷰 반영)의 Phase A~D를 한 번의 승인된 패스로 구현했다. 목표는 `WorkerNPC → BaseNPCActionSelector.RequestNewActionQueue(...) → Queue<IAction>` 구조를 유지하면서, Guard가 경계 구역에서 장기 `GuardAction`으로 순찰하다가 Guard 전용 욕구 임계치에 도달하거나 유효한 전투 대상이 감지되면 남은 queue 전체를 반환하고 재계획해 `Move(동적 타겟) → 장기 AttackAction → 타겟 사망 → Guard 복귀` loop를 완성하는 것이었다.
+
+Phase A(action 결과 계약과 queue lifecycle): `ActionResult`(Running/Completed/ReplanRequested/Failed) 추가, `IAction.CheckComplete()`를 `Result` property로 대체. `DefaultAction.Init()`이 더 이상 `Start()`를 호출하지 않고, `Complete()`/`RequestReplan()`/`Fail(reason)` 세 종료 경로로 분리했다(`Fail`은 원인을 한 번 로그로 남긴다). `WorkerNPC`가 queue lifecycle을 단독 소유하도록 재작성: `CancelAndReturnQueue()`가 현재 action과 남은 queue를 각각 정확히 한 번 반환하고, `AdvanceQueue()`는 프레임당 최대 1회만 `RequestNewActionQueue`를 호출한다. `NPCType`을 저장해 `NPCType.Farmer` 하드코딩을 제거했고, 풀 재사용을 고려해 `_isInitialized` 가드와 `NPCComponent.ResetRuntimeState()`(Phase A에서는 빈 구현)를 `Init()`/`OnDisable()` 양쪽에 추가했다. `MoveAction`/`EatAction`/`DrinkAction`/`SleepAction`/`FarmingAction`/`IdleAction`을 새 계약으로 마이그레이션하면서, base.Start() 실패 후 하위 override가 `Complete()`를 덮어써 결과를 오염시키던 잠재 버그(EatAction/DrinkAction)와 컴포넌트 유실 시 `Stop()`만 호출해 영원히 멈추던 버그(FarmingAction/MoveAction)를 함께 고쳤다. `ActionPool.GetAction`/`ReturnAction`을 null-safe하게 만들고, `FarmerActionSelector`의 queue 조립을 대여 실패 시 전체 롤백하는 트랜잭션 방식으로 바꿨다(결정 로직 자체는 변경 없음).
+
+Phase B(비전투 Guard 순찰과 욕구 억제): `GuardActionCost`(경계 반경/순찰 도착 거리/순찰점 개수, 초당 욕구 증가량, Guard 전용 중단 임계치 0..1) 신설. `GuardAction`은 결정적 순찰점 순환(반경 위 N개 점 인덱스 순회, `UnityEngine.Random` 미사용)으로 이동하고 매 Tick 욕구를 직접 증가시키며(`StatEffect` 신규 할당 없음), 정상 순찰 중에는 `Complete()`를 반환하지 않는다. `BuildingType.GuardPost`를 enum 끝에 추가(기존 직렬화 값 보존). `GuardActionSelector`를 Farmer 복사본에서 전면 재작성해 비전투 분기만 구현: need 임계 초과 시 기존 job-neutral `DestinationDecider.Decide(workCost: null)`로 `Move → Eat/Drink/Sleep`, 아니면 `Move → Guard`/`Guard`, 설정 누락 시 `Idle` backoff.
+
+Phase C(감지·타겟 인프라와 동적 이동): `ICombatTarget`/`IMoveTarget` 최소 계약, `CombatTargetHandle`(Target+Owner 쌍으로 유효성 판정하는 plain C# handle, `IMoveTarget` 구현 — Unity 파괴 객체 null 판정 문제를 Owner truthiness로 해결), `ProximitySensor2D`(LayerMask 기반 범용 Trigger2D 감지기, `OnTriggerEnter2D`/`Exit2D`만 사용, 파괴된 collider 정리는 명시적 `Prune()`에서만 exit 알림과 함께 수행, `OnDisable()`에서 보유 collider 전체 exit 알림 후 정리), `GuardPerception`(`Dictionary<Collider2D, TargetEntry>` 역방향 매핑으로 한 적의 복수 collider를 하나의 후보로 중복 제거, 자체 `Update()`에서 sensor+자신의 `Prune()` 호출, `CopyCandidatesTo` 버퍼 메서드로 selector에 후보 노출), `GuardRuntimeState`(NPC별 `CombatTargetHandle` 하나를 직접 소유 — perception이 후보를 잃어도 selector가 명시적으로 지우기 전까지 타겟 유지), `MoveRequest`(고정 `Vector3` 또는 `IMoveTarget` + stopping distance), `Enemy`(최소 `ICombatTarget` 테스트 표적, AI 없음)를 신설했다. `NPCComponent`가 `GuardPerception` 참조와 per-NPC `GuardRuntimeState`를 노출하고 `ResetRuntimeState()`가 타겟을 지운다. `ActionContext`에 `MoveRequest? moveRequest`를 생성자 맨 끝에 추가(기존 호출부 보존). `MoveAction`이 `MoveRequest`를 지원하도록 확장하고, 항상 0.1f로 고정되어 있던 stopping distance 버그를 제거했으며, 동적 타겟이 사라지면 재계획을 요청한다.
+
+Phase D(장기 AttackAction과 전체 loop 연결): `AttackActionCost`(공격 반경) 신설. `AttackAction`은 매 Tick `GuardRuntimeState`에서 타겟을 다시 읽고(캐시하지 않음), `interval = 1/AttackSpeed`로 타이머를 누적해 `MaxHitsPerTick` 한도 내에서 반복 타격한다. 타격 전 유효성·거리 재검사 → 피해 적용 → 타격 직후 생존 재검사 순서를 지켜 같은 Tick에서 죽은 대상에 중복 피해를 주지 않으며, hit 상한에 걸려 루프가 끝난 경우에만 잔여 timer를 `interval * MaxHitsPerTick`으로 clamp한다(사망/사거리 이탈로 끝난 경우는 clamp하지 않음). `Clear()`는 timer만 초기화하고 타겟은 지우지 않는다. `NPCStat`/`IStatView`/`DefaultStatContext`에 공격력·공격 속도(attacks/sec)를 기존 생성자 끝에 default 파라미터로 추가했다(유일한 10-인자 호출부인 `DefaultStatContext.CreateStat()`도 갱신). `GuardAction`이 매 Tick `GuardPerception.HasCandidate`를 욕구 임계 검사보다 먼저 확인해 적 감지가 욕구보다 우선하도록 했다(타겟 선택·저장은 하지 않음). `GuardActionSelector`가 재계획마다 전투 분기를 최우선으로 시도: `GuardRuntimeState`에 유효 타겟이 있으면 그대로, 없으면 `GuardPerception` 후보 중 가장 가까운 살아있는 적을 선택해 `SetTarget` 후, 공격 범위 밖이면 `Move(dynamic MoveRequest, stopping distance = AttackRange×0.9) → Attack`, 안이면 `Attack`만 queue에 넣는다.
+
+**씬 배선 (미완료, 의도된 범위 제외)**: 이번 패스는 사용자 승인에 따라 C# 코드와 ScriptableObject 클래스 정의만 구현했다. `SampleScene.unity`/`NPCGirl.prefab`의 GameObject·collider·Layer·asset 인스턴스 연결은 다루지 않았으며, 사용자가 Unity 에디터에서 직접 수행해야 한다. 남은 배선 항목은 아래 "다음 배선 작업" 참고. 이 배선이 끝나기 전까지 Guard 계획 §8의 Play Mode 시나리오(G-PT-01~18)는 실행할 수 없다.
+
+### 다음 배선 작업 (사용자, Unity 에디터)
+
+1. `GuardActionSelector` GameObject 생성 + `dataManager`/`actionPool`/`_destinationDB`/Guard 전용 `NPCDecisionTuning`(Farmer보다 높은 `CriticalNeedThreshold` 권장) 연결, `NPCManager._selectors[1]`을 이 selector로 교체(현재 3칸 모두 Farmer selector를 가리킴).
+2. `GuardActionCost.asset`, `AttackActionCost.asset` 생성 후 `DataManager._costInfos`에 등록. `GuardActionCost`의 초당 욕구 증가량은 `FarmingActionCost.asset`의 `FarmingActionPerHunger/Thirst/Fatigue`(각 10) 대비 `증가량 × 3초 < 10`을 만족해야 한다(기본값 0.3은 이 조건을 만족).
+3. `DestinationDB`에 `GuardPost` 엔트리 추가.
+4. `NPCGirl.prefab`(또는 Guard 전용 prefab)에 combat sensor 자식 GameObject + `CircleCollider2D(IsTrigger)` + `ProximitySensor2D`(LayerMask=Enemy) + `GuardPerception` 구성, `NPCComponent._guardPerception` 연결.
+5. Enemy Layer 생성, `Enemy` 표적 배치(Collider2D + 한쪽에 Rigidbody2D), Physics 2D Layer Collision Matrix 제한, sensor `_detectionMask` 설정.
+6. `DefaultStatContext`(또는 Guard 전용 stat context)에 공격력·공격 속도 값 입력.
+
 IMP-024 completed on 2026-08-14 (코드 구현 완료 / 런타임 검증 blocked): `PublicMD/DestinationDecider_Refactor_Plan.md`(Codex 작성)를 검토해 Phase A~D를 구현했다(Phase E 정식 문서 개정과 자동 테스트 도입은 사용자와 합의해 범위 제외, 아래 후속 과제로 기록). 목표는 판단(`DestinationDecider`)과 실행(`Pub`/`DrinkAction`/`EatAction`)이 서로 다른 결과를 예측·적용하던 문제(카테고리만 보고 랜덤 아이템 지급, 퍼센트 vs 절대값 need 예측 불일치, 안전 작업 0회에도 강제 1회 작업)를 없애는 것이었다.
 
 Phase 0(선행 버그): `FarmingActionCost.asset`의 `FarmingAcitonPerThirst` 오타로 인해 런타임 갈증 작업비용이 항상 0이었던 버그를 수정(`FormerlySerializedAs`로 마이그레이션 병행). `DataManager`의 비용 딕셔너리 구성을 `Start()`→`Awake()`로 옮겨 `FarmerActionSelector.Start()`와의 초기화 순서 경쟁을 제거. `FarmingAction.Clear()` 부재(재사용 시 진행시간 미초기화)와 캐스팅 실패 시 큐가 멈추는 문제를 수정.
@@ -72,6 +93,11 @@ IMP-020 completed on 2026-07-03: popup infrastructure now supports lazy Instanti
 ## Completed Tasks
 | Task ID | Date | Summary | Evidence | Related REQs |
 |---|---|---|---|---|
+| IMP-025 | 2026-08-19 | `Guard_Action_Implementation_Plan.md` rev 3 Phase A~D 구현. ActionResult 계약, WorkerNPC queue lifecycle 단독 소유, 장기 GuardAction(순찰+욕구 억제), ProximitySensor2D+GuardPerception+GuardRuntimeState+CombatTargetHandle 감지·타겟 인프라, 장기 AttackAction, GuardActionSelector 전투/욕구/순찰 우선순위 통합. 상세는 위 Current Status 참고. | 아래 검증 행 참조. | 사용자 요청: Guard 장기 행동·전투 전환 구현 |
+| IMP-025 | 2026-08-19 | Command-line C# build (Phase A~D 각각 독립 검증) | `dotnet build Assembly-CSharp.csproj --no-restore` — Phase A/B/C/D 각 종료 시점 모두 오류 0, 경고 0. 신규 파일은 매 Phase마다 `Assembly-CSharp.csproj`에 수동 `<Compile Include>` 추가 후 확인(Unity 미실행, IMP-022/024와 동일 절차). |  |
+| IMP-025 | 2026-08-19 | 정적 grep 검증 | `ActionPool.Create`에 Guard/Attack case 존재, `WorkerNPC`에 `NPCType.Farmer` 하드코딩 0건, `GuardActionSelector`에 FarmingActionCost/Farmer 문구 0건, `GuardAction`에 Physics2D/OnTrigger/GetComponent 0건, `ProximitySensor2D`에 Guard/Enemy/ICombatTarget 실제 참조 0건(doc-comment 1건만), `MoveAction`에 ICombatTarget/Enemy 0건, `Assets/Scripts` 전체 `UnityEngine.Random` 신규 호출 0건. |  |
+| IMP-025 | 2026-08-19 | Codex review agent | 에이전트 런치 성공(비동기, PID 62428, run id `20260819-014129-214`). 결과는 `PublicMD/Code_Evaluation_Result.md`에 기록됨(아직 미수신 — 수신된 리뷰 결과는 이 표에 기록하지 않음). |  |
+| IMP-025 | 2026-08-19 | 런타임 Blocker (의도된 범위 제외, 버그 아님) | 사용자 승인에 따라 이번 구현은 C# 코드/ScriptableObject 클래스 정의만 포함하고 `SampleScene.unity`/`NPCGirl.prefab` YAML은 의도적으로 수정하지 않았다. GuardActionSelector 씬 배선, GuardActionCost/AttackActionCost asset 인스턴스, GuardPost destination, combat sensor prefab 구성, Enemy Layer가 모두 미완료라 Play Mode 시나리오(G-PT-01~18)는 사용자 배선 후 실행 가능하다. |  |
 | IMP-024 | 2026-08-14 | `DestinationDecider_Refactor_Plan.md` Phase A~D 구현. `IInteractionProvider`를 옵션 조회+지정 실행 계약으로 재정의하고 `Pub`에서 `UnityEngine.Random` 제거, `DestinationDecider` 전면 재작성(원본값 예측, 반복 시뮬레이션 안전 작업 횟수, 3단계 critical 정책, 결정적 타이브레이크), `NPCDecision` 단일 스텝화, `IdleAction` 신설, `FarmerActionSelector` 단일 결정→큐 변환. 상세는 위 Current Status 참고. | 아래 검증 행 참조. | 사용자 요청: Codex DestinationDecider 리팩터링 계획 검토·구현 |
 | IMP-024 | 2026-08-14 | Command-line C# build | `dotnet build Assembly-CSharp.csproj --no-restore` — 오류 0, 경고 0. (신규 파일 `IdleAction.cs`가 Unity 미실행 상태에서 `Assembly-CSharp.csproj`에 즉시 반영되지 않아 최초 빌드가 CS0246으로 실패 — 수동 1줄 패치로 재확인. Unity가 다음 애셋 리프레시에서 정확한 버전으로 덮어쓸 것.) |  |
 | IMP-024 | 2026-08-14 | `UnityEngine.Random` 제거 확인 (grep) | `Assets/Scripts` 전체에서 `UnityEngine.Random`/`Random.Range` 0건. | |
@@ -111,6 +137,37 @@ IMP-020 completed on 2026-07-03: popup infrastructure now supports lazy Instanti
 ## Files Changed
 | Path | Change Summary | Reason |
 |---|---|---|
+| Assets/Scripts/Enum/ActionResult.cs | 신규. `Running`/`Completed`/`ReplanRequested`/`Failed`. | 장기 action이 재계획과 실패를 구분해 결과를 보고하기 위해. |
+| Assets/Scripts/Interface/IAction.cs | `CheckComplete()` 제거, `ActionResult Result { get; }` 추가. | WorkerNPC가 완료/재계획/실패를 구분해 queue를 처리하도록. |
+| Assets/Scripts/System/Action/DefaultAction.cs | `Init()`에서 `Start()` 호출 제거. `Complete()`/`RequestReplan()`/`Fail(reason)` 종료 경로 분리. | selector가 queue를 구성하는 시점에 대기 action이 미리 시작되지 않도록, 실패 원인을 진단 가능하게. |
+| Assets/Scripts/Actor/WorkerNPC.cs | queue lifecycle 단독 소유로 재작성(`AdvanceQueue`/`CancelAndReturnQueue`), `NPCType` 저장(Farmer 하드코딩 제거), `_isInitialized` 풀 재사용 가드. | Guard의 장기 action 재계획·전체 queue 취소 요구사항을 지원하고 pool 재사용 시 stale 상태를 막기 위해. |
+| Assets/Scripts/Manager/NPCManager.cs | 실제 `NPCType`을 `WorkerNPC.Init`에 전달, selector 인덱스 사전 검증. | Farmer 하드코딩 제거에 대응, worker를 pool에서 꺼내기 전에 설정 오류를 잡기 위해. |
+| Assets/Scripts/System/Actor/NPCComponent.cs | `GuardPerception` 참조와 per-NPC `GuardRuntimeState` 추가, `ResetRuntimeState()`(Phase A 빈 구현 → Phase C에서 타겟 clear로 채움). | Guard 감지·전투 상태의 연결점이자 pool 재사용 시 정리 지점을 제공하기 위해. |
+| Assets/Scripts/System/Action/MoveAction.cs | `MoveRequest`(고정/동적) 지원, 하드코딩된 stopping distance 제거, 동적 타겟 소실 시 재계획. | Guard의 이동 대상(적)이 움직이는 상황을 전투 도메인 참조 없이 지원하기 위해. |
+| Assets/Scripts/System/Action/EatAction.cs, DrinkAction.cs | `IsFinished` 마이그레이션, provider 부재 시 `Complete()`→`Fail(...)`로 수정(기존에는 base.Start() 실패 후에도 Complete()가 결과를 덮어쓸 수 있었음). | 새 ActionResult 계약 적용 및 잠재 버그 수정. |
+| Assets/Scripts/System/Action/SleepAction.cs, IdleAction.cs | `IsFinished` 마이그레이션. | 새 ActionResult 계약 적용. |
+| Assets/Scripts/System/Action/FarmingAction.cs | `IsFinished` 마이그레이션, 컴포넌트 유실 시 `Stop()`→`Fail(...)`(기존에는 영원히 멈춘 채 남았음), cost 누락 시 `Fail(...)`. | 새 ActionResult 계약 적용 및 정지 상태로 남는 버그 수정. |
+| Assets/Scripts/System/Lib/ActionPool.cs | `GetAction`/`ReturnAction` null-safe, `Create` default case 진단, Guard/Attack case 추가. | 팩토리 실패 시 예외 대신 안전한 실패, 신규 action 타입 등록. |
+| Assets/Scripts/System/Actor/FarmerActionSelector.cs | queue 조립을 대여 실패 시 전체 롤백하는 트랜잭션 방식으로 변경(결정 로직은 불변). | 부분 조립된 queue가 pool에서 누수되지 않도록. |
+| Assets/Scripts/Enum/BuildingType.cs | `GuardPost`를 enum 끝에 추가. | 기존 직렬화 값 보존하며 Guard 경계 목적지 식별자 확보. |
+| Assets/Data/ScriptableObject/Script/GuardActionCost.cs | 신규. 경계 반경/순찰 도착 거리/순찰점 개수, 초당 욕구 증가량, Guard 전용 중단 임계치(0..1). | 순찰·욕구 억제 수치를 코드 변경 없이 asset에서 조정하기 위해. |
+| Assets/Scripts/System/Action/GuardAction.cs | 신규. 결정적 순찰점 순환, 매 Tick 직접 욕구 증가, GuardPerception 후보 감지 시 재계획. | Guard의 장기 경계 행동을 selector 호출이나 Physics 참조 없이 구현하기 위해. |
+| Assets/Scripts/System/Actor/GuardActionSelector.cs | Farmer 복사본에서 전면 재작성. 전투→욕구→순찰 우선순위, 트랜잭션 queue 조립. | 복사된 Farmer 로직(FarmingActionCost 의존 등)을 제거하고 Guard 고유 의사결정을 구현하기 위해. |
+| Assets/Scripts/Interface/ICombatTarget.cs, IMoveTarget.cs | 신규. 최소 전투/이동 대상 계약. | Guard 전투와 MoveAction이 서로 다른 최소 계약만 의존하도록 분리. |
+| Assets/Scripts/System/Actor/CombatTargetHandle.cs | 신규. `IMoveTarget` 구현 plain C# handle, Owner 기반 유효성 판정. | Unity 파괴 객체의 interface 참조 null 판정 문제를 해결하기 위해. |
+| Assets/Scripts/System/Actor/ProximitySensor2D.cs | 신규. LayerMask 기반 범용 Trigger2D 감지기. | Guard/Enemy 도메인과 무관한 재사용 가능한 감지 계층을 확보하기 위해. |
+| Assets/Scripts/System/Actor/GuardPerception.cs | 신규. sensor collider를 살아있는 ICombatTarget 후보로 변환·중복 제거하는 Guard adapter. | 복수 collider를 가진 적을 하나의 후보로 취급하고 sensor를 domain-agnostic하게 유지하기 위해. |
+| Assets/Scripts/System/Actor/GuardRuntimeState.cs | 신규. NPC별 `CombatTargetHandle` 소유. | 선택된 타겟이 perception 범위 이탈과 무관하게 유지되도록(사거리 이탈 시 타겟 유지 요구사항). |
+| Assets/Data/Struct/MoveRequest.cs | 신규. 고정 `Vector3` 또는 `IMoveTarget` + stopping distance. | MoveAction이 전투 타입을 직접 참조하지 않고 동적 목적지를 지원하도록. |
+| Assets/Data/Struct/ActionContext.cs | `MoveRequest? moveRequest`를 생성자 맨 끝에 추가. | 기존 positional 호출부를 보존하면서 동적 이동 요청을 전달하기 위해. |
+| Assets/Scripts/Actor/Enemy.cs | 신규. 최소 `ICombatTarget` 테스트 표적. | 사용자가 Play Mode에서 Guard 전투를 검증할 표적을 제공하기 위해. |
+| Assets/Scripts/System/Actor/NPCStat.cs | 공격력·공격 속도 필드와 `GetAttackPower`/`GetAttackSpeed` 추가(생성자 끝에 default 파라미터로 append). | AttackAction이 공격 주기·피해량을 계산하기 위해. |
+| Assets/Scripts/Interface/IStatView.cs | `GetAttackPower`/`GetAttackSpeed` 추가. | read-only stat 소비자가 공격 수치를 조회할 수 있도록. |
+| Assets/Data/ScriptableObject/Script/DefaultStatContext.cs | 공격력·공격 속도 직렬화 필드 추가, `CreateStat()` 호출부 갱신. | 공격 수치를 코드 변경 없이 asset에서 조정하기 위해. |
+| Assets/Data/ScriptableObject/Script/AttackActionCost.cs | 신규. 공격 반경. | AttackAction의 사거리 판정 수치를 asset에서 조정하기 위해. |
+| Assets/Scripts/System/Action/AttackAction.cs | 신규. 장기 반복 타격, 타격 직후 사망 재검사, hit 상한 기반 timer clamp. | 하나의 action이 타겟 사망까지 공격을 관리하고 프레임 폭주를 방지하기 위해. |
+| Assembly-CSharp.csproj | Phase A~D 신규 `.cs` 파일 `<Compile Include>` 수동 추가. | Unity 미실행 상태에서 `dotnet build`가 신규 파일을 인식하도록(Unity가 다음 리프레시에서 정확한 버전으로 덮어씀). |
+| PublicMD/ProjectStructure.md | "Guard Combat Vertical Slice" 섹션 추가. | Guard 관련 신규 파일과 책임 배치를 문서화하기 위해. |
 | Assets/Data/ScriptableObject/Script/DefaultStatContext.cs | 빈 ScriptableObject를 NPC 기본 stat 정의 에셋으로 구현. `CreateStat()`로 새 `NPCStat` runtime 인스턴스를 생성. | 기본 NPC stat 수치를 코드 변경 없이 Inspector 에셋에서 조정하기 위해. |
 | Assets/Scripts/System/Actor/NPCStat.cs | need 현재/최대값까지 받는 생성자 overload 추가 및 health/move speed/need clamp 적용. 기존 4인자 생성자는 유지. | `DefaultStatContext`에서 현재 `NPCStat`이 가진 모든 stat 정보를 안전하게 주입하기 위해. |
 | Assets/Scripts/Manager/NPCManager.cs | `_defaultStatContext` serialized reference 추가. 연결되어 있으면 에셋 기반 stat 생성, 없으면 기존 fallback 유지. | NPC 생성 시 하드코딩된 기본 stat 대신 ScriptableObject 기본값을 사용할 수 있게 하기 위해. |

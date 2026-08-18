@@ -379,3 +379,45 @@ Action implementations should not need to register themselves into `WorkerNPC` j
 - The old worker architecture documentation has been removed from this file because the corresponding files are no longer present.
 - `Assembly-CSharp.csproj` currently references the new script set.
 - `dotnet build Assembly-CSharp.csproj --no-restore` passed on 2026-08-01 with 0 warnings and 0 errors.
+- This document's sections above still describe the 2026-08-01 skeleton and predate `DestinationDecider`, `NPCDecisionTuning`, `DataManager`, and the Guard combat slice below. They have not been rewritten as part of this change; see `PublicMD/PROGRESS.md` for the intervening history (IMP-022 onward).
+
+## Guard Combat Vertical Slice (2026-08-19)
+
+`PublicMD/Guard_Action_Implementation_Plan.md`의 Phase A~D 구현 결과. `WorkerNPC → BaseNPCActionSelector.RequestNewActionQueue(...) → Queue<IAction>` 구조는 그대로 유지하고, action 결과 계약과 Guard 전용 실행/감지/전투 인프라를 추가했다.
+
+### Action 결과 계약 (Phase A)
+
+- `Assets/Scripts/Enum/ActionResult.cs` — `Running` / `Completed` / `ReplanRequested` / `Failed`.
+- `IAction.CheckComplete()`가 `ActionResult Result { get; }`로 대체됐다.
+- `DefaultAction`은 `Init()`에서 더 이상 `Start()`를 호출하지 않는다. `Complete()` / `RequestReplan()` / `Fail(reason)` 세 개의 protected 종료 경로를 갖는다.
+- `WorkerNPC`가 queue lifecycle을 단독 소유한다: 현재 action을 dequeue 시점에만 `Start()`하고, `ReplanRequested`/`Failed` 시 현재 action과 남은 queue 전체를 `Stop()`+반환한 뒤 `RequestNewActionQueue`를 다시 호출한다. `NPCType`을 저장하며 더 이상 `NPCType.Farmer`를 하드코딩하지 않는다. 풀 재사용을 고려해 `_isInitialized` 가드와 `NPCComponent.ResetRuntimeState()` 호출을 `Init()`/`OnDisable()` 양쪽에 둔다.
+
+### Guard 순찰과 욕구 (Phase B)
+
+- `Assets/Data/ScriptableObject/Script/GuardActionCost.cs` — 경계 반경/순찰 도착 거리/순찰점 개수, 초당 욕구 증가량, Guard 전용 중단 임계치(0..1)를 데이터로 소유한다.
+- `Assets/Scripts/System/Action/GuardAction.cs` — 경계 중심을 순회하며 장기 실행되는 순찰 action. 결정적 순찰점 순환(반경 위 N개 점, `UnityEngine.Random` 미사용)을 쓰고, 매 Tick 욕구를 직접 증가시키며(`StatEffect` 신규 할당 없음), 정상 순찰 중에는 `Complete()`를 반환하지 않는다.
+- `Assets/Scripts/Enum/BuildingType.cs`에 `GuardPost`를 끝에 추가(기존 직렬화 값 보존).
+- `Assets/Scripts/System/Actor/GuardActionSelector.cs`가 Farmer 복사본에서 전면 재작성됐다. 우선순위는 전투 → 욕구 → 순찰이며(전투 분기는 Phase D에서 연결), 큐 조립은 대여 실패 시 전체 롤백하는 트랜잭션 방식이다.
+
+### 감지·타겟 인프라 (Phase C)
+
+- `Assets/Scripts/Interface/ICombatTarget.cs`, `Assets/Scripts/Interface/IMoveTarget.cs` — 최소 전투/이동 대상 계약.
+- `Assets/Scripts/System/Actor/CombatTargetHandle.cs` — `ICombatTarget` + `Component Owner` 쌍으로 유효성을 판정하는 plain C# handle(`IMoveTarget` 구현). Unity 파괴 객체 null 판정 문제를 `Owner` truthiness로 해결한다.
+- `Assets/Scripts/System/Actor/ProximitySensor2D.cs` — LayerMask 기반 범용 Trigger2D 감지기. Guard/Enemy/ICombatTarget을 전혀 참조하지 않는다.
+- `Assets/Scripts/System/Actor/GuardPerception.cs` — sensor collider를 살아 있는 `ICombatTarget` 후보로 변환·중복 제거(`Dictionary<Collider2D, TargetEntry>` 역방향 매핑)하는 Guard 전용 adapter. 타겟을 직접 선택·저장하지 않는다.
+- `Assets/Scripts/System/Actor/GuardRuntimeState.cs` — NPC별 `CombatTargetHandle` 하나를 소유. perception이 후보를 잃어도 selector가 명시적으로 지우기 전까지 타겟을 유지한다(사거리 이탈 시 타겟 유지 요구사항).
+- `Assets/Data/Struct/MoveRequest.cs` — 고정 좌표 또는 `IMoveTarget` 기반 동적 목적지. `MoveAction`은 이를 통해서만 동적 대상을 알고, 전투 타입을 직접 참조하지 않는다.
+- `Assets/Scripts/Actor/Enemy.cs` — 검증용 최소 `ICombatTarget` 구현(이동/반격 없음).
+- `NPCComponent`가 `GuardPerception` 참조와 per-NPC `GuardRuntimeState` 인스턴스를 소유·노출한다. Farmer 계열 프리팹에서는 `GuardPerception`이 비어 있을 수 있으므로 모든 소비 지점이 null을 허용한다.
+
+### 전투 (Phase D)
+
+- `Assets/Data/ScriptableObject/Script/AttackActionCost.cs` — 공격 반경.
+- `Assets/Scripts/System/Action/AttackAction.cs` — 하나의 action이 타겟이 죽거나 범위를 벗어날 때까지 반복 타격한다. `NPCStat.GetAttackSpeed`로 interval을 계산하고(첫 타격은 한 interval 후), 타격 직후 생존을 재검사해 이미 죽은 대상에 중복 피해를 주지 않는다. 한 Tick당 최대 타격 횟수 상한(`MaxHitsPerTick`)으로 긴 프레임에서의 공격 폭주를 막는다. `Clear()`는 timer만 초기화하고 타겟은 지우지 않는다(사거리 이탈 재계획에서 타겟 유지).
+- `NPCStat`/`IStatView`/`DefaultStatContext`에 공격력(`GetAttackPower`)과 공격 속도(`GetAttackSpeed`, attacks/sec)가 추가됐다(생성자 끝에 append, 기존 호출부 보존).
+- `GuardAction`이 매 Tick `GuardPerception.HasCandidate`만 확인해 후보가 있으면 재계획을 요청한다(적 감지가 욕구 임계보다 우선).
+- `GuardActionSelector`가 재계획 시 `GuardRuntimeState`에 유효 타겟이 있으면 우선 사용하고, 없으면 `GuardPerception`의 후보 중 가장 가까운 살아있는 적을 선택해 저장한다. 공격 범위 밖이면 `Move(dynamic MoveRequest) → Attack`, 안이면 `Attack`만 큐에 넣는다.
+
+### 씬 배선 (미완료)
+
+C# 코드와 ScriptableObject 클래스 정의만 구현했다. `SampleScene.unity`/`NPCGirl.prefab`의 GameObject·collider·Layer·asset 인스턴스 연결은 사용자가 Unity 에디터에서 직접 수행해야 한다. 남은 배선 목록은 `PublicMD/PROGRESS.md`를 참고한다.

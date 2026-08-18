@@ -1,34 +1,36 @@
+using UnityEngine;
+
 public abstract class DefaultAction : IAction
 {
     private readonly ActionType _actionType;
-    
+
     protected ActionContext actionContext;
     protected bool _isPaused;
     protected bool _isRunning;
-    protected bool _isComplete;
- 
+    private ActionResult _result;
+
     public DefaultAction(ActionType actionType)
     {
         _actionType = actionType;
     }
+
+    protected bool IsFinished => _result != ActionResult.Running;
+
     public virtual void Init(ActionContext context)
     {
         actionContext = context;
-        
+
         _isPaused = false;
         _isRunning = false;
-        _isComplete = false;
-
-        Start();
+        _result = ActionResult.Running;
     }
 
     public virtual void Start()
     {
         if (!actionContext.Component)
         {
-            _isComplete = true;
-            _isRunning = false;
-            return; 
+            Fail($"{_actionType} action started without a valid NPCComponent");
+            return;
         }
 
         _isRunning = true;
@@ -40,7 +42,7 @@ public abstract class DefaultAction : IAction
 
     public virtual void Pause()
     {
-        if (!_isRunning || _isComplete)
+        if (!_isRunning || IsFinished)
         {
             return;
         }
@@ -50,7 +52,7 @@ public abstract class DefaultAction : IAction
 
     public virtual void Resume()
     {
-        if (!_isRunning || _isComplete)
+        if (!_isRunning || IsFinished)
         {
             return;
         }
@@ -69,20 +71,33 @@ public abstract class DefaultAction : IAction
         actionContext = default;
         _isPaused = false;
         _isRunning = false;
-        _isComplete = false;
+        _result = ActionResult.Running;
     }
 
-    public virtual bool CheckComplete()
-    {
-        return _isComplete;
-    }
+    public ActionResult Result => _result;
 
     public ActionType GetMyActionType() => _actionType;
 
     protected abstract void UpdateCompletion();
+
     protected virtual void Complete()
     {
-        _isComplete = true;
+        _result = ActionResult.Completed;
+        _isRunning = false;
+        _isPaused = false;
+    }
+
+    protected virtual void RequestReplan()
+    {
+        _result = ActionResult.ReplanRequested;
+        _isRunning = false;
+        _isPaused = false;
+    }
+
+    protected virtual void Fail(string reason)
+    {
+        Debug.LogError($"{_actionType} action failed: {reason}");
+        _result = ActionResult.Failed;
         _isRunning = false;
         _isPaused = false;
     }

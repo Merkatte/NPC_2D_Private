@@ -1,0 +1,129 @@
+using UnityEngine;
+
+public class AttackAction : DefaultAction
+{
+    // Caps hits processed in a single Tick so a huge frame delta (or an absurd AttackSpeed)
+    // can't apply unbounded damage in one frame.
+    private const int MaxHitsPerTick = 5;
+
+    private float _timer;
+
+    public AttackAction() : base(ActionType.Attack)
+    {
+    }
+
+    public override void Start()
+    {
+        base.Start();
+        if (IsFinished)
+        {
+            return;
+        }
+
+        GuardRuntimeState runtimeState = actionContext.Component.GuardRuntimeState;
+        NPCStat stat = actionContext.Stat;
+        AttackActionCost cost = actionContext.CostInfo as AttackActionCost;
+
+        if (!runtimeState.HasValidTarget)
+        {
+            Fail("AttackAction started without a valid target");
+            return;
+        }
+
+        if (stat == null || stat.GetAttackSpeed <= 0f)
+        {
+            Fail("AttackAction started with an invalid attack speed");
+            return;
+        }
+
+        if (cost == null)
+        {
+            Fail("AttackAction has no valid AttackActionCost in ActionContext");
+            return;
+        }
+
+        _timer = 0f;
+    }
+
+    public override void Tick()
+    {
+        if (!_isRunning || _isPaused || IsFinished)
+        {
+            return;
+        }
+
+        var component = actionContext.Component;
+        var stat = actionContext.Stat;
+        var cost = actionContext.CostInfo as AttackActionCost;
+
+        if (!component || stat == null || cost == null)
+        {
+            Fail("AttackAction lost its required references mid-tick");
+            return;
+        }
+
+        GuardRuntimeState runtimeState = component.GuardRuntimeState;
+        float interval = 1f / stat.GetAttackSpeed;
+        _timer += Time.deltaTime;
+
+        int hits = 0;
+        bool targetDied = false;
+        bool outOfRange = false;
+
+        while (_timer >= interval && hits < MaxHitsPerTick)
+        {
+            CombatTargetHandle handle = runtimeState.TargetHandle;
+            if (!handle.IsValid)
+            {
+                targetDied = true;
+                break;
+            }
+
+            Vector3 toTarget = handle.Target.Position - component.Position;
+            toTarget.z = 0f;
+            if (toTarget.sqrMagnitude > cost.AttackRange * cost.AttackRange)
+            {
+                outOfRange = true;
+                break;
+            }
+
+            _timer -= interval;
+            handle.Target.ApplyDamage(stat.GetAttackPower);
+            hits++;
+
+            if (!handle.IsValid)
+            {
+                targetDied = true;
+                break;
+            }
+        }
+
+        if (hits >= MaxHitsPerTick)
+        {
+            _timer = Mathf.Min(_timer, interval * MaxHitsPerTick);
+        }
+
+        if (targetDied)
+        {
+            runtimeState.ClearTarget();
+            RequestReplan();
+            return;
+        }
+
+        if (outOfRange)
+        {
+            RequestReplan();
+        }
+    }
+
+    public override void Clear()
+    {
+        _timer = 0f;
+        base.Clear();
+    }
+
+    protected override void UpdateCompletion()
+    {
+        // AttackAction only exits through RequestReplan/Fail; it never completes on its own.
+    }
+}

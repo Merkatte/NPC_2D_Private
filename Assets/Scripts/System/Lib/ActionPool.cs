@@ -30,11 +30,20 @@ public class ActionPool : MonoBehaviour
         if (queue.Count == 0)
             Create(actionType);
 
+        if (queue.Count == 0)
+        {
+            Debug.LogError($"ActionPool has no factory for {actionType}");
+            return null;
+        }
+
         return queue.Dequeue();
     }
 
     public void ReturnAction(IAction action)
     {
+        if (action == null)
+            return;
+
         action.Clear();
 
         if (!_actionDictionary.ContainsKey(action.GetMyActionType()))
@@ -65,6 +74,15 @@ public class ActionPool : MonoBehaviour
                 break;
             case ActionType.Idle:
                 _actionDictionary[actionType].Enqueue(new IdleAction());
+                break;
+            case ActionType.Guard:
+                _actionDictionary[actionType].Enqueue(new GuardAction());
+                break;
+            case ActionType.Attack:
+                _actionDictionary[actionType].Enqueue(new AttackAction());
+                break;
+            default:
+                Debug.LogError($"ActionPool.Create has no case for {actionType}");
                 break;
         }
     }

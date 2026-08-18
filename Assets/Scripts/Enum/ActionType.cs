@@ -6,4 +6,6 @@ public enum ActionType
     Drink,
     Farming,
     Idle,
+    Guard,
+    Attack,
 }

@@ -7,6 +7,6 @@ public interface IAction
     void Resume();
     void Stop();
     void Clear();
-    bool CheckComplete();
+    ActionResult Result { get; }
     ActionType GetMyActionType();
 }

@@ -8,7 +8,8 @@ public class NPCStat : IStatView
     }
 
     public NPCStat(string name, float health, float healthMax, float moveSpeed,
-        float fatigue, float hunger, float thirst, float fatigueMax, float hungerMax, float thirstMax)
+        float fatigue, float hunger, float thirst, float fatigueMax, float hungerMax, float thirstMax,
+        float attackPower = 1f, float attackSpeed = 1f)
     {
         _name = name;
         _healthMax = Mathf.Max(0f, healthMax);
@@ -20,10 +21,12 @@ public class NPCStat : IStatView
         _fatigue = Mathf.Clamp(fatigue, 0f, _fatigueMax);
         _hunger = Mathf.Clamp(hunger, 0f, _hungerMax);
         _thirst = Mathf.Clamp(thirst, 0f, _thirstMax);
+        _attackPower = Mathf.Max(0f, attackPower);
+        _attackSpeed = Mathf.Max(0f, attackSpeed);
     }
-    
+
     private string _name;
-    
+
     private float _health;
     private float _healthMax;
 
@@ -36,18 +39,24 @@ public class NPCStat : IStatView
     private float _fatigueMax = 100f;
     private float _hungerMax = 100f;
     private float _thirstMax = 100f;
-    
+
+    private float _attackPower = 1f;
+    private float _attackSpeed = 1f;
+
     public float GetCurrentHealth => _health;
     public float GetMaxHealth => _healthMax;
     public float GetMoveSpeed => _moveSpeed;
-    
+
     public float GetFatigue => _fatigue;
     public float GetHunger => _hunger;
     public float GetThirst => _thirst;
-    
+
     public float GetFatigueMax => _fatigueMax;
     public float GetHungerMax => _hungerMax;
     public float GetThirstMax => _thirstMax;
+
+    public float GetAttackPower => _attackPower;
+    public float GetAttackSpeed => _attackSpeed;
     
     public float CurrentFatiguePercentage => GetPercentage(_fatigue, _fatigueMax);
     public float CurrentHungerPercentage => GetPercentage(_hunger, _hungerMax);

@@ -21,4 +21,8 @@ public interface IStatView
     float CurrentFatiguePercentage { get; }
     float CurrentHungerPercentage { get; }
     float CurrentThirstPercentage { get; }
+
+    //Combat Info
+    float GetAttackPower { get; }
+    float GetAttackSpeed { get; }
 }

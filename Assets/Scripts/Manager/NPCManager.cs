@@ -18,6 +18,13 @@ public class NPCManager : MonoBehaviour
 
     public void CreateNPC(NPCType npcType)
     {
+        int selectorIndex = (int)npcType;
+        if (_selectors == null || selectorIndex < 0 || selectorIndex >= _selectors.Count || !_selectors[selectorIndex])
+        {
+            Debug.LogError($"NPCManager has no selector registered for {npcType}");
+            return;
+        }
+
         if(!_workers.ContainsKey(npcType))
             _workers.Add(npcType, new List<WorkerNPC>());
 
@@ -25,6 +32,6 @@ public class NPCManager : MonoBehaviour
         WorkerNPC newWorker = _workerPool.GetWorker(Vector2.zero);
 
         var newStat = dataManager.GetStat();
-        newWorker.Init(newStat, _selectors[(int)npcType]);
+        newWorker.Init(npcType, newStat, _selectors[selectorIndex]);
     }
 }

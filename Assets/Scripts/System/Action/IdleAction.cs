@@ -11,7 +11,7 @@ public sealed class IdleAction : DefaultAction
 
     public override void Tick()
     {
-        if (!_isRunning || _isPaused || _isComplete)
+        if (!_isRunning || _isPaused || IsFinished)
         {
             return;
         }

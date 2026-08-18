@@ -9,17 +9,21 @@ public class EatAction : DefaultAction
     public override void Start()
     {
         base.Start();
+        if (IsFinished)
+        {
+            return;
+        }
+
         if (actionContext.InteractionProvider == null || actionContext.Request == null ||
             !actionContext.InteractionProvider.CanInteract(GetMyActionType()))
         {
-            Debug.LogError("Current InteractionProvider does not support this action");
-            Complete();
+            Fail("Current InteractionProvider does not support this action");
         }
     }
 
     public override void Tick()
     {
-        if (!_isRunning || _isPaused || _isComplete)
+        if (!_isRunning || _isPaused || IsFinished)
         {
             return;
         }

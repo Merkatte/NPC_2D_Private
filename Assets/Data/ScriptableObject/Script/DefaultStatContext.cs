@@ -16,7 +16,10 @@ public class DefaultStatContext : ScriptableObject
     [SerializeField] private float _fatigueMax = 100f;
     [SerializeField] private float _hungerMax = 100f;
     [SerializeField] private float _thirstMax = 100f;
-    
+
+    [SerializeField] private float _attackPower = 1f;
+    [SerializeField] private float _attackSpeed = 1f;
+
     public string Name => _name;
     public float Health => _health;
     public float HealthMax => _healthMax;
@@ -27,6 +30,8 @@ public class DefaultStatContext : ScriptableObject
     public float FatigueMax => _fatigueMax;
     public float HungerMax => _hungerMax;
     public float ThirstMax => _thirstMax;
+    public float AttackPower => _attackPower;
+    public float AttackSpeed => _attackSpeed;
 
     public NPCStat CreateStat()
     {
@@ -40,6 +45,8 @@ public class DefaultStatContext : ScriptableObject
             _thirst,
             _fatigueMax,
             _hungerMax,
-            _thirstMax);
+            _thirstMax,
+            _attackPower,
+            _attackSpeed);
     }
 }
