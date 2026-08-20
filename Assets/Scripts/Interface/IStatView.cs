@@ -1,14 +1,12 @@
-using UnityEngine;
-
 public interface IStatView
 {
     //Health Info
     float GetCurrentHealth { get; }
     float GetMaxHealth { get; }
-    
+
     //Speed Info
     float GetMoveSpeed { get; }
-    
+
     //Natural Info
     float GetFatigue { get; }
     float GetHunger { get; }
@@ -16,13 +14,4 @@ public interface IStatView
     float GetFatigueMax { get; }
     float GetHungerMax { get; }
     float GetThirstMax { get; }
-    
-    //Percentage Info
-    float CurrentFatiguePercentage { get; }
-    float CurrentHungerPercentage { get; }
-    float CurrentThirstPercentage { get; }
-
-    //Combat Info
-    float GetAttackPower { get; }
-    float GetAttackSpeed { get; }
 }

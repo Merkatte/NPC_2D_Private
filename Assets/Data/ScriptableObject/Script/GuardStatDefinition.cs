@@ -1,9 +1,9 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "DefaultStatContext", menuName = "Scriptable Objects/DefaultStatContext")]
-public class DefaultStatContext : NPCStatDefinition
+[CreateAssetMenu(fileName = "GuardStatDefinition", menuName = "Scriptable Objects/NPCStatDefinition/GuardStatDefinition")]
+public class GuardStatDefinition : NPCStatDefinition
 {
-    [SerializeField] private string _name = "something";
+    [SerializeField] private string _name = "Guard";
 
     [SerializeField] private float _health = 100f;
     [SerializeField] private float _healthMax = 100f;
@@ -17,20 +17,14 @@ public class DefaultStatContext : NPCStatDefinition
     [SerializeField] private float _hungerMax = 100f;
     [SerializeField] private float _thirstMax = 100f;
 
-    public string Name => _name;
-    public float Health => _health;
-    public float HealthMax => _healthMax;
-    public float MoveSpeed => _moveSpeed;
-    public float Fatigue => _fatigue;
-    public float Hunger => _hunger;
-    public float Thirst => _thirst;
-    public float FatigueMax => _fatigueMax;
-    public float HungerMax => _hungerMax;
-    public float ThirstMax => _thirstMax;
+    [SerializeField] private float _attackPower = 1f;
+    [SerializeField] private float _attackSpeed = 1f;
+    [SerializeField] private float _attackRange = 1f;
+    [SerializeField] private float _guardRadius = 5f;
 
     public override NPCStat CreateRuntimeStat()
     {
-        return new NPCStat(
+        return new GuardStat(
             _name,
             _health,
             _healthMax,
@@ -40,6 +34,10 @@ public class DefaultStatContext : NPCStatDefinition
             _thirst,
             _fatigueMax,
             _hungerMax,
-            _thirstMax);
+            _thirstMax,
+            _attackPower,
+            _attackSpeed,
+            _attackRange,
+            _guardRadius);
     }
 }

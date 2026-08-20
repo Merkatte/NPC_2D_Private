@@ -1,14 +1,12 @@
-using System;
 using UnityEngine;
 
 public class TestNPCSpawnWindow : MonoBehaviour
 {
     private const float WindowWidth = 220f;
-    private const float WindowHeight = 90f;
+    private const float WindowHeight = 130f;
 
     [SerializeField] private NPCManager _npcManager;
 
-    private readonly NPCType[] _npcTypes = (NPCType[])Enum.GetValues(typeof(NPCType));
     private Rect _windowRect = new Rect(20f, 20f, WindowWidth, WindowHeight);
 
     private void Awake()
@@ -26,22 +24,26 @@ public class TestNPCSpawnWindow : MonoBehaviour
 
     private void DrawWindow(int windowId)
     {
-        if (GUILayout.Button("Create Random NPC", GUILayout.Height(32f)))
+        if (GUILayout.Button("Create Farmer NPC", GUILayout.Height(32f)))
         {
-            CreateRandomNPC();
+            CreateNPC(NPCType.Farmer);
+        }
+
+        if (GUILayout.Button("Create Guard NPC", GUILayout.Height(32f)))
+        {
+            CreateNPC(NPCType.Guard);
         }
 
         GUI.DragWindow();
     }
 
-    private void CreateRandomNPC()
+    private void CreateNPC(NPCType npcType)
     {
-        if (!_npcManager || _npcTypes.Length == 0)
+        if (!_npcManager)
         {
             return;
         }
 
-        int index = UnityEngine.Random.Range(0, _npcTypes.Length);
-        _npcManager.CreateNPC(_npcTypes[index]);
+        _npcManager.CreateNPC(npcType);
     }
 }

@@ -7,6 +7,7 @@ public class AttackAction : DefaultAction
     private const int MaxHitsPerTick = 5;
 
     private float _timer;
+    private ICombatStatView _combatStat;
 
     public AttackAction() : base(ActionType.Attack)
     {
@@ -21,8 +22,7 @@ public class AttackAction : DefaultAction
         }
 
         GuardRuntimeState runtimeState = actionContext.Component.GuardRuntimeState;
-        NPCStat stat = actionContext.Stat;
-        AttackActionCost cost = actionContext.CostInfo as AttackActionCost;
+        _combatStat = actionContext.Stat as ICombatStatView;
 
         if (!runtimeState.HasValidTarget)
         {
@@ -30,15 +30,9 @@ public class AttackAction : DefaultAction
             return;
         }
 
-        if (stat == null || stat.GetAttackSpeed <= 0f)
+        if (_combatStat == null || _combatStat.AttackSpeed <= 0f)
         {
             Fail("AttackAction started with an invalid attack speed");
-            return;
-        }
-
-        if (cost == null)
-        {
-            Fail("AttackAction has no valid AttackActionCost in ActionContext");
             return;
         }
 
@@ -53,17 +47,15 @@ public class AttackAction : DefaultAction
         }
 
         var component = actionContext.Component;
-        var stat = actionContext.Stat;
-        var cost = actionContext.CostInfo as AttackActionCost;
 
-        if (!component || stat == null || cost == null)
+        if (!component || _combatStat == null)
         {
             Fail("AttackAction lost its required references mid-tick");
             return;
         }
 
         GuardRuntimeState runtimeState = component.GuardRuntimeState;
-        float interval = 1f / stat.GetAttackSpeed;
+        float interval = 1f / _combatStat.AttackSpeed;
         _timer += Time.deltaTime;
 
         int hits = 0;
@@ -79,14 +71,14 @@ public class AttackAction : DefaultAction
                 break;
             }
 
-            if (!cost.IsInRange(component.Position, handle.Target.Position))
+            if (!CombatRange.IsInRange(component.Position, handle.Target.Position, _combatStat.AttackRange))
             {
                 outOfRange = true;
                 break;
             }
 
             _timer -= interval;
-            handle.Target.ApplyDamage(stat.GetAttackPower);
+            handle.Target.ApplyDamage(_combatStat.AttackPower);
             hits++;
 
             if (!handle.IsValid)
@@ -117,6 +109,7 @@ public class AttackAction : DefaultAction
     public override void Clear()
     {
         _timer = 0f;
+        _combatStat = null;
         base.Clear();
     }
 }

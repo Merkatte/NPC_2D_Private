@@ -22,3 +22,5 @@ MonoBehaviour:
   _fatigueMax: 100
   _hungerMax: 100
   _thirstMax: 100
+  _attackPower: 10
+  _attackSpeed: 10

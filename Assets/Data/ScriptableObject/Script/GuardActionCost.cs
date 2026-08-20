@@ -6,7 +6,6 @@ public class GuardActionCost : DefaultActionCost
     public override ActionType MyType => ActionType.Guard;
 
     [Header("Patrol")]
-    public float GuardRadius = 5f;
     public float PatrolArrivalDistance = 0.2f;
     public int PatrolPointCount = 4;
 
@@ -23,9 +22,13 @@ public class GuardActionCost : DefaultActionCost
     [Range(0f, 1f)] public float ThirstInterruptThreshold = 0.97f;
     [Range(0f, 1f)] public float FatigueInterruptThreshold = 0.97f;
 
+    [Header("Combat")]
+    [SerializeField, Range(0f, 1f)] private float _attackStoppingDistanceRatio = 0.9f;
+
+    public float AttackStoppingDistanceRatio => _attackStoppingDistanceRatio;
+
     private void OnValidate()
     {
-        GuardRadius = Mathf.Max(0f, GuardRadius);
         PatrolArrivalDistance = Mathf.Max(0.01f, PatrolArrivalDistance);
         PatrolPointCount = Mathf.Max(1, PatrolPointCount);
 
@@ -36,6 +39,8 @@ public class GuardActionCost : DefaultActionCost
         HungerInterruptThreshold = Mathf.Clamp01(HungerInterruptThreshold);
         ThirstInterruptThreshold = Mathf.Clamp01(ThirstInterruptThreshold);
         FatigueInterruptThreshold = Mathf.Clamp01(FatigueInterruptThreshold);
+
+        _attackStoppingDistanceRatio = Mathf.Clamp01(_attackStoppingDistanceRatio);
     }
 
     /// <summary>

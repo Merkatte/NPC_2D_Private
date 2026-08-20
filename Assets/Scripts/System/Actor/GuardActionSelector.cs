@@ -8,7 +8,6 @@ public class GuardActionSelector : BaseNPCActionSelector
 
     private DestinationDecider _decider;
     private GuardActionCost _guardActionCostInfo;
-    private AttackActionCost _attackActionCostInfo;
     private readonly List<(ICombatTarget Target, Component Owner)> _candidateBuffer = new List<(ICombatTarget, Component)>();
 
     protected override void Start()
@@ -24,15 +23,11 @@ public class GuardActionSelector : BaseNPCActionSelector
         {
             Debug.LogError("GuardActionCost not found; Guard will be unable to patrol.");
         }
+    }
 
-        if (dataManager.TryGetActionCostInfo<AttackActionCost>(ActionType.Attack, out var attackCost))
-        {
-            _attackActionCostInfo = attackCost;
-        }
-        else
-        {
-            Debug.LogError("AttackActionCost not found; Guard will be unable to attack.");
-        }
+    public override bool CanUseStat(NPCStat stat)
+    {
+        return stat is IGuardStatView;
     }
 
     public override Queue<IAction> RequestNewActionQueue(NPCStat stat, NPCType npcType, NPCComponent component)
@@ -40,14 +35,19 @@ public class GuardActionSelector : BaseNPCActionSelector
         if (!component)
             return new Queue<IAction>();
 
-        if (_decider == null || _decisionTuning == null || _destinationDB == null || stat == null
-            || _guardActionCostInfo == null || _attackActionCostInfo == null)
+        if (_decider == null || _decisionTuning == null || _destinationDB == null || stat == null || _guardActionCostInfo == null)
         {
-            Debug.LogError("GuardActionSelector is missing required setup (decider/tuning/destinationDB/stat/GuardActionCost/AttackActionCost); falling back to Idle.");
+            Debug.LogError("GuardActionSelector is missing required setup (decider/tuning/destinationDB/stat/GuardActionCost); falling back to Idle.");
             return BuildIdleQueue(component, stat);
         }
 
-        if (TryBuildCombatQueue(component, stat, out Queue<IAction> combatQueue))
+        if (!(stat is IGuardStatView guardStat))
+        {
+            Debug.LogError("Guard selector requires a stat implementing IGuardStatView; falling back to Idle.");
+            return BuildIdleQueue(component, stat);
+        }
+
+        if (TryBuildCombatQueue(component, stat, guardStat, out Queue<IAction> combatQueue))
             return combatQueue;
 
         if (_guardActionCostInfo.ShouldInterrupt(stat))
@@ -59,10 +59,10 @@ public class GuardActionSelector : BaseNPCActionSelector
             Debug.LogWarning("Guard need is above threshold but no need destination is currently available; falling back to patrol.");
         }
 
-        return BuildGuardQueue(component, stat);
+        return BuildGuardQueue(component, stat, guardStat);
     }
 
-    private bool TryBuildCombatQueue(NPCComponent component, NPCStat stat, out Queue<IAction> queue)
+    private bool TryBuildCombatQueue(NPCComponent component, NPCStat stat, IGuardStatView guardStat, out Queue<IAction> queue)
     {
         queue = null;
         GuardRuntimeState runtimeState = component.GuardRuntimeState;
@@ -72,7 +72,7 @@ public class GuardActionSelector : BaseNPCActionSelector
             return false;
         }
 
-        queue = BuildCombatQueue(component, stat, runtimeState);
+        queue = BuildCombatQueue(component, stat, guardStat, runtimeState);
         return true;
     }
 
@@ -110,14 +110,14 @@ public class GuardActionSelector : BaseNPCActionSelector
         return true;
     }
 
-    private Queue<IAction> BuildCombatQueue(NPCComponent component, NPCStat stat, GuardRuntimeState runtimeState)
+    private Queue<IAction> BuildCombatQueue(NPCComponent component, NPCStat stat, IGuardStatView guardStat, GuardRuntimeState runtimeState)
     {
         List<IAction> rented = new List<IAction>();
         CombatTargetHandle handle = runtimeState.TargetHandle;
 
-        if (!_attackActionCostInfo.IsInRange(component.Position, handle.Target.Position))
+        if (!CombatRange.IsInRange(component.Position, handle.Target.Position, guardStat.AttackRange))
         {
-            float stoppingDistance = _attackActionCostInfo.AttackRange * 0.9f;
+            float stoppingDistance = guardStat.AttackRange * _guardActionCostInfo.AttackStoppingDistanceRatio;
             ActionContext moveContext = new ActionContext(component, stat, moveRequest: MoveRequest.Dynamic(handle, stoppingDistance));
 
             if (!TryRentAction(ActionType.Move, moveContext, rented))
@@ -127,7 +127,7 @@ public class GuardActionSelector : BaseNPCActionSelector
             }
         }
 
-        ActionContext attackContext = new ActionContext(component, stat, cost: _attackActionCostInfo);
+        ActionContext attackContext = new ActionContext(component, stat);
         if (!TryRentAction(ActionType.Attack, attackContext, rented))
         {
             ReturnAll(rented);
@@ -165,7 +165,7 @@ public class GuardActionSelector : BaseNPCActionSelector
         return new Queue<IAction>(rented);
     }
 
-    private Queue<IAction> BuildGuardQueue(NPCComponent component, NPCStat stat)
+    private Queue<IAction> BuildGuardQueue(NPCComponent component, NPCStat stat, IGuardStatView guardStat)
     {
         if (!_destinationDB.TryGetDestinationPos(BuildingType.GuardPost, out Vector3 guardPos))
         {
@@ -178,7 +178,7 @@ public class GuardActionSelector : BaseNPCActionSelector
 
         Vector3 toPost = guardPos - component.Position;
         toPost.z = 0f;
-        if (toPost.sqrMagnitude > _guardActionCostInfo.GuardRadius * _guardActionCostInfo.GuardRadius)
+        if (toPost.sqrMagnitude > guardStat.GuardRadius * guardStat.GuardRadius)
         {
             if (!TryRentAction(ActionType.Move, context, rented))
             {

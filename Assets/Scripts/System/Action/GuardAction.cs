@@ -4,6 +4,7 @@ public class GuardAction : DefaultAction
 {
     private Vector3 _center;
     private int _patrolIndex;
+    private IGuardStatView _guardStat;
 
     public GuardAction() : base(ActionType.Guard)
     {
@@ -23,6 +24,13 @@ public class GuardAction : DefaultAction
             return;
         }
 
+        _guardStat = actionContext.Stat as IGuardStatView;
+        if (_guardStat == null)
+        {
+            Fail("GuardAction requires a stat implementing IGuardStatView");
+            return;
+        }
+
         _center = actionContext.Destination ?? actionContext.Component.Position;
     }
 
@@ -37,7 +45,7 @@ public class GuardAction : DefaultAction
         var stat = actionContext.Stat;
         var cost = actionContext.CostInfo as GuardActionCost;
 
-        if (!component || stat == null || cost == null)
+        if (!component || stat == null || cost == null || _guardStat == null)
         {
             Fail("GuardAction lost its required references mid-tick");
             return;
@@ -58,7 +66,7 @@ public class GuardAction : DefaultAction
             return;
         }
 
-        TickPatrol(component, cost);
+        TickPatrol(component, cost, _guardStat);
     }
 
     private static void ApplyNeedDecay(NPCStat stat, GuardActionCost cost)
@@ -68,9 +76,9 @@ public class GuardAction : DefaultAction
         stat.ChangeFatigue(cost.FatiguePerSecond * Time.deltaTime);
     }
 
-    private void TickPatrol(NPCComponent component, GuardActionCost cost)
+    private void TickPatrol(NPCComponent component, GuardActionCost cost, IGuardStatView guardStat)
     {
-        Vector3 target = GetPatrolPoint(cost);
+        Vector3 target = GetPatrolPoint(cost, guardStat);
         Vector3 toTarget = target - component.Position;
         toTarget.z = 0f;
 
@@ -84,11 +92,11 @@ public class GuardAction : DefaultAction
         component.Move(toTarget.normalized);
     }
 
-    private Vector3 GetPatrolPoint(GuardActionCost cost)
+    private Vector3 GetPatrolPoint(GuardActionCost cost, IGuardStatView guardStat)
     {
         int count = Mathf.Max(1, cost.PatrolPointCount);
         float angle = _patrolIndex * (Mathf.PI * 2f / count);
-        Vector3 offset = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * cost.GuardRadius;
+        Vector3 offset = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * guardStat.GuardRadius;
         return _center + offset;
     }
 
@@ -96,6 +104,7 @@ public class GuardAction : DefaultAction
     {
         _center = Vector3.zero;
         _patrolIndex = 0;
+        _guardStat = null;
         base.Clear();
     }
 }

@@ -28,6 +28,16 @@ public class BaseNPCActionSelector : MonoBehaviour
     }
 
     /// <summary>
+    /// Whether this selector can operate on the given stat's runtime capabilities.
+    /// Called at NPC creation time so a role selector can never be paired with an
+    /// incompatible stat definition.
+    /// </summary>
+    public virtual bool CanUseStat(NPCStat stat)
+    {
+        return stat != null;
+    }
+
+    /// <summary>
     /// Rents one action of the given type, initializes it, and appends it to the caller's
     /// in-progress rental list. Callers must roll back via ReturnAll on any failure so a
     /// partially built queue never leaks rented actions back to the pool.
