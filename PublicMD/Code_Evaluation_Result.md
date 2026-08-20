@@ -2,298 +2,47 @@
 
 ## Purpose
 
-현재 NPC stat 구조에서 공용 stat, 직업별 성장 능력치, action tuning의 책임 경계를 검토한다.
-
-이 문서는 이후 Claude Code 또는 Codex가 stat 분리 작업을 계획할 때 사용하는 handoff 문서다. 현재 요청은 설계 검토와 문서 정리이며 production C# 구현은 포함하지 않는다.
+IMP-027 `DestinationDecider` rational utility rewrite의 구현 결과를 검토한다. 범위는 새 점수·예측 모델, Guard selector 통합, tuning 직렬화, TestOnly probe와 실제 selector/runner 연결이다. Production 코드는 수정하지 않았다.
 
 ## Review Snapshot
 
-- Date: 2026-08-20
+- Date: 2026-08-21
 - Scope:
-  - `NPCStat`, `IStatView`, `ActionContext`
-  - `GuardActionCost`, `AttackActionCost`, `FarmingActionCost`
-  - `GuardAction`, `AttackAction`, `GuardActionSelector`
-  - `NPCComponent`, `GuardRuntimeState`, `GuardPerception`, `ProximitySensor2D`
-  - `DefaultStatContext`, `DataManager`, `NPCManager`
-  - `NPCGirl.prefab`의 Guard 감지 collider
+  - `Assets/Scripts/System/Lib/DestinationDecider.cs`
+  - `Assets/Scripts/System/Actor/GuardActionSelector.cs`
+  - `Assets/Data/ScriptableObject/Script/NPCDecisionTuning.cs`
+  - `Assets/Data/ScriptableObject/NPCDecisionTuning.asset`
+  - `Assets/TestOnly/TestDecisionScenarioProbe.cs`
+  - 연결 계약: `FarmerActionSelector`, `WorkerNPC`, `GuardAction`, `NPCDecision`, `DestinationDB`, interaction provider
 - Sources:
   - `PublicMD/CodeConvention.md`
   - `PublicMD/ProjectStructure.md`
-  - `PublicMD/Game_Plan.md`
-  - `PublicMD/PLAN.md`
+  - `PublicMD/DestinationDecider_Rational_Utility_Plan.md`
+  - `PublicMD/PROGRESS.md`
 - Verification:
-  - 관련 C# 및 prefab YAML 정적 검사
-  - `dotnet build Assembly-CSharp.csproj --no-restore`
-  - Build result: 0 warnings, 0 errors
-- Production code changes: 없음
+  - `dotnet build Assembly-CSharp.csproj --no-restore`: 0 warnings, 0 errors
+  - 변경 production 파일 대상 `git diff --check`: 통과
+  - `GuardTest.unity`와 `SampleScene.unity`에서 selector의 `DestinationDB`/`NPCDecisionTuning` 직렬화 참조 확인
+  - `TestDecisionScenarioProbe`는 `Assembly-CSharp.csproj`에 포함되지만 어떤 scene에도 배선되지 않음
+  - Unity Play Mode와 probe 실행은 미검증
 
 ## Executive Summary
 
-공유 `ScriptableObject`에는 action 실행 비용과 판정 tuning을 두고, NPC마다 달라지거나 성장하는 능력치는 runtime stat에 두려는 방향은 타당하다.
+새 구조는 대부분 승인된 경계를 잘 지킨다. `DestinationDecider`가 실제 stat을 변경하거나 action queue를 만들지 않고 copied snapshot만 예측하며, Farmer와 Guard 역할 후보가 같은 bounded utility 모델에서 비교된다. 공개 `Decide(...)`와 queue lifecycle도 유지됐다. 비선형 risk, depth별 후보 버퍼, critical bit mask, 결정적 tie-break와 serialized tuning은 구현 품질이 좋다.
 
-현재 확인된 핵심 문제는 다음과 같다.
+다만 Guard의 plain Idle 후보와 GuardDuty 후보가 모두 외부에서 `NPCIntent.Idle`로 보이는 설계는 수정이 필요하다. selector는 모든 non-supply 결정을 Guard queue로 바꾸므로, Decider가 `travel=0`, `After=현재 상태`인 plain Idle을 선택했는데 실제 runtime은 GuardPost로 이동하고 need가 증가하는 GuardAction을 실행할 수 있다. 이는 단순 tuning 문제가 아니라 예측 후보와 실행 행동의 계약 불일치다. `PROGRESS.md`도 stress rate에서 plain Idle이 GuardDuty를 이길 수 있음을 기록하고 있어 실제 도달 가능한 경로다.
 
-- `NPCStat`과 `IStatView`가 공격력과 공격 속도를 공용 stat으로 강제하므로 Farmer도 사용하지 않는 전투 필드를 가진다.
-- `GuardActionCost`와 `AttackActionCost`에 공유 action tuning과 개체별 성장 후보 값이 섞여 있다.
-- 감지 범위는 stat/data에 없고 `NPCGirl.prefab`의 `CircleCollider2D.radius`에만 저장되어 있다.
-- `ActionContext.Stat`은 concrete `NPCStat`이므로 role capability를 명시적으로 전달할 경계가 없다.
-- `DataManager.GetStat()`은 단일 `DefaultStatContext`만 사용하며 `NPCManager`는 enum index로 selector를 선택한다.
-
-권장 방향은 `NPCStat`을 공용 base runtime state로 유지하고, `GuardStat : NPCStat`, `FarmStat : NPCStat` 같은 role subclass가 필요한 capability interface를 구현하는 것이다. 이 구조에서 Guard 한 명이 `NPCStat`, `CombatStat`, `GuardStat` 객체를 각각 가지는 것은 아니다. 실제 runtime 객체는 `GuardStat` 하나이며 여러 base/interface reference가 같은 객체를 가리킨다.
-
-## Clarified Stat Model
-
-### Interface inheritance does not create additional stat objects
-
-다음 선언은 계약의 포함 관계를 뜻하며 runtime 객체 수를 늘리지 않는다.
-
-```csharp
-public interface IStatView
-{
-    float CurrentHealth { get; }
-    float MoveSpeed { get; }
-}
-
-public interface ICombatStatView : IStatView
-{
-    float AttackPower { get; }
-    float AttackSpeed { get; }
-    float AttackRange { get; }
-}
-
-public interface IGuardStatView : ICombatStatView
-{
-    float DetectionRange { get; }
-}
-
-public class NPCStat : IStatView
-{
-    // Common runtime state and mutation.
-}
-
-public class GuardStat : NPCStat, IGuardStatView
-{
-    // Guard/combat runtime state and mutation.
-}
-```
-
-Guard 한 명을 생성하면 `GuardStat` 객체 하나만 존재한다.
-
-```csharp
-GuardStat guardStat = new GuardStat(/* ... */);
-
-NPCStat npcStat = guardStat;
-IStatView commonView = guardStat;
-ICombatStatView combatView = guardStat;
-IGuardStatView guardView = guardStat;
-```
-
-위 네 변수는 모두 같은 객체를 참조한다.
-
-```text
-GuardStat instance 1개
-├─ NPCStat reference로 사용 가능
-├─ IStatView reference로 사용 가능
-├─ ICombatStatView reference로 사용 가능
-└─ IGuardStatView reference로 사용 가능
-```
-
-### `CombatStat` class is optional
-
-`ICombatStatView`를 만든다고 해서 반드시 `CombatStat : NPCStat` concrete class를 만들어야 하는 것은 아니다.
-
-현재처럼 Guard만 전투 stat을 사용한다면 다음 구조가 가장 단순하다.
-
-```text
-NPCStat
-├─ GuardStat : IGuardStatView
-└─ FarmStat : IFarmStatView
-```
-
-여러 전투 직업이 생기고 공통 전투 mutation 구현까지 공유해야 할 때만 중간 concrete class를 고려한다.
-
-```text
-NPCStat
-└─ CombatStat : ICombatStatView
-   ├─ GuardStat : IGuardStatView
-   └─ SoldierStat : ISoldierStatView
-```
-
-중간 class의 도입 기준은 공통 getter가 아니라 공통 state와 mutation 구현의 존재 여부다.
-
-### Strict ISP alternative
-
-`AttackAction`이 health, move speed, needs를 전혀 사용하지 않는다면 `ICombatStatView`가 `IStatView`를 상속하지 않도록 더 작게 분리할 수도 있다.
-
-```csharp
-public interface ICombatStatView
-{
-    float AttackPower { get; }
-    float AttackSpeed { get; }
-    float AttackRange { get; }
-}
-
-public class GuardStat : NPCStat, ICombatStatView, IGuardStatView
-{
-}
-```
-
-두 형태 모두 객체는 `GuardStat` 하나다. 최종 선택 기준은 소비자가 공용 stat과 전투 stat을 항상 함께 필요로 하는지 여부다.
-
-## Data Ownership Decision
-
-`Cost`와 `Stat`의 2분법보다 다음 세 소유권으로 분류한다.
-
-| Data kind | Lifetime | Recommended owner | Examples |
-|---|---|---|---|
-| Action/decision tuning | 공유 immutable asset | `GuardActionTuning`, `AttackActionTuning` | 욕구 증가율, interrupt threshold, 도착 허용 거리, 순찰점 수 |
-| Per-NPC runtime capability | NPC instance | `GuardStat`, `FarmStat`, combat capability | 공격력, 공격 속도, 탐지 범위, 숙련도 |
-| Assignment/equipment definition | 배치 또는 장비 instance/definition | Guard post assignment, weapon definition | 순찰 반경, 무기 공격 범위 |
-
-값별 권장 판단은 다음과 같다.
-
-| Current value | Current owner | Recommended owner |
-|---|---|---|
-| `HungerPerSecond` 등 | `GuardActionCost` | 공유 Guard action tuning |
-| need interrupt thresholds | `GuardActionCost` | 공유 Guard decision/action tuning |
-| `PatrolArrivalDistance` | `GuardActionCost` | 공유 Guard action tuning |
-| `PatrolPointCount` | `GuardActionCost` | 공유 Guard action tuning |
-| `GetAttackPower` | base `NPCStat` | per-NPC combat/Guard stat |
-| `GetAttackSpeed` | base `NPCStat` | per-NPC combat/Guard stat |
-| detection range | prefab collider only | per-NPC Guard stat, Unity collider에 투영 |
-| `AttackRange` | `AttackActionCost` | 성장 대상이면 per-NPC combat stat, 무기 영향이면 weapon definition |
-| `GuardRadius` | `GuardActionCost` | 개인 성장치인지 GuardPost/assignment 반경인지 먼저 기획 결정 |
-
-판정 기준까지 보관하는 asset은 `Cost`보다 `Tuning` 또는 `Policy`가 더 정확한 이름이다.
-
-## Action Context Boundary
-
-### Recommended cast location
-
-Guard capability 검증은 `GuardActionSelector.RequestNewActionQueue(...)` 또는 NPC role composition 단계에 둔다.
-
-```csharp
-if (stat is not IGuardStatView guardStat)
-{
-    // Configuration error or safe Idle fallback.
-}
-```
-
-검증된 `IGuardStatView`는 typed Guard action context/request에 전달한다. Guard/Attack action의 `Tick()`에서 반복 cast하지 않는다.
-
-### Do not cache per-NPC stat in selector fields
-
-`NPCManager`는 같은 selector scene instance를 동일 role의 여러 Worker에게 전달한다. 따라서 `GuardActionSelector` field에 특정 NPC의 `GuardStat`을 저장하면 NPC 간 state가 섞인다.
-
-### Rejected locations
-
-- `NPCComponent`: Unity `Transform`, `Animator`, renderer, collider 등 scene reference holder다. stat compatibility 판정 책임을 추가하지 않는다.
-- 현재 `GuardRuntimeState`: 선택된 combat target을 보관하는 per-NPC transient state다. stat까지 넣지 않는다.
-- shared selector field: 여러 NPC가 공유하므로 per-instance state를 저장하지 않는다.
-
-현재 `IAction.Init(ActionContext)` 구조 때문에 typed context 분리가 과도한 변경이라면, 각 role action의 `Init()` 또는 `Start()`에서 capability를 한 번 검증하는 것은 허용 가능하다. 작은 runtime cast를 없애기 위해 공용 `ActionContext`에 role별 nullable property를 계속 추가하는 것은 피한다.
-
-## Detection Range Synchronization
-
-현재 감지 범위의 source of truth는 `Assets/Prefab/NPCGirl.prefab`의 `CircleCollider2D.m_Radius = 3`이다. stat 생성 또는 성장 시 collider를 갱신하는 경로가 없다.
-
-권장 책임 흐름은 다음과 같다.
-
-```text
-GuardStat.DetectionRange
-        ↓
-GuardPerception.SetDetectionRange(float)
-        ↓
-CircleCollider2D.radius
-```
-
-규칙:
-
-- `GuardStat`은 `Collider2D`, `MonoBehaviour`, prefab을 참조하지 않는다.
-- `GuardPerception` 또는 별도 `GuardPerceptionRangeBinding`이 Unity collider 갱신을 담당한다.
-- `ProximitySensor2D`는 Guard stat을 모르는 범용 sensor로 유지한다.
-- 초기화와 level-up 적용 후 명시적으로 범위를 동기화한다.
-- mutation 진입점이 많아지면 stat change event를 도입할 수 있다.
-- event를 사용하면 pooled NPC의 `OnEnable`/`OnDisable` 또는 명시적 `Bind`/`Unbind`에서 구독 lifecycle을 정리한다.
-
-## Progression Ownership
-
-레벨업 정책 전체를 `GuardStat`에 넣지 않는다.
-
-| Responsibility | Owner |
-|---|---|
-| 현재 level/experience/stat 값 | per-NPC role stat 또는 progression state |
-| clamp와 invariant | `GuardStat` mutation method |
-| 경험치 지급 조건 | progression system |
-| 레벨업 판정과 성장 적용 순서 | progression system |
-| 경험치 요구량, 성장량, 상한 | shared `ScriptableObject` 또는 CSV definition |
-| collider/UI 반영 | Unity binding/presenter |
-
-권장 흐름:
-
-```text
-Valid work/combat result
-        ↓
-GuardProgressionSystem
-        ↓ reads
-GuardProgressionDefinition
-        ↓ calls
-GuardStat.ApplyGrowth(...)
-        ↓ notify or explicit refresh
-GuardPerception/UI binding
-```
-
-`GuardStat`은 값과 불변식을 소유하고, progression system은 언제 왜 얼마나 성장하는지를 소유한다.
-
-## NPC Creation Direction
-
-현재 `NPCManager`는 `(int)npcType`으로 `_selectors` list를 인덱싱하고, `DataManager.GetStat()`은 npcType과 무관하게 단일 `DefaultStatContext`에서 `NPCStat`을 생성한다.
-
-`GetStat(NPCType)`로 확장하는 것은 최소 변경으로 가능하지만 enum switch 또는 parallel list를 늘리는 방식은 권장하지 않는다.
-
-권장 registration:
-
-```text
-NPCType
-└─ NPC creation entry
-   ├─ Worker prefab/pool
-   ├─ BaseNPCActionSelector
-   └─ NPCStatDefinition / runtime factory
-```
-
-각 entry는 `Awake()` 또는 `OnValidate()`에서 다음을 검증한다.
-
-- duplicate `NPCType`
-- missing selector
-- missing stat definition/factory
-- selector와 stat capability 불일치
-- missing worker pool/prefab
-
-가능한 stat definition 계약:
-
-```csharp
-public abstract class NPCStatDefinition : ScriptableObject
-{
-    public abstract NPCStat CreateRuntimeStat();
-}
-```
-
-```text
-DefaultNPCStatDefinition → NPCStat
-GuardStatDefinition      → GuardStat
-FarmStatDefinition       → FarmStat
-```
-
-직업 변경을 runtime에 지원할 경우 `NPCType`이 actor archetype과 current job을 동시에 의미하지 않도록 분리해야 한다. 상속 구조를 유지하면 직업 변경 시 기존 stat을 새 subtype으로 migration해야 한다. 직업별 숙련도를 계속 보존해야 한다면 공용 `NPCStat`과 role stat module의 합성이 장기적으로 더 적합하다.
+최종 판정은 **조건부 승인**이다. 아래 H-01을 먼저 정리한 뒤 Unity 검증과 balance 조정으로 넘어가는 것이 안전하다.
 
 ## Improvements Since Previous Review
 
-- stat interface 상속과 runtime 객체 수의 관계를 명확히 기록했다.
-- `CombatStat` concrete class가 필수가 아니라는 기준을 추가했다.
-- action tuning, per-NPC capability, assignment/equipment의 3개 데이터 소유권을 구분했다.
-- Guard stat cast 위치와 shared selector에 per-NPC state를 저장하면 안 되는 이유를 명시했다.
-- detection range의 stat-to-collider 동기화 책임을 구체화했다.
-- 기존 파일에 섞여 있던 과거 Guard 전체 감사 snapshot은 이번 stat architecture 검토와 범위가 달라 제거했다.
+- one-step `bestSupply >= work + SwitchMargin` 분기가 제거되고 모든 일반 후보가 하나의 점수 모델에서 비교된다.
+- 공급 행동은 한 번만 반환되고, queue 종료 후 실제 stat/position으로 재판단하는 기존 계약이 유지된다.
+- Guard selector가 공급 행동 이후에도 Decider를 다시 호출하므로 기존 호출 gate 문제가 해결됐다.
+- critical 안전 필터가 root뿐 아니라 미래 node에도 적용된다.
+- 재귀 branch별 후보 리스트와 `int` bit mask를 사용해 이전 계획의 mutable-state 공유 및 `bool[]` 할당 위험을 피했다.
+- 신규 serialized tuning 값이 asset YAML에 명시되어 Unity의 silent zero default 위험을 피했다.
+- TestOnly probe는 검증할 수 없는 항목을 PASS로 위장하지 않고 `NOT VERIFIED`로 구분한다.
 
 ## Findings By Severity
 
@@ -303,98 +52,107 @@ None found.
 
 ### High
 
-None found.
+#### H-01 — Guard의 plain Idle 결정이 GuardDuty 실행으로 변환된다
+
+- Location:
+  - `Assets/Scripts/System/Lib/DestinationDecider.cs:202-217`
+  - `Assets/Scripts/System/Lib/DestinationDecider.cs:373-388`
+  - `Assets/Scripts/System/Actor/GuardActionSelector.cs:108-121`
+  - `Assets/Data/Struct/NPCDecision.cs:3-5`
+- Evidence:
+  - plain Idle은 현재 위치, 이동 시간 0, 상태 변화 없음으로 예측된다.
+  - GuardDuty는 GuardPost 위치, 실제 이동 시간, duty need cost를 갖지만 똑같이 `NPCIntent.Idle`로 반환된다.
+  - selector는 supply가 아닌 모든 결과를 `BuildGuardQueue(...)`로 바꾼다.
+  - `PublicMD/PROGRESS.md`는 10/s stress rate에서 plain Idle이 GuardDuty보다 높은 점수를 받을 수 있다고 명시한다.
+- Impact:
+  - Decider가 계산하지 않은 GuardPost 왕복비용과 need 증가가 runtime에서 발생한다.
+  - 공급 시설에서 plain Idle이 이기면 “잠시 대기”가 아니라 즉시 GuardPost 복귀로 변환되어 이번 작업의 핵심인 post-supply 합리성을 훼손할 수 있다.
+  - `NPCDecision`의 “selector는 결정을 다시 해석하지 않고 queue로 변환한다”는 계약과 어긋난다.
+- Recommendation:
+  - 가장 명확한 해결은 `NPCIntent.Guard`를 추가해 GuardDuty와 Idle을 구분하고 selector에서 각각 Guard queue와 Idle queue로 매핑하는 것이다.
+  - 공개 enum 확장을 피해야 한다면, non-critical Guard에서 유효한 GuardDuty가 존재할 때 plain Idle을 후보 집합에서 제외하고 Idle은 실제 fallback일 때만 생성해야 한다.
+  - tuning으로 두 후보의 점수만 조정해 숨기지 말 것. 식별 정보가 소실되는 구조 자체를 해결해야 한다.
 
 ### Medium
 
-#### M-01 — Shared action tuning and per-NPC capability are mixed
+#### M-01 — Unity runtime 검증이 아직 없고 오프라인 검증은 재현할 수 없다
 
 - Location:
-  - `Assets/Data/ScriptableObject/Script/GuardActionCost.cs`
-  - `Assets/Data/ScriptableObject/Script/AttackActionCost.cs`
-- Evidence: shared asset의 `GuardRadius`와 `AttackRange`가 모든 NPC에 동일하게 적용되며 개체별 성장 차이를 표현할 수 없다.
-- Recommendation: 값의 실제 소유자를 action tuning, per-NPC capability, assignment/equipment 중 하나로 결정하고 분리한다.
+  - `Assets/TestOnly/TestDecisionScenarioProbe.cs`
+  - `PublicMD/PROGRESS.md:127-131`
+- Evidence:
+  - probe GUID는 어떤 scene YAML에도 존재하지 않는다.
+  - Play Mode와 Unity probe는 미실행으로 기록되어 있다.
+  - 18개 PASS를 만든 임시 .NET harness는 저장소 밖 scratchpad여서 현재 코드와 함께 다시 실행할 수 없다.
+- Impact: build와 정적 구조는 검증됐지만 실제 provider 데이터, queue 종료 후 재판단, Guard combat 선점, action duration과의 상호작용은 아직 확인되지 않았다.
+- Recommendation: H-01 수정 후 `GuardTest.unity`에 probe를 임시 배선해 결과를 보존하고, 계획의 Farmer/Guard Play Mode 시나리오를 실행한다. 미실행 항목은 계속 미검증으로 유지한다.
 
-#### M-02 — Base stat contract forces combat data onto non-combat roles
-
-- Location:
-  - `Assets/Scripts/Interface/IStatView.cs`
-  - `Assets/Scripts/System/Actor/NPCStat.cs`
-  - `Assets/Data/ScriptableObject/Script/DefaultStatContext.cs`
-- Evidence: Farmer를 포함한 모든 `NPCStat`이 attack power와 attack speed를 저장하고 노출한다.
-- Recommendation: 공용 stat과 combat/role capability interface를 분리한다.
-
-#### M-03 — Detection radius has no runtime synchronization path
+#### M-02 — interrupt/critical threshold가 같을 때 inversion warning이 누락된다
 
 - Location:
-  - `Assets/Prefab/NPCGirl.prefab:177`
-  - `Assets/Scripts/System/Actor/GuardPerception.cs`
-  - `Assets/Scripts/System/Actor/ProximitySensor2D.cs`
-- Evidence: 감지 범위는 prefab의 `CircleCollider2D.m_Radius = 3`에만 존재한다.
-- Recommendation: `GuardPerception.SetDetectionRange(float)` 또는 dedicated binding을 추가하고 initialization/progression에서 호출한다.
-
-#### M-04 — NPC creation can pair a role selector with the wrong stat type
-
-- Location:
-  - `Assets/Scripts/Manager/NPCManager.cs`
-  - `Assets/Scripts/Manager/DataManager.cs`
-- Evidence: selector는 enum index로 선택하지만 stat은 단일 `GetStat()`으로 생성한다.
-- Recommendation: `NPCType` keyed creation registration에서 selector와 stat definition을 함께 구성·검증한다.
+  - `Assets/Scripts/System/Actor/GuardActionSelector.cs:53-75`
+  - `Assets/Data/ScriptableObject/Script/GuardActionCost.cs:51-65`
+  - `Assets/Scripts/System/Lib/DestinationDecider.cs:393-404`
+- Evidence:
+  - `ShouldInterrupt`는 `need >= interruptThreshold`에서 참이다.
+  - critical mask는 `need > CriticalNeedThreshold`에서만 열린다.
+  - warning 검사는 interrupt threshold가 critical threshold와 같으면 안전하다고 판단한다.
+- Impact: 두 threshold가 같은 asset 설정에서 정확히 경계값인 NPC는 warning 없이 interrupt 상태지만 critical gate 밖에 놓이고 timed Idle fallback을 반복할 수 있다.
+- Recommendation: warning의 안전 조건을 각 interrupt threshold가 critical threshold보다 **엄격히 큰 경우**로 바꾸거나 두 runtime 비교 연산자의 경계 정책을 통일한다. 현재 기본값 0.97/0.95에는 즉시 발생하지 않는다.
 
 ### Low
 
-#### L-01 — `Cost` naming no longer describes all stored data
+#### L-01 — Sleep 후보가 재귀 node마다 `StatEffect`를 할당한다
 
-- Location:
-  - `Assets/Data/ScriptableObject/Script/DefaultActionCost.cs`
-  - `Assets/Data/ScriptableObject/Script/GuardActionCost.cs`
-- Evidence: cost뿐 아니라 threshold, arrival tolerance, patrol geometry가 포함된다.
-- Recommendation: 분리 후 남는 책임에 따라 `ActionCost`, `ActionTuning`, `ActionPolicy` 이름을 선택한다.
+- Location: `Assets/Scripts/System/Lib/DestinationDecider.cs:293-311`
+- Evidence: `AddSleepCandidate`가 매 후보 구성 시 `new StatEffect(...)`를 호출한다.
+- Impact: bounded replan이라 위험은 낮지만 `PROGRESS.md`의 “node당 heap allocation 없음” 설명은 정확하지 않다.
+- Recommendation: copied `NeedSnapshot`의 `Fatigue`를 직접 0으로 만든 뒤 `After`에 넣어 임시 `StatEffect` 생성을 제거한다.
+
+#### L-02 — 비정상 점수가 조용히 버려진다
+
+- Location: `Assets/Scripts/System/Lib/DestinationDecider.cs:494-507`
+- Evidence: NaN/Infinity 후보는 건너뛰지만 계획이 요구한 development diagnostic이 없다.
+- Impact: 잘못된 tuning 또는 stat 입력이 Idle fallback으로만 나타나 원인 추적이 어렵다.
+- Recommendation: `UNITY_EDITOR || DEVELOPMENT_BUILD`에서 한 결정당 한 번만 invalid candidate 정보를 warning으로 출력한다. release 선택 경로는 현재처럼 안전하게 거부하면 된다.
+
+#### L-03 — architecture 문서가 현재 구조보다 오래됐다
+
+- Location: `PublicMD/ProjectStructure.md`
+- Evidence: 문서 전반이 2026-08-01 skeleton을 설명하고 일부 후반부는 문자 인코딩이 손상되어 있다. 현재 `DestinationDecider`, queue runner, Guard stat/combat/utility 구조는 `PROGRESS.md`에만 분산돼 있다.
+- Impact: 새 작업자가 책임 경계를 찾을 때 현재 코드보다 오래된 권고를 읽게 된다.
+- Recommendation: IMP-027 Play Mode 검증 후 현재 구조를 기준으로 문서를 다시 정리한다.
 
 ## Findings By File
 
-- `IStatView.cs`: 공용 contract에서 combat getter를 분리해야 한다.
-- `NPCStat.cs`: 공용 runtime state만 남기는 방향이 적절하다.
-- `DefaultStatContext.cs`: 역할별 runtime stat factory/definition 확장이 필요하다.
-- `ActionContext.cs`: role capability의 명시적 전달 경계가 필요하지만 role별 nullable field 누적은 피해야 한다.
-- `GuardActionCost.cs`: action tuning과 patrol/assignment 값을 재분류해야 한다.
-- `AttackActionCost.cs`: `AttackRange`의 owner가 actor stat인지 weapon definition인지 결정해야 한다.
-- `GuardActionSelector.cs`: role stat compatibility를 검증하기 좋은 경계지만 per-NPC stat field cache는 금지한다.
-- `AttackAction.cs`: 최종적으로 `ICombatStatView`에 의존하는 것이 적절하다.
-- `GuardPerception.cs`: detection range를 Unity collider에 투영할 책임 후보이다.
-- `GuardRuntimeState.cs`: combat target state만 유지한다.
-- `NPCManager.cs` / `DataManager.cs`: type-safe creation registration이 필요하다.
+- `DestinationDecider.cs`: 책임 집중, bounded recursion, copied-state prediction은 적절하다. Guard Idle/GuardDuty identity 손실이 핵심 결함이다. Sleep allocation과 invalid-score diagnostic은 후속 정리 대상이다.
+- `GuardActionSelector.cs`: combat 우선순위와 매 replan Decider 호출은 올바르다. 다만 non-supply 전체를 Guard queue로 해석하는 정책이 H-01을 만든다. threshold equality validation도 보정이 필요하다.
+- `NPCDecisionTuning.cs` / `.asset`: 필드 clamp와 YAML 값이 일치하며 신규 필드의 silent zero 위험이 없다. duration이 runtime action 값의 복사본이라는 한계도 정확히 문서화됐다.
+- `TestDecisionScenarioProbe.cs`: reflection이나 production test API 없이 가능한 범위를 정직하게 검증한다. 다만 scene 미배선·미실행 상태이고 일부 수치 시나리오는 의도적으로 검증하지 않는다.
+- `FarmerActionSelector.cs`: 변경 없이 새 Decider를 사용하며, supply queue 종료 후 실제 상태로 재판단한다. bounded Farming batch 계약도 유지된다.
+- `WorkerNPC.cs`: queue lifecycle 단독 소유를 유지하며 새 decision 계산을 직접 알지 않는다.
 
 ## Cross-Cutting Findings
 
-- interface inheritance는 계약의 포함 관계이며 객체 조합이나 객체 수를 자동으로 결정하지 않는다.
-- class inheritance를 선택하면 Guard 한 명당 `GuardStat` 객체 하나만 생성할 수 있다.
-- 직업 변경과 직업별 성장 상태 보존은 stat inheritance 선택에 영향을 주는 별도 기획 결정이다.
-- shared `ScriptableObject`는 base value, curve, tuning definition으로 사용하고 runtime current value는 저장하지 않는다.
-- plain C# stat은 Unity collider/UI를 직접 참조하지 않고 binding 계층을 통해 반영한다.
+- “예측 후보 하나 ↔ 외부 decision 하나 ↔ 실행 queue 하나”의 의미 보존이 utility 정확도보다 우선한다. H-01처럼 후보 종류를 외부 경계에서 합치면 좋은 수식도 실제 행동 비용과 연결되지 않는다.
+- Guard duty evaluation slice와 runtime GuardAction 지속시간의 차이는 명확히 문서화되어 있어 의도된 근사로 볼 수 있다. 단, H-01과 결합하면 근사가 아니라 전혀 다른 후보가 실행되는 문제가 된다.
+- 현재 tuning 값은 합성 수치 검증의 출발값이며 최종 balance 값이 아니다. 구조 결함을 tuning으로 상쇄하지 말아야 한다.
 
 ## Positive Notes
 
-- `NPCStat`은 현재 plain C# runtime state로 Unity scene object를 직접 참조하지 않는다.
-- `WorkerNPC`가 `NPCStat` base reference를 보관하므로 `GuardStat` subtype 한 개를 그대로 받을 수 있다.
-- `GuardPerception`과 `ProximitySensor2D`의 Guard adapter / 범용 sensor 분리는 유지할 가치가 있다.
-- `GuardRuntimeState`는 이미 per-NPC target state로 분리되어 있다.
-- shared ScriptableObject에서 runtime stat을 새 객체로 생성하는 원칙 자체는 올바르다.
+- `DestinationDecider`는 action/pool/runner를 참조하거나 실제 `NPCStat`을 mutate하지 않는다.
+- public `Decide(...)`, `NPCDecision`, `ActionContext`, `IAction`, `WorkerNPC` 계약이 유지됐다.
+- Farmer와 Guard가 동일한 risk/travel/future 가치 단위로 평가되면서 역할별 실행은 selector에 남아 있다.
+- critical safety filtering, finite check, deterministic tie-break, depth clamp가 명시적이다.
+- Guard combat가 utility decision보다 먼저 실행되는 우선순위가 유지됐다.
+- scene의 기존 Farmer/Guard selector에는 `NPCDecisionTuning.asset`과 `DestinationDB` 참조가 연결되어 있어 production용 신규 재배선은 필요하지 않다.
 
 ## Recommended Next Actions
 
-1. 직업이 생성 후 고정인지, runtime 변경 가능한지 먼저 확정한다.
-2. `AttackRange`와 `GuardRadius`가 actor 성장치인지 equipment/assignment 값인지 결정한다.
-3. `IStatView`, `ICombatStatView`, `IGuardStatView`, `IFarmStatView`의 정확한 getter 목록을 승인한다.
-4. 현재 prototype에서는 `GuardStat : NPCStat, IGuardStatView`와 `FarmStat : NPCStat, IFarmStatView`를 우선 검토한다.
-5. 공통 전투 mutation 구현이 실제로 두 개 이상의 class에서 필요할 때만 `CombatStat : NPCStat`을 추가한다.
-6. selector에서 role capability를 검증하고 action에 전달할 typed context/request 설계를 결정한다.
-7. `GuardPerception` 또는 binding을 통한 detection range 동기화 경로를 설계한다.
-8. `NPCType` keyed creation registration과 stat definition/factory 구조를 설계한다.
-9. 승인된 설계로 별도 implementation plan을 작성한 뒤 production code를 변경한다.
-
-## Final Verdict
-
-**Direction approved with design decisions pending.**
-
-공유 action tuning과 per-NPC 성장 stat의 분리는 승인 가능하다. `GuardStat : NPCStat` 방식도 Guard당 stat 객체 하나만 생성하는 올바른 선택이다. 다만 직업 변경 정책, `AttackRange`/`GuardRadius`의 실제 소유자, interface 상속 범위, typed action context 형태를 확정하기 전에는 구현을 시작하지 않는다.
+1. H-01을 수정해 GuardDuty와 plain Idle의 실행 의미를 분리한다.
+2. threshold equality validation을 보정한다.
+3. 수정 후 command-line build와 정적 diff를 다시 확인한다.
+4. `GuardTest.unity`에서 TestOnly probe와 Farmer/Guard Play Mode 시나리오를 실행한다.
+5. decision trace로 tuning을 조정하되 구조 문제를 weight 변경으로 덮지 않는다.
+6. Sleep 임시 할당과 invalid-score diagnostic을 정리한다.
+7. 안정화 후 `ProjectStructure.md`를 현재 아키텍처로 갱신한다.

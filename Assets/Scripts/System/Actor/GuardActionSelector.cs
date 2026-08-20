@@ -8,6 +8,10 @@ public class GuardActionSelector : BaseNPCActionSelector
 
     private DestinationDecider _decider;
     private GuardActionCost _guardActionCostInfo;
+
+    // Cost of one Guard duty evaluation slice. Derived from shared tuning and the shared cost
+    // asset, so it is not per-NPC state and is safe to cache on this shared selector instance.
+    private StatEffect _guardDutyCost;
     private readonly List<(ICombatTarget Target, Component Owner)> _candidateBuffer = new List<(ICombatTarget, Component)>();
 
     protected override void Start()
@@ -23,6 +27,51 @@ public class GuardActionSelector : BaseNPCActionSelector
         {
             Debug.LogError("GuardActionCost not found; Guard will be unable to patrol.");
         }
+
+        BuildGuardDutyCost();
+        WarnOnInterruptThresholdInversion();
+    }
+
+    /// <summary>
+    /// Projects Guard's authoritative per-second need growth onto one duty evaluation slice.
+    /// The slice length is a planning approximation only: GuardAction does not complete or
+    /// replan on that interval, it runs until enemy detection or ShouldInterrupt(...) fires.
+    /// </summary>
+    private void BuildGuardDutyCost()
+    {
+        if (_guardActionCostInfo == null || _decisionTuning == null)
+            return;
+
+        float seconds = _decisionTuning.GuardDutyEvaluationSeconds;
+
+        _guardDutyCost = new StatEffect(
+            hungerDelta: _guardActionCostInfo.HungerPerSecond * seconds,
+            thirstDelta: _guardActionCostInfo.ThirstPerSecond * seconds,
+            fatigueDelta: _guardActionCostInfo.FatiguePerSecond * seconds);
+    }
+
+    /// <summary>
+    /// Guard's own interrupt thresholds must sit at or above the decider's critical threshold.
+    /// If one drops below it, ShouldInterrupt(...) can be true while the critical gate is still
+    /// closed, so Guard duty stays a valid, possibly winning candidate and the Guard ends up
+    /// repeating the timed Idle fallback instead of patrolling.
+    /// </summary>
+    private void WarnOnInterruptThresholdInversion()
+    {
+        if (_guardActionCostInfo == null || _decisionTuning == null)
+            return;
+
+        float critical = _decisionTuning.CriticalNeedThreshold;
+        if (_guardActionCostInfo.HungerInterruptThreshold >= critical &&
+            _guardActionCostInfo.ThirstInterruptThreshold >= critical &&
+            _guardActionCostInfo.FatigueInterruptThreshold >= critical)
+        {
+            return;
+        }
+
+        Debug.LogWarning(
+            $"GuardActionCost interrupt threshold is below NPCDecisionTuning.CriticalNeedThreshold ({critical}); " +
+            "Guard can end up repeating the timed Idle fallback instead of patrolling.");
     }
 
     public override bool CanUseStat(NPCStat stat)
@@ -50,13 +99,23 @@ public class GuardActionSelector : BaseNPCActionSelector
         if (TryBuildCombatQueue(component, stat, guardStat, out Queue<IAction> combatQueue))
             return combatQueue;
 
+        // The decider is now consulted on every replan, not only above the interrupt threshold,
+        // so a Guard that just ate re-decides from its real stats and its real position.
+        // workCost units are role-dependent: for Guard this is one duty EVALUATION slice
+        // (a planning approximation), not the per-action cost that Farmer passes.
+        NPCDecision decision = _decider.Decide(stat, npcType, component.Position, _guardDutyCost);
+
+        if (IsSupplyIntent(decision.Intent))
+            return BuildNeedQueue(decision, component, stat);
+
+        // A non-supply result does not prove there was no usable supply candidate: the internal
+        // Guard duty candidate and the plain Idle candidate both surface as NPCDecision.Idle, so
+        // supply may simply have scored lower. Handing back the patrol queue here would make
+        // GuardAction request another replan immediately, every frame.
         if (_guardActionCostInfo.ShouldInterrupt(stat))
         {
-            NPCDecision needDecision = _decider.Decide(stat, npcType, component.Position, workCost: null);
-            if (IsSupplyIntent(needDecision.Intent))
-                return BuildNeedQueue(needDecision, component, stat);
-
-            Debug.LogWarning("Guard need is above threshold but no need destination is currently available; falling back to patrol.");
+            Debug.LogWarning("Guard interrupt remains active, but the decider selected no supply action; using timed Idle to avoid a replan loop.");
+            return BuildIdleQueue(component, stat);
         }
 
         return BuildGuardQueue(component, stat, guardStat);

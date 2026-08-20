@@ -16,10 +16,22 @@ MonoBehaviour:
   _criticalNeedThreshold: 0.95
   _minimumWorkBatch: 2
   _maximumWorkBatch: 5
-  _switchMargin: 30
-  _workValue: 100
-  _workCapacityWeight: 10
-  _travelWeight: 3
-  _riskWeight: 5
+  _needRiskExponent: 3
+  _healthRiskExponent: 2
   _dangerPenaltyMultiplier: 5
   _healthWeight: 50
+  _workValue: 100
+  _travelWeight: 8
+  _actionTimeWeight: 1
+  _riskExposureWeight: 1
+  _terminalRiskWeight: 100
+  _futureDiscount: 0.9
+  _lookAheadDepth: 2
+  _estimatedEatSeconds: 2
+  _estimatedDrinkSeconds: 1
+  _estimatedSleepSeconds: 2
+  _estimatedFarmingSeconds: 3
+  _estimatedIdleSeconds: 1
+  _guardDutyEvaluationSeconds: 3
+  _guardDutyValuePerSecond: 20
+  _logDecisionTrace: 0
