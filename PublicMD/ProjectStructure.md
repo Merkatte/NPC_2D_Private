@@ -1,423 +1,435 @@
 # Project Structure
 
-## Purpose
+> 문서 기준일: 2026-08-21
+> 이 문서는 현재 저장소의 실제 파일과 runtime 역할을 설명한다.
 
-This document records the current Unity NPC prototype structure as of 2026-08-01. The previous `WorkerAI`, `WorkerActionPlan`, `WorkerActionContext`, Behavior Graph, animation, combat, recruitment, and UI structures are no longer present in `Assets/Scripts`.
+## 1. 구조 한눈에 보기
 
-The current codebase is a fresh early skeleton. It is not yet a complete runtime architecture, but the current C# project builds successfully.
+```text
+WorkerNPC                         actor root / action queue runner
+  -> BaseNPCActionSelector       다음 queue 결정 및 구성
+       -> DestinationDecider     역할·보급 utility 판단
+       -> DestinationDB          목적지·상호작용 capability 조회
+       -> ActionPool             IAction 대여·반환
+  -> IAction                     선택된 행동 실행
+       -> ActionContext          실행에 필요한 값과 capability
+  -> NPCComponent                Unity 참조·이동·Guard 감지
+  -> NPCStat                     개체별 runtime 상태
+```
 
-## Current File Structure
+현재 프로젝트에는 `WorkerAI`, `WorkerActionPlan`, `WorkerActionContext`, Behavior Graph가 없다. 새 작업에서 이 과거 구조를 전제로 삼지 않는다.
+
+## 2. 실제 파일 구조
 
 ```text
 Assets/
+  Data/
+    CSV/
+      ItemData.csv
+
+    Class/
+      CONST.cs
+
+    ScriptableObject/
+      DefaultStatContext.asset
+      FarmingActionCost.asset
+      GuardActionCost.asset
+      GuardStatDefinition.asset
+      ItemDataContext.asset
+      NPCDecisionTuning.asset
+
+      Script/
+        DefaultActionCost.cs
+        DefaultStatContext.cs
+        FarmProductionDefinition.cs
+        FarmingActionCost.cs
+        GuardActionCost.cs
+        GuardStatDefinition.cs
+        ItemDataContext.cs
+        NPCDecisionTuning.cs
+        NPCStatDefinition.cs
+
+    Struct/
+      ActionContext.cs
+      InteractStruct.cs
+      InteractionOption.cs
+      ItemInfo.cs
+      MoveRequest.cs
+      NPCDecision.cs
+      StatEffect.cs
+
+  Prefab/
+    NPCGirl.prefab
+
+  Scenes/
+    SampleScene.unity
+    GuardTest.unity
+
   Scripts/
     Actor/
+      BaseInteractable.cs
+      Enemy.cs
+      Pub.cs
       WorkerNPC.cs
 
     Enum/
+      ActionResult.cs
       ActionType.cs
+      BuildingType.cs
+      ItemCategory.cs
+      NPCIntent.cs
       NPCType.cs
 
     Interface/
       IAction.cs
+      ICombatStatView.cs
+      ICombatTarget.cs
+      IDataManager.cs
+      IGuardStatView.cs
+      IInteractionProvider.cs
+      IInventory.cs
+      IMoveTarget.cs
+      IRandomSource.cs
+      IStatView.cs
 
     Manager/
+      DataManager.cs
+      InteractableManager.cs
       NPCManager.cs
 
     System/
       Action/
+        AttackAction.cs
+        DefaultAction.cs
+        DrinkAction.cs
         EatAction.cs
         FarmingAction.cs
+        GuardAction.cs
+        IdleAction.cs
         MoveAction.cs
         SleepAction.cs
 
       Actor/
         BaseNPCActionSelector.cs
+        CombatTargetHandle.cs
         FarmerActionSelector.cs
+        GuardActionSelector.cs
+        GuardPerception.cs
+        GuardRuntimeState.cs
+        GuardStat.cs
         NPCComponent.cs
         NPCStat.cs
+        ProximitySensor2D.cs
+
+      Farming/                       현재 interaction 통합 전 과도기 모듈
+        FarmWorkPhase.cs
+        FarmWorkResult.cs
+        FarmWorkSite.cs
+        IFarmWorkProvider.cs
+
+      Inventory/
+        WarehouseInventory.cs
 
       Lib/
         ActionPool.cs
+        CombatRange.cs
+        CSVParser.cs
         DestinationDB.cs
+        DestinationDecider.cs
+        SeededRandomSource.cs
+        WorkerPool.cs
+
+  TestOnly/
+    TestDecisionScenarioProbe.cs
+    TestEnemyRainSpawner.cs
+    TestFarmProductionWindow.cs
+    TestNPCSpawnWindow.cs
 ```
 
-`Assets/BehaviorGraph` is not present in the current project tree.
+`Assets/_Recovery`는 Unity 복구 산출물이며 runtime 구조의 일부가 아니다. 현재 `.asmdef`가 없으므로 모든 C# 파일은 기본 `Assembly-CSharp`에 컴파일된다.
 
-## Current Architecture Direction
+## 3. 폴더별 책임
 
-The new structure is moving toward a thinner Unity component layer with plain C# objects for runtime state and action logic.
+### `Assets/Scripts/Actor`
+
+씬에 직접 존재하는 actor 또는 상호작용 MonoBehaviour를 둔다.
+
+| 파일 | 역할 |
+|---|---|
+| `WorkerNPC` | NPC actor root, action queue lifecycle의 단일 소유자 |
+| `BaseInteractable` | 현재 item 기반 상호작용 provider의 공통 base |
+| `Pub` | Eat/Drink option과 `StatEffect` 제공 |
+| `Enemy` | 최소 전투 target 구현과 체력·사망 처리 |
+
+`BaseInteractable`은 이름과 달리 현재 item catalogue에 강하게 결합되어 있다. 향후 범용 `BaseInteractionProvider`로 재설계할 때 item 초기화 책임을 그대로 올려 보내지 않는다.
+
+### `Assets/Scripts/Manager`
+
+씬 수준 조립과 registry 진입점을 둔다.
+
+| 파일 | 역할 |
+|---|---|
+| `NPCManager` | `NPCType`별 selector + stat definition 조합, NPC spawn |
+| `DataManager` | action cost dictionary와 item table 제공 |
+| `InteractableManager` | 현재 `BaseInteractable`에 item table 주입 |
+
+manager는 action 세부 실행이나 role utility 공식을 소유하지 않는다.
+
+### `Assets/Scripts/System/Actor`
+
+NPC runtime state, role selector, 감지 adapter를 둔다.
+
+| 묶음 | 파일 | 역할 |
+|---|---|---|
+| stat | `NPCStat`, `GuardStat` | 개체별 mutable runtime 상태 |
+| selector | `BaseNPCActionSelector`, `FarmerActionSelector`, `GuardActionSelector` | 다음 queue 결정과 구성 |
+| Unity adapter | `NPCComponent` | 이동·방향·optional perception 접근 |
+| perception | `ProximitySensor2D`, `GuardPerception` | 물리 감지와 combat target 변환 |
+| target state | `GuardRuntimeState`, `CombatTargetHandle` | Guard별 현재 target과 Unity 생존성 |
+
+### `Assets/Scripts/System/Action`
+
+`IAction` 구현을 둔다. 각 action은 실행 흐름과 결과를 소유한다.
+
+| Action | 주 책임 |
+|---|---|
+| `DefaultAction` | lifecycle와 `ActionResult` 공통 구현 |
+| `MoveAction` | 고정 위치 또는 `IMoveTarget` 추적 이동 |
+| `EatAction`, `DrinkAction` | provider request 실행 후 `StatEffect` 적용 |
+| `SleepAction` | 일정 시간 뒤 fatigue 회복 |
+| `FarmingAction` | 농경지 work 1회와 작업 비용 적용 |
+| `GuardAction` | 장기 순찰, 욕구 증가, 감지/interrupt replan |
+| `AttackAction` | 공격 주기, 범위, damage, target 상태 처리 |
+| `IdleAction` | 짧은 안전 대기 |
+
+### `Assets/Scripts/System/Lib`
+
+두 개 이상의 흐름에서 사용하는 registry, pool, 계산 보조를 둔다.
+
+| 파일 | 역할 |
+|---|---|
+| `ActionPool` | `ActionType`별 action factory와 재사용 queue |
+| `WorkerPool` | `WorkerNPC` GameObject pool |
+| `DestinationDB` | `BuildingType`별 scene destination/provider cache |
+| `DestinationDecider` | bounded look-ahead utility decision policy |
+| `CombatRange` | 2D 거리 판정 |
+| `SeededRandomSource` | seed 기반 결정적 난수 |
+| `CSVParser` | 단순 CSV row parsing |
+
+`Lib`는 잡다한 코드를 버리는 폴더가 아니다. 특정 도메인 상태나 한 action만 쓰는 규칙은 해당 도메인에 둔다.
+
+### `Assets/Scripts/System/Farming`
+
+농경지 runtime 상태와 생산 결과를 둔다. 현재 vertical slice는 `IFarmWorkProvider`라는 별도 capability를 사용하지만 이는 확정된 장기 확장 방식이 아니다.
+
+| 파일 | 역할 |
+|---|---|
+| `FarmWorkSite` | Growing/Harvesting phase와 progress transaction |
+| `FarmWorkPhase` | 농경지 phase 식별 |
+| `FarmWorkResult` | work 전후 상태와 생산량 결과 |
+| `IFarmWorkProvider` | 현재 FarmingAction 연결용 과도기 계약 |
+
+향후 공통 `IInteractionProvider` protocol로 통합하면 이 폴더에는 farm 도메인 상태·결과·구현을 남기고, 역할별 provider lookup 계약은 제거한다.
+
+### `Assets/Scripts/System/Inventory`
+
+시설 inventory의 runtime 구현을 둔다. 현재는 용량 없는 `WarehouseInventory` 하나이며 item ID별 정수 수량을 보유한다.
+
+### `Assets/Scripts/Interface`
+
+프로젝트 여러 영역이 공유하는 안정적인 계약만 둔다.
+
+- 실행: `IAction`, `IInteractionProvider`
+- read model: `IStatView`, `ICombatStatView`, `IGuardStatView`
+- capability: `ICombatTarget`, `IMoveTarget`, `IInventory`, `IRandomSource`
+- data service: `IDataManager`
+
+한 concrete class의 이름을 감추기 위한 일대일 interface는 이 폴더에 추가하지 않는다. 도메인 전용 계약은 실제 필요가 있으면 도메인 폴더에 두되, provider가 도메인마다 증식하지 않도록 먼저 공통 interaction protocol로 표현 가능한지 검토한다.
+
+### `Assets/Data/Struct`
+
+selector, action, provider 사이를 전달하는 작은 request/result/value object를 둔다.
+
+- `ActionContext`: action 실행 dependency 묶음
+- `NPCDecision`: decider의 단일 semantic decision
+- `MoveRequest`: 고정/동적 이동 목표
+- `InteractRequest`, `InteractResult`: 현재 공급 상호작용 request/result
+- `InteractionOption`: utility 평가용 공급 option
+- `StatEffect`: stat delta 묶음
+- `ItemInfo`: CSV item row model
+
+이 폴더의 타입은 행동 로직이나 scene lookup을 소유하지 않는다.
+
+### `Assets/Data/ScriptableObject/Script`
+
+공유 정의와 tuning의 C# 타입을 둔다.
+
+| 종류 | 파일 |
+|---|---|
+| stat factory | `NPCStatDefinition`, `DefaultStatContext`, `GuardStatDefinition` |
+| action cost/policy | `DefaultActionCost`, `FarmingActionCost`, `GuardActionCost` |
+| decision tuning | `NPCDecisionTuning` |
+| farming definition | `FarmProductionDefinition` |
+| item table wrapper | `ItemDataContext` |
+
+asset instance는 `Assets/Data/ScriptableObject`에 둔다. 공유 asset은 runtime 상태를 저장하지 않는다.
+
+### `Assets/TestOnly`
+
+Play Mode에서 수동 검증하기 위한 개발 도구를 둔다.
+
+- `TestNPCSpawnWindow`: Farmer/Guard spawn
+- `TestEnemyRainSpawner`: Guard 전투용 적 연속 생성
+- `TestDecisionScenarioProbe`: utility decision 결정적 시나리오 probe
+- `TestFarmProductionWindow`: farm gauge와 warehouse 직접 검증
+
+이 코드는 production gameplay dependency가 되어서는 안 된다. 현재 assembly가 분리되지 않았으므로 build target 제외가 필요한 시점에 `.asmdef` 또는 Editor/Development conditional 정책을 별도로 도입한다.
+
+## 4. Runtime 흐름
+
+### 4.1 NPC 생성
 
 ```text
-NPCManager
-  -> owns or creates WorkerNPC instances by NPCType
+Test/UI command
+  -> NPCManager.CreateNPC(NPCType)
+  -> NPCCreationEntry 조회
+  -> NPCStatDefinition.CreateRuntimeStat()
+  -> selector.CanUseStat(stat)
+  -> WorkerPool.GetWorker()
+  -> WorkerNPC.Init(...)
+```
 
-WorkerNPC : MonoBehaviour
-  -> represents the NPC actor instance
-  -> owns narrow references to NPCStat and NPCComponent
-  -> owns an Action tick delegate
-  -> invokes registered callbacks from Update()
+새 role을 추가할 때 enum index로 selector와 stat을 따로 맞추지 않는다. `NPCCreationEntry` 한 row에 호환되는 두 참조를 함께 배선한다.
 
-NPCComponent : MonoBehaviour
-  -> intended place for Unity-facing NPC references such as Transform, Animator, Renderer, Collider, etc.
-  -> currently empty
+### 4.2 일반 queue 실행
 
-NPCStat
-  -> plain C# state holder for name, health, max health, and move speed
-  -> exposes read-only stat properties and mutation methods
+```text
+WorkerNPC.AdvanceQueue()
+  -> selector.RequestNewActionQueue(stat, npcType, component)
+  -> Move? -> semantic action(s)
+  -> Start once
+  -> Tick until result changes
+```
 
-BaseNPCActionSelector : MonoBehaviour
-  -> base selector boundary
-  -> owns or uses ActionPool
+`Completed`는 다음 action으로 진행하고, `ReplanRequested`와 `Failed`는 남은 queue를 폐기한 뒤 실제 stat/position으로 다시 판단한다.
 
+### 4.3 Farmer
+
+```text
 FarmerActionSelector
-  -> role-specific selector skeleton
-  -> currently empty
-
-ActionPool
-  -> maps ActionType to pooled IAction queues
-  -> creates MoveAction, EatAction, FarmingAction, SleepAction
-
-IAction implementations
-  -> action lifecycle methods: Start, Tick, Pause, Resume, Stop, Clear
-  -> currently mostly NotImplementedException stubs
-
-DestinationDB
-  -> intended Unity-side destination registry
-  -> currently skeletal
+  -> DestinationDecider.Decide(stat, Farmer, position, farmingCost)
+  -> destination/provider 확인
+  -> MoveAction (필요한 경우)
+  -> Farming/Eat/Drink/Sleep/Idle action
 ```
 
-## Script Roles
+Work 결정은 bounded repeat count를 가질 수 있다. 공급 행동은 한 번만 실행하고 queue 종료 후 실제 상태로 다시 판단한다.
 
-### Design Intent
-
-The current direction intentionally avoids a single large NPC MonoBehaviour that exposes every NPC-related detail to every caller.
-
-`WorkerNPC` should be the narrow actor root: code that only needs ticking should depend on the tick registration API, code that needs stats should use `NPCStat`, and code that needs Unity scene references should go through `NPCComponent` or a narrower context. This keeps callers from learning about unrelated NPC internals just because they need one capability.
-
-Preferred split:
+### 4.4 Guard
 
 ```text
-WorkerNPC
-  -> actor identity, lifecycle bridge, tick dispatch
+GuardActionSelector
+  -> perception target 있으면 Move/Attack
+  -> 아니면 DestinationDecider
+       -> supply queue 또는 Guard queue
 
-NPCComponent
-  -> Unity object/component references
-
-NPCStat
-  -> mutable stat values and stat invariants
-
-Action runner or IAction
-  -> behavior execution lifecycle
-
-Selector
-  -> behavior choice
+GuardAction.Tick
+  -> needs 증가
+  -> enemy 감지 시 ReplanRequested
+  -> interrupt threshold 도달 시 ReplanRequested
+  -> 원형 patrol point 이동
 ```
 
-### WorkerNPC
+Sensor의 `CircleCollider2D`는 prefab scene data이고, 공격/순찰 능력치는 `GuardStat`이다.
 
-File: `Assets/Scripts/Actor/WorkerNPC.cs`
+### 4.5 상호작용
 
-Current role:
-
-- Represents the scene NPC MonoBehaviour.
-- Stores a plain `NPCStat` reference.
-- Stores an `NPCComponent` reference for Unity-facing component access.
-- Provides `RegisterTick(Action)` and `UnReigsterTick(Action)` to add/remove tick callbacks.
-- Calls `_onTick` during `Update()`.
-
-Current issues to resolve before further architecture work:
-
-- `UnReigsterTick` is misspelled and should become `UnregisterTick`.
-- `OnClear()` is not connected to Unity lifecycle yet. It should be called from `OnDestroy()` or be renamed into `OnDestroy()` if its only role is cleanup.
-- This class should remain a thin runner/Unity bridge. It should not grow decision logic or concrete action behavior.
-
-### NPCComponent
-
-File: `Assets/Scripts/System/Actor/NPCComponent.cs`
-
-Current role:
-
-- Placeholder MonoBehaviour for Unity-facing NPC components and references.
-
-Intended role:
-
-- Own serialized Unity references such as `Transform`, `Animator`, sprite/visual root, collider, and other scene components.
-- Provide those references to plain C# runtime objects through explicit initialization.
-
-Should not:
-
-- Become a large behavior implementation class.
-- Own detailed action rules, stat mutation rules, or role decision priority.
-
-### NPCStat
-
-File: `Assets/Scripts/System/Actor/NPCStat.cs`
-
-Current role:
-
-- Plain C# state object for NPC name, health, max health, and move speed.
-- `ChangeHealth(float)` clamps health between zero and max health.
-- `ChangeMoveSpeed(float)` is intended to adjust movement speed.
-
-Current issues:
-
-- Constructor accepts `moveSpeed` but does not assign `_moveSpeed`.
-- Public read-only properties use `Get...` names. Prefer `CurrentHealth`, `MaxHealth`, and `MoveSpeed`.
-- `ChangeMoveSpeed` clamps using the current `_moveSpeed` as its max, so positive increases cannot work. A separate max speed or stat modifier model is needed.
-- `using System.Runtime.InteropServices;` is unused.
-
-### IAction
-
-File: `Assets/Scripts/Interface/IAction.cs`
-
-Current role:
-
-- Defines the action lifecycle:
-
-```csharp
-void Start();
-void Tick();
-void Pause();
-void Resume();
-void Stop();
-void Clear();
-```
-
-Design note:
-
-- This contract currently cannot report whether an action is running, succeeded, or failed.
-- If `WorkerNPC` or an action runner is responsible for advancing a queue, `Tick()` should eventually return an action state or the action should expose a clear completion result.
-
-Recommended direction:
-
-```csharp
-ActionState Tick(NPCActionContext context);
-```
-
-or an equivalent explicit result contract.
-
-### Action Implementations
-
-Files:
-
-- `Assets/Scripts/System/Action/MoveAction.cs`
-- `Assets/Scripts/System/Action/EatAction.cs`
-- `Assets/Scripts/System/Action/FarmingAction.cs`
-- `Assets/Scripts/System/Action/SleepAction.cs`
-
-Current role:
-
-- Concrete `IAction` skeletons.
-
-Current status:
-
-- Most methods throw `System.NotImplementedException`.
-- `MoveAction.Clear()` is the only non-throwing cleanup stub.
-
-Should own:
-
-- The execution details and completion/failure/cancel rules of one behavior.
-
-Should not own:
-
-- Worker action queue advancement.
-- High-level behavior selection.
-- Direct registration/unregistration into `WorkerNPC` unless the architecture deliberately moves tick ownership into actions.
-
-### ActionPool
-
-File: `Assets/Scripts/System/Lib/ActionPool.cs`
-
-Current role:
-
-- Maintains a `Dictionary<ActionType, Queue<IAction>>`.
-- Creates actions on demand and returns them to their typed queues.
-
-Current issues:
-
-- `using NUnit.Framework;` is present in production code and should be removed.
-- `_actionDictionary` should be private.
-- `ReturnAction` repeats identical enqueue logic in every switch case.
-- No default case handles unsupported `ActionType`.
-- Returning an action requires the caller to pass the correct `ActionType`; a mismatch can put an action into the wrong pool.
-
-### BaseNPCActionSelector / FarmerActionSelector
-
-Files:
-
-- `Assets/Scripts/System/Actor/BaseNPCActionSelector.cs`
-- `Assets/Scripts/System/Actor/FarmerActionSelector.cs`
-
-Current role:
-
-- Selector boundary skeleton.
-- `BaseNPCActionSelector` stores a protected `ActionPool`.
-- `FarmerActionSelector` currently adds no behavior.
-
-Recommended direction:
-
-- Selectors should decide intent and request actions from `ActionPool`.
-- Selectors should not execute actions directly.
-- Selectors should not mutate `NPCStat` directly except through action planning decisions.
-
-### DestinationDB / DestinationInfo
-
-File: `Assets/Scripts/System/Lib/DestinationDB.cs`
-
-Current role:
-
-- Placeholder destination registry.
-- Contains a serialized `List<DestinationDB>` named `Destinations`.
-- Defines `DestinationInfo` with name, transform, and object references.
-
-Current issues:
-
-- The serialized list likely should be `List<DestinationInfo>`, not `List<DestinationDB>`.
-- `DestinationInfo` is not marked `[System.Serializable]`, so Unity will not serialize it as an Inspector list element.
-- Field names are public PascalCase, but serialized private fields are preferred for new runtime data.
-
-### NPCManager
-
-File: `Assets/Scripts/Manager/NPCManager.cs`
-
-Current role:
-
-- Placeholder manager with `Dictionary<NPCType, List<WorkerNPC>>`.
-- Initializes the dictionary in `Awake()`.
-- Contains an empty `CreateNPC()`.
-
-Recommended direction:
-
-- Keep this class as a composition/spawn/registry manager.
-- Do not put action selection, stat rules, or per-action execution details here.
-
-## Dependency Direction
-
-Preferred direction for the new skeleton:
+현재 공급 흐름:
 
 ```text
-NPCManager
-  -> WorkerNPC
-
-WorkerNPC
-  -> NPCStat
-  -> NPCComponent
-  -> current action runner or tick delegate
-
-Callers
-  -> depend on the narrow object they actually need
-  -> avoid taking WorkerNPC when NPCStat, NPCComponent, or a focused context is enough
-
-Selector
-  -> ActionPool
-  -> IAction
-
-IAction
-  -> context/capabilities needed for execution
-
-NPCStat
-  -> no dependency on selectors, actions, managers, or Unity scene objects
+DestinationDecider
+  -> IInteractionProvider.AppendOptions()
+  -> item/effect 후보 평가
+  -> NPCDecision(InteractRequest)
+  -> selector가 provider + request를 ActionContext에 주입
+  -> EatAction/DrinkAction.TryInteraction()
 ```
 
-## Recommended Runtime Flow
+현재 농사 흐름은 별도 `IFarmWorkProvider`를 사용한다. 새 Cook, Smith, Clinic 등을 같은 별도 lookup 방식으로 추가하지 말고 `ARCHITECTURE.md`의 공통 interaction protocol 방향을 먼저 적용한다.
 
-The current `RegisterTick(Action)` model can work for a low-level tick callback, but action queue progression needs a single lifecycle owner.
+## 5. 새 기능을 어디에 추가하는가
 
-Recommended action queue flow:
+### 새 NPC action
 
-```text
-WorkerNPC or NPCActionRunner
-  if no current action:
-    ask selector for the next action or action queue
-    call currentAction.Start(context)
+1. `ActionType`에 값을 추가한다.
+2. `System/Action`에 `DefaultAction` 기반 구현을 만든다.
+3. `ActionPool.Create` factory case를 추가한다.
+4. selector가 명시적 `ActionContext`를 구성한다.
+5. `Clear()`의 pooled-state reset과 모든 결과 경로를 검증한다.
 
-  each tick:
-    state = currentAction.Tick(context)
+### 새 role
 
-  if state == Running:
-    keep current action
+1. 실제 전용 stat이 있을 때만 `NPCStat` subclass와 view interface를 만든다.
+2. `BaseNPCActionSelector` subclass를 추가한다.
+3. `NPCManager._creationEntries`에 role/selector/stat definition 한 row를 배선한다.
+4. 기존 actor root와 action runner는 수정하지 않는 것을 우선한다.
 
-  if state == Success:
-    clear/return current action
-    start next queued action
+### 새 destination
 
-  if state == Failed:
-    cancel/clear current action plan
-    ask selector again later
-```
+1. 필요한 `BuildingType`을 추가한다.
+2. 씬 `DestinationDB` row에 Transform과 provider를 연결한다.
+3. provider가 지원하는 action을 공통 interaction protocol로 노출한다.
+4. selector/action에 도메인별 scene lookup을 직접 추가하지 않는다.
 
-Action implementations should not need to register themselves into `WorkerNPC` just to be ticked. A central runner is easier to cancel, clear, and debug.
+### 새 facility runtime state
 
-## Extension Guide
+게이지, 재고, 예약처럼 배치마다 다른 상태는 해당 scene component가 소유한다. ScriptableObject에는 초기값과 규칙만 둔다. NPC stat 또는 selector field에 시설 상태를 캐시하지 않는다.
 
-### Adding A New Action
+### 새 gameplay 난수
 
-1. Add an `ActionType` value if the action must be selected or pooled by type.
-2. Create the new `IAction` implementation under `Assets/Scripts/System/Action`.
-3. Add creation support to `ActionPool`.
-4. Ensure `Clear()` resets all reusable runtime state before returning to the pool.
-5. Add a completion result path before using the action in a queue.
+`IRandomSource`를 주입한다. seed와 호출 순서를 재현 가능하게 유지한다. `UnityEngine.Random`은 TestOnly 시각 도구 외 production 규칙에서 사용하지 않는다.
 
-### Adding NPC Runtime State
+## 6. 씬과 프리팹 배선
 
-1. Put mutable plain state in a plain C# class such as `NPCStat`.
-2. Expose read-only properties for observation.
-3. Expose explicit mutation methods such as `ChangeHealth`, `SetMoveSpeed`, or `ApplyDelta`.
-4. Keep Unity object references out of pure stat objects unless there is a clear ownership reason.
+### `NPCGirl.prefab`
 
-### Adding Unity Component References
+현재 공유 NPC actor prefab이다.
 
-1. Add serialized private fields to `NPCComponent` or the owning MonoBehaviour.
-2. Validate required references during `Awake()` or explicit `Init`.
-3. Pass references into runtime context objects explicitly.
-4. Avoid hidden `FindObjectOfType`, scene searches, and repeated `GetComponent` inside per-frame action ticks.
+- `WorkerNPC`
+- `NPCComponent`
+- `GuardPerception`
+- Sensor child의 `ProximitySensor2D`와 `CircleCollider2D(radius 3)`
+- visual child
 
-## Known Design Notes
+Farmer도 같은 prefab을 사용하므로 Guard 전용 컴포넌트는 optional 경계로 취급한다. Guard selector는 호환 stat과 perception을 검증해야 하며 Farmer action은 이를 알지 않는다.
 
-- The project is currently in a reset/skeleton phase.
-- The old worker architecture documentation has been removed from this file because the corresponding files are no longer present.
-- `Assembly-CSharp.csproj` currently references the new script set.
-- `dotnet build Assembly-CSharp.csproj --no-restore` passed on 2026-08-01 with 0 warnings and 0 errors.
-- This document's sections above still describe the 2026-08-01 skeleton and predate `DestinationDecider`, `NPCDecisionTuning`, `DataManager`, and the Guard combat slice below. They have not been rewritten as part of this change; see `PublicMD/PROGRESS.md` for the intervening history (IMP-022 onward).
+### `SampleScene.unity`
 
-## Guard Combat Vertical Slice (2026-08-19)
+기본 Farmer 실행용 manager, pool, destination, interactable 배선을 가진다. 기능 구현 후 실제 scene reference가 연결되어 있는지는 별도로 확인한다.
 
-`PublicMD/Guard_Action_Implementation_Plan.md`의 Phase A~D 구현 결과. `WorkerNPC → BaseNPCActionSelector.RequestNewActionQueue(...) → Queue<IAction>` 구조는 그대로 유지하고, action 결과 계약과 Guard 전용 실행/감지/전투 인프라를 추가했다.
+### `GuardTest.unity`
 
-### Action 결과 계약 (Phase A)
+Farmer/Guard selector, 적, test spawner, GuardPost/PatrolArea를 포함한 통합 검증 씬이다. `PatrolArea`의 시각 오브젝트가 존재하는 것과 bounds 기반 순찰 기능이 구현된 것은 서로 다른 사실이다. 현재 bounds 기반 순찰은 미구현이다.
 
-- `Assets/Scripts/Enum/ActionResult.cs` — `Running` / `Completed` / `ReplanRequested` / `Failed`.
-- `IAction.CheckComplete()`가 `ActionResult Result { get; }`로 대체됐다.
-- `DefaultAction`은 `Init()`에서 더 이상 `Start()`를 호출하지 않는다. `Complete()` / `RequestReplan()` / `Fail(reason)` 세 개의 protected 종료 경로를 갖는다.
-- `WorkerNPC`가 queue lifecycle을 단독 소유한다: 현재 action을 dequeue 시점에만 `Start()`하고, `ReplanRequested`/`Failed` 시 현재 action과 남은 queue 전체를 `Stop()`+반환한 뒤 `RequestNewActionQueue`를 다시 호출한다. `NPCType`을 저장하며 더 이상 `NPCType.Farmer`를 하드코딩하지 않는다. 풀 재사용을 고려해 `_isInitialized` 가드와 `NPCComponent.ResetRuntimeState()` 호출을 `Init()`/`OnDisable()` 양쪽에 둔다.
+## 7. 현재 과도기와 주의점
 
-### Guard 순찰과 욕구 (Phase B)
+- `IFarmWorkProvider` 경로는 현재 농사 구현을 작동시키지만 범용 provider 방향과 중복된다.
+- `DestinationInfo.InteractProvider`의 concrete type이 `BaseInteractable`이어서 모든 `IInteractionProvider` 구현을 Inspector에서 직접 연결할 수 있는 구조가 아니다.
+- `InteractableManager`와 `BaseInteractable.Init`은 item 기반 공급 도메인 책임이다.
+- `EatAction`과 `DrinkAction`은 현재 `TryInteraction`이 false이거나 `InteractResult.Success`가 false여도 시간을 채우면 `Completed`가 된다. 공통 interaction transaction을 정리할 때 실패 의미를 함께 바로잡아야 한다.
+- action runtime duration과 utility prediction duration이 중복 정의되어 drift 가능성이 있다.
+- `DataManager.instance`는 남아 있는 전역 상태다.
+- `.asmdef`와 자동 테스트 assembly가 없다.
+- `CONST.cs`는 현재 의미 있는 도메인 책임이 없는 placeholder다. 새 상수를 넣는 공용 쓰레기통으로 사용하지 않는다.
 
-- `Assets/Data/ScriptableObject/Script/GuardActionCost.cs` — 경계 반경/순찰 도착 거리/순찰점 개수, 초당 욕구 증가량, Guard 전용 중단 임계치(0..1)를 데이터로 소유한다.
-- `Assets/Scripts/System/Action/GuardAction.cs` — 경계 중심을 순회하며 장기 실행되는 순찰 action. 결정적 순찰점 순환(반경 위 N개 점, `UnityEngine.Random` 미사용)을 쓰고, 매 Tick 욕구를 직접 증가시키며(`StatEffect` 신규 할당 없음), 정상 순찰 중에는 `Complete()`를 반환하지 않는다.
-- `Assets/Scripts/Enum/BuildingType.cs`에 `GuardPost`를 끝에 추가(기존 직렬화 값 보존).
-- `Assets/Scripts/System/Actor/GuardActionSelector.cs`가 Farmer 복사본에서 전면 재작성됐다. 우선순위는 전투 → 욕구 → 순찰이며(전투 분기는 Phase D에서 연결), 큐 조립은 대여 실패 시 전체 롤백하는 트랜잭션 방식이다.
+이 항목들은 현재 구현 사실을 설명하는 것이며 새 코드가 그대로 복제해야 할 패턴은 아니다.
 
-### 감지·타겟 인프라 (Phase C)
+## 8. 문서 갱신 규칙
 
-- `Assets/Scripts/Interface/ICombatTarget.cs`, `Assets/Scripts/Interface/IMoveTarget.cs` — 최소 전투/이동 대상 계약.
-- `Assets/Scripts/System/Actor/CombatTargetHandle.cs` — `ICombatTarget` + `Component Owner` 쌍으로 유효성을 판정하는 plain C# handle(`IMoveTarget` 구현). Unity 파괴 객체 null 판정 문제를 `Owner` truthiness로 해결한다.
-- `Assets/Scripts/System/Actor/ProximitySensor2D.cs` — LayerMask 기반 범용 Trigger2D 감지기. Guard/Enemy/ICombatTarget을 전혀 참조하지 않는다.
-- `Assets/Scripts/System/Actor/GuardPerception.cs` — sensor collider를 살아 있는 `ICombatTarget` 후보로 변환·중복 제거(`Dictionary<Collider2D, TargetEntry>` 역방향 매핑)하는 Guard 전용 adapter. 타겟을 직접 선택·저장하지 않는다.
-- `Assets/Scripts/System/Actor/GuardRuntimeState.cs` — NPC별 `CombatTargetHandle` 하나를 소유. perception이 후보를 잃어도 selector가 명시적으로 지우기 전까지 타겟을 유지한다(사거리 이탈 시 타겟 유지 요구사항).
-- `Assets/Data/Struct/MoveRequest.cs` — 고정 좌표 또는 `IMoveTarget` 기반 동적 목적지. `MoveAction`은 이를 통해서만 동적 대상을 알고, 전투 타입을 직접 참조하지 않는다.
-- `Assets/Scripts/Actor/Enemy.cs` — 검증용 최소 `ICombatTarget` 구현(이동/반격 없음).
-- `NPCComponent`가 `GuardPerception` 참조와 per-NPC `GuardRuntimeState` 인스턴스를 소유·노출한다. Farmer 계열 프리팹에서는 `GuardPerception`이 비어 있을 수 있으므로 모든 소비 지점이 null을 허용한다.
+구조 변경 작업이 끝나면 최소한 다음을 함께 확인한다.
 
-### 전투 (Phase D)
-
-- `Assets/Data/ScriptableObject/Script/AttackActionCost.cs` — 공격 반경.
-- `Assets/Scripts/System/Action/AttackAction.cs` — 하나의 action이 타겟이 죽거나 범위를 벗어날 때까지 반복 타격한다. `NPCStat.GetAttackSpeed`로 interval을 계산하고(첫 타격은 한 interval 후), 타격 직후 생존을 재검사해 이미 죽은 대상에 중복 피해를 주지 않는다. 한 Tick당 최대 타격 횟수 상한(`MaxHitsPerTick`)으로 긴 프레임에서의 공격 폭주를 막는다. `Clear()`는 timer만 초기화하고 타겟은 지우지 않는다(사거리 이탈 재계획에서 타겟 유지).
-- `NPCStat`/`IStatView`/`DefaultStatContext`에 공격력(`GetAttackPower`)과 공격 속도(`GetAttackSpeed`, attacks/sec)가 추가됐다(생성자 끝에 append, 기존 호출부 보존).
-- `GuardAction`이 매 Tick `GuardPerception.HasCandidate`만 확인해 후보가 있으면 재계획을 요청한다(적 감지가 욕구 임계보다 우선).
-- `GuardActionSelector`가 재계획 시 `GuardRuntimeState`에 유효 타겟이 있으면 우선 사용하고, 없으면 `GuardPerception`의 후보 중 가장 가까운 살아있는 적을 선택해 저장한다. 공격 범위 밖이면 `Move(dynamic MoveRequest) → Attack`, 안이면 `Attack`만 큐에 넣는다.
-
-### 씬 배선 (미완료)
-
-C# 코드와 ScriptableObject 클래스 정의만 구현했다. `SampleScene.unity`/`NPCGirl.prefab`의 GameObject·collider·Layer·asset 인스턴스 연결은 사용자가 Unity 에디터에서 직접 수행해야 한다. 남은 배선 목록은 `PublicMD/PROGRESS.md`를 참고한다.
+1. 이 문서의 실제 파일 tree와 주요 runtime flow가 맞는가.
+2. `ARCHITECTURE.md`의 책임/의존 방향이 새 코드와 맞는가.
+3. `CodeConvention.md`가 새 패턴을 허용하거나 금지하는 이유를 설명하는가.
+4. 미구현 기능을 현재 구현처럼 기록하지 않았는가.
+5. 과도기 코드를 영구 표준처럼 기록하지 않았는가.
