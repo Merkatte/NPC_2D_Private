@@ -2,11 +2,28 @@ using UnityEngine;
 
 public class FarmingAction : DefaultAction
 {
+    // Named seam for a future Farmer skill/proficiency system; always 1f until that exists.
+    private const float WorkerEfficiency = 1f;
+
     private float _workingTime = 3f;
     private float _currentWorkingTime = 0f;
-    
+    private IFarmWorkProvider _farmWorkProvider;
+
     public FarmingAction() : base(ActionType.Farming)
     {
+    }
+
+    public override void Start()
+    {
+        base.Start();
+        if (IsFinished)
+            return;
+
+        _farmWorkProvider = actionContext.FarmWorkProvider;
+        if (_farmWorkProvider == null || !_farmWorkProvider.CanApplyWork)
+        {
+            Fail("FarmingAction started without a usable IFarmWorkProvider");
+        }
     }
 
     public override void Tick()
@@ -30,6 +47,7 @@ public class FarmingAction : DefaultAction
     public override void Clear()
     {
         _currentWorkingTime = 0f;
+        _farmWorkProvider = null;
         base.Clear();
     }
 
@@ -44,11 +62,16 @@ public class FarmingAction : DefaultAction
             return;
         }
 
+        if (!_farmWorkProvider.TryApplyWork(WorkerEfficiency, out _))
+        {
+            Fail("FarmWorkSite rejected TryApplyWork");
+            return;
+        }
+
         stat.ChangeFatigue(actionCost.FarmingActionPerFatigue);
         stat.ChangeHunger(actionCost.FarmingActionPerHunger);
         stat.ChangeThirst(actionCost.FarmingActionPerThirst);
-        
-        Debug.Log("Work is done!");
+
         Complete();
     }
 }

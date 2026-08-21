@@ -26,7 +26,9 @@ public class Enemy : MonoBehaviour, ICombatTarget
         }
 
         _health = Mathf.Max(0f, _health - amount);
-        if(_health <= 0f)
-            Debug.Log("Im Dead!!!!!!");
+        if (_health <= 0f)
+        {
+            Destroy(gameObject);
+        }
     }
 }

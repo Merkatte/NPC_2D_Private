@@ -12,15 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e79a8271a05cb4f499d6bc8b03d95e78, type: 3}
   m_Name: GuardActionCost
   m_EditorClassIdentifier: Assembly-CSharp::GuardActionCost
-  MovePerThirst: 0.5
-  MovePerHunger: 0.5
-  MovePerFatigue: 0.5
-  GuardRadius: 5
   PatrolArrivalDistance: 0.2
   PatrolPointCount: 4
-  HungerPerSecond: 0.3
-  ThirstPerSecond: 0.3
-  FatiguePerSecond: 0.3
+  HungerPerSecond: 10
+  ThirstPerSecond: 10
+  FatiguePerSecond: 10
   HungerInterruptThreshold: 0.97
   ThirstInterruptThreshold: 0.97
   FatigueInterruptThreshold: 0.97
+  _attackStoppingDistanceRatio: 0.9

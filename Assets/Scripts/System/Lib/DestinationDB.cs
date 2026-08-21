@@ -7,6 +7,7 @@ public class DestinationDB : MonoBehaviour
 
     private Dictionary<BuildingType, DestinationInfo> _destinationDB;
     private List<BuildingType> _registeredKeys;
+    private Dictionary<BuildingType, FarmWorkSite> _farmWorkSites;
 
     public IReadOnlyList<BuildingType> RegisteredKeys
     {
@@ -52,6 +53,21 @@ public class DestinationDB : MonoBehaviour
         return true;
     }
 
+    public bool TryGetFarmWorkProvider(BuildingType destinationName, out IFarmWorkProvider provider)
+    {
+        EnsureInitialized();
+        provider = null;
+
+        if (!_farmWorkSites.TryGetValue(destinationName, out var site))
+            return false;
+
+        if (!site)
+            return false;
+
+        provider = site;
+        return true;
+    }
+
     private void EnsureInitialized()
     {
         if (_destinationDB != null)
@@ -64,6 +80,7 @@ public class DestinationDB : MonoBehaviour
     {
         _destinationDB = new Dictionary<BuildingType, DestinationInfo>();
         _registeredKeys = new List<BuildingType>();
+        _farmWorkSites = new Dictionary<BuildingType, FarmWorkSite>();
 
         if (_destionations == null)
             return;
@@ -80,6 +97,9 @@ public class DestinationDB : MonoBehaviour
                 _registeredKeys.Add(info.BuildingType);
 
             _destinationDB[info.BuildingType] = info;
+
+            if (info.DestinationObject && info.DestinationObject.TryGetComponent(out FarmWorkSite farmWorkSite))
+                _farmWorkSites[info.BuildingType] = farmWorkSite;
         }
     }
 }

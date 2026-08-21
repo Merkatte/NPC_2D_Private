@@ -9,6 +9,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
     private DestinationDecider _decider;
     private FarmingActionCost _farmingActionCostInfo;
     private StatEffect _workCost;
+    private bool _hasLoggedMissingFarmProvider;
 
     protected override void Start()
     {
@@ -54,7 +55,24 @@ public class FarmerActionSelector : BaseNPCActionSelector
             decision = _decider.Decide(stat, npcType, component.Position, _workCost);
         }
 
-        ActionContext actionContext = BuildContext(decision, component, stat);
+        IFarmWorkProvider farmWorkProvider = null;
+        if (decision.Intent == NPCIntent.Work)
+        {
+            bool hasProvider = _destinationDB.TryGetFarmWorkProvider(decision.DestinationKey, out farmWorkProvider);
+            if (!hasProvider || !farmWorkProvider.CanApplyWork)
+            {
+                if (!_hasLoggedMissingFarmProvider)
+                {
+                    Debug.LogError($"FarmerActionSelector: no usable IFarmWorkProvider for {decision.DestinationKey}; falling back to Idle.");
+                    _hasLoggedMissingFarmProvider = true;
+                }
+
+                decision = NPCDecision.Idle(component.Position);
+                farmWorkProvider = null;
+            }
+        }
+
+        ActionContext actionContext = BuildContext(decision, component, stat, farmWorkProvider);
         List<IAction> rented = new List<IAction>();
 
         if (decision.DestinationKey != BuildingType.None)
@@ -80,12 +98,12 @@ public class FarmerActionSelector : BaseNPCActionSelector
         return new Queue<IAction>(rented);
     }
 
-    private ActionContext BuildContext(NPCDecision decision, NPCComponent component, NPCStat stat)
+    private ActionContext BuildContext(NPCDecision decision, NPCComponent component, NPCStat stat, IFarmWorkProvider farmWorkProvider)
     {
         switch (decision.Intent)
         {
             case NPCIntent.Work:
-                return new ActionContext(component, stat, decision.DestinationPos, _farmingActionCostInfo);
+                return new ActionContext(component, stat, decision.DestinationPos, _farmingActionCostInfo, farmWorkProvider: farmWorkProvider);
 
             case NPCIntent.Eat:
             case NPCIntent.Drink:

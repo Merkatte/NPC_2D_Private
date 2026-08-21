@@ -2,47 +2,70 @@
 
 ## Purpose
 
-IMP-027 `DestinationDecider` rational utility rewrite의 구현 결과를 검토한다. 범위는 새 점수·예측 모델, Guard selector 통합, tuning 직렬화, TestOnly probe와 실제 selector/runner 연결이다. Production 코드는 수정하지 않았다.
+Review the Farm Production Gauge vertical slice against `PublicMD/ARCHITECTURE.md`, `PublicMD/ProjectStructure.md`, `PublicMD/CodeConvention.md`, and `PublicMD/Farm_Production_Gauge_Plan.md`. This was a read-only audit; no fixes or report-file edits were performed.
 
 ## Review Snapshot
 
 - Date: 2026-08-21
 - Scope:
-  - `Assets/Scripts/System/Lib/DestinationDecider.cs`
-  - `Assets/Scripts/System/Actor/GuardActionSelector.cs`
-  - `Assets/Data/ScriptableObject/Script/NPCDecisionTuning.cs`
-  - `Assets/Data/ScriptableObject/NPCDecisionTuning.asset`
-  - `Assets/TestOnly/TestDecisionScenarioProbe.cs`
-  - 연결 계약: `FarmerActionSelector`, `WorkerNPC`, `GuardAction`, `NPCDecision`, `DestinationDB`, interaction provider
-- Sources:
-  - `PublicMD/CodeConvention.md`
-  - `PublicMD/ProjectStructure.md`
-  - `PublicMD/DestinationDecider_Rational_Utility_Plan.md`
-  - `PublicMD/PROGRESS.md`
+  - All 10 new farm, inventory, random-source, definition, and TestOnly scripts
+  - Modified `ActionContext`, `DestinationDB`, `FarmerActionSelector`, and `FarmingAction`
+  - Direct dependency surfaces: `DefaultAction`, `WorkerNPC`, `BaseNPCActionSelector`, `ActionPool`, `DestinationDecider`, `NPCManager`, `NPCComponent`, `NPCStat`, action result contracts, and current scene YAML
+  - New script/folder `.meta` files and `Assembly-CSharp.csproj` entries
+- Excluded:
+  - Unrelated Guard/Enemy/scene/recovery-file worktree changes, except the farm wiring present in `GuardTest.unity`
+  - The external `.claude` plan, because the requested audit workflow explicitly prohibits reading `.claude`
+- Repository state:
+  - Farm files are uncommitted.
+  - Unrelated user-owned changes were detected and left untouched.
 - Verification:
-  - `dotnet build Assembly-CSharp.csproj --no-restore`: 0 warnings, 0 errors
-  - 변경 production 파일 대상 `git diff --check`: 통과
-  - `GuardTest.unity`와 `SampleScene.unity`에서 selector의 `DestinationDB`/`NPCDecisionTuning` 직렬화 참조 확인
-  - `TestDecisionScenarioProbe`는 `Assembly-CSharp.csproj`에 포함되지만 어떤 scene에도 배선되지 않음
-  - Unity Play Mode와 probe 실행은 미검증
+  - `git status`, `git diff`, `git diff --check`, targeted `rg`, source inspection, metadata inspection, and scene/prefab YAML inspection completed.
+  - All 10 new scripts and both new folders have `.meta` files.
+  - No duplicate GUID was found among `Assets/**/*.meta`.
+  - All 10 scripts are included in `Assembly-CSharp.csproj`.
+  - Existing `Assembly-CSharp.dll` is newer than the reviewed source files, corroborating a Unity compile after the changes.
+  - The reported `dotnet build --no-restore` result was not independently rerun because the sandbox is read-only and a build writes artifacts.
+  - No direct `UnityEngine.Random` or `Random.Range` use was found in the new farm slice.
+  - No repeated component or scene lookup occurs inside `FarmingAction.Tick()`.
+  - The documented 100/10/10 state-machine scenario matches the code by inspection.
+  - Unity Play Mode, TestOnly-window interaction, and real Farmer end-to-end execution remain unverified.
 
 ## Executive Summary
 
-새 구조는 대부분 승인된 경계를 잘 지킨다. `DestinationDecider`가 실제 stat을 변경하거나 action queue를 만들지 않고 copied snapshot만 예측하며, Farmer와 Guard 역할 후보가 같은 bounded utility 모델에서 비교된다. 공개 `Decide(...)`와 queue lifecycle도 유지됐다. 비선형 risk, depth별 후보 버퍼, critical bit mask, 결정적 tie-break와 serialized tuning은 구현 품질이 좋다.
+The core design is sound. Runtime gauge state belongs to `FarmWorkSite`, immutable tuning belongs to `FarmProductionDefinition`, quantities belong to `WarehouseInventory`, and `FarmingAction` invokes a narrow capability without learning the concrete facility implementation. Growth and harvesting transitions are correct, current warehouse mutation occurs before gauge reduction, pooled action state is cleared, and the selector—not `WorkerNPC`—continues to own capability wiring.
 
-다만 Guard의 plain Idle 후보와 GuardDuty 후보가 모두 외부에서 `NPCIntent.Idle`로 보이는 설계는 수정이 필요하다. selector는 모든 non-supply 결정을 Guard queue로 바꾸므로, Decider가 `travel=0`, `After=현재 상태`인 plain Idle을 선택했는데 실제 runtime은 GuardPost로 이동하고 need가 증가하는 GuardAction을 실행할 수 있다. 이는 단순 tuning 문제가 아니라 예측 후보와 실행 행동의 계약 불일치다. `PROGRESS.md`도 stress rate에서 plain Idle이 GuardDuty를 이길 수 있음을 기록하고 있어 실제 도달 가능한 경로다.
+The repository is not yet runtime-ready, however. Neither current scene wires `FarmWorkSite`, `WarehouseInventory`, `SeededRandomSource`, or a `FarmProductionDefinition` asset. Because the modified selector now requires the provider, every Work decision in the current scenes is converted to Idle. This is a confirmed regression in the checked-in scene state, not only a missing validation step.
 
-최종 판정은 **조건부 승인**이다. 아래 H-01을 먼저 정리한 뒤 Unity 검증과 balance 조정으로 넘어가는 것이 안전하다.
+Additional medium risks concern the partial-acceptance inventory contract, Unity destroyed/disabled component lifetime, missing stat validation before farm mutation, and duplicated farming-duration sources.
+
+Final verdict: **changes required before runtime acceptance**. The architecture is conditionally acceptable, but the vertical slice is not operational in the current repository scenes.
+
+## Review Priority Assessment
+
+1. Architecture and responsibility placement:
+   - No Critical or High responsibility-boundary violation found.
+   - M-01 and Low configuration/placement findings remain.
+2. Correctness, lifecycle, cancellation, and regression:
+   - No Critical issue found.
+   - M-01 through M-04 apply.
+   - Cancellation itself is safe: incomplete actions do not call the provider.
+3. Unity scene, prefab, component, and serialized-reference safety:
+   - No Critical issue found.
+   - H-01 and M-02 apply.
+4. Code convention, maintainability, dead code, and magic values:
+   - No Critical or High convention issue found.
+   - M-04 and L-02/L-03 apply.
+   - No new dead code or unused import was identified in the farm slice.
 
 ## Improvements Since Previous Review
 
-- one-step `bestSupply >= work + SwitchMargin` 분기가 제거되고 모든 일반 후보가 하나의 점수 모델에서 비교된다.
-- 공급 행동은 한 번만 반환되고, queue 종료 후 실제 stat/position으로 재판단하는 기존 계약이 유지된다.
-- Guard selector가 공급 행동 이후에도 Decider를 다시 호출하므로 기존 호출 gate 문제가 해결됐다.
-- critical 안전 필터가 root뿐 아니라 미래 node에도 적용된다.
-- 재귀 branch별 후보 리스트와 `int` bit mask를 사용해 이전 계획의 mutable-state 공유 및 `bool[]` 할당 위험을 피했다.
-- 신규 serialized tuning 값이 asset YAML에 명시되어 Unity의 silent zero default 위험을 피했다.
-- TestOnly probe는 검증할 수 없는 항목을 PASS로 위장하지 않고 `NOT VERIFIED`로 구분한다.
+- `FarmingAction` is no longer a log-only action; successful completion now produces an observable domain result.
+- Production state is correctly kept out of `WorkerNPC`, selectors, and ScriptableObject runtime data.
+- The trailing optional `ActionContext` parameter preserves existing constructor call sites.
+- The provider is resolved during destination initialization/selection and cached by the action; no lookup was added to its tick.
+- Global Unity random state is avoided.
+- The TestOnly tool observes and invokes public feature APIs without taking ownership of gameplay state.
+- The previous IMP-027 Guard/utility findings were outside this audit and should not be considered resolved by this report.
 
 ## Findings By Severity
 
@@ -52,107 +75,218 @@ None found.
 
 ### High
 
-#### H-01 — Guard의 plain Idle 결정이 GuardDuty 실행으로 변환된다
+#### H-01 — Current gameplay scenes cannot execute farming
 
+- Severity: High
+- Category: Unity serialized-reference safety / runtime regression
 - Location:
-  - `Assets/Scripts/System/Lib/DestinationDecider.cs:202-217`
-  - `Assets/Scripts/System/Lib/DestinationDecider.cs:373-388`
-  - `Assets/Scripts/System/Actor/GuardActionSelector.cs:108-121`
-  - `Assets/Data/Struct/NPCDecision.cs:3-5`
+  - `Assets/Scenes/SampleScene.unity:871`
+  - `Assets/Scenes/SampleScene.unity:1286`
+  - `Assets/Scenes/GuardTest.unity:1208`
+  - `Assets/Scenes/GuardTest.unity:1625`
+  - `Assets/Scripts/System/Actor/FarmerActionSelector.cs:58-72`
+  - `Assets/Scripts/System/Lib/DestinationDB.cs:101-102`
 - Evidence:
-  - plain Idle은 현재 위치, 이동 시간 0, 상태 변화 없음으로 예측된다.
-  - GuardDuty는 GuardPost 위치, 실제 이동 시간, duty need cost를 갖지만 똑같이 `NPCIntent.Idle`로 반환된다.
-  - selector는 supply가 아닌 모든 결과를 `BuildGuardQueue(...)`로 바꾼다.
-  - `PublicMD/PROGRESS.md`는 10/s stress rate에서 plain Idle이 GuardDuty보다 높은 점수를 받을 수 있다고 명시한다.
-- Impact:
-  - Decider가 계산하지 않은 GuardPost 왕복비용과 need 증가가 runtime에서 발생한다.
-  - 공급 시설에서 plain Idle이 이기면 “잠시 대기”가 아니라 즉시 GuardPost 복귀로 변환되어 이번 작업의 핵심인 post-supply 합리성을 훼손할 수 있다.
-  - `NPCDecision`의 “selector는 결정을 다시 해석하지 않고 queue로 변환한다”는 계약과 어긋난다.
-- Recommendation:
-  - 가장 명확한 해결은 `NPCIntent.Guard`를 추가해 GuardDuty와 Idle을 구분하고 selector에서 각각 Guard queue와 Idle queue로 매핑하는 것이다.
-  - 공개 enum 확장을 피해야 한다면, non-critical Guard에서 유효한 GuardDuty가 존재할 때 plain Idle을 후보 집합에서 제외하고 Idle은 실제 fallback일 때만 생성해야 한다.
-  - tuning으로 두 후보의 점수만 조정해 숨기지 말 것. 식별 정보가 소실되는 구조 자체를 해결해야 한다.
+  - Both scenes register a Farm destination, but the referenced farm GameObject contains only `Transform` and `SpriteRenderer`.
+  - The GUIDs for `FarmWorkSite`, `WarehouseInventory`, `SeededRandomSource`, and `TestFarmProductionWindow` occur in no scene or prefab.
+  - No `FarmProductionDefinition` asset instance exists.
+  - `DestinationDecider` can still choose Work from the Farm position, after which `FarmerActionSelector` fails provider lookup and replaces the decision with Idle.
+- Description:
+  - The C# slice exists, but the current playable composition cannot instantiate its dependency graph. Existing Farmer work is therefore disabled rather than upgraded.
+- Recommended fix:
+  - Create a valid `FarmProductionDefinition` asset.
+  - Wire `FarmWorkSite`, an `IInventory`-implementing warehouse component, and `SeededRandomSource` in the gameplay scene.
+  - Ensure the Farm `DestinationObject` is the GameObject carrying `FarmWorkSite`.
+  - Wire the TestOnly window temporarily if it will be used for validation.
+  - Save and inspect the resulting YAML, then run the documented Play Mode scenarios.
+- Impact if unfixed:
+  - Farmers repeatedly choose Work and receive Idle instead.
+  - No gauge progress, phase transition, yield, or warehouse deposit can occur in the current scenes.
+  - The feature cannot meet its runtime Definition of Done despite compiling.
 
 ### Medium
 
-#### M-01 — Unity runtime 검증이 아직 없고 오프라인 검증은 재현할 수 없다
+#### M-01 — Partial inventory acceptance cannot be rolled back atomically
 
+- Severity: Medium
+- Category: Architecture / transaction correctness
 - Location:
-  - `Assets/TestOnly/TestDecisionScenarioProbe.cs`
-  - `PublicMD/PROGRESS.md:127-131`
+  - `Assets/Scripts/Interface/IInventory.cs:1-5`
+  - `Assets/Scripts/System/Farming/FarmWorkSite.cs:64-70`
 - Evidence:
-  - probe GUID는 어떤 scene YAML에도 존재하지 않는다.
-  - Play Mode와 Unity probe는 미실행으로 기록되어 있다.
-  - 18개 PASS를 만든 임시 .NET harness는 저장소 밖 scratchpad여서 현재 코드와 함께 다시 실행할 수 없다.
-- Impact: build와 정적 구조는 검증됐지만 실제 provider 데이터, queue 종료 후 재판단, Guard combat 선점, action duration과의 상호작용은 아직 확인되지 않았다.
-- Recommendation: H-01 수정 후 `GuardTest.unity`에 probe를 임시 배선해 결과를 보존하고, 계획의 Farmer/Guard Play Mode 시나리오를 실행한다. 미실행 항목은 계속 미검증으로 유지한다.
+  - `TryAdd` exposes `acceptedQuantity`, which permits an implementation to accept less than requested.
+  - `FarmWorkSite` calls `TryAdd` first, then treats `acceptedQuantity != yield` as total failure.
+  - `IInventory` exposes no removal or rollback operation.
+- Description:
+  - A future capacity-limited inventory can validly mutate by a partial amount before returning. `FarmWorkSite` would then preserve the gauge and report failure while the partial output remains deposited.
+  - The current unlimited `WarehouseInventory` always accepts all-or-nothing, so the defect is dormant with that concrete implementation.
+- Recommended fix:
+  - Define and enforce an exact-add contract for production, such as `TryAddExact`, where failure guarantees zero mutation; or redesign `TryApplyWork` to treat accepted partial quantity coherently.
+  - Document the mutation invariant directly on `IInventory`.
+- Impact if unfixed:
+  - A capacity-aware inventory can create partial or duplicated output across retries while the farm gauge remains unchanged.
 
-#### M-02 — interrupt/critical threshold가 같을 때 inversion warning이 누락된다
+#### M-02 — Provider validity becomes stale after lookup
 
+- Severity: Medium
+- Category: Unity lifecycle / serialized-reference safety
 - Location:
-  - `Assets/Scripts/System/Actor/GuardActionSelector.cs:53-75`
-  - `Assets/Data/ScriptableObject/Script/GuardActionCost.cs:51-65`
-  - `Assets/Scripts/System/Lib/DestinationDecider.cs:393-404`
+  - `Assets/Scripts/System/Lib/DestinationDB.cs:56-68`
+  - `Assets/Data/Struct/ActionContext.cs:12`
+  - `Assets/Scripts/System/Action/FarmingAction.cs:22-25`
+  - `Assets/Scripts/System/Farming/FarmWorkSite.cs:20`
 - Evidence:
-  - `ShouldInterrupt`는 `need >= interruptThreshold`에서 참이다.
-  - critical mask는 `need > CriticalNeedThreshold`에서만 열린다.
-  - warning 검사는 interrupt threshold가 critical threshold와 같으면 안전하다고 판단한다.
-- Impact: 두 threshold가 같은 asset 설정에서 정확히 경계값인 NPC는 warning 없이 interrupt 상태지만 critical gate 밖에 놓이고 timed Idle fallback을 반복할 수 있다.
-- Recommendation: warning의 안전 조건을 각 interrupt threshold가 critical threshold보다 **엄격히 큰 경우**로 바꾸거나 두 runtime 비교 연산자의 경계 정책을 통일한다. 현재 기본값 0.97/0.95에는 즉시 발생하지 않는다.
+  - `DestinationDB` correctly uses concrete `FarmWorkSite` truthiness at lookup.
+  - The provider is then stored as `IFarmWorkProvider`, for which `_farmWorkProvider == null` does not apply Unity fake-null semantics.
+  - `FarmWorkSite.CanApplyWork` returns only the `Awake`-cached `_isOperational`; it does not check `this`, `isActiveAndEnabled`, or current dependency validity.
+- Description:
+  - Destruction or disabling between queue creation, movement, action start, and completion is not detected reliably.
+- Recommended fix:
+  - Make `CanApplyWork` dynamically include Unity lifetime/enablement and required-reference checks, and repeat that guard inside `TryApplyWork`.
+  - If facilities become destructible, expose an explicit Unity owner/handle or cancellation signal rather than relying on an interface null check.
+- Impact if unfixed:
+  - An action can call into a disabled or destroyed component wrapper, causing ghost managed-state mutation, a missing-reference failure, or success against a facility that no longer exists.
+
+#### M-03 — Missing `NPCStat` can mutate the farm before throwing
+
+- Severity: Medium
+- Category: Correctness / safe failure
+- Location:
+  - `Assets/Scripts/System/Action/FarmingAction.cs:16-26`
+  - `Assets/Scripts/System/Action/FarmingAction.cs:54-75`
+  - `Assets/Scripts/System/Action/DefaultAction.cs:28-38`
+- Evidence:
+  - `DefaultAction.Start()` validates only `NPCComponent`.
+  - `FarmingAction.Start()` validates only the provider.
+  - On completion, the provider mutates farm/inventory before `stat.ChangeFatigue`, `ChangeHunger`, and `ChangeThirst` are called.
+  - `ActionContext.Stat` can be null.
+- Description:
+  - An invalid context with a valid component, cost, and provider applies farm work and then throws `NullReferenceException` while applying the NPC cost.
+  - Normal `NPCManager` creation prevents this path, but it violates the required action-level safe-failure contract.
+- Recommended fix:
+  - Validate `Stat`, `FarmingActionCost`, and provider during `Start()`, before timing begins.
+  - Keep defensive completion checks before calling `TryApplyWork`.
+- Impact if unfixed:
+  - Misconfigured tests or alternative runners can partially mutate world state and leave the action queue in an exception path.
+
+#### M-04 — Runtime and decision layers use separate farming-duration values
+
+- Severity: Medium
+- Category: Maintainability / magic values / prediction correctness
+- Location:
+  - `Assets/Scripts/System/Action/FarmingAction.cs:8`
+  - `Assets/Scripts/System/Lib/DestinationDecider.cs:355`
+  - `Assets/Data/ScriptableObject/Script/NPCDecisionTuning.cs:46`
+  - `Assets/Data/ScriptableObject/NPCDecisionTuning.asset:33`
+- Evidence:
+  - Runtime duration is hardcoded as `_workingTime = 3f`.
+  - Utility scoring reads the separately serialized `EstimatedFarmingSeconds`, currently also 3.
+- Description:
+  - The two values agree only by convention. Changing the tuning asset changes planning cost without changing actual action duration.
+- Recommended fix:
+  - Establish one authoritative farming-duration definition consumed by both action execution and decision prediction.
+- Impact if unfixed:
+  - Balance edits can make Work utility, travel comparisons, and future-action scoring diverge from actual gameplay timing.
 
 ### Low
 
-#### L-01 — Sleep 후보가 재귀 node마다 `StatEffect`를 할당한다
+#### L-01 — Inclusive random range overflows at `int.MaxValue`
 
-- Location: `Assets/Scripts/System/Lib/DestinationDecider.cs:293-311`
-- Evidence: `AddSleepCandidate`가 매 후보 구성 시 `new StatEffect(...)`를 호출한다.
-- Impact: bounded replan이라 위험은 낮지만 `PROGRESS.md`의 “node당 heap allocation 없음” 설명은 정확하지 않다.
-- Recommendation: copied `NeedSnapshot`의 `Fatigue`를 직접 0으로 만든 뒤 `After`에 넣어 임시 `StatEffect` 생성을 제거한다.
+- Severity: Low
+- Category: Correctness / edge-case validation
+- Location:
+  - `Assets/Scripts/System/Lib/SeededRandomSource.cs:9-16`
+  - `Assets/Data/ScriptableObject/Script/FarmProductionDefinition.cs:23-24`
+- Evidence:
+  - `NextInclusive` computes `maximum + 1`.
+  - `FarmProductionDefinition` considers `MaximumYield == int.MaxValue` valid.
+- Description:
+  - The addition overflows before it reaches `System.Random.Next`.
+- Recommended fix:
+  - Implement an overflow-safe inclusive range or explicitly reject `int.MaxValue`.
+- Impact if unfixed:
+  - An otherwise accepted extreme definition causes an exception during harvesting.
 
-#### L-02 — 비정상 점수가 조용히 버려진다
+#### L-02 — Duplicate destination keys can pair a stale farm provider with a different destination
 
-- Location: `Assets/Scripts/System/Lib/DestinationDecider.cs:494-507`
-- Evidence: NaN/Infinity 후보는 건너뛰지만 계획이 요구한 development diagnostic이 없다.
-- Impact: 잘못된 tuning 또는 stat 입력이 Idle fallback으로만 나타나 원인 추적이 어렵다.
-- Recommendation: `UNITY_EDITOR || DEVELOPMENT_BUILD`에서 한 결정당 한 번만 invalid candidate 정보를 warning으로 출력한다. release 선택 경로는 현재처럼 안전하게 거부하면 된다.
+- Severity: Low
+- Category: Configuration validation / dependency integrity
+- Location: `Assets/Scripts/System/Lib/DestinationDB.cs:88-102`
+- Evidence:
+  - Duplicate keys overwrite `_destinationDB[key]`.
+  - `_farmWorkSites[key]` is updated only when the current row contains a `FarmWorkSite`; a later duplicate without one does not remove the earlier cached site.
+  - Current inspected scenes contain no duplicate destination keys.
+- Description:
+  - A duplicate row can make position and capability come from different facility rows.
+- Recommended fix:
+  - Reject and report duplicate `BuildingType` rows, or replace/remove all associated cached capability entries atomically when a key is overwritten.
+- Impact if unfixed:
+  - A configuration mistake can send a Farmer to one object while applying work to another.
 
-#### L-03 — architecture 문서가 현재 구조보다 오래됐다
+#### L-03 — Definition class is outside its owning script domain
 
-- Location: `PublicMD/ProjectStructure.md`
-- Evidence: 문서 전반이 2026-08-01 skeleton을 설명하고 일부 후반부는 문자 인코딩이 손상되어 있다. 현재 `DestinationDecider`, queue runner, Guard stat/combat/utility 구조는 `PROGRESS.md`에만 분산돼 있다.
-- Impact: 새 작업자가 책임 경계를 찾을 때 현재 코드보다 오래된 권고를 읽게 된다.
-- Recommendation: IMP-027 Play Mode 검증 후 현재 구조를 기준으로 문서를 다시 정리한다.
+- Severity: Low
+- Category: Code convention / maintainability
+- Location: `Assets/Data/ScriptableObject/Script/FarmProductionDefinition.cs`
+- Evidence:
+  - `CodeConvention.md` places ScriptableObject class definitions in their owning script domain and reserves `Assets/Data/<Domain>` for asset instances.
+  - The Farming domain now has enough scripts to justify `Assets/Scripts/System/Farming`.
+- Description:
+  - The file follows the repository’s legacy action-cost layout and the implementation plan, but not the current domain-ownership convention.
+- Recommended fix:
+  - During a deliberate structure cleanup, move the class definition into the Farming script domain while preserving its `.meta` GUID. Place future asset instances under a Farming data folder.
+- Impact if unfixed:
+  - Configuration ownership remains less discoverable and the generic `Data/ScriptableObject/Script` folder continues to grow.
 
 ## Findings By File
 
-- `DestinationDecider.cs`: 책임 집중, bounded recursion, copied-state prediction은 적절하다. Guard Idle/GuardDuty identity 손실이 핵심 결함이다. Sleep allocation과 invalid-score diagnostic은 후속 정리 대상이다.
-- `GuardActionSelector.cs`: combat 우선순위와 매 replan Decider 호출은 올바르다. 다만 non-supply 전체를 Guard queue로 해석하는 정책이 H-01을 만든다. threshold equality validation도 보정이 필요하다.
-- `NPCDecisionTuning.cs` / `.asset`: 필드 clamp와 YAML 값이 일치하며 신규 필드의 silent zero 위험이 없다. duration이 runtime action 값의 복사본이라는 한계도 정확히 문서화됐다.
-- `TestDecisionScenarioProbe.cs`: reflection이나 production test API 없이 가능한 범위를 정직하게 검증한다. 다만 scene 미배선·미실행 상태이고 일부 수치 시나리오는 의도적으로 검증하지 않는다.
-- `FarmerActionSelector.cs`: 변경 없이 새 Decider를 사용하며, supply queue 종료 후 실제 상태로 재판단한다. bounded Farming batch 계약도 유지된다.
-- `WorkerNPC.cs`: queue lifecycle 단독 소유를 유지하며 새 decision 계산을 직접 알지 않는다.
+- `FarmWorkSite.cs`: State ownership and transition logic are appropriate. M-01 and M-02 apply.
+- `FarmingAction.cs`: Provider invocation and pooled cleanup are correct. M-03 and M-04 apply.
+- `FarmerActionSelector.cs`: Capability wiring belongs at this layer, and Idle fallback prevents fail/replan spam. H-01 makes that fallback the only current scene behavior.
+- `DestinationDB.cs`: Initialization-time component caching is appropriate and avoids tick lookups. L-02 applies.
+- `IInventory.cs` / `WarehouseInventory.cs`: Current unlimited implementation safely rejects invalid input and overflow before mutation. The generic contract has the M-01 ambiguity.
+- `SeededRandomSource.cs`: Deterministic lazy initialization is appropriate. L-01 applies.
+- `FarmProductionDefinition.cs`: Single-purpose immutable configuration shape is good. L-03 applies.
+- `FarmWorkResult.cs`, `FarmWorkPhase.cs`, `IFarmWorkProvider.cs`, `IRandomSource.cs`: No direct issue found.
+- `ActionContext.cs`: Trailing optional capability preserves call-site compatibility. No direct issue found; continued growth should still be monitored to prevent service-locator drift.
+- `TestFarmProductionWindow.cs`: Correctly isolated under `TestOnly` and uses public APIs. No code defect found, but it is not wired or executed.
+- `SampleScene.unity` / `GuardTest.unity`: H-01 applies.
 
 ## Cross-Cutting Findings
 
-- “예측 후보 하나 ↔ 외부 decision 하나 ↔ 실행 queue 하나”의 의미 보존이 utility 정확도보다 우선한다. H-01처럼 후보 종류를 외부 경계에서 합치면 좋은 수식도 실제 행동 비용과 연결되지 않는다.
-- Guard duty evaluation slice와 runtime GuardAction 지속시간의 차이는 명확히 문서화되어 있어 의도된 근사로 볼 수 있다. 단, H-01과 결합하면 근사가 아니라 전혀 다른 후보가 실행되는 문제가 된다.
-- 현재 tuning 값은 합성 수치 검증의 출발값이며 최종 balance 값이 아니다. 구조 결함을 tuning으로 상쇄하지 말아야 한다.
+- The narrow provider boundary is justified even with one concrete implementation because it separates pooled action execution from facility state and supplies a clear test seam.
+- Adding one farm capability to `ActionContext` does not yet make it a service locator. Additional role-specific capabilities should trigger a role-context review.
+- Direct farm-to-warehouse deposit is a documented vertical-slice concession. It should not become the assumed final carry/deposit architecture.
+- The provisional non-catalogue integer item key is acceptable for this isolated warehouse skeleton. Not adding Wheat to `ItemData.csv` is reasonable because the current catalogue drives Food/Drink interaction candidates. A separate item-definition source will be required before economy, carry, or general inventory integration.
+- The concrete `SeededRandomSource` field is a documented concession; no additional issue is raised for it.
+- The new minimal script `.meta` format matches existing repository examples and all reviewed GUIDs are unique.
 
 ## Positive Notes
 
-- `DestinationDecider`는 action/pool/runner를 참조하거나 실제 `NPCStat`을 mutate하지 않는다.
-- public `Decide(...)`, `NPCDecision`, `ActionContext`, `IAction`, `WorkerNPC` 계약이 유지됐다.
-- Farmer와 Guard가 동일한 risk/travel/future 가치 단위로 평가되면서 역할별 실행은 selector에 남아 있다.
-- critical safety filtering, finite check, deterministic tie-break, depth clamp가 명시적이다.
-- Guard combat가 utility decision보다 먼저 실행되는 우선순위가 유지됐다.
-- scene의 기존 Farmer/Guard selector에는 `NPCDecisionTuning.asset`과 `DestinationDB` 참조가 연결되어 있어 production용 신규 재배선은 필요하지 않다.
+- `WorkerNPC`, `IAction`, `ActionResult`, `ActionPool`, `DestinationDecider`, and `NPCStat` were not polluted with farm-specific state.
+- Growing and harvesting apply exactly one state-machine step per successful provider call.
+- Reaching maximum growth changes phase without producing output.
+- Each successful harvest deposits output before decreasing the gauge, including the final harvest.
+- Failed current `WarehouseInventory` additions leave both quantity and gauge unchanged.
+- Multiple queued `FarmingAction` instances share one facility state through the same provider.
+- NPC need costs apply only after successful farm work.
+- Cancelled or unfinished actions never call `TryApplyWork`.
+- `Clear()` resets the cached provider and timer before pool reuse.
+- No runtime progress or warehouse quantity is stored in the ScriptableObject.
+- No global Unity random state, scene search, or per-tick component lookup was introduced.
 
 ## Recommended Next Actions
 
-1. H-01을 수정해 GuardDuty와 plain Idle의 실행 의미를 분리한다.
-2. threshold equality validation을 보정한다.
-3. 수정 후 command-line build와 정적 diff를 다시 확인한다.
-4. `GuardTest.unity`에서 TestOnly probe와 Farmer/Guard Play Mode 시나리오를 실행한다.
-5. decision trace로 tuning을 조정하되 구조 문제를 weight 변경으로 덮지 않는다.
-6. Sleep 임시 할당과 invalid-score diagnostic을 정리한다.
-7. 안정화 후 `ProjectStructure.md`를 현재 아키텍처로 갱신한다.
+1. Wire the farm composition in the actual gameplay scene and create the required definition asset.
+2. Run the TestOnly window and real Farmer Play Mode acceptance scenarios.
+3. Harden Unity lifetime checks in `FarmWorkSite` and validate all required action dependencies before work begins.
+4. Clarify or replace the partial-acceptance inventory contract.
+5. Unify runtime and predicted farming duration.
+6. Add repository-owned tests for the state cycle, deterministic yield, failed inventory add, pooled action reuse, and destroyed/disabled provider behavior.
+7. Address the low-severity random-range, duplicate-key, and file-placement findings during cleanup.
+
+## Final Verdict
+
+**Changes required before runtime acceptance.**
+
+The responsibility split and core state-machine implementation are good, with no Critical architectural issue. Approval is blocked by the confirmed lack of scene composition, which currently converts all Farmer Work decisions into Idle. Resolve H-01 and the medium transaction/lifecycle safety issues, then complete Unity Play Mode validation before treating the Farm Production Gauge vertical slice as finished.
