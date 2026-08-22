@@ -11,9 +11,9 @@ public readonly struct NPCDecision
     public BuildingType DestinationKey { get; }
     public Vector3 DestinationPos { get; }
     public int RepeatCount { get; }
-    public InteractRequest? Request { get; }
+    public InteractionRequest? Request { get; }
 
-    public NPCDecision(NPCIntent intent, BuildingType destinationKey, Vector3 destinationPos, int repeatCount, InteractRequest? request = null)
+    public NPCDecision(NPCIntent intent, BuildingType destinationKey, Vector3 destinationPos, int repeatCount, InteractionRequest? request = null)
     {
         Intent = intent;
         DestinationKey = destinationKey;

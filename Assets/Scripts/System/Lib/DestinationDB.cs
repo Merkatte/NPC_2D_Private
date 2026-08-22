@@ -4,10 +4,10 @@ using UnityEngine;
 public class DestinationDB : MonoBehaviour
 {
     [SerializeField] private List<DestinationInfo> _destionations;
+    [SerializeField] private InteractableManager _interactableManager;
 
     private Dictionary<BuildingType, DestinationInfo> _destinationDB;
     private List<BuildingType> _registeredKeys;
-    private Dictionary<BuildingType, FarmWorkSite> _farmWorkSites;
 
     public IReadOnlyList<BuildingType> RegisteredKeys
     {
@@ -38,34 +38,21 @@ public class DestinationDB : MonoBehaviour
         return true;
     }
 
-    public bool TryGetInteractionProvider(BuildingType destinationName, out IInteractionProvider provider)
+    public bool TryGetInteractionProvider(BuildingType destinationName, ActionType actionType, out IInteractionProvider provider)
     {
         EnsureInitialized();
         provider = null;
+
+        if (!_interactableManager)
+            return false;
 
         if (!_destinationDB.TryGetValue(destinationName, out var info))
             return false;
 
-        if (info.InteractProvider == null)
+        if (!info.DestinationObject)
             return false;
 
-        provider = info.InteractProvider;
-        return true;
-    }
-
-    public bool TryGetFarmWorkProvider(BuildingType destinationName, out IFarmWorkProvider provider)
-    {
-        EnsureInitialized();
-        provider = null;
-
-        if (!_farmWorkSites.TryGetValue(destinationName, out var site))
-            return false;
-
-        if (!site)
-            return false;
-
-        provider = site;
-        return true;
+        return _interactableManager.TryGetInteractionProvider(info.DestinationObject, actionType, out provider);
     }
 
     private void EnsureInitialized()
@@ -80,7 +67,6 @@ public class DestinationDB : MonoBehaviour
     {
         _destinationDB = new Dictionary<BuildingType, DestinationInfo>();
         _registeredKeys = new List<BuildingType>();
-        _farmWorkSites = new Dictionary<BuildingType, FarmWorkSite>();
 
         if (_destionations == null)
             return;
@@ -97,9 +83,6 @@ public class DestinationDB : MonoBehaviour
                 _registeredKeys.Add(info.BuildingType);
 
             _destinationDB[info.BuildingType] = info;
-
-            if (info.DestinationObject && info.DestinationObject.TryGetComponent(out FarmWorkSite farmWorkSite))
-                _farmWorkSites[info.BuildingType] = farmWorkSite;
         }
     }
 }
@@ -110,5 +93,4 @@ public class DestinationInfo
     public BuildingType BuildingType;
     public Transform DestinationLoc;
     public GameObject DestinationObject;
-    public BaseInteractable InteractProvider;
 }

@@ -1,13 +1,13 @@
 public readonly struct InteractionOption
 {
     public ActionType Type { get; }
-    public int ItemId { get; }
-    public StatEffect Effect { get; }
+    public int OptionId { get; }
+    public StatEffect ActorEffect { get; }
 
-    public InteractionOption(ActionType type, int itemId, StatEffect effect)
+    public InteractionOption(ActionType type, int optionId, StatEffect actorEffect)
     {
         Type = type;
-        ItemId = itemId;
-        Effect = effect;
+        OptionId = optionId;
+        ActorEffect = actorEffect;
     }
 }

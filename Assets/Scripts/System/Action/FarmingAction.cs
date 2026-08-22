@@ -2,12 +2,10 @@ using UnityEngine;
 
 public class FarmingAction : DefaultAction
 {
-    // Named seam for a future Farmer skill/proficiency system; always 1f until that exists.
-    private const float WorkerEfficiency = 1f;
-
     private float _workingTime = 3f;
     private float _currentWorkingTime = 0f;
-    private IFarmWorkProvider _farmWorkProvider;
+    private IInteractionProvider _interactionProvider;
+    private InteractionRequest _request;
 
     public FarmingAction() : base(ActionType.Farming)
     {
@@ -19,11 +17,15 @@ public class FarmingAction : DefaultAction
         if (IsFinished)
             return;
 
-        _farmWorkProvider = actionContext.FarmWorkProvider;
-        if (_farmWorkProvider == null || !_farmWorkProvider.CanApplyWork)
+        _interactionProvider = actionContext.InteractionProvider;
+        if (_interactionProvider == null || actionContext.Request == null ||
+            !_interactionProvider.CanInteract(GetMyActionType()))
         {
-            Fail("FarmingAction started without a usable IFarmWorkProvider");
+            Fail("FarmingAction started without a usable IInteractionProvider");
+            return;
         }
+
+        _request = actionContext.Request.Value;
     }
 
     public override void Tick()
@@ -47,7 +49,8 @@ public class FarmingAction : DefaultAction
     public override void Clear()
     {
         _currentWorkingTime = 0f;
-        _farmWorkProvider = null;
+        _interactionProvider = null;
+        _request = default;
         base.Clear();
     }
 
@@ -62,9 +65,9 @@ public class FarmingAction : DefaultAction
             return;
         }
 
-        if (!_farmWorkProvider.TryApplyWork(WorkerEfficiency, out _))
+        if (!_interactionProvider.TryInteract(_request, out _))
         {
-            Fail("FarmWorkSite rejected TryApplyWork");
+            Fail("FarmWorkSite rejected the Farming transaction");
             return;
         }
 

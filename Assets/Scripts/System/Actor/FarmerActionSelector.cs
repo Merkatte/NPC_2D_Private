@@ -55,24 +55,24 @@ public class FarmerActionSelector : BaseNPCActionSelector
             decision = _decider.Decide(stat, npcType, component.Position, _workCost);
         }
 
-        IFarmWorkProvider farmWorkProvider = null;
+        IInteractionProvider farmProvider = null;
         if (decision.Intent == NPCIntent.Work)
         {
-            bool hasProvider = _destinationDB.TryGetFarmWorkProvider(decision.DestinationKey, out farmWorkProvider);
-            if (!hasProvider || !farmWorkProvider.CanApplyWork)
+            bool hasProvider = _destinationDB.TryGetInteractionProvider(decision.DestinationKey, ActionType.Farming, out farmProvider);
+            if (!hasProvider)
             {
                 if (!_hasLoggedMissingFarmProvider)
                 {
-                    Debug.LogError($"FarmerActionSelector: no usable IFarmWorkProvider for {decision.DestinationKey}; falling back to Idle.");
+                    Debug.LogError($"FarmerActionSelector: no usable IInteractionProvider for {decision.DestinationKey}/{ActionType.Farming}; falling back to Idle.");
                     _hasLoggedMissingFarmProvider = true;
                 }
 
                 decision = NPCDecision.Idle(component.Position);
-                farmWorkProvider = null;
+                farmProvider = null;
             }
         }
 
-        ActionContext actionContext = BuildContext(decision, component, stat, farmWorkProvider);
+        ActionContext actionContext = BuildContext(decision, component, stat, farmProvider);
         List<IAction> rented = new List<IAction>();
 
         if (decision.DestinationKey != BuildingType.None)
@@ -98,17 +98,22 @@ public class FarmerActionSelector : BaseNPCActionSelector
         return new Queue<IAction>(rented);
     }
 
-    private ActionContext BuildContext(NPCDecision decision, NPCComponent component, NPCStat stat, IFarmWorkProvider farmWorkProvider)
+    private ActionContext BuildContext(NPCDecision decision, NPCComponent component, NPCStat stat, IInteractionProvider farmProvider)
     {
         switch (decision.Intent)
         {
             case NPCIntent.Work:
-                return new ActionContext(component, stat, decision.DestinationPos, _farmingActionCostInfo, farmWorkProvider: farmWorkProvider);
+            {
+                // 1f is a seam for a future Farmer skill/proficiency system.
+                InteractionRequest request = new InteractionRequest(ActionType.Farming, strength: 1f);
+                return new ActionContext(component, stat, decision.DestinationPos, _farmingActionCostInfo, provider: farmProvider, request: request);
+            }
 
             case NPCIntent.Eat:
             case NPCIntent.Drink:
             {
-                _destinationDB.TryGetInteractionProvider(decision.DestinationKey, out var provider);
+                ActionType actionType = decision.Request.HasValue ? decision.Request.Value.Type : ToActionType(decision.Intent);
+                _destinationDB.TryGetInteractionProvider(decision.DestinationKey, actionType, out var provider);
                 return new ActionContext(component, stat, decision.DestinationPos, provider: provider, request: decision.Request);
             }
 

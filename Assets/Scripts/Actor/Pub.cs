@@ -1,8 +1,32 @@
 using System.Collections.Generic;
+using UnityEngine;
 
-public class Pub : BaseInteractable
+public class Pub : BaseInteractionProvider
 {
-    public override bool CanInteract(ActionType type)
+    [SerializeField] private ItemDataContext _itemDataContext;
+
+    private Dictionary<ItemCategory, List<ItemInfo>> _itemInfos;
+
+    protected override bool TryInitializeCore(out string failureReason)
+    {
+        if (!_itemDataContext)
+        {
+            failureReason = "missing ItemDataContext";
+            return false;
+        }
+
+        _itemInfos = _itemDataContext.ItemInfos();
+        if (_itemInfos == null)
+        {
+            failureReason = "ItemDataContext produced no item info mapping";
+            return false;
+        }
+
+        failureReason = null;
+        return true;
+    }
+
+    protected override bool SupportsCore(ActionType type)
     {
         return type switch
         {
@@ -12,11 +36,8 @@ public class Pub : BaseInteractable
         };
     }
 
-    public override void AppendOptions(ActionType type, List<InteractionOption> buffer)
+    protected override void AppendOptionsCore(ActionType type, List<InteractionOption> buffer)
     {
-        if (_itemInfos == null)
-            return;
-
         ItemCategory? category = ToCategory(type);
         if (category == null)
             return;
@@ -30,12 +51,9 @@ public class Pub : BaseInteractable
         }
     }
 
-    public override bool TryInteraction(InteractRequest request, out InteractResult interactResult)
+    protected override bool TryInteractCore(InteractionRequest request, out InteractionResult result)
     {
-        interactResult = default;
-
-        if (_itemInfos == null)
-            return false;
+        result = default;
 
         ItemCategory? category = ToCategory(request.Type);
         if (category == null)
@@ -46,10 +64,10 @@ public class Pub : BaseInteractable
 
         foreach (var item in itemList)
         {
-            if (item.ID != request.ItemId)
+            if (item.ID != request.OptionId)
                 continue;
 
-            interactResult = new InteractResult(true, item.Effect);
+            result = new InteractionResult(item.Effect);
             return true;
         }
 

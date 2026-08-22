@@ -42,14 +42,19 @@ public class DrinkAction : DefaultAction
     protected override void UpdateCompletion()
     {
         var stat = actionContext.Stat;
-        
+
         if (currentDrinkTime >= drinkTime)
         {
-            if (actionContext.InteractionProvider != null && actionContext.Request != null &&
-                actionContext.InteractionProvider.TryInteraction(actionContext.Request.Value, out var result))
+            if (actionContext.InteractionProvider == null || actionContext.Request == null ||
+                !actionContext.InteractionProvider.TryInteract(actionContext.Request.Value, out var result))
             {
-                stat.ApplyStatEffect(result.Effect);
+                Fail("InteractionProvider rejected the Drink transaction");
+                return;
             }
+
+            if (result.HasActorEffect)
+                stat.ApplyStatEffect(result.ActorEffect);
+
             Complete();
         }
     }

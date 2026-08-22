@@ -212,10 +212,11 @@ public class GuardActionSelector : BaseNPCActionSelector
             return new Queue<IAction>();
         }
 
-        _destinationDB.TryGetInteractionProvider(decision.DestinationKey, out var provider);
+        ActionType actionType = ToActionType(decision.Intent);
+        _destinationDB.TryGetInteractionProvider(decision.DestinationKey, actionType, out var provider);
         ActionContext interactContext = new ActionContext(component, stat, decision.DestinationPos, provider: provider, request: decision.Request);
 
-        if (!TryRentAction(ToActionType(decision.Intent), interactContext, rented))
+        if (!TryRentAction(actionType, interactContext, rented))
         {
             ReturnAll(rented);
             return new Queue<IAction>();

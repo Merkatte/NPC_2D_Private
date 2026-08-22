@@ -62,7 +62,7 @@ FarmingAction -> IFarmWorkProvider.TryApplyWork(...)
 - 해당 GameObject에 `Pub` component가 붙어 있다.
 - 현재 `DestinationInfo.InteractProvider`도 같은 GameObject의 `Pub`를 가리킨다.
 
-따라서 `DestinationDB`가 `DestinationObject`에서 provider component를 초기화 시 한 번 수집하도록 바꿔도 기존 Eat/Drink 배선은 유지할 수 있다.
+따라서 `DestinationDB`는 기존처럼 `BuildingType -> DestinationObject`를 해석하고, provider의 초기화·등록·조회는 `InteractableManager`에 위임할 수 있다. 기존 Eat/Drink의 `DestinationObject`와 `Pub` component 관계는 유지된다.
 
 Farm destination의 `DestinationObject`도 이미 존재하지만 `FarmWorkSite` scene 부착은 아직 사용자 배선 단계다. 이번 refactor는 이 component를 자동 생성하지 않는다.
 
@@ -84,12 +84,13 @@ Farm destination의 `DestinationObject`도 이미 존재하지만 `FarmWorkSite`
 1. `IInteractionProvider`를 item 공급에 한정되지 않은 공통 실행 프로토콜로 만든다.
 2. Eat, Drink, Farming이 같은 provider/request/result 경로를 사용하게 한다.
 3. `ActionContext`에서 `FarmWorkProvider`를 제거하고 `InteractionProvider + InteractionRequest` 한 경로만 남긴다.
-4. `DestinationDB`에서 domain별 provider cache와 lookup을 제거한다.
-5. 한 destination GameObject에 서로 다른 `ActionType` provider component가 함께 존재할 수 있게 한다.
-6. provider의 공통 validation과 dispatch는 `BaseInteractionProvider`가 template method로 소유하게 한다.
-7. Farm phase/progress/yield transaction은 계속 `FarmWorkSite`가 소유하게 한다.
-8. Pub item catalogue와 stat effect 규칙은 계속 `Pub`가 소유하게 한다.
-9. provider transaction 실패가 action의 거짓 `Completed`로 처리되지 않게 한다.
+4. `DestinationDB`에서 domain별 provider cache와 lookup을 제거하고, 건물과 scene object의 매핑만 소유하게 한다.
+5. `InteractableManager`를 모든 interaction provider의 초기화·등록·조회 책임을 가진 범용 manager로 유지한다.
+6. 한 destination GameObject에 서로 다른 `ActionType` provider component가 함께 존재할 수 있게 한다.
+7. provider의 공통 초기화 lifecycle, validation과 dispatch는 `BaseInteractionProvider`가 template method로 소유하게 한다.
+8. Farm phase/progress/yield transaction은 계속 `FarmWorkSite`가 소유하게 한다.
+9. Pub item catalogue와 stat effect 규칙은 계속 `Pub`가 소유하게 한다.
+10. provider transaction 실패가 action의 거짓 `Completed`로 처리되지 않게 한다.
 
 ## 4. 명시적 제외 범위
 
@@ -114,9 +115,14 @@ Sleep은 향후 option 없는 interaction의 추가 사례가 될 수 있지만,
 DestinationObject
   -> one or more BaseInteractionProvider components
 
+InteractableManager
+  -> scene의 interaction provider 초기화·명시적 등록
+  -> (GameObject owner, ActionType)별 provider handle cache
+  -> provider의 domain 규칙과 BuildingType은 모름
+
 DestinationDB
-  -> (BuildingType, ActionType)별 provider handle cache
-  -> provider의 domain 규칙은 모름
+  -> BuildingType에서 DestinationLoc/DestinationObject 조회
+  -> interaction 조회는 DestinationObject를 InteractableManager에 전달
 
 Selector
   -> provider + InteractionRequest를 ActionContext에 주입
@@ -127,6 +133,7 @@ Action
   -> 공통 ActorEffect 적용 또는 action 고유 비용 적용
 
 BaseInteractionProvider
+  -> idempotent 초기화 lifecycle
   -> 공통 support/availability/request validation
   -> concrete provider의 core method로 dispatch
 
@@ -162,7 +169,7 @@ public interface IInteractionProvider
 - `AppendOptions(type, buffer)`: 선택 가능한 option이 있는 interaction만 buffer에 추가한다. Farming처럼 option이 없는 interaction은 아무것도 추가하지 않는다.
 - `TryInteract(request, out result)`: transaction을 정확히 한 번 실행한다. 반환 bool이 성공의 단일 source of truth다.
 
-`Supports`와 `CanInteract`를 분리하는 이유는 `DestinationDB.Awake()` 시점에 Pub item initialization이나 `FarmWorkSite.Awake()` 순서를 신뢰하지 않고도 capability cache를 만들기 위해서다.
+`Supports`와 `CanInteract`를 분리하는 이유는 capability 등록과 runtime 사용 가능 여부를 구분하기 위해서다. `InteractableManager`는 안정적인 `Supports` 결과로 cache를 구성하고, 실제 조회 시 `CanInteract`로 초기화 성공 여부와 현재 상태를 확인한다.
 
 ### 6.2 `InteractionRequest`
 
@@ -243,13 +250,32 @@ public readonly struct InteractionOption
 ```csharp
 public abstract class BaseInteractionProvider : MonoBehaviour, IInteractionProvider
 {
-    protected virtual bool IsOperational => true;
+    private bool _initializationAttempted;
+    private bool _isOperational;
+    private string _initializationFailureReason;
+
+    public bool TryInitialize(out string failureReason)
+    {
+        if (_initializationAttempted)
+        {
+            failureReason = _initializationFailureReason;
+            return _isOperational;
+        }
+
+        _initializationAttempted = true;
+        _isOperational = TryInitializeCore(out _initializationFailureReason);
+        failureReason = _initializationFailureReason;
+        return _isOperational;
+    }
 
     public bool Supports(ActionType type)
         => SupportsCore(type);
 
     public bool CanInteract(ActionType type)
-        => SupportsCore(type) && IsOperational;
+    {
+        EnsureInitialized();
+        return SupportsCore(type) && _isOperational && CanInteractCore(type);
+    }
 
     public void AppendOptions(ActionType type, List<InteractionOption> buffer)
     {
@@ -271,6 +297,11 @@ public abstract class BaseInteractionProvider : MonoBehaviour, IInteractionProvi
 
     protected abstract bool SupportsCore(ActionType type);
 
+    protected virtual bool CanInteractCore(ActionType type)
+        => true;
+
+    protected abstract bool TryInitializeCore(out string failureReason);
+
     protected virtual void AppendOptionsCore(
         ActionType type,
         List<InteractionOption> buffer)
@@ -280,11 +311,19 @@ public abstract class BaseInteractionProvider : MonoBehaviour, IInteractionProvi
     protected abstract bool TryInteractCore(
         InteractionRequest request,
         out InteractionResult result);
+
+    private void EnsureInitialized()
+    {
+        if (!_initializationAttempted)
+            TryInitialize(out _);
+    }
 }
 ```
 
 공통 base가 소유하는 것:
 
+- idempotent 초기화와 실패 상태 보존
+- manager보다 먼저 protocol이 호출되어도 안전한 lazy initialization
 - null buffer 방어
 - stable support와 runtime availability 결합
 - invalid strength 거부
@@ -294,7 +333,7 @@ public abstract class BaseInteractionProvider : MonoBehaviour, IInteractionProvi
 concrete provider가 소유하는 것:
 
 - 지원 `ActionType`
-- operational 조건
+- 초기화 dependency 검증과 operational 조건
 - option 생성
 - domain request 검증
 - transaction과 결과
@@ -308,8 +347,9 @@ public protocol method는 derived class에서 제각각 다시 구현하지 않�
 `Pub : BaseInteractionProvider`로 변경한다.
 
 - `_itemInfos`와 item lookup은 `Pub`가 직접 소유한다.
-- `InitializeItems(...)`를 통해 item table을 받는다.
-- `IsOperational => _itemInfos != null`.
+- `[SerializeField] private ItemDataContext _itemDataContext;`를 직접 참조한다.
+- `TryInitializeCore`에서 `_itemDataContext.ItemInfos()`를 한 번 읽어 `_itemInfos`를 구성한다.
+- 누락된 context나 mapping 실패는 초기화 실패 이유로 반환한다.
 - `SupportsCore`: Eat/Drink만 true.
 - `AppendOptionsCore`: category의 item을 `InteractionOption(OptionId=item.ID, ActorEffect=item.Effect)`로 추가.
 - `TryInteractCore`: request type과 option ID에 맞는 item을 찾고 `InteractionResult(item.Effect)` 반환.
@@ -317,13 +357,16 @@ public protocol method는 derived class에서 제각각 다시 구현하지 않�
 
 기존 `BaseInteractable`의 item dictionary와 `Init`은 범용 base로 옮기지 않는다.
 
+두 Pub가 같은 `ItemDataContext.asset`을 참조하는 것은 데이터를 복제하는 것이 아니다. 두 component가 같은 공유 definition asset을 명시적으로 참조하는 구조이며, `InteractableManager`가 item domain dependency를 알지 않게 한다.
+
 ### 8.2 `FarmWorkSite`
 
 `FarmWorkSite : BaseInteractionProvider`로 변경한다.
 
 - `IFarmWorkProvider` 구현을 제거한다.
 - `SupportsCore(ActionType.Farming)`만 true.
-- `IsOperational => _isOperational`.
+- 기존 `Awake()`의 definition/random/inventory 검증을 `TryInitializeCore`로 이동한다.
+- concrete dependency는 계속 `FarmWorkSite`의 serialized field로 소유한다.
 - `AppendOptionsCore`는 base 기본 empty 구현 사용.
 - `TryInteractCore`는 `request.Strength`를 worker efficiency로 사용한다.
 - 기존 Growing/Harvesting transaction과 inventory-before-progress invariant는 그대로 유지한다.
@@ -334,7 +377,7 @@ Farm의 `Phase`, `CurrentProgress`, `MaxProgress`, `NormalizedProgress` read-onl
 
 `FarmWorkResult`는 공통 실행 결과와 중복되고 production 소비자가 없어 삭제한다. TestOnly window는 호출 전후 phase/progress/warehouse quantity를 직접 기록해 마지막 변화량을 보여준다.
 
-## 9. DestinationDB 일반화
+## 9. InteractableManager registry와 DestinationDB routing
 
 ### 9.1 DestinationInfo
 
@@ -350,25 +393,51 @@ DestinationObject
 
 provider는 `DestinationObject`에 붙은 component로 표현한다. 이 필드는 모든 destination의 공통 scene object이므로 Pub/Well/Inn/Farm/GuardPost가 domain별 Inspector field를 떠안는 문제가 없다.
 
-### 9.2 Provider cache
+### 9.2 `InteractableManager`의 명시적 등록과 초기화
 
-`Convert2Dict()`에서 destination마다 다음을 한 번 수행한다.
+`InteractableManager`는 이름과 기존 scene component를 유지한다. 현재 serialized field를 다음 형태로 발전시킨다.
 
-1. `DestinationObject.GetComponents<MonoBehaviour>()`로 component를 가져온다.
-2. `IInteractionProvider` 구현만 선별한다.
-3. 모든 `ActionType`을 순회하며 `provider.Supports(type)`를 확인한다.
-4. `(BuildingType, ActionType)` key로 provider handle을 cache한다.
+```csharp
+[SerializeField] private BaseInteractionProvider[] _interactables;
+```
 
-provider handle은 다음 두 값을 함께 보관한다.
+manager는 `Awake()`와 lookup 진입부에서 idempotent `EnsureInitialized()`를 호출한다. 초기화 과정은 다음과 같다.
 
-- `MonoBehaviour Owner`: Unity destroyed-object fake null 확인
-- `IInteractionProvider Provider`: 공통 호출 계약
+1. `_interactables`를 serialized 순서대로 순회한다.
+2. null/destroyed component를 건너뛰고 원인을 한 번 로그한다.
+3. 각 provider의 `TryInitialize(out reason)`를 한 번 호출한다.
+4. 모든 `ActionType`을 순회하며 안정적인 `provider.Supports(type)`를 확인한다.
+5. `(provider.gameObject, ActionType)` key로 provider handle을 cache한다.
 
-`Tick()` 또는 action 실행 중 `GetComponent`를 호출하지 않는다.
+provider handle은 `BaseInteractionProvider` concrete component를 보관한다. 따라서 Unity destroyed-object fake null 검사와 `IInteractionProvider` 호출을 모두 만족하며, interface만 cache할 때 생기는 fake-null 문제를 피한다.
 
-### 9.3 Lookup API
+`InteractableManager`가 제공하는 API:
 
-기존 API를 다음 하나로 수렴한다.
+```csharp
+bool TryGetInteractionProvider(
+    GameObject destinationObject,
+    ActionType actionType,
+    out IInteractionProvider provider);
+```
+
+조회 성공 조건:
+
+- manager 초기화가 완료됨
+- `(destinationObject, actionType)` cache entry 존재
+- backing component가 destroyed되지 않음
+- `Provider.CanInteract(actionType)`가 현재 true
+
+`GetComponent`, scene-wide search, tag lookup을 매 조회나 action `Tick()`에서 수행하지 않는다. provider 등록은 `_interactables` 배열 하나가 명시적 source of truth다.
+
+### 9.3 `DestinationDB`의 routing
+
+`DestinationDB`는 provider component를 scan하거나 cache하지 않는다. `[SerializeField] private InteractableManager _interactableManager;`를 참조하고 다음 순서만 수행한다.
+
+1. `BuildingType`으로 `DestinationInfo`를 조회한다.
+2. `DestinationObject`가 유효한지 확인한다.
+3. manager에 `(DestinationObject, ActionType)` lookup을 위임한다.
+
+외부 호출 API는 기존 소비자의 의미를 위해 `DestinationDB`에 유지한다.
 
 ```csharp
 bool TryGetInteractionProvider(
@@ -377,27 +446,24 @@ bool TryGetInteractionProvider(
     out IInteractionProvider provider);
 ```
 
-조회 성공 조건:
-
-- `(BuildingType, ActionType)` cache entry 존재
-- backing `MonoBehaviour`가 destroyed되지 않음
-- `Provider.CanInteract(actionType)`가 현재 true
-
 삭제 대상:
 
 - 기존 action type 없는 `TryGetInteractionProvider(BuildingType, out ...)`
 - `_farmWorkSites`
 - `TryGetFarmWorkProvider(...)`
+- `DestinationDB` 내부 provider handle/cache/component scan
+
+이 경계에서 `DestinationDB`는 위치·scene object routing을, `InteractableManager`는 interaction component lifecycle과 registry를 담당한다. 양쪽 모두 Pub/Farm/Cook 같은 domain 종류를 분기하지 않는다.
 
 ### 9.4 중복 규칙
 
-한 destination에서 같은 `ActionType`을 지원하는 provider는 하나만 허용한다.
+같은 GameObject에서 같은 `ActionType`을 지원하는 provider는 하나만 허용한다.
 
 - 한 Pub provider가 Eat과 Drink를 동시에 지원하는 것은 허용한다.
-- 서로 다른 provider가 같은 `(BuildingType, ActionType)`을 지원하면 `DestinationDB` 초기화 중 오류를 한 번 로그한다.
-- cache에는 component 순서상 첫 provider만 유지해 결과를 결정적으로 만든다.
+- 서로 다른 provider가 같은 `(GameObject, ActionType)`을 지원하면 `InteractableManager` 초기화 중 오류를 한 번 로그한다.
+- cache에는 `_interactables` 배열에서 먼저 나온 provider만 유지해 결과를 결정적으로 만든다.
 
-향후 같은 건물에서 같은 action의 여러 provider를 선택해야 한다면 request에 provider identity를 몰래 넣지 않고, 별도 destination key 또는 명시적 composite provider 설계를 먼저 한다.
+향후 같은 시설 object에서 같은 action의 여러 provider를 선택해야 한다면 request에 provider identity를 몰래 넣지 않고, 별도 destination object 또는 명시적 composite provider 설계를 먼저 한다.
 
 ## 10. Selector와 ActionContext 통합
 
@@ -478,19 +544,29 @@ utility 판단, `RepeatCount`, 이동 queue 구성은 변경하지 않는다.
 
 위 이름 변경 외 utility 수식, 위험 곡선, critical tier, look-ahead depth, candidate 종류는 수정하지 않는다.
 
-## 13. Item 초기화 책임
+## 13. `InteractableManager`의 범용 manager 책임
 
-기존 `BaseInteractable`에서 item table을 제거하면 `InteractableManager`는 실제로 Pub item 초기화만 담당하게 된다. 이름과 책임을 맞추기 위해 다음처럼 정리한다.
+`InteractableManager`가 현재 Pub item initializer처럼 보이는 것은 등록된 concrete provider가 Pub뿐이기 때문이다. 이 우연을 장기 책임으로 확정해 `ItemInteractionInitializer`로 축소하지 않는다. class/file과 `.meta` GUID를 그대로 유지하고, 다음 범용 책임을 실제로 부여한다.
 
-- `InteractableManager.cs`를 `ItemInteractionInitializer.cs`로 rename한다.
-- `.meta`를 함께 이동해 script GUID `4761b464a243d78409e02c7851329d5e`를 보존한다.
-- class 이름도 `ItemInteractionInitializer`로 변경한다.
-- `[FormerlySerializedAs("_interactables")] [SerializeField] private Pub[] _pubs;`
-- `_dataManager`에서 item table을 받아 각 Pub의 `InitializeItems`를 호출한다.
-- 초기화는 `Awake()`에서 수행해 모든 `Start()` 이전에 Pub가 operational이 되게 한다.
-- null `DataManager`/array는 원인을 한 번 로그하고 안전하게 반환한다.
+- scene에서 사용 가능한 `BaseInteractionProvider`의 명시적 등록 목록 소유
+- provider 초기화 lifecycle 시작과 초기화 실패 진단
+- `(GameObject owner, ActionType)` capability cache 소유
+- destination object와 action type을 통한 provider 조회
+- duplicate/null/destroyed provider 검증
 
-현재 두 scene의 `_interactables` entry는 모두 `Pub` component이므로 field migration이 가능하다. 새 `IItemDataConsumer` interface나 item-provider base는 두 번째 실제 소비자가 생길 때까지 만들지 않는다.
+반대로 manager가 소유하지 않는 것:
+
+- Pub item table, Farm progress, Cook recipe 같은 domain data
+- Eat/Drink/Farming별 `switch` 또는 concrete type 검사
+- selector의 행동 우선순위나 utility 계산
+- action 실행 시간, stat 변경, transaction 규칙
+- 모든 provider에 넘기는 범용 service bag 또는 service locator
+
+따라서 기존 `_dataManager` field와 “manager가 item table을 Pub에 주입”하는 흐름은 제거한다. Pub는 concrete dependency인 `ItemDataContext`를 직접 serialized reference로 소유하고, FarmWorkSite도 기존 concrete dependency를 직접 소유한다. manager는 각 provider의 공통 `TryInitialize`만 호출한다.
+
+이 변경 후 `DataManager.GetItemInfos()`와 `IDataManager.GetItemInfos()`의 호출부가 0건이므로 두 API와 `DataManager._itemDataContext`도 함께 제거한다. `ItemDataContext` 자체는 Pub가 직접 참조하는 공유 definition asset으로 유지한다.
+
+이 제한이 중요하다. 이름만 `InteractableManager`로 남기고 domain dependency를 계속 추가하면 실제로는 God Manager가 된다. 반대로 위 lifecycle·registry 경계를 지키면 현재 Pub뿐인 상태에서도 미래 `Cook`, `Shop`, `Clinic` provider를 같은 절차로 등록할 수 있고 manager 자체는 수정할 필요가 없다.
 
 ## 14. 파일 변경 목록
 
@@ -500,7 +576,6 @@ utility 판단, `RepeatCount`, 이동 queue 구성은 변경하지 않는다.
 |---|---|---|
 | `Assets/Scripts/Actor/BaseInteractable.cs` | `Assets/Scripts/Actor/BaseInteractionProvider.cs` | 범용 template method base |
 | `Assets/Data/Struct/InteractStruct.cs` | `Assets/Data/Struct/InteractionRequest.cs` | request/result 분리 및 이름 일치 |
-| `Assets/Scripts/Manager/InteractableManager.cs` | `Assets/Scripts/Manager/ItemInteractionInitializer.cs` | item 초기화라는 실제 책임 표현 |
 
 각 `.cs.meta`도 파일과 함께 이동한다. 새 GUID를 생성하지 않는다.
 
@@ -521,11 +596,13 @@ utility 판단, `RepeatCount`, 이동 queue 구성은 변경하지 않는다.
 | `Assets/Data/Struct/InteractionOption.cs` | ItemId/Effect를 OptionId/ActorEffect로 일반화 |
 | `Assets/Data/Struct/ActionContext.cs` | 공통 provider/request만 유지, farm field 제거 |
 | `Assets/Data/Struct/NPCDecision.cs` | request type rename |
-| `Assets/Scripts/Actor/BaseInteractionProvider.cs` | template method 구현 |
-| `Assets/Scripts/Actor/Pub.cs` | item domain을 concrete class로 이동 |
-| `Assets/Scripts/Manager/ItemInteractionInitializer.cs` | Pub 전용 item initialization |
+| `Assets/Scripts/Actor/BaseInteractionProvider.cs` | idempotent 초기화 lifecycle과 template method 구현 |
+| `Assets/Scripts/Actor/Pub.cs` | `ItemDataContext` 직접 참조와 item domain concrete 구현 |
+| `Assets/Scripts/Manager/InteractableManager.cs` | 범용 provider 초기화·등록·조회 cache manager로 확장 |
+| `Assets/Scripts/Manager/DataManager.cs` | 사용되지 않는 item context field와 `GetItemInfos()` 제거 |
+| `Assets/Scripts/Interface/IDataManager.cs` | 사용되지 않는 `GetItemInfos()` 계약 제거 |
 | `Assets/Scripts/System/Farming/FarmWorkSite.cs` | 공통 provider 구현, 기존 transaction 보존 |
-| `Assets/Scripts/System/Lib/DestinationDB.cs` | DestinationObject component scan, 공통 cache |
+| `Assets/Scripts/System/Lib/DestinationDB.cs` | BuildingType→DestinationObject routing 유지, provider 조회를 manager에 위임 |
 | `Assets/Scripts/System/Lib/DestinationDecider.cs` | 새 provider lookup과 option 이름 반영 |
 | `Assets/Scripts/System/Actor/FarmerActionSelector.cs` | Farming도 공통 provider/request 사용 |
 | `Assets/Scripts/System/Actor/GuardActionSelector.cs` | 새 lookup signature 반영 |
@@ -557,20 +634,22 @@ utility 판단, `RepeatCount`, 이동 queue 구성은 변경하지 않는다.
 1. `git status`로 기존 사용자 변경과 overlap 파일을 기록한다.
 2. 세 아키텍처 문서와 이 Plan을 다시 읽는다.
 3. `InteractionRequest`, `InteractionResult`, `InteractionOption`, `IInteractionProvider` 계약을 먼저 변경한다.
-4. `BaseInteractable`을 `BaseInteractionProvider`로 meta 보존 rename하고 template method를 구현한다.
-5. `Pub`와 item initializer를 새 base에 맞춘다.
-6. `FarmWorkSite`를 공통 provider로 이전하되 기존 transaction invariant를 보존한다.
-7. `DestinationDB`를 공통 provider cache로 교체한다.
-8. `ActionContext`와 `NPCDecision`의 type/field를 통합한다.
-9. `DestinationDecider`, Farmer/Guard selector를 새 lookup/request에 맞춘다.
-10. Eat/Drink/Farming action을 새 transaction semantics에 맞춘다.
-11. TestOnly 두 파일을 새 protocol에 맞춘다.
-12. obsolete IFarm/FarmWorkResult 파일을 참조 0건 확인 후 삭제한다.
-13. csproj compile entry를 현재 파일 목록과 일치시킨다.
-14. build와 정적 검증을 수행한다.
-15. 세 아키텍처 문서를 구현 결과에 맞게 갱신한다.
-16. 사용자가 Play Mode 배선을 확인할 항목을 정리한다.
-17. 독립 Codex review agent를 실행하고 `PROGRESS.md`를 갱신한다.
+4. `BaseInteractable`을 `BaseInteractionProvider`로 meta 보존 rename하고 초기화 lifecycle과 template method를 구현한다.
+5. `Pub`가 `ItemDataContext`를 직접 소유하고 새 base lifecycle로 초기화되게 변경한다.
+6. `FarmWorkSite`를 공통 provider로 이전하되 기존 transaction invariant와 concrete dependency ownership을 보존한다.
+7. `InteractableManager`를 범용 provider 초기화·등록·조회 cache로 확장한다. class/file rename은 하지 않는다.
+8. 호출부가 사라진 `DataManager`/`IDataManager`의 item 전달 API를 제거한다.
+9. `DestinationDB`의 domain/provider cache를 제거하고 interaction 조회를 manager에 위임한다.
+10. `ActionContext`와 `NPCDecision`의 type/field를 통합한다.
+11. `DestinationDecider`, Farmer/Guard selector를 새 lookup/request에 맞춘다.
+12. Eat/Drink/Farming action을 새 transaction semantics에 맞춘다.
+13. TestOnly 두 파일을 새 protocol에 맞춘다.
+14. obsolete IFarm/FarmWorkResult 파일을 참조 0건 확인 후 삭제한다.
+15. csproj compile entry를 현재 파일 목록과 일치시킨다.
+16. build와 정적 검증을 수행한다.
+17. 세 아키텍처 문서를 구현 결과에 맞게 갱신한다.
+18. 사용자가 Play Mode 배선을 확인할 항목을 정리한다.
+19. 독립 Codex review agent를 실행하고 `PROGRESS.md`를 갱신한다.
 
 삭제를 먼저 하지 않는다. 모든 소비자를 새 protocol로 옮기고 `rg` 참조가 0건인 것을 확인한 뒤 obsolete 파일을 삭제한다.
 
@@ -598,14 +677,18 @@ InteractRequest
 InteractResult
 TryInteraction
 DestinationInfo.InteractProvider
+GetItemInfos
 ```
 
-`InteractProvider:`라는 구형 scene YAML key는 Unity가 scene을 다시 저장하기 전 남아 있을 수 있다. production C# 참조 0건과 runtime component discovery가 우선 검증 대상이며, 사용자 scene 변경을 정리한다는 이유로 YAML을 직접 삭제하지 않는다.
+`InteractProvider:`라는 구형 scene YAML key는 Unity가 scene을 다시 저장하기 전 남아 있을 수 있다. production C# 참조 0건과 manager registry를 통한 runtime lookup이 우선 검증 대상이며, 사용자 scene 변경을 정리한다는 이유로 YAML을 직접 삭제하지 않는다.
 
 ### 구조 검증
 
 - `ActionContext`에는 interaction provider field가 하나뿐이어야 한다.
-- `DestinationDB`에는 domain 이름이 붙은 provider dictionary/lookup이 없어야 한다.
+- `InteractableManager`만 provider registry/cache를 소유해야 한다.
+- `InteractableManager`에는 `Pub`, `FarmWorkSite`, `ItemDataContext`, `DataManager` 같은 concrete/domain type 분기나 dependency가 없어야 한다.
+- `DestinationDB`에는 domain 이름이 붙은 provider dictionary/lookup과 provider component scan이 없어야 한다.
+- `DestinationDB`는 `BuildingType -> DestinationObject -> InteractableManager` routing만 수행해야 한다.
 - `FarmWorkSite`와 `Pub`는 `BaseInteractionProvider`를 통해 `IInteractionProvider`를 구현해야 한다.
 - action의 `Tick()`에는 `GetComponent`, scene search, provider cast가 없어야 한다.
 - `TryInteract` false 경로에서 action이 `Complete()`되지 않아야 한다.
@@ -650,26 +733,28 @@ DestinationInfo.InteractProvider
 - 존재하지 않는 option ID 또는 unavailable provider는 `Failed`가 되고 stat은 변하지 않는다.
 - transaction false 이후 action이 `Completed`로 보고되지 않는다.
 
-### DestinationDB
+### InteractableManager와 DestinationDB
 
-- Eat GameObject의 Pub가 `(Pub, Eat)` provider로 발견된다.
-- Drink GameObject의 Pub가 `(Well, Drink)` provider로 발견된다.
-- FarmWorkSite를 Farm destination object에 붙이면 `(Farm, Farming)` provider로 발견된다.
+- InteractableManager에 등록된 Eat GameObject의 Pub가 `(GameObject, Eat)` provider로 cache된다.
+- InteractableManager에 등록된 Drink GameObject의 Pub가 `(GameObject, Drink)` provider로 cache된다.
+- FarmWorkSite를 manager에 등록하고 Farm destination object에 붙이면 `(GameObject, Farming)` provider로 cache된다.
+- DestinationDB가 각각의 `BuildingType`을 올바른 object로 변환해 manager 조회 결과를 반환한다.
 - 한 GameObject의 provider가 여러 서로 다른 action을 지원할 수 있다.
-- 같은 destination/action duplicate는 오류 1회와 deterministic first-provider 정책을 따른다.
+- 같은 object/action duplicate는 오류 1회와 serialized registration 순서의 deterministic first-provider 정책을 따른다.
 
 ## 18. Unity Editor 배선과 직렬화
 
-이번 refactor 자체 때문에 Pub provider를 다시 drag할 필요는 없어야 한다. Eat/Drink의 `DestinationObject`에 Pub가 이미 붙어 있기 때문이다.
+`InteractableManager` class/file과 기존 `_interactables` field를 유지하므로 기존 두 Pub 등록은 가능한 한 직렬화 상태를 보존한다. 다만 Pub의 item dependency와 DestinationDB→manager 연결은 새 책임 경계에 맞춰 명시적으로 확인해야 한다.
 
 구현 후 사용자가 Unity Editor에서 확인할 항목:
 
-1. `ItemInteractionInitializer` component가 Missing Script가 아닌지 확인한다.
-2. 기존 DataManager와 Pub 2개 참조가 rename 후 유지되었는지 확인한다.
-3. `DestinationDB`의 모든 row에서 `DestinationObject` 참조가 유지되었는지 확인한다.
-4. Farm destination object에 `FarmWorkSite`를 부착한다.
-5. FarmWorkSite에 `FarmProductionDefinition`, `SeededRandomSource`, `IInventory` 구현 source를 연결한다.
-6. TestFarmProductionWindow 참조를 연결한다.
+1. 기존 `InteractableManager` component가 그대로 존재하고 `_interactables`의 Pub 2개 참조가 유지되었는지 확인한다.
+2. 각 Pub에 동일한 `ItemDataContext.asset`을 할당한다.
+3. Farm destination object에 `FarmWorkSite`를 부착하고 이를 `InteractableManager._interactables`에 추가한다.
+4. `DestinationDB._interactableManager`에 scene의 manager를 할당한다.
+5. `DestinationDB`의 모든 row에서 `DestinationObject` 참조가 유지되었는지 확인한다.
+6. FarmWorkSite에 `FarmProductionDefinition`, `SeededRandomSource`, `IInventory` 구현 source를 연결한다.
+7. TestFarmProductionWindow 참조를 연결한다.
 
 class/file rename은 기존 `.meta` GUID를 보존하고 `[FormerlySerializedAs]`를 사용한다. 구현자가 scene YAML을 직접 정리하거나 기존 사용자 scene 변경을 덮어쓰지 않는다.
 
@@ -677,9 +762,21 @@ class/file rename은 기존 `.meta` GUID를 보존하고 `[FormerlySerializedAs]
 
 ### 초기화 순서
 
-위험: `DestinationDB.Awake`가 Pub item initialization보다 먼저 실행될 수 있다.
+위험: `DestinationDB.Awake`, `InteractableManager.Awake`, TestOnly component의 호출 순서를 scene에서 보장하기 어렵다.
 
-대응: cache 구성에는 operational 상태가 아닌 `Supports`를 사용한다. 실제 조회 시 `CanInteract`를 확인한다. Item initializer는 `Awake`에서 Pub를 초기화한다.
+대응: manager와 base provider 초기화를 idempotent하게 만든다. manager의 `Awake()`와 `TryGetInteractionProvider()`가 모두 `EnsureInitialized()`를 사용하고, provider public protocol도 아직 초기화되지 않았다면 같은 초기화 경로를 안전하게 호출한다. Script Execution Order와 scene search에 의존하지 않는다.
+
+### God Manager 팽창
+
+위험: 미래 provider를 추가할 때마다 manager에 data field, concrete type 분기, domain 초기화 코드를 추가하면 다시 결합 지점이 된다.
+
+대응: manager의 허용 책임을 lifecycle·registry·lookup·공통 진단으로 제한한다. concrete dependency는 concrete provider가 serialized reference로 소유하며, manager code에는 `Pub`, `FarmWorkSite`, `Cook` 등의 이름이 등장하지 않아야 한다.
+
+### 명시적 등록 누락
+
+위험: GameObject에 provider를 붙였지만 manager의 `_interactables`에 등록하지 않으면 lookup에 나타나지 않는다.
+
+대응: manager 초기화 시 null/duplicate를 검증하고, DestinationDB lookup 실패는 명확한 진단과 기존 Idle fallback으로 처리한다. 자동 scene-wide discovery는 이번 범위에 넣지 않는다.
 
 ### Unity interface fake null
 
@@ -715,8 +812,8 @@ class/file rename은 기존 `.meta` GUID를 보존하고 `[FormerlySerializedAs]
 
 다음 중 하나가 발생하면 범위를 임의로 넓히지 않고 사용자에게 보고한다.
 
-1. Eat/Drink provider가 `DestinationObject`와 다른 GameObject에 있어 component discovery로 기존 배선을 보존할 수 없음.
-2. `BaseInteractable` 또는 `InteractableManager` script GUID rename으로 scene component reference가 보존되지 않음.
+1. Eat/Drink provider의 owner GameObject와 `DestinationObject`가 달라 `(GameObject, ActionType)` routing으로 기존 의미를 보존할 수 없음.
+2. `BaseInteractable` rename 또는 `InteractableManager` field migration으로 scene component/provider 등록 reference가 보존되지 않음.
 3. 공통 request로 옮기기 위해 `WorkerNPC`, `IAction`, queue lifecycle 공개 계약 변경이 필요함.
 4. utility 결과를 유지하려면 `DestinationDecider` 수식 자체를 바꿔야 함.
 5. 기존 사용자 scene 변경과 병합하지 않고는 구현할 수 없음.
@@ -730,6 +827,8 @@ class/file rename은 기존 `.meta` GUID를 보존하고 `[FormerlySerializedAs]
 - `IFarmWorkProvider` 계열 참조와 파일이 제거된다.
 - `ActionContext`에 domain별 provider field가 없다.
 - `DestinationDB`에 domain별 provider lookup이 없다.
+- `InteractableManager`가 provider lifecycle·registry·lookup을 소유하며 concrete domain 분기를 갖지 않는다.
+- `DestinationDB`는 interaction registry를 중복 소유하지 않고 manager에 routing한다.
 - `BaseInteractionProvider`가 공통 validation/dispatch를 실제로 제공한다.
 - Pub item data와 Farm runtime state가 각 concrete provider에 남는다.
 - provider false가 action의 거짓 성공으로 처리되지 않는다.

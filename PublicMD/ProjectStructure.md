@@ -1,6 +1,6 @@
 # Project Structure
 
-> 문서 기준일: 2026-08-21
+> 문서 기준일: 2026-08-22
 > 이 문서는 현재 저장소의 실제 파일과 runtime 역할을 설명한다.
 
 ## 1. 구조 한눈에 보기
@@ -51,8 +51,9 @@ Assets/
 
     Struct/
       ActionContext.cs
-      InteractStruct.cs
       InteractionOption.cs
+      InteractionRequest.cs
+      InteractionResult.cs
       ItemInfo.cs
       MoveRequest.cs
       NPCDecision.cs
@@ -67,7 +68,7 @@ Assets/
 
   Scripts/
     Actor/
-      BaseInteractable.cs
+      BaseInteractionProvider.cs
       Enemy.cs
       Pub.cs
       WorkerNPC.cs
@@ -121,11 +122,9 @@ Assets/
         NPCStat.cs
         ProximitySensor2D.cs
 
-      Farming/                       현재 interaction 통합 전 과도기 모듈
+      Farming/
         FarmWorkPhase.cs
-        FarmWorkResult.cs
         FarmWorkSite.cs
-        IFarmWorkProvider.cs
 
       Inventory/
         WarehouseInventory.cs
@@ -157,11 +156,11 @@ Assets/
 | 파일 | 역할 |
 |---|---|
 | `WorkerNPC` | NPC actor root, action queue lifecycle의 단일 소유자 |
-| `BaseInteractable` | 현재 item 기반 상호작용 provider의 공통 base |
-| `Pub` | Eat/Drink option과 `StatEffect` 제공 |
+| `BaseInteractionProvider` | `IInteractionProvider`의 공통 template method base: idempotent 초기화, support/availability/request validation, concrete core로 dispatch |
+| `Pub` | `ItemDataContext`를 직접 참조해 Eat/Drink option과 `StatEffect` 제공 |
 | `Enemy` | 최소 전투 target 구현과 체력·사망 처리 |
 
-`BaseInteractable`은 이름과 달리 현재 item catalogue에 강하게 결합되어 있다. 향후 범용 `BaseInteractionProvider`로 재설계할 때 item 초기화 책임을 그대로 올려 보내지 않는다.
+`BaseInteractionProvider`는 domain 규칙을 모른다. item catalogue 책임은 `Pub`가, farm progress/yield 책임은 `Assets/Scripts/System/Farming/FarmWorkSite.cs`가 각자 소유한다.
 
 ### `Assets/Scripts/Manager`
 
@@ -170,8 +169,8 @@ Assets/
 | 파일 | 역할 |
 |---|---|
 | `NPCManager` | `NPCType`별 selector + stat definition 조합, NPC spawn |
-| `DataManager` | action cost dictionary와 item table 제공 |
-| `InteractableManager` | 현재 `BaseInteractable`에 item table 주입 |
+| `DataManager` | action cost dictionary 제공 |
+| `InteractableManager` | scene의 `BaseInteractionProvider` 초기화·등록·`(GameObject, ActionType)` 조회 registry |
 
 manager는 action 세부 실행이나 role utility 공식을 소유하지 않는다.
 
@@ -210,7 +209,7 @@ NPC runtime state, role selector, 감지 adapter를 둔다.
 |---|---|
 | `ActionPool` | `ActionType`별 action factory와 재사용 queue |
 | `WorkerPool` | `WorkerNPC` GameObject pool |
-| `DestinationDB` | `BuildingType`별 scene destination/provider cache |
+| `DestinationDB` | `BuildingType`별 scene destination Transform/GameObject 조회, provider 조회는 `InteractableManager`에 위임 |
 | `DestinationDecider` | bounded look-ahead utility decision policy |
 | `CombatRange` | 2D 거리 판정 |
 | `SeededRandomSource` | seed 기반 결정적 난수 |
@@ -220,16 +219,14 @@ NPC runtime state, role selector, 감지 adapter를 둔다.
 
 ### `Assets/Scripts/System/Farming`
 
-농경지 runtime 상태와 생산 결과를 둔다. 현재 vertical slice는 `IFarmWorkProvider`라는 별도 capability를 사용하지만 이는 확정된 장기 확장 방식이 아니다.
+농경지 runtime 상태를 둔다. `FarmWorkSite`는 `BaseInteractionProvider`를 상속해 공통 `IInteractionProvider` protocol로 노출되며, 별도의 domain 전용 provider interface는 없다.
 
 | 파일 | 역할 |
 |---|---|
-| `FarmWorkSite` | Growing/Harvesting phase와 progress transaction |
+| `FarmWorkSite` | `IInteractionProvider` 구현, Growing/Harvesting phase와 progress transaction |
 | `FarmWorkPhase` | 농경지 phase 식별 |
-| `FarmWorkResult` | work 전후 상태와 생산량 결과 |
-| `IFarmWorkProvider` | 현재 FarmingAction 연결용 과도기 계약 |
 
-향후 공통 `IInteractionProvider` protocol로 통합하면 이 폴더에는 farm 도메인 상태·결과·구현을 남기고, 역할별 provider lookup 계약은 제거한다.
+work 결과는 별도 result 타입 없이 공통 `InteractionResult`(성공 시 `default`, farming에는 actor effect가 없음)로 표현한다. phase/progress는 `FarmWorkSite`의 read-only property로 조회한다.
 
 ### `Assets/Scripts/System/Inventory`
 
@@ -253,7 +250,7 @@ selector, action, provider 사이를 전달하는 작은 request/result/value ob
 - `ActionContext`: action 실행 dependency 묶음
 - `NPCDecision`: decider의 단일 semantic decision
 - `MoveRequest`: 고정/동적 이동 목표
-- `InteractRequest`, `InteractResult`: 현재 공급 상호작용 request/result
+- `InteractionRequest`, `InteractionResult`: Eat/Drink/Farming이 공유하는 공통 interaction request/result
 - `InteractionOption`: utility 평가용 공급 option
 - `StatEffect`: stat delta 묶음
 - `ItemInfo`: CSV item row model
@@ -344,18 +341,25 @@ Sensor의 `CircleCollider2D`는 prefab scene data이고, 공격/순찰 능력치
 
 ### 4.5 상호작용
 
-현재 공급 흐름:
+Eat, Drink, Farming이 모두 같은 흐름을 사용한다.
 
 ```text
-DestinationDecider
-  -> IInteractionProvider.AppendOptions()
-  -> item/effect 후보 평가
-  -> NPCDecision(InteractRequest)
-  -> selector가 provider + request를 ActionContext에 주입
-  -> EatAction/DrinkAction.TryInteraction()
+DestinationDB.TryGetInteractionProvider(BuildingType, ActionType, out provider)
+  -> InteractableManager.TryGetInteractionProvider(DestinationObject, ActionType, out provider)
+
+공급(Eat/Drink):
+  DestinationDecider -> provider.AppendOptions() -> item/effect 후보 평가
+    -> NPCDecision(InteractionRequest)
+    -> selector가 provider + request를 ActionContext에 주입
+    -> EatAction/DrinkAction.TryInteract()
+
+Farming:
+  FarmerActionSelector가 InteractionRequest(Farming, strength: 1f)를 직접 구성
+    -> ActionContext에 provider + request 주입
+    -> FarmingAction.TryInteract()
 ```
 
-현재 농사 흐름은 별도 `IFarmWorkProvider`를 사용한다. 새 Cook, Smith, Clinic 등을 같은 별도 lookup 방식으로 추가하지 말고 `ARCHITECTURE.md`의 공통 interaction protocol 방향을 먼저 적용한다.
+새 Cook, Shop, Clinic 등을 추가할 때는 domain 전용 provider interface나 `DestinationDB.TryGetXxxProvider(...)`를 만들지 않고, `BaseInteractionProvider`를 상속한 concrete provider를 `InteractableManager._interactables`에 등록하는 같은 경로를 따른다.
 
 ## 5. 새 기능을 어디에 추가하는가
 
@@ -413,14 +417,11 @@ Farmer/Guard selector, 적, test spawner, GuardPost/PatrolArea를 포함한 통�
 
 ## 7. 현재 과도기와 주의점
 
-- `IFarmWorkProvider` 경로는 현재 농사 구현을 작동시키지만 범용 provider 방향과 중복된다.
-- `DestinationInfo.InteractProvider`의 concrete type이 `BaseInteractable`이어서 모든 `IInteractionProvider` 구현을 Inspector에서 직접 연결할 수 있는 구조가 아니다.
-- `InteractableManager`와 `BaseInteractable.Init`은 item 기반 공급 도메인 책임이다.
-- `EatAction`과 `DrinkAction`은 현재 `TryInteraction`이 false이거나 `InteractResult.Success`가 false여도 시간을 채우면 `Completed`가 된다. 공통 interaction transaction을 정리할 때 실패 의미를 함께 바로잡아야 한다.
 - action runtime duration과 utility prediction duration이 중복 정의되어 drift 가능성이 있다.
 - `DataManager.instance`는 남아 있는 전역 상태다.
 - `.asmdef`와 자동 테스트 assembly가 없다.
 - `CONST.cs`는 현재 의미 있는 도메인 책임이 없는 placeholder다. 새 상수를 넣는 공용 쓰레기통으로 사용하지 않는다.
+- Sleep/Inn은 아직 `IInteractionProvider` 기반이 아니다. `DestinationDecider.AddSupplyCandidates`에 `BuildingType.Inn` 특수 분기가 남아 있다.
 
 이 항목들은 현재 구현 사실을 설명하는 것이며 새 코드가 그대로 복제해야 할 패턴은 아니다.
 

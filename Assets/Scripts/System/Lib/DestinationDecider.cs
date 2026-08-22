@@ -63,7 +63,7 @@ public class DestinationDecider
         public BuildingType Key;
         public Vector3 Position;
         public ActionType ActionType;
-        public int ItemId;
+        public int OptionId;
         public int RepeatCount;
         public float TravelTime;
         public float ActionTime;
@@ -208,7 +208,7 @@ public class DestinationDecider
             Key = BuildingType.None,
             Position = pos,
             ActionType = ActionType.Idle,
-            ItemId = -1,
+            OptionId = -1,
             RepeatCount = 1,
             TravelTime = 0f,
             ActionTime = _tuning.EstimatedIdleSeconds,
@@ -246,22 +246,19 @@ public class DestinationDecider
 
             float travelTime = GetTravelTime(pos, destinationPos, moveSpeed);
 
-            if (_destinationDB.TryGetInteractionProvider(key, out IInteractionProvider provider))
-            {
-                AddItemCandidates(candidates, provider, ActionType.Eat, key, destinationPos, travelTime, state);
-                AddItemCandidates(candidates, provider, ActionType.Drink, key, destinationPos, travelTime, state);
-            }
+            AddItemCandidatesForType(candidates, key, ActionType.Eat, destinationPos, travelTime, state);
+            AddItemCandidatesForType(candidates, key, ActionType.Drink, destinationPos, travelTime, state);
 
-            // TODO: Inn 전용 BaseInteractable이 생기면 SleepAction과 마찬가지로 provider 기반으로 옮긴다.
+            // TODO: Inn 전용 provider가 생기면 SleepAction과 마찬가지로 provider 기반으로 옮긴다.
             if (key == BuildingType.Inn)
                 AddSleepCandidate(candidates, key, destinationPos, travelTime, state);
         }
     }
 
-    private void AddItemCandidates(List<Candidate> candidates, IInteractionProvider provider, ActionType type,
-        BuildingType key, Vector3 pos, float travelTime, NeedSnapshot state)
+    private void AddItemCandidatesForType(List<Candidate> candidates, BuildingType key, ActionType type,
+        Vector3 pos, float travelTime, NeedSnapshot state)
     {
-        if (!provider.CanInteract(type))
+        if (!_destinationDB.TryGetInteractionProvider(key, type, out IInteractionProvider provider))
             return;
 
         _optionBuffer.Clear();
@@ -280,12 +277,12 @@ public class DestinationDecider
                 Key = key,
                 Position = pos,
                 ActionType = type,
-                ItemId = option.ItemId,
+                OptionId = option.OptionId,
                 RepeatCount = 1,
                 TravelTime = travelTime,
                 ActionTime = actionTime,
                 ActivityReward = 0f,
-                After = ApplyEffect(state, option.Effect),
+                After = ApplyEffect(state, option.ActorEffect),
             });
         }
     }
@@ -302,7 +299,7 @@ public class DestinationDecider
             Key = key,
             Position = pos,
             ActionType = ActionType.Sleep,
-            ItemId = -1,
+            OptionId = -1,
             RepeatCount = 1,
             TravelTime = travelTime,
             ActionTime = _tuning.EstimatedSleepSeconds,
@@ -349,7 +346,7 @@ public class DestinationDecider
             Key = BuildingType.Farm,
             Position = workPos,
             ActionType = ActionType.Farming,
-            ItemId = -1,
+            OptionId = -1,
             RepeatCount = safeRepeats,
             TravelTime = GetTravelTime(pos, workPos, moveSpeed),
             ActionTime = _tuning.EstimatedFarmingSeconds * safeRepeats,
@@ -379,7 +376,7 @@ public class DestinationDecider
             Key = BuildingType.None,
             Position = postPos,
             ActionType = ActionType.Idle,
-            ItemId = -1,
+            OptionId = -1,
             RepeatCount = 1,
             TravelTime = GetTravelTime(pos, postPos, moveSpeed),
             ActionTime = seconds,
@@ -507,7 +504,7 @@ public class DestinationDecider
         return bestIndex >= 0;
     }
 
-    // Ascending: lower is better. score desc -> travelTime asc -> ItemId asc -> ActionType asc
+    // Ascending: lower is better. score desc -> travelTime asc -> OptionId asc -> ActionType asc
     // -> BuildingType asc -> Kind asc. Scores within ScoreEpsilon count as a tie so float noise
     // never changes the chosen action.
     private static int CompareForSelection(Candidate a, Candidate b)
@@ -522,7 +519,7 @@ public class DestinationDecider
         if (byTravel != 0)
             return byTravel;
 
-        int byItem = a.ItemId.CompareTo(b.ItemId);
+        int byItem = a.OptionId.CompareTo(b.OptionId);
         if (byItem != 0)
             return byItem;
 
@@ -539,7 +536,7 @@ public class DestinationDecider
 
     private static NPCDecision ToDecision(Candidate c)
     {
-        InteractRequest? request = c.ItemId >= 0 ? new InteractRequest(c.ActionType, c.ItemId) : (InteractRequest?)null;
+        InteractionRequest? request = c.OptionId >= 0 ? new InteractionRequest(c.ActionType, c.OptionId) : (InteractionRequest?)null;
         return new NPCDecision(c.Intent, c.Key, c.Position, c.RepeatCount, request);
     }
 
@@ -730,7 +727,7 @@ public class DestinationDecider
 
             _traceBuilder.Append(i == bestIndex ? "  * " : "    ")
                 .Append(c.Kind).Append('/').Append(c.Intent).Append(" key=").Append(c.Key)
-                .Append(" item=").Append(c.ItemId).Append(" xN=").Append(c.RepeatCount)
+                .Append(" item=").Append(c.OptionId).Append(" xN=").Append(c.RepeatCount)
                 .Append(" reward=").Append(c.ActivityReward.ToString("F1"))
                 .Append(" travel=-").Append((c.TravelTime * _tuning.TravelWeight).ToString("F1"))
                 .Append(" actionTime=-").Append((c.ActionTime * _tuning.ActionTimeWeight).ToString("F1"))
@@ -767,7 +764,7 @@ public class DestinationDecider
             return "score";
         if (best.TravelTime != second.TravelTime)
             return "tie-break: travelTime";
-        if (best.ItemId != second.ItemId)
+        if (best.OptionId != second.OptionId)
             return "tie-break: itemId";
         if (best.ActionType != second.ActionType)
             return "tie-break: actionType";

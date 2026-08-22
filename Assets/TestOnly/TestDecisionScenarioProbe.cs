@@ -251,7 +251,7 @@ public class TestDecisionScenarioProbe : MonoBehaviour
     /// <summary>
     /// Applies the effect the chosen supply action would produce, using the same clamp order as
     /// NPCStat.ApplyStatEffect. Reads options through AppendOptions only - it never calls
-    /// TryInteraction, so scene inventory is not consumed by the probe.
+    /// TryInteract, so scene inventory is not consumed by the probe.
     /// </summary>
     private bool TryApplyChosenSupply(NPCDecision decision, ProbeStat stat)
     {
@@ -264,19 +264,20 @@ public class TestDecisionScenarioProbe : MonoBehaviour
         if (!decision.Request.HasValue)
             return false;
 
-        if (!_destinationDB.TryGetInteractionProvider(decision.DestinationKey, out IInteractionProvider provider))
+        InteractionRequest request = decision.Request.Value;
+
+        if (!_destinationDB.TryGetInteractionProvider(decision.DestinationKey, request.Type, out IInteractionProvider provider))
             return false;
 
-        InteractRequest request = decision.Request.Value;
         List<InteractionOption> buffer = new List<InteractionOption>();
         provider.AppendOptions(request.Type, buffer);
 
         for (int i = 0; i < buffer.Count; ++i)
         {
-            if (buffer[i].ItemId != request.ItemId || buffer[i].Effect == null)
+            if (buffer[i].OptionId != request.OptionId || buffer[i].ActorEffect == null)
                 continue;
 
-            StatEffect e = buffer[i].Effect;
+            StatEffect e = buffer[i].ActorEffect;
             stat.Health = Mathf.Clamp(stat.Health + e.HealthDelta, 0f, stat.HealthMax);
             stat.Hunger = Mathf.Clamp(stat.Hunger + e.HungerDelta, 0f, stat.HungerMax);
             stat.Thirst = Mathf.Clamp(stat.Thirst + e.ThirstDelta, 0f, stat.ThirstMax);
@@ -344,7 +345,7 @@ public class TestDecisionScenarioProbe : MonoBehaviour
 
         // Thirsty but at full health: the health penalty must outweigh the extra thirst relief.
         NPCDecision d = Decide(decider, NewStat(20f, 20f, 99f), NPCType.Farmer, pos, workCost);
-        bool pickedDamaging = d.Request.HasValue && d.Request.Value.ItemId == damagingItemId;
+        bool pickedDamaging = d.Request.HasValue && d.Request.Value.OptionId == damagingItemId;
         Check("General 4", "health-damaging supply is rejected while a safe alternative exists",
             !pickedDamaging, d);
     }
@@ -365,7 +366,7 @@ public class TestDecisionScenarioProbe : MonoBehaviour
             return;
 
         NPCDecision d = Decide(decider, NewStat(20f, 20f, 90f), NPCType.Farmer, pos, workCost);
-        int chosen = d.Request.HasValue ? d.Request.Value.ItemId : -1;
+        int chosen = d.Request.HasValue ? d.Request.Value.OptionId : -1;
 
         _report.Append("  OBS  General 1 - identical drink effects ").Append(lowerId).Append(" and ").Append(higherId)
             .Append(" at ").Append(key).Append("; decider chose item ").Append(chosen)
@@ -385,9 +386,7 @@ public class TestDecisionScenarioProbe : MonoBehaviour
 
         for (int i = 0; i < keys.Count; ++i)
         {
-            if (!_destinationDB.TryGetInteractionProvider(keys[i], out IInteractionProvider provider))
-                continue;
-            if (!provider.CanInteract(ActionType.Drink))
+            if (!_destinationDB.TryGetInteractionProvider(keys[i], ActionType.Drink, out IInteractionProvider provider))
                 continue;
 
             buffer.Clear();
@@ -395,15 +394,15 @@ public class TestDecisionScenarioProbe : MonoBehaviour
 
             for (int o = 0; o < buffer.Count; ++o)
             {
-                if (buffer[o].Effect == null)
+                if (buffer[o].ActorEffect == null)
                     continue;
 
-                if (buffer[o].Effect.HealthDelta < 0f && itemId < 0)
+                if (buffer[o].ActorEffect.HealthDelta < 0f && itemId < 0)
                 {
                     key = keys[i];
-                    itemId = buffer[o].ItemId;
+                    itemId = buffer[o].OptionId;
                 }
-                else if (buffer[o].Effect.HealthDelta >= 0f && buffer[o].Effect.ThirstDelta < 0f)
+                else if (buffer[o].ActorEffect.HealthDelta >= 0f && buffer[o].ActorEffect.ThirstDelta < 0f)
                 {
                     hasSafeAlternative = true;
                 }
@@ -424,9 +423,7 @@ public class TestDecisionScenarioProbe : MonoBehaviour
 
         for (int i = 0; i < keys.Count; ++i)
         {
-            if (!_destinationDB.TryGetInteractionProvider(keys[i], out IInteractionProvider provider))
-                continue;
-            if (!provider.CanInteract(ActionType.Drink))
+            if (!_destinationDB.TryGetInteractionProvider(keys[i], ActionType.Drink, out IInteractionProvider provider))
                 continue;
 
             buffer.Clear();
@@ -436,12 +433,12 @@ public class TestDecisionScenarioProbe : MonoBehaviour
             {
                 for (int b = a + 1; b < buffer.Count; ++b)
                 {
-                    if (!SameEffect(buffer[a].Effect, buffer[b].Effect))
+                    if (!SameEffect(buffer[a].ActorEffect, buffer[b].ActorEffect))
                         continue;
 
                     key = keys[i];
-                    lowerId = Mathf.Min(buffer[a].ItemId, buffer[b].ItemId);
-                    higherId = Mathf.Max(buffer[a].ItemId, buffer[b].ItemId);
+                    lowerId = Mathf.Min(buffer[a].OptionId, buffer[b].OptionId);
+                    higherId = Mathf.Max(buffer[a].OptionId, buffer[b].OptionId);
                     return true;
                 }
             }
@@ -531,12 +528,12 @@ public class TestDecisionScenarioProbe : MonoBehaviour
 
     private static string Describe(string id, NPCDecision d)
     {
-        return $"{id}:{d.Intent}/{d.DestinationKey}/{d.RepeatCount}/{(d.Request.HasValue ? d.Request.Value.ItemId : -1)}/{d.DestinationPos:F3}";
+        return $"{id}:{d.Intent}/{d.DestinationKey}/{d.RepeatCount}/{(d.Request.HasValue ? d.Request.Value.OptionId : -1)}/{d.DestinationPos:F3}";
     }
 
     private static string Describe(NPCDecision d)
     {
-        return $"{d.Intent} key={d.DestinationKey} xN={d.RepeatCount} item={(d.Request.HasValue ? d.Request.Value.ItemId : -1)}";
+        return $"{d.Intent} key={d.DestinationKey} xN={d.RepeatCount} item={(d.Request.HasValue ? d.Request.Value.OptionId : -1)}";
     }
 
     // ---- Helpers ----

@@ -1,6 +1,6 @@
 # NPC Work 2D Architecture
 
-> 문서 기준일: 2026-08-21
+> 문서 기준일: 2026-08-22
 > 대상 버전: Unity 6000.3.9f1, URP 2D
 > 현재 실행 씬: `Assets/Scenes/SampleScene.unity`, `Assets/Scenes/GuardTest.unity`
 
@@ -133,10 +133,10 @@ Cook   -> 현재 등록 정책에 따라 selector + DefaultStatContext
 
 - `ActionPool`: `ActionType`별 plain C# action 재사용
 - `WorkerPool`: `NPCGirl.prefab` 기반 `WorkerNPC` 재사용
-- `DataManager`: action cost와 item table 제공
-- `DestinationDB`: 건물별 위치와 provider lookup
+- `DataManager`: action cost 제공
+- `DestinationDB`: 건물별 위치 조회, provider 조회는 `InteractableManager`에 위임
 - `NPCManager`: NPC 생성과 role composition
-- `InteractableManager`: 현재 item 기반 `BaseInteractable` 초기화
+- `InteractableManager`: scene의 `BaseInteractionProvider` 초기화·등록·`(GameObject, ActionType)` 조회 registry
 
 `DataManager.instance`는 현재 존재하는 전역 접근점이지만 권장되는 새 의존성 전달 방식은 아니다. 새 코드는 가능하면 serialized reference, 초기화 인자 또는 명시적 context를 사용한다.
 
@@ -180,9 +180,9 @@ selector가 action을 빌리는 중 실패하면 이미 빌린 action을 모두 
 - `NPCComponent`, `NPCStat`
 - 고정 destination 또는 `MoveRequest`
 - `DefaultActionCost`
-- `IInteractionProvider`, `InteractRequest`
+- `IInteractionProvider`, `InteractionRequest`
 
-현재 농경지 작업은 과도기적으로 `IFarmWorkProvider`를 별도 필드로 전달한다. 이는 작동 중인 구현 사실이지만 최종 확장 규칙은 아니다. `ActionContext`에 역할별 nullable provider를 계속 추가하면 service locator와 유사한 dependency bag이 되므로 금지한다.
+Eat/Drink/Farming 모두 같은 `IInteractionProvider` + `InteractionRequest` 경로 하나만 사용한다. domain별 provider 필드는 없다. `ActionContext`에 역할별 nullable provider를 계속 추가하면 service locator와 유사한 dependency bag이 되므로 금지한다.
 
 ## 6. 판단 모델
 
@@ -244,38 +244,33 @@ role별 stat subclass는 실제 role 데이터가 생길 때 만든다. 아직 �
 
 ### 8.1 현재 구현
 
-`DestinationDB`는 `BuildingType`별 `DestinationInfo`를 dictionary로 변환하고 다음 정보를 조회한다.
-
-- 목적지 Transform 위치
-- `BaseInteractable` 기반 `IInteractionProvider`
-- 과도기적인 `FarmWorkSite`/`IFarmWorkProvider`
-
-현재 `IInteractionProvider`는 범용 이름과 달리 Eat/Drink 중심 계약이다.
+`IInteractionProvider`는 Eat, Drink, Farming이 공유하는 공통 실행 프로토콜이다.
 
 ```text
+Supports(ActionType)
 CanInteract(ActionType)
 AppendOptions(ActionType, buffer)
-TryInteraction(InteractRequest, out InteractResult)
+TryInteract(InteractionRequest, out InteractionResult)
 ```
 
-`InteractRequest`는 `ActionType + ItemId`, `InteractResult`는 `Success + StatEffect`를 표현한다. 따라서 농경지 phase/progress/yield를 자연스럽게 표현하지 못해 현재 farming slice에서 별도 provider가 추가되었다.
+- `Supports`는 구조적 capability(초기화 상태와 무관), `CanInteract`는 `Supports && 현재 operational` 의미다.
+- `InteractionRequest`는 `ActionType + OptionId(기본값 없음, item ID 등 안정적 식별자) + Strength(실행 강도, 기본 1)`를 가진다.
+- `InteractionResult`는 `ActorEffect` 하나만 노출한다. 성공 여부는 `TryInteract`의 반환값 하나로만 표현하고, `InteractionResult.Success` 같은 별도 필드는 없다.
+- 농경지 게이지, item catalogue 같은 도메인 상태는 `InteractionResult`에 담기지 않고 concrete provider(`FarmWorkSite`, `Pub`)가 자신의 read-only property로 노출한다.
 
-### 8.2 확정된 통합 방향
+`BaseInteractionProvider`(`Assets/Scripts/Actor/BaseInteractionProvider.cs`)가 idempotent 초기화 lifecycle, `Supports`/`CanInteract`/`AppendOptions`/`TryInteract`의 공통 validation과 실패 처리, protected core method로의 dispatch를 소유한다. `Pub`와 `FarmWorkSite`는 이 base를 상속해 각자 `SupportsCore`/`TryInitializeCore`/`AppendOptionsCore`/`TryInteractCore`만 구현한다.
 
-장기적으로 `IInteractionProvider`를 모든 상호작용 가능한 시설의 **공통 실행 프로토콜**로 재설계한다. 목표는 하나의 거대한 인터페이스가 모든 도메인 필드를 노출하는 것이 아니라, 동일한 요청/결과 envelope로 서로 다른 도메인 구현을 호출하는 것이다.
+### 8.2 Provider 조회 경로
 
-목표 형태의 원칙:
+```text
+DestinationDB.TryGetInteractionProvider(BuildingType, ActionType, out IInteractionProvider)
+  -> BuildingType으로 DestinationInfo.DestinationObject를 찾는다
+  -> InteractableManager.TryGetInteractionProvider(DestinationObject, ActionType, out provider)로 위임
+```
 
-- `ActionType` 또는 interaction kind로 지원 여부를 묻는다.
-- `InteractionRequest`는 공통 식별자와 실행 강도 등 안정적인 최소 정보만 가진다.
-- `InteractionResult`는 성공/실패, 공통 actor effect, 선택적 결과 식별자를 표현한다.
-- 농경지 게이지, 요리 레시피, 상점 재고 같은 도메인 상태는 concrete provider 내부에 남긴다.
-- `BaseInteractionProvider` 계열은 공통 validation과 dispatch를 제공할 수 있다.
-- 파생 provider는 Farm/Pub/Cook의 규칙만 구현한다.
-- `DestinationDB`는 도메인별 `TryGetFarm...`, `TryGetCook...`를 늘리지 않고 `BuildingType + ActionType`으로 공통 provider를 조회하는 방향으로 통합한다.
-- `ActionContext`도 최종적으로 공통 provider + request 한 경로를 사용한다.
+`InteractableManager`는 `BaseInteractionProvider[] _interactables`를 명시적 등록 목록으로 갖고, `(GameObject owner, ActionType)` -> provider component cache를 소유한다. 초기화 시 각 provider의 `TryInitialize`를 한 번 호출하고, 안정적인 `Supports(type)`로 cache key를 구성한다. 조회 성공 조건은 cache entry 존재 + backing component가 destroyed되지 않음 + `CanInteract(type)`이 현재 true. 같은 `(GameObject, ActionType)`에 provider가 둘 이상 등록되면 오류를 한 번 로그하고 `_interactables` 배열에서 먼저 나온 provider만 유지한다.
 
-현재의 `IFarmWorkProvider`, `ActionContext.FarmWorkProvider`, `DestinationDB.TryGetFarmWorkProvider`는 이 통합이 완료될 때까지의 과도기 코드다. 새 도메인 provider를 같은 방식으로 추가하지 않는다.
+`DestinationDB`는 `BuildingType -> DestinationObject` 매핑만 소유하며 provider component를 직접 scan하거나 cache하지 않는다. domain별 provider dictionary(`TryGetFarmWorkProvider` 같은)는 없다. 한 destination `GameObject`에 서로 다른 `ActionType`을 지원하는 여러 provider component가 함께 존재할 수 있다(Pub는 Eat과 Drink를 한 component로 함께 지원).
 
 ## 9. Guard 전투와 감지
 
@@ -305,12 +300,14 @@ CircleCollider2D trigger
 
 ```text
 FarmingAction 완료
-  -> IFarmWorkProvider.TryApplyWork(1f)
+  -> IInteractionProvider.TryInteract(InteractionRequest(Farming, strength: 1f))
   -> FarmWorkSite
        Growing: progress 증가, max에서 Harvesting 전환
        Harvesting: 수확량 생성 -> IInventory.TryAdd -> 성공 시 progress 감소
   -> WarehouseInventory 수량 증가
 ```
+
+`FarmWorkSite`는 `BaseInteractionProvider`를 상속해 `ActionType.Farming`만 지원하는 `IInteractionProvider`다. `AppendOptions`는 base의 기본 empty 구현을 그대로 쓴다(Farming은 선택 가능한 option이 없는 interaction). `Strength`는 현재 worker efficiency로 사용되며 항상 1이다(향후 Farmer 숙련도 seam).
 
 현재 invariant:
 
@@ -391,12 +388,12 @@ plain runtime/data types
 
 우선순위가 높은 구조 부채:
 
-1. 현재 공급 전용 `IInteractionProvider`와 농사 전용 `IFarmWorkProvider`를 공통 interaction protocol로 통합한다.
-2. `BaseInteractable`의 item table 초기화 책임을 범용 interaction base에서 분리한다.
-3. action 내부 하드코딩 지속시간과 `NPCDecisionTuning`의 예측 시간을 단일 정의로 맞춘다.
-4. GuardDuty와 plain Idle을 `NPCDecision`에서 구별할 필요가 있는지 결정한다.
-5. 감지 범위와 향후 성장 stat의 동기화 책임을 정한다.
-6. `DataManager.instance` 전역 접근을 명시적 조립으로 점진적으로 대체한다.
-7. production 코드와 `TestOnly` 코드를 assembly definition으로 격리할지 결정한다.
+1. action 내부 하드코딩 지속시간과 `NPCDecisionTuning`의 예측 시간을 단일 정의로 맞춘다.
+2. GuardDuty와 plain Idle을 `NPCDecision`에서 구별할 필요가 있는지 결정한다.
+3. 감지 범위와 향후 성장 stat의 동기화 책임을 정한다.
+4. `DataManager.instance` 전역 접근을 명시적 조립으로 점진적으로 대체한다.
+5. production 코드와 `TestOnly` 코드를 assembly definition으로 격리할지 결정한다.
+
+`IInteractionProvider`/`IFarmWorkProvider` 통합(Eat/Drink/Farming 공통 프로토콜)과 `BaseInteractable`의 item table 책임 분리는 2026-08-22 `PublicMD/InteractionProvider_Unification_Plan.md` 구현으로 완료되었다.
 
 아직 구현되지 않은 모집, 상인, 치료, 정식 물류, 직업 성장, 저장/불러오기, UI 시스템은 `Game_Plan.md`와 `PLAN.md`에서 관리한다. 해당 시스템이 생기기 전에는 이 문서에 가상의 class/API를 현재 구조처럼 기록하지 않는다.

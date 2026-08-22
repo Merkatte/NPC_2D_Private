@@ -1,13 +1,12 @@
 using UnityEngine;
 
-public class FarmWorkSite : MonoBehaviour, IFarmWorkProvider
+public class FarmWorkSite : BaseInteractionProvider
 {
     [SerializeField] private FarmProductionDefinition _definition;
     [SerializeField] private SeededRandomSource _randomSource;
     [SerializeField] private MonoBehaviour _outputInventorySource;
 
     private IInventory _outputInventory;
-    private bool _isOperational;
 
     private FarmWorkPhase _phase = FarmWorkPhase.Growing;
     private float _currentProgress;
@@ -17,72 +16,13 @@ public class FarmWorkSite : MonoBehaviour, IFarmWorkProvider
     public float MaxProgress => _definition ? _definition.MaxProgress : 0f;
     public float NormalizedProgress => MaxProgress <= 0f ? 0f : Mathf.Clamp01(_currentProgress / MaxProgress);
 
-    public bool CanApplyWork => _isOperational;
+    protected override bool SupportsCore(ActionType type)
+        => type == ActionType.Farming;
 
-    private void Awake()
+    protected override bool TryInitializeCore(out string failureReason)
     {
         _outputInventory = _outputInventorySource as IInventory;
-        _isOperational = ResolveOperational(out string failureReason);
 
-        if (!_isOperational)
-            Debug.LogError($"FarmWorkSite on {name} is not operational: {failureReason}");
-    }
-
-    public bool TryApplyWork(float workerEfficiency, out FarmWorkResult result)
-    {
-        if (workerEfficiency <= 0f || !CanApplyWork)
-        {
-            result = FarmWorkResult.Failed(_phase, _currentProgress);
-            return false;
-        }
-
-        return _phase == FarmWorkPhase.Growing
-            ? ApplyGrowingWork(workerEfficiency, out result)
-            : ApplyHarvestingWork(workerEfficiency, out result);
-    }
-
-    private bool ApplyGrowingWork(float workerEfficiency, out FarmWorkResult result)
-    {
-        FarmWorkPhase previousPhase = _phase;
-        float previousProgress = _currentProgress;
-
-        float delta = _definition.GrowthPerWork * workerEfficiency;
-        _currentProgress = Mathf.Min(_definition.MaxProgress, _currentProgress + delta);
-
-        if (_currentProgress >= _definition.MaxProgress)
-            _phase = FarmWorkPhase.Harvesting;
-
-        result = new FarmWorkResult(true, previousPhase, _phase, previousProgress, _currentProgress, -1, 0);
-        return true;
-    }
-
-    private bool ApplyHarvestingWork(float workerEfficiency, out FarmWorkResult result)
-    {
-        FarmWorkPhase previousPhase = _phase;
-        float previousProgress = _currentProgress;
-
-        int yield = _randomSource.NextInclusive(_definition.MinimumYield, _definition.MaximumYield);
-        bool accepted = _outputInventory.TryAdd(_definition.OutputItemId, yield, out int acceptedQuantity);
-
-        if (!accepted || acceptedQuantity != yield)
-        {
-            result = FarmWorkResult.Failed(previousPhase, previousProgress);
-            return false;
-        }
-
-        float delta = _definition.HarvestProgressPerWork * workerEfficiency;
-        _currentProgress = Mathf.Max(0f, _currentProgress - delta);
-
-        if (_currentProgress <= 0f)
-            _phase = FarmWorkPhase.Growing;
-
-        result = new FarmWorkResult(true, previousPhase, _phase, previousProgress, _currentProgress,
-            _definition.OutputItemId, yield);
-        return true;
-    }
-
-    private bool ResolveOperational(out string failureReason)
-    {
         if (!_definition)
         {
             failureReason = "missing FarmProductionDefinition";
@@ -108,6 +48,44 @@ public class FarmWorkSite : MonoBehaviour, IFarmWorkProvider
         }
 
         failureReason = null;
+        return true;
+    }
+
+    protected override bool TryInteractCore(InteractionRequest request, out InteractionResult result)
+    {
+        result = default;
+        float workerEfficiency = request.Strength;
+
+        return _phase == FarmWorkPhase.Growing
+            ? ApplyGrowingWork(workerEfficiency)
+            : ApplyHarvestingWork(workerEfficiency);
+    }
+
+    private bool ApplyGrowingWork(float workerEfficiency)
+    {
+        float delta = _definition.GrowthPerWork * workerEfficiency;
+        _currentProgress = Mathf.Min(_definition.MaxProgress, _currentProgress + delta);
+
+        if (_currentProgress >= _definition.MaxProgress)
+            _phase = FarmWorkPhase.Harvesting;
+
+        return true;
+    }
+
+    private bool ApplyHarvestingWork(float workerEfficiency)
+    {
+        int yield = _randomSource.NextInclusive(_definition.MinimumYield, _definition.MaximumYield);
+        bool accepted = _outputInventory.TryAdd(_definition.OutputItemId, yield, out int acceptedQuantity);
+
+        if (!accepted || acceptedQuantity != yield)
+            return false;
+
+        float delta = _definition.HarvestProgressPerWork * workerEfficiency;
+        _currentProgress = Mathf.Max(0f, _currentProgress - delta);
+
+        if (_currentProgress <= 0f)
+            _phase = FarmWorkPhase.Growing;
+
         return true;
     }
 }

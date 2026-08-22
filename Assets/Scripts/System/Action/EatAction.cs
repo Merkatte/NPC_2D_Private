@@ -44,11 +44,16 @@ public class EatAction : DefaultAction
 
         if (currentEatTime >= eatTime)
         {
-            if (actionContext.InteractionProvider != null && actionContext.Request != null &&
-                actionContext.InteractionProvider.TryInteraction(actionContext.Request.Value, out var result))
+            if (actionContext.InteractionProvider == null || actionContext.Request == null ||
+                !actionContext.InteractionProvider.TryInteract(actionContext.Request.Value, out var result))
             {
-                stat.ApplyStatEffect(result.Effect);
+                Fail("InteractionProvider rejected the Eat transaction");
+                return;
             }
+
+            if (result.HasActorEffect)
+                stat.ApplyStatEffect(result.ActorEffect);
+
             Complete();
         }
     }

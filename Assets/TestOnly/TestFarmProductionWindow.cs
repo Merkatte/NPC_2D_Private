@@ -11,8 +11,14 @@ public class TestFarmProductionWindow : MonoBehaviour
     [SerializeField] private int _observedItemId;
 
     private Rect _windowRect = new Rect(20f, 300f, WindowWidth, WindowHeight);
-    private FarmWorkResult _lastResult;
+
     private bool _hasLastResult;
+    private bool _lastSuccess;
+    private FarmWorkPhase _lastPreviousPhase;
+    private FarmWorkPhase _lastCurrentPhase;
+    private float _lastPreviousProgress;
+    private float _lastCurrentProgress;
+    private int _lastWarehouseDelta;
 
     private void OnGUI()
     {
@@ -46,17 +52,30 @@ public class TestFarmProductionWindow : MonoBehaviour
 
         if (_hasLastResult)
         {
-            GUILayout.Label($"Last: success={_lastResult.Success} phase={_lastResult.PreviousPhase}->{_lastResult.CurrentPhase} " +
-                $"progress={_lastResult.PreviousProgress:F1}->{_lastResult.CurrentProgress:F1} " +
-                $"produced={_lastResult.ProducedItemId}x{_lastResult.ProducedQuantity}");
+            GUILayout.Label($"Last: success={_lastSuccess} phase={_lastPreviousPhase}->{_lastCurrentPhase} " +
+                $"progress={_lastPreviousProgress:F1}->{_lastCurrentProgress:F1} warehouseDelta={_lastWarehouseDelta}");
         }
 
         GUI.DragWindow();
     }
 
+    // Records state directly before/after the call: the common InteractionResult intentionally
+    // carries no farm-specific payload (see PublicMD/InteractionProvider_Unification_Plan.md
+    // section 8.2), so the previous dedicated result type no longer exists.
     private void ApplyWork()
     {
-        _farmWorkSite.TryApplyWork(1f, out _lastResult);
+        FarmWorkPhase previousPhase = _farmWorkSite.Phase;
+        float previousProgress = _farmWorkSite.CurrentProgress;
+        int previousQuantity = _warehouse.GetQuantity(_observedItemId);
+
+        bool success = _farmWorkSite.TryInteract(new InteractionRequest(ActionType.Farming, strength: 1f), out _);
+
+        _lastSuccess = success;
+        _lastPreviousPhase = previousPhase;
+        _lastCurrentPhase = _farmWorkSite.Phase;
+        _lastPreviousProgress = previousProgress;
+        _lastCurrentProgress = _farmWorkSite.CurrentProgress;
+        _lastWarehouseDelta = _warehouse.GetQuantity(_observedItemId) - previousQuantity;
         _hasLastResult = true;
     }
 }

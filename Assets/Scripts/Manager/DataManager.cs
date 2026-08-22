@@ -5,7 +5,6 @@ using UnityEngine;
 public class DataManager : MonoBehaviour, IDataManager
 {
     [SerializeField] private CostInfo[] _costInfos;
-    [SerializeField] private ItemDataContext _itemDataContext;
 
     Dictionary<ActionType, CostInfo> _costInfoDict = new Dictionary<ActionType, CostInfo>();
 
@@ -19,11 +18,6 @@ public class DataManager : MonoBehaviour, IDataManager
         {
             _costInfoDict.Add(item.actionCost.MyType, item);
         }
-    }
-
-    public Dictionary<ItemCategory, List<ItemInfo>> GetItemInfos()
-    {
-        return _itemDataContext.ItemInfos();
     }
 
     public bool TryGetActionCostInfo<T>(ActionType actionType, out T costInfo) where T : DefaultActionCost

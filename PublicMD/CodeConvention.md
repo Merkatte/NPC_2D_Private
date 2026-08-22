@@ -1,6 +1,6 @@
 # Code Convention
 
-> 문서 기준일: 2026-08-21
+> 문서 기준일: 2026-08-22
 > 적용 범위: 현재 Unity NPC Work 2D 프로젝트의 C# 코드와 직렬화 asset
 
 ## 1. 목적과 우선순위
@@ -52,7 +52,7 @@ public int GetQuantity(int itemId); // 인자가 필요한 조회는 method이�
 
 ```csharp
 bool TryGetDestinationPos(BuildingType key, out Vector3 position);
-bool TryApplyWork(float efficiency, out FarmWorkResult result);
+bool TryInteract(InteractionRequest request, out InteractionResult result);
 ```
 
 ### 2.3 이름에 책임을 드러낸다
@@ -68,7 +68,7 @@ bool TryApplyWork(float efficiency, out FarmWorkResult result);
 - `...DB`: 씬 배선에서 만든 lookup/cache
 - `...Pool`: 생성·회수·재사용 소유자
 
-이름이 넓으면 실제 계약도 넓어야 한다. 공급 전용 API인데 `IInteractionProvider`라는 이름을 쓰는 현재 불일치는 통합 대상이지 새 코드의 선례가 아니다.
+이름이 넓으면 실제 계약도 넓어야 한다. `IInteractionProvider`는 Eat/Drink/Farming이 공유하는 실제 공통 protocol이다.
 
 ## 3. 파일과 폴더
 
@@ -237,9 +237,9 @@ queue는 실행 순서만 표현한다. 숨은 조건 분기나 장기 계획 st
 
 범용 interface가 farm progress, cook recipe, pub item list를 모두 property로 노출해서는 안 된다. 도메인 세부 상태는 concrete provider가 소유한다.
 
-### 6.2 목표 패턴
+### 6.2 확정 패턴
 
-새 상호작용 구조는 다음 모양을 우선한다.
+현재 상호작용 구조는 다음 모양이다.
 
 ```text
 IInteractionProvider
@@ -248,11 +248,11 @@ IInteractionProvider
 BaseInteractionProvider
   -> 공통 validation, 실패 처리, dispatch template
 
-FarmInteractionProvider / Pub / Cook...
+FarmWorkSite / Pub / (미래) Cook...
   -> 자신의 domain rule과 runtime state
 ```
 
-base class는 공유되는 실제 lifecycle이나 validation이 있을 때만 만든다. 단지 상속 계층을 보기 좋게 만들기 위해 빈 base를 만들지 않는다.
+`Pub`(Eat/Drink)와 `FarmWorkSite`(Farming)가 모두 `BaseInteractionProvider`를 상속해 이 패턴을 따른다. base class는 공유되는 실제 lifecycle이나 validation이 있을 때만 만든다. 단지 상속 계층을 보기 좋게 만들기 위해 빈 base를 만들지 않는다.
 
 ### 6.3 금지하는 증식 패턴
 
@@ -268,7 +268,7 @@ DestinationDB.TryGetCookProvider(...)
 DestinationDB.TryGetShopProvider(...)
 ```
 
-현재 `IFarmWorkProvider`는 이미 구현된 과도기 연결이다. 통합 전까지 유지할 수 있지만 새 도메인이 이를 복제해서는 안 된다.
+새 facility(Cook, Shop, Clinic 등)를 추가할 때는 domain 전용 provider interface나 `DestinationDB.TryGetXxxProvider(...)`를 만들지 않는다. `BaseInteractionProvider`를 상속하고 `InteractableManager._interactables`에 등록해 기존 `IInteractionProvider` 경로로 노출한다.
 
 ## 7. Interface 규칙
 
