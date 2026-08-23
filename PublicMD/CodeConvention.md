@@ -83,6 +83,7 @@ bool TryInteract(InteractionRequest request, out InteractionResult result);
 
 - `Assets/Scripts/Actor`: scene actor와 interactable MonoBehaviour
 - `Assets/Scripts/Manager`: scene composition, registry, spawn manager
+- `Assets/Scripts/UI`: UI facade, view base, 표시 lifecycle과 UI 전용 routing
 - `Assets/Scripts/Interface`: 여러 domain이 공유하는 안정적인 계약
 - `Assets/Scripts/Enum`: project-wide identifier
 - `Assets/Scripts/System/Action`: `IAction` 구현
@@ -168,6 +169,17 @@ provider는 요청받은 상호작용의 도메인 규칙과 transaction을 실�
 - 정의와 tuning은 ScriptableObject가 소유한다.
 - provider가 `WorkerNPC` 또는 selector concrete type을 참조하지 않는다.
 - 외부 저장과 내부 상태를 함께 바꾸는 경우 mutation 순서와 rollback/거부 의미를 명시한다.
+
+### 4.7 UI
+
+`UIManager`는 외부 호출자가 concrete view나 Canvas 구조를 알지 않게 하는 facade이자 popup/hover category coordinator다.
+
+- 호출자는 `IUIService`에 표시 의도와 명시적 enum/source만 전달한다.
+- `UIManager`는 개별 화면의 domain data를 검색하거나 Text/Slider를 직접 갱신하지 않는다.
+- popup/hover가 추가될 때 concrete serialized field를 늘리지 않고 `PopBase[]`/`HoverBase[]` registry에 등록한다.
+- `PopBase`와 `HoverBase`는 공통 lifecycle만 소유하며 concrete view가 실제 표현과 animation을 소유한다.
+- hover source는 `IHoverInfoSource`를 통해 `HoverInfo`를 제공하고 domain component가 concrete UI를 참조하지 않게 한다.
+- `object` payload, string path, 개별 화면별 거대 `switch`로 compile-time 계약을 숨기지 않는다.
 
 ## 5. Action 규칙
 

@@ -51,6 +51,7 @@ Assets/
 
     Struct/
       ActionContext.cs
+      HoverInfo.cs
       InteractionOption.cs
       InteractionRequest.cs
       InteractionResult.cs
@@ -77,9 +78,11 @@ Assets/
       ActionResult.cs
       ActionType.cs
       BuildingType.cs
+      HoverType.cs
       ItemCategory.cs
       NPCIntent.cs
       NPCType.cs
+      PopupType.cs
 
     Interface/
       IAction.cs
@@ -87,16 +90,23 @@ Assets/
       ICombatTarget.cs
       IDataManager.cs
       IGuardStatView.cs
+      IHoverInfoSource.cs
       IInteractionProvider.cs
       IInventory.cs
       IMoveTarget.cs
       IRandomSource.cs
       IStatView.cs
+      IUIService.cs
 
     Manager/
       DataManager.cs
       InteractableManager.cs
       NPCManager.cs
+
+    UI/
+      HoverBase.cs
+      PopBase.cs
+      UIManager.cs
 
     System/
       Action/
@@ -232,14 +242,26 @@ work 결과는 별도 result 타입 없이 공통 `InteractionResult`(성공 시
 
 시설 inventory의 runtime 구현을 둔다. 현재는 용량 없는 `WarehouseInventory` 하나이며 item ID별 정수 수량을 보유한다.
 
+### `Assets/Scripts/UI`
+
+UI의 공통 진입점과 표시 lifecycle을 둔다.
+
+| 파일 | 역할 |
+|---|---|
+| `UIManager` | 외부 `IUIService` facade, `PopupType`/`HoverType` routing, popup stack과 현재 hover 조정 |
+| `PopBase` | popup 식별자와 open/close lifecycle hook |
+| `HoverBase` | hover source 소유권, 주기적 정보 갱신, show/hide lifecycle hook |
+
+`UIManager`는 개별 popup/hover마다 concrete field를 갖지 않고 `PopBase[]`/`HoverBase[]` registry를 dictionary로 변환한다. 호출자는 concrete view나 하위 controller를 탐색하지 않고 `IUIService.TryShow/TryHide`에 category enum과 필요한 source만 전달한다. concrete UI는 `PopBase` 또는 `HoverBase`를 상속해 실제 Text, gauge, animation 표현을 소유한다.
+
 ### `Assets/Scripts/Interface`
 
 프로젝트 여러 영역이 공유하는 안정적인 계약만 둔다.
 
 - 실행: `IAction`, `IInteractionProvider`
 - read model: `IStatView`, `ICombatStatView`, `IGuardStatView`
-- capability: `ICombatTarget`, `IMoveTarget`, `IInventory`, `IRandomSource`
-- data service: `IDataManager`
+- capability: `ICombatTarget`, `IMoveTarget`, `IInventory`, `IRandomSource`, `IHoverInfoSource`
+- data service: `IDataManager`, `IUIService`
 
 한 concrete class의 이름을 감추기 위한 일대일 interface는 이 폴더에 추가하지 않는다. 도메인 전용 계약은 실제 필요가 있으면 도메인 폴더에 두되, provider가 도메인마다 증식하지 않도록 먼저 공통 interaction protocol로 표현 가능한지 검토한다.
 
@@ -248,6 +270,7 @@ work 결과는 별도 result 타입 없이 공통 `InteractionResult`(성공 시
 selector, action, provider 사이를 전달하는 작은 request/result/value object를 둔다.
 
 - `ActionContext`: action 실행 dependency 묶음
+- `HoverInfo`: hover view가 그릴 title/description/progress/anchor 값
 - `NPCDecision`: decider의 단일 semantic decision
 - `MoveRequest`: 고정/동적 이동 목표
 - `InteractionRequest`, `InteractionResult`: Eat/Drink/Farming이 공유하는 공통 interaction request/result

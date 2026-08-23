@@ -63,11 +63,17 @@ public class FarmWorkSite : BaseInteractionProvider
 
     private bool ApplyGrowingWork(float workerEfficiency)
     {
+        float previousProgress = _currentProgress;
         float delta = _definition.GrowthPerWork * workerEfficiency;
         _currentProgress = Mathf.Min(_definition.MaxProgress, _currentProgress + delta);
 
         if (_currentProgress >= _definition.MaxProgress)
             _phase = FarmWorkPhase.Harvesting;
+
+        Debug.Log(
+            $"FarmWorkSite '{name}': growth gauge {previousProgress:F1} -> {_currentProgress:F1} / {MaxProgress:F1} " +
+            $"({NormalizedProgress:P0}), phase={_phase}.",
+            this);
 
         return true;
     }
@@ -80,11 +86,17 @@ public class FarmWorkSite : BaseInteractionProvider
         if (!accepted || acceptedQuantity != yield)
             return false;
 
+        float previousProgress = _currentProgress;
         float delta = _definition.HarvestProgressPerWork * workerEfficiency;
         _currentProgress = Mathf.Max(0f, _currentProgress - delta);
 
         if (_currentProgress <= 0f)
             _phase = FarmWorkPhase.Growing;
+
+        Debug.Log(
+            $"FarmWorkSite '{name}': harvest gauge {previousProgress:F1} -> {_currentProgress:F1} / {MaxProgress:F1} " +
+            $"({NormalizedProgress:P0}), stored item {_definition.OutputItemId} x{yield}, phase={_phase}.",
+            this);
 
         return true;
     }

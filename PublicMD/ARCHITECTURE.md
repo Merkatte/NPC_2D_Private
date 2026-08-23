@@ -319,6 +319,22 @@ FarmingAction 완료
 
 현재 직접 farm→warehouse 적재는 운반 시스템 전의 임시 수직 슬라이스다. 운반·용량·예약·저장/불러오기·숙련도 반영은 미구현이다.
 
+## 10.5 UI 기본 라우팅
+
+현재 UI는 실제 화면 제작 전의 공통 routing/lifecycle 기반만 구현되어 있다.
+
+```text
+caller
+  -> IUIService.TryShow(category enum, optional source)
+  -> UIManager
+       PopupType -> PopBase registry -> popup open/close stack
+       HoverType + IHoverInfoSource -> HoverBase registry -> current hover
+```
+
+`UIManager`는 외부 facade이자 popup/hover category coordinator다. 개별 화면의 Text, gauge, animation, domain formatting은 알지 않으며 `PopBase[]`와 `HoverBase[]` 두 serialized registry만 dictionary로 변환한다. `PopBase`는 popup open/close hook을, `HoverBase`는 현재 source의 소유권과 주기적 `HoverInfo` 갱신을 소유한다. 다른 source의 종료 요청이 현재 hover를 닫지 않도록 source identity를 확인한다.
+
+게임 도메인 component는 concrete UI view나 `UIManager`를 직접 참조하지 않는다. hover 입력 adapter가 `IHoverInfoSource`를 제공하고 `IUIService`에 표시 의도를 전달한다. 현재 concrete popup, farm hover view, pointer/raycast adapter와 scene wiring은 미구현이다.
+
 ## 11. 난수와 재현성
 
 게임플레이 결과에 영향을 주는 난수는 `UnityEngine.Random`을 직접 사용하지 않고 `IRandomSource`를 통해 공급한다. 현재 `SeededRandomSource`는 `System.Random`과 serialized seed를 사용한다.
@@ -393,7 +409,8 @@ plain runtime/data types
 3. 감지 범위와 향후 성장 stat의 동기화 책임을 정한다.
 4. `DataManager.instance` 전역 접근을 명시적 조립으로 점진적으로 대체한다.
 5. production 코드와 `TestOnly` 코드를 assembly definition으로 격리할지 결정한다.
+6. `Pub`(및 향후 Cook/Shop 등)이 `[SerializeField] ItemDataContext`를 각자 직접 참조하는 현재 방식은 시설마다 Inspector에 같은 asset을 반복 배선해야 하고, 서로 다른 asset을 잘못 물리는 참조 drift를 구조적으로 막지 못한다. 매니저 주입으로 되돌리는 것은 `InteractableManager`의 domain 무지 원칙을 다시 깨므로 피한다. 검토할 대안: (a) `Reset()`에서 `AssetDatabase.FindAssets`로 프로젝트에 하나뿐인 asset을 자동 채우는 editor-only 편의 기능(명시적 `SerializeField`는 유지, override 가능), (b) `ItemDataContext`에 static self-reference singleton을 둬 `SerializeField` 자체를 없애는 방법(단, `DataManager.instance`와 같은 전역 접근점 계열이므로 이 asset이 앞으로도 프로젝트에 항상 정확히 하나임이 보장될 때만 고려). 2026-08-22 사용자 논의, 아직 미결정·미구현.
 
 `IInteractionProvider`/`IFarmWorkProvider` 통합(Eat/Drink/Farming 공통 프로토콜)과 `BaseInteractable`의 item table 책임 분리는 2026-08-22 `PublicMD/InteractionProvider_Unification_Plan.md` 구현으로 완료되었다.
 
-아직 구현되지 않은 모집, 상인, 치료, 정식 물류, 직업 성장, 저장/불러오기, UI 시스템은 `Game_Plan.md`와 `PLAN.md`에서 관리한다. 해당 시스템이 생기기 전에는 이 문서에 가상의 class/API를 현재 구조처럼 기록하지 않는다.
+아직 구현되지 않은 모집, 상인, 치료, 정식 물류, 직업 성장, 저장/불러오기와 concrete UI 화면은 `Game_Plan.md`와 `PLAN.md`에서 관리한다. 해당 시스템이 생기기 전에는 이 문서에 가상의 class/API를 현재 구조처럼 기록하지 않는다.
