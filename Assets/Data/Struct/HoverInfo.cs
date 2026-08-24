@@ -1,16 +1,17 @@
+using JetBrains.Annotations;
 using UnityEngine;
 
 public readonly struct HoverInfo
 {
-    public string Title { get; }
-    public string Description { get; }
+    [CanBeNull] public string Title { get; }
+    [CanBeNull] public string Description { get; }
     public Vector3 AnchorPosition { get; }
     public bool HasProgress { get; }
     public float NormalizedProgress { get; }
 
     public HoverInfo(
-        string title,
-        string description,
+        [CanBeNull] string title,
+        [CanBeNull] string description,
         Vector3 anchorPosition,
         bool hasProgress = false,
         float normalizedProgress = 0f)

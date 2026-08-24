@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class FarmWorkSite : BaseInteractionProvider
+public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
 {
     [SerializeField] private FarmProductionDefinition _definition;
     [SerializeField] private SeededRandomSource _randomSource;
@@ -98,6 +98,25 @@ public class FarmWorkSite : BaseInteractionProvider
             $"({NormalizedProgress:P0}), stored item {_definition.OutputItemId} x{yield}, phase={_phase}.",
             this);
 
+        return true;
+    }
+
+    public Object Owner => this;
+
+    public bool TryGetHoverInfo(out HoverInfo info)
+    {
+        if (!_definition || _definition.MaxProgress <= 0f)
+        {
+            info = default;
+            return false;
+        }
+
+        info = new HoverInfo(
+            title: null,
+            description: null,
+            anchorPosition: transform.position,
+            hasProgress: true,
+            normalizedProgress: NormalizedProgress);
         return true;
     }
 }

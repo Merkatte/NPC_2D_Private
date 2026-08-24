@@ -15,6 +15,6 @@ MonoBehaviour:
   _maxProgress: 100
   _growthPerWork: 10
   _harvestProgressPerWork: 10
-  _outputItemId: -1
+  _outputItemId: 2
   _minimumYield: 1
   _maximumYield: 1

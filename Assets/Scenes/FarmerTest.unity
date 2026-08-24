@@ -245,6 +245,7 @@ MonoBehaviour:
   _interactables:
   - {fileID: 797661897}
   - {fileID: 2104496465}
+  - {fileID: 1373381419}
 --- !u!1 &347341982
 GameObject:
   m_ObjectHideFlags: 0
@@ -719,7 +720,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95b5a9e6ed9fdac43a4ec42f9aa909e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Pub
-  _itemDataContext: {fileID: 0}
+  _itemDataContext: {fileID: 11400000, guid: df1cde6d9ea68634494a9967845fe8ad, type: 2}
 --- !u!1 &825924304
 GameObject:
   m_ObjectHideFlags: 0
@@ -1235,7 +1236,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCManager
   _workerPool: {fileID: 1698803130}
-  _creationEntries: []
+  _creationEntries:
+  - _npcType: 0
+    _selector: {fileID: 825924306}
+    _statDefinition: {fileID: 11400000, guid: 8bfe8a7e097b9fb4096bcbc93499c8be, type: 2}
 --- !u!4 &1748550658
 Transform:
   m_ObjectHideFlags: 0
@@ -1308,7 +1312,7 @@ MonoBehaviour:
   - BuildingType: 4
     DestinationLoc: {fileID: 1373381417}
     DestinationObject: {fileID: 1373381415}
-  _interactableManager: {fileID: 0}
+  _interactableManager: {fileID: 267677647}
 --- !u!1 &2074886626
 GameObject:
   m_ObjectHideFlags: 0
@@ -1445,7 +1449,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95b5a9e6ed9fdac43a4ec42f9aa909e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Pub
-  _itemDataContext: {fileID: 0}
+  _itemDataContext: {fileID: 11400000, guid: df1cde6d9ea68634494a9967845fe8ad, type: 2}
 --- !u!1 &2106675832
 GameObject:
   m_ObjectHideFlags: 0

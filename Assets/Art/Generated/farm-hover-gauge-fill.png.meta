@@ -1,0 +1,1627 @@
+fileFormatVersion: 2
+guid: 2cecf562040fb1543a10fa9b8b2fd17e
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 5167148887306334290
+    second: farm-hover-gauge-fill_0
+  - first:
+      213: -8636646613119176998
+    second: farm-hover-gauge-fill_1
+  - first:
+      213: -2352938450607140196
+    second: farm-hover-gauge-fill_2
+  - first:
+      213: 3948411018201676500
+    second: farm-hover-gauge-fill_3
+  - first:
+      213: -7685694775089064680
+    second: farm-hover-gauge-fill_4
+  - first:
+      213: 5989361054176913317
+    second: farm-hover-gauge-fill_5
+  - first:
+      213: -5918136891834194966
+    second: farm-hover-gauge-fill_6
+  - first:
+      213: -5257102971688887184
+    second: farm-hover-gauge-fill_7
+  - first:
+      213: 4920955217207650583
+    second: farm-hover-gauge-fill_8
+  - first:
+      213: -5079791017006341516
+    second: farm-hover-gauge-fill_9
+  - first:
+      213: -3433042343019462806
+    second: farm-hover-gauge-fill_10
+  - first:
+      213: -1118141887401261368
+    second: farm-hover-gauge-fill_11
+  - first:
+      213: 3358840092200582223
+    second: farm-hover-gauge-fill_12
+  - first:
+      213: 7454703616915644616
+    second: farm-hover-gauge-fill_13
+  - first:
+      213: 7647298352917369213
+    second: farm-hover-gauge-fill_14
+  - first:
+      213: 6257202766542253111
+    second: farm-hover-gauge-fill_15
+  - first:
+      213: -6950471401510786126
+    second: farm-hover-gauge-fill_16
+  - first:
+      213: -7629066268249356799
+    second: farm-hover-gauge-fill_17
+  - first:
+      213: 8274017374880312121
+    second: farm-hover-gauge-fill_18
+  - first:
+      213: 5621355758021272142
+    second: farm-hover-gauge-fill_19
+  - first:
+      213: -4861556169915472220
+    second: farm-hover-gauge-fill_20
+  - first:
+      213: -378701599447545329
+    second: farm-hover-gauge-fill_21
+  - first:
+      213: -6169542459862191153
+    second: farm-hover-gauge-fill_22
+  - first:
+      213: -1904950323712990008
+    second: farm-hover-gauge-fill_23
+  - first:
+      213: 1516488347604918035
+    second: farm-hover-gauge-fill_24
+  - first:
+      213: -8284378583848449301
+    second: farm-hover-gauge-fill_25
+  - first:
+      213: -1616242215484742311
+    second: farm-hover-gauge-fill_26
+  - first:
+      213: 100016213048567499
+    second: farm-hover-gauge-fill_27
+  - first:
+      213: 2625101105693200782
+    second: farm-hover-gauge-fill_28
+  - first:
+      213: 1231031419455326484
+    second: farm-hover-gauge-fill_29
+  - first:
+      213: -2934964491639486385
+    second: farm-hover-gauge-fill_30
+  - first:
+      213: -4927489242306130183
+    second: farm-hover-gauge-fill_31
+  - first:
+      213: -1667271081016540441
+    second: farm-hover-gauge-fill_32
+  - first:
+      213: -4194194204391065644
+    second: farm-hover-gauge-fill_33
+  - first:
+      213: -8626311265728549328
+    second: farm-hover-gauge-fill_34
+  - first:
+      213: 4859760842733827259
+    second: farm-hover-gauge-fill_35
+  - first:
+      213: -7943363781917576448
+    second: farm-hover-gauge-fill_36
+  - first:
+      213: -6513683787833073338
+    second: farm-hover-gauge-fill_37
+  - first:
+      213: 3844330418159591164
+    second: farm-hover-gauge-fill_38
+  - first:
+      213: 6779730018923132899
+    second: farm-hover-gauge-fill_39
+  - first:
+      213: -3715958634295474009
+    second: farm-hover-gauge-fill_40
+  - first:
+      213: 48772674115126635
+    second: farm-hover-gauge-fill_41
+  - first:
+      213: 1252631156401560364
+    second: farm-hover-gauge-fill_42
+  - first:
+      213: 127249542947487735
+    second: farm-hover-gauge-fill_43
+  - first:
+      213: 4793594488972289760
+    second: farm-hover-gauge-fill_44
+  - first:
+      213: 2662961738967278365
+    second: farm-hover-gauge-fill_45
+  - first:
+      213: 5190341858232899152
+    second: farm-hover-gauge-fill_46
+  - first:
+      213: -7490680214292458090
+    second: farm-hover-gauge-fill_47
+  - first:
+      213: -6191829629550544215
+    second: farm-hover-gauge-fill_48
+  - first:
+      213: -6521163255815306718
+    second: farm-hover-gauge-fill_49
+  - first:
+      213: 6823707520917017649
+    second: farm-hover-gauge-fill_50
+  - first:
+      213: -8487281126857520614
+    second: farm-hover-gauge-fill_51
+  - first:
+      213: 8750887770603326444
+    second: farm-hover-gauge-fill_52
+  - first:
+      213: -5978816079887295086
+    second: farm-hover-gauge-fill_53
+  - first:
+      213: -6864974523404273010
+    second: farm-hover-gauge-fill_54
+  - first:
+      213: -1864676645383420246
+    second: farm-hover-gauge-fill_55
+  - first:
+      213: -8952612781957427839
+    second: farm-hover-gauge-fill_56
+  - first:
+      213: -505797305068694621
+    second: farm-hover-gauge-fill_57
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 710
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_0
+      rect:
+        serializedVersion: 2
+        x: 89
+        y: 565
+        width: 251
+        height: 125
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 250f279498665b740800000000000000
+      internalID: 5167148887306334290
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_1
+      rect:
+        serializedVersion: 2
+        x: 369
+        y: 549
+        width: 51
+        height: 58
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ade637e0aa7742880800000000000000
+      internalID: -8636646613119176998
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_2
+      rect:
+        serializedVersion: 2
+        x: 419
+        y: 597
+        width: 13
+        height: 9
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c92143112fea85fd0800000000000000
+      internalID: -2352938450607140196
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_3
+      rect:
+        serializedVersion: 2
+        x: 433
+        y: 588
+        width: 60
+        height: 24
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4da3627c6e29bc630800000000000000
+      internalID: 3948411018201676500
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_4
+      rect:
+        serializedVersion: 2
+        x: 448
+        y: 586
+        width: 5
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8159db6925de65590800000000000000
+      internalID: -7685694775089064680
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_5
+      rect:
+        serializedVersion: 2
+        x: 494
+        y: 565
+        width: 73
+        height: 42
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5a726c1552c7e1350800000000000000
+      internalID: 5989361054176913317
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_6
+      rect:
+        serializedVersion: 2
+        x: 620
+        y: 547
+        width: 122
+        height: 79
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ae3a61e3add8edda0800000000000000
+      internalID: -5918136891834194966
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_7
+      rect:
+        serializedVersion: 2
+        x: 710
+        y: 585
+        width: 8
+        height: 13
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 07c55d853b40b07b0800000000000000
+      internalID: -5257102971688887184
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_8
+      rect:
+        serializedVersion: 2
+        x: 719
+        y: 549
+        width: 67
+        height: 70
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 719644d92beba4440800000000000000
+      internalID: 4920955217207650583
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_9
+      rect:
+        serializedVersion: 2
+        x: 781
+        y: 595
+        width: 11
+        height: 31
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 472ed12ebf4f089b0800000000000000
+      internalID: -5079791017006341516
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_10
+      rect:
+        serializedVersion: 2
+        x: 799
+        y: 599
+        width: 24
+        height: 25
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6f33759d226b50d0800000000000000
+      internalID: -3433042343019462806
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_11
+      rect:
+        serializedVersion: 2
+        x: 878
+        y: 595
+        width: 33
+        height: 24
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8c686f8a0ef8b70f0800000000000000
+      internalID: -1118141887401261368
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_12
+      rect:
+        serializedVersion: 2
+        x: 910
+        y: 524
+        width: 47
+        height: 95
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f4cb4f8944ffc9e20800000000000000
+      internalID: 3358840092200582223
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_13
+      rect:
+        serializedVersion: 2
+        x: 988
+        y: 587
+        width: 132
+        height: 42
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8c0a310617d647760800000000000000
+      internalID: 7454703616915644616
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_14
+      rect:
+        serializedVersion: 2
+        x: 1103
+        y: 549
+        width: 85
+        height: 66
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d71d119b559a02a60800000000000000
+      internalID: 7647298352917369213
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_15
+      rect:
+        serializedVersion: 2
+        x: 1189
+        y: 579
+        width: 8
+        height: 31
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 73ca75b93cc06d650800000000000000
+      internalID: 6257202766542253111
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_16
+      rect:
+        serializedVersion: 2
+        x: 1198
+        y: 593
+        width: 11
+        height: 20
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2bb2073e517fa8f90800000000000000
+      internalID: -6950471401510786126
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_17
+      rect:
+        serializedVersion: 2
+        x: 1204
+        y: 551
+        width: 87
+        height: 75
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 106051946ac102690800000000000000
+      internalID: -7629066268249356799
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_18
+      rect:
+        serializedVersion: 2
+        x: 1280
+        y: 595
+        width: 23
+        height: 22
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 93ba62ff6f633d270800000000000000
+      internalID: 8274017374880312121
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_19
+      rect:
+        serializedVersion: 2
+        x: 1312
+        y: 563
+        width: 43
+        height: 58
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e4264f85741130e40800000000000000
+      internalID: 5621355758021272142
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_20
+      rect:
+        serializedVersion: 2
+        x: 1360
+        y: 619
+        width: 5
+        height: 6
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4a6649ccb68488cb0800000000000000
+      internalID: -4861556169915472220
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_21
+      rect:
+        serializedVersion: 2
+        x: 1360
+        y: 595
+        width: 30
+        height: 27
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f0a8e09d6e49ebaf0800000000000000
+      internalID: -378701599447545329
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_22
+      rect:
+        serializedVersion: 2
+        x: 1415
+        y: 563
+        width: 41
+        height: 42
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc3793502d1616aa0800000000000000
+      internalID: -6169542459862191153
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_23
+      rect:
+        serializedVersion: 2
+        x: 1465
+        y: 563
+        width: 25
+        height: 40
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8c4625006c14095e0800000000000000
+      internalID: -1904950323712990008
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_24
+      rect:
+        serializedVersion: 2
+        x: 1499
+        y: 562
+        width: 46
+        height: 107
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 31f92011e16ab0510800000000000000
+      internalID: 1516488347604918035
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_25
+      rect:
+        serializedVersion: 2
+        x: 1553
+        y: 579
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bea0cdc0299f70d80800000000000000
+      internalID: -8284378583848449301
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_26
+      rect:
+        serializedVersion: 2
+        x: 1618
+        y: 547
+        width: 81
+        height: 57
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 955aa0ba444f199e0800000000000000
+      internalID: -1616242215484742311
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_27
+      rect:
+        serializedVersion: 2
+        x: 1705
+        y: 591
+        width: 15
+        height: 11
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bc62a824734536100800000000000000
+      internalID: 100016213048567499
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_28
+      rect:
+        serializedVersion: 2
+        x: 1712
+        y: 581
+        width: 8
+        height: 7
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e8114581c8b3e6420800000000000000
+      internalID: 2625101105693200782
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_29
+      rect:
+        serializedVersion: 2
+        x: 1720
+        y: 581
+        width: 66
+        height: 76
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 419caffbd80851110800000000000000
+      internalID: 1231031419455326484
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_30
+      rect:
+        serializedVersion: 2
+        x: 1797
+        y: 582
+        width: 7
+        height: 12
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f48817f4859e447d0800000000000000
+      internalID: -2934964491639486385
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_31
+      rect:
+        serializedVersion: 2
+        x: 1811
+        y: 577
+        width: 35
+        height: 18
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9fec8cd14aa0e9bb0800000000000000
+      internalID: -4927489242306130183
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_32
+      rect:
+        serializedVersion: 2
+        x: 1875
+        y: 610
+        width: 30
+        height: 28
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7e24abf09c9acd8e0800000000000000
+      internalID: -1667271081016540441
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_33
+      rect:
+        serializedVersion: 2
+        x: 1886
+        y: 580
+        width: 89
+        height: 41
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4d7b448c79a3bc5c0800000000000000
+      internalID: -4194194204391065644
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_34
+      rect:
+        serializedVersion: 2
+        x: 1970
+        y: 634
+        width: 43
+        height: 12
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 03eac44ab9f294880800000000000000
+      internalID: -8626311265728549328
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_35
+      rect:
+        serializedVersion: 2
+        x: 884
+        y: 563
+        width: 17
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb4b0840db6517340800000000000000
+      internalID: 4859760842733827259
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_36
+      rect:
+        serializedVersion: 2
+        x: 989
+        y: 564
+        width: 23
+        height: 12
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0037911e9b083c190800000000000000
+      internalID: -7943363781917576448
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_37
+      rect:
+        serializedVersion: 2
+        x: 1381
+        y: 549
+        width: 19
+        height: 21
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6412dfe1b1fba95a0800000000000000
+      internalID: -6513683787833073338
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_38
+      rect:
+        serializedVersion: 2
+        x: 1676
+        y: 563
+        width: 11
+        height: 12
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cfe91ada52ec95530800000000000000
+      internalID: 3844330418159591164
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_39
+      rect:
+        serializedVersion: 2
+        x: 1924
+        y: 523
+        width: 53
+        height: 12
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3e737fa1880761e50800000000000000
+      internalID: 6779730018923132899
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_40
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 246
+        width: 2092
+        height: 205
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7a8c5c26f434e6cc0800000000000000
+      internalID: -3715958634295474009
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_41
+      rect:
+        serializedVersion: 2
+        x: 1286
+        y: 99
+        width: 21
+        height: 29
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b65c06b1d764da000800000000000000
+      internalID: 48772674115126635
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_42
+      rect:
+        serializedVersion: 2
+        x: 1383
+        y: 72
+        width: 7
+        height: 10
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c2bd6e7666d326110800000000000000
+      internalID: 1252631156401560364
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_43
+      rect:
+        serializedVersion: 2
+        x: 1423
+        y: 114
+        width: 7
+        height: 13
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7ff373df8c414c100800000000000000
+      internalID: 127249542947487735
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_44
+      rect:
+        serializedVersion: 2
+        x: 1511
+        y: 83
+        width: 19
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0e6a6784ac4468240800000000000000
+      internalID: 4793594488972289760
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_45
+      rect:
+        serializedVersion: 2
+        x: 1527
+        y: 147
+        width: 25
+        height: 26
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d13e995b79db4f420800000000000000
+      internalID: 2662961738967278365
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_46
+      rect:
+        serializedVersion: 2
+        x: 1552
+        y: 153
+        width: 5
+        height: 7
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 05610d2ab6cc70840800000000000000
+      internalID: 5190341858232899152
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_47
+      rect:
+        serializedVersion: 2
+        x: 1552
+        y: 148
+        width: 5
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6951d0d4802cb0890800000000000000
+      internalID: -7490680214292458090
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_48
+      rect:
+        serializedVersion: 2
+        x: 1553
+        y: 117
+        width: 13
+        height: 15
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9aab6e4f1c3321aa0800000000000000
+      internalID: -6191829629550544215
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_49
+      rect:
+        serializedVersion: 2
+        x: 1558
+        y: 152
+        width: 5
+        height: 12
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2228cc6c19c2085a0800000000000000
+      internalID: -6521163255815306718
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_50
+      rect:
+        serializedVersion: 2
+        x: 1602
+        y: 137
+        width: 9
+        height: 22
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1349b6336dda2be50800000000000000
+      internalID: 6823707520917017649
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_51
+      rect:
+        serializedVersion: 2
+        x: 1660
+        y: 123
+        width: 9
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a1ac7cc58ce173a80800000000000000
+      internalID: -8487281126857520614
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_52
+      rect:
+        serializedVersion: 2
+        x: 1682
+        y: 121
+        width: 5
+        height: 15
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ceb0f1c2016617970800000000000000
+      internalID: 8750887770603326444
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_53
+      rect:
+        serializedVersion: 2
+        x: 1704
+        y: 159
+        width: 4
+        height: 6
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 29d9ce4d37af60da0800000000000000
+      internalID: -5978816079887295086
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_54
+      rect:
+        serializedVersion: 2
+        x: 1704
+        y: 130
+        width: 30
+        height: 26
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e8ab16c0b06bab0a0800000000000000
+      internalID: -6864974523404273010
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_55
+      rect:
+        serializedVersion: 2
+        x: 1722
+        y: 191
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aa644f278765f16e0800000000000000
+      internalID: -1864676645383420246
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_56
+      rect:
+        serializedVersion: 2
+        x: 1911
+        y: 185
+        width: 8
+        height: 11
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 18d4ec79b1ee1c380800000000000000
+      internalID: -8952612781957427839
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: farm-hover-gauge-fill_57
+      rect:
+        serializedVersion: 2
+        x: 1913
+        y: 169
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3a3d707e70c0bf8f0800000000000000
+      internalID: -505797305068694621
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      farm-hover-gauge-fill_0: 5167148887306334290
+      farm-hover-gauge-fill_1: -8636646613119176998
+      farm-hover-gauge-fill_10: -3433042343019462806
+      farm-hover-gauge-fill_11: -1118141887401261368
+      farm-hover-gauge-fill_12: 3358840092200582223
+      farm-hover-gauge-fill_13: 7454703616915644616
+      farm-hover-gauge-fill_14: 7647298352917369213
+      farm-hover-gauge-fill_15: 6257202766542253111
+      farm-hover-gauge-fill_16: -6950471401510786126
+      farm-hover-gauge-fill_17: -7629066268249356799
+      farm-hover-gauge-fill_18: 8274017374880312121
+      farm-hover-gauge-fill_19: 5621355758021272142
+      farm-hover-gauge-fill_2: -2352938450607140196
+      farm-hover-gauge-fill_20: -4861556169915472220
+      farm-hover-gauge-fill_21: -378701599447545329
+      farm-hover-gauge-fill_22: -6169542459862191153
+      farm-hover-gauge-fill_23: -1904950323712990008
+      farm-hover-gauge-fill_24: 1516488347604918035
+      farm-hover-gauge-fill_25: -8284378583848449301
+      farm-hover-gauge-fill_26: -1616242215484742311
+      farm-hover-gauge-fill_27: 100016213048567499
+      farm-hover-gauge-fill_28: 2625101105693200782
+      farm-hover-gauge-fill_29: 1231031419455326484
+      farm-hover-gauge-fill_3: 3948411018201676500
+      farm-hover-gauge-fill_30: -2934964491639486385
+      farm-hover-gauge-fill_31: -4927489242306130183
+      farm-hover-gauge-fill_32: -1667271081016540441
+      farm-hover-gauge-fill_33: -4194194204391065644
+      farm-hover-gauge-fill_34: -8626311265728549328
+      farm-hover-gauge-fill_35: 4859760842733827259
+      farm-hover-gauge-fill_36: -7943363781917576448
+      farm-hover-gauge-fill_37: -6513683787833073338
+      farm-hover-gauge-fill_38: 3844330418159591164
+      farm-hover-gauge-fill_39: 6779730018923132899
+      farm-hover-gauge-fill_4: -7685694775089064680
+      farm-hover-gauge-fill_40: -3715958634295474009
+      farm-hover-gauge-fill_41: 48772674115126635
+      farm-hover-gauge-fill_42: 1252631156401560364
+      farm-hover-gauge-fill_43: 127249542947487735
+      farm-hover-gauge-fill_44: 4793594488972289760
+      farm-hover-gauge-fill_45: 2662961738967278365
+      farm-hover-gauge-fill_46: 5190341858232899152
+      farm-hover-gauge-fill_47: -7490680214292458090
+      farm-hover-gauge-fill_48: -6191829629550544215
+      farm-hover-gauge-fill_49: -6521163255815306718
+      farm-hover-gauge-fill_5: 5989361054176913317
+      farm-hover-gauge-fill_50: 6823707520917017649
+      farm-hover-gauge-fill_51: -8487281126857520614
+      farm-hover-gauge-fill_52: 8750887770603326444
+      farm-hover-gauge-fill_53: -5978816079887295086
+      farm-hover-gauge-fill_54: -6864974523404273010
+      farm-hover-gauge-fill_55: -1864676645383420246
+      farm-hover-gauge-fill_56: -8952612781957427839
+      farm-hover-gauge-fill_57: -505797305068694621
+      farm-hover-gauge-fill_6: -5918136891834194966
+      farm-hover-gauge-fill_7: -5257102971688887184
+      farm-hover-gauge-fill_8: 4920955217207650583
+      farm-hover-gauge-fill_9: -5079791017006341516
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
