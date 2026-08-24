@@ -1,6 +1,6 @@
 # Project Structure
 
-> 문서 기준일: 2026-08-22
+> 문서 기준일: 2026-08-25
 > 이 문서는 현재 저장소의 실제 파일과 runtime 역할을 설명한다.
 
 ## 1. 구조 한눈에 보기
@@ -61,10 +61,13 @@ Assets/
       StatEffect.cs
 
   Prefab/
-    NPCGirl.prefab
+    InGame/
+      NPCGirl.prefab
+    UI/
+      FarmGauge.prefab
 
   Scenes/
-    SampleScene.unity
+    FarmerTest.unity
     GuardTest.unity
 
   Scripts/
@@ -104,7 +107,9 @@ Assets/
       NPCManager.cs
 
     UI/
+      FarmGaugeHover.cs
       HoverBase.cs
+      PointerHoverRouter.cs
       PopBase.cs
       UIManager.cs
 
@@ -138,6 +143,9 @@ Assets/
 
       Inventory/
         WarehouseInventory.cs
+
+      Mapper/
+        ItemInfoCsvMapper.cs
 
       Lib/
         ActionPool.cs
@@ -229,11 +237,11 @@ NPC runtime state, role selector, 감지 adapter를 둔다.
 
 ### `Assets/Scripts/System/Farming`
 
-농경지 runtime 상태를 둔다. `FarmWorkSite`는 `BaseInteractionProvider`를 상속해 공통 `IInteractionProvider` protocol로 노출되며, 별도의 domain 전용 provider interface는 없다.
+농경지 runtime 상태를 둔다. `FarmWorkSite`는 `BaseInteractionProvider`를 상속해 공통 `IInteractionProvider` protocol로 노출되며, 별도의 domain 전용 provider interface는 없다. 동시에 `IHoverInfoSource`도 직접 구현해 자신의 progress를 `HoverInfo`로, 표시할 hover 창을 `HoverType`으로 스스로 노출한다 — hover 전용 wrapper 컴포넌트를 따로 두지 않는다.
 
 | 파일 | 역할 |
 |---|---|
-| `FarmWorkSite` | `IInteractionProvider` 구현, Growing/Harvesting phase와 progress transaction |
+| `FarmWorkSite` | `IInteractionProvider` + `IHoverInfoSource` 구현, Growing/Harvesting phase와 progress transaction |
 | `FarmWorkPhase` | 농경지 phase 식별 |
 
 work 결과는 별도 result 타입 없이 공통 `InteractionResult`(성공 시 `default`, farming에는 actor effect가 없음)로 표현한다. phase/progress는 `FarmWorkSite`의 read-only property로 조회한다.
@@ -251,8 +259,12 @@ UI의 공통 진입점과 표시 lifecycle을 둔다.
 | `UIManager` | 외부 `IUIService` facade, `PopupType`/`HoverType` routing, popup stack과 현재 hover 조정 |
 | `PopBase` | popup 식별자와 open/close lifecycle hook |
 | `HoverBase` | hover source 소유권, 주기적 정보 갱신, show/hide lifecycle hook |
+| `FarmGaugeHover` | `HoverBase` 구현, `HoverInfo`를 `Image.fillAmount`와 world→screen anchor로 표현 |
+| `PointerHoverRouter` | world pointer(마우스) 아래 `IHoverInfoSource`를 감지해 `IUIService`에 show/hide 의도를 전달하는 입력 adapter |
 
 `UIManager`는 개별 popup/hover마다 concrete field를 갖지 않고 `PopBase[]`/`HoverBase[]` registry를 dictionary로 변환한다. 호출자는 concrete view나 하위 controller를 탐색하지 않고 `IUIService.TryShow/TryHide`에 category enum과 필요한 source만 전달한다. concrete UI는 `PopBase` 또는 `HoverBase`를 상속해 실제 Text, gauge, animation 표현을 소유한다.
+
+`PointerHoverRouter`는 어떤 concrete 도메인 타입(`FarmWorkSite` 등)이나 `HoverBase`/`UIManager` concrete 타입도 참조하지 않는다. `Physics2D.OverlapPoint`로 찾은 hit collider에서 `IHoverInfoSource`를 시도하고, 있으면 `source.HoverType`으로 `IUIService.TryShow`를 호출할 뿐이다. `Collider2D`와 `IHoverInfoSource`는 반드시 같은 GameObject에 있어야 한다.
 
 ### `Assets/Scripts/Interface`
 

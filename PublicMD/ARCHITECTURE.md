@@ -1,6 +1,6 @@
 # NPC Work 2D Architecture
 
-> 문서 기준일: 2026-08-22
+> 문서 기준일: 2026-08-25
 > 대상 버전: Unity 6000.3.9f1, URP 2D
 > 현재 실행 씬: `Assets/Scenes/SampleScene.unity`, `Assets/Scenes/GuardTest.unity`
 
@@ -321,11 +321,11 @@ FarmingAction 완료
 
 ## 10.5 UI 기본 라우팅
 
-현재 UI는 실제 화면 제작 전의 공통 routing/lifecycle 기반만 구현되어 있다.
-
 ```text
-caller
-  -> IUIService.TryShow(category enum, optional source)
+PointerHoverRouter (world pointer adapter)
+  -> Physics2D.OverlapPoint(world pointer, hoverable layer mask)
+  -> hit GameObject의 IHoverInfoSource (TryGetComponent)
+  -> IUIService.TryShow(source.HoverType, source) / TryHide(...)
   -> UIManager
        PopupType -> PopBase registry -> popup open/close stack
        HoverType + IHoverInfoSource -> HoverBase registry -> current hover
@@ -333,7 +333,17 @@ caller
 
 `UIManager`는 외부 facade이자 popup/hover category coordinator다. 개별 화면의 Text, gauge, animation, domain formatting은 알지 않으며 `PopBase[]`와 `HoverBase[]` 두 serialized registry만 dictionary로 변환한다. `PopBase`는 popup open/close hook을, `HoverBase`는 현재 source의 소유권과 주기적 `HoverInfo` 갱신을 소유한다. 다른 source의 종료 요청이 현재 hover를 닫지 않도록 source identity를 확인한다.
 
-게임 도메인 component는 concrete UI view나 `UIManager`를 직접 참조하지 않는다. hover 입력 adapter가 `IHoverInfoSource`를 제공하고 `IUIService`에 표시 의도를 전달한다. 현재 concrete popup, farm hover view, pointer/raycast adapter와 scene wiring은 미구현이다.
+게임 도메인 component는 concrete UI view나 `UIManager`를 직접 참조하지 않는다. `FarmWorkSite`처럼 hover 가능한 도메인 component가 `IHoverInfoSource`를 직접 구현해 `HoverInfo`와 `HoverType`을 스스로 노출하고, `IUIService`에 표시 의도를 전달하는 것은 `PointerHoverRouter`(`Assets/Scripts/UI/PointerHoverRouter.cs`)의 책임이다.
+
+`IHoverInfoSource`는 `HoverType`을 스스로 선언한다. 이 값이 없으면 pointer adapter가 "이 오브젝트는 어떤 hover 창으로 보여줘야 하는가"를 판단하기 위해 도메인 타입별로 분기해야 하고, 그 순간 adapter는 도메인을 알게 된다. source가 `HoverType`을 노출하면 adapter는 `IHoverInfoSource`/`IUIService`/`HoverType`/`Collider2D`/`Camera`만 알면 되고, 어떤 concrete 도메인 타입도 참조하지 않는다.
+
+`PointerHoverRouter`는 마우스 아래 대상이 바뀌었을 때만 `TryGetComponent<IHoverInfoSource>`를 호출한다(hot path에서 반복 `GetComponent` 금지, `CodeConvention.md` §12.3). **`Collider2D`와 `IHoverInfoSource`는 반드시 같은 GameObject에 있어야 한다** — `TryGetComponent`가 hit GameObject 자신만 조회하기 때문이다. 자식 collider 구조가 필요해지면 `GetComponentInParent` 확장이 필요하다.
+
+Layer(`Hoverable`, `TagManager.asset` 인덱스 7)는 레이캐스트 후보를 줄이는 필터로만 쓴다. "이게 hover 가능한가"의 실제 판단은 `IHoverInfoSource` 구현 여부이며, Layer나 Tag로 그 판단을 대신하지 않는다.
+
+popup이 열려 있을 때 hover 표시를 차단하는 정책은 아직 없다 — `PopupType`에 `None`뿐이라 concrete popup이 없기 때문이다. 나중에 추가할 때는 "UIManager가 hover 후보를 보관했다가 popup 종료 시 복구" 또는 "UIManager가 hover 허용 상태 변경 이벤트 제공" 중 하나를 선택해야 한다.
+
+제한 사항: `Physics2D.OverlapPoint`는 여러 collider가 겹칠 때 sprite sorting order가 아니라 Unity 내부 기준(가장 낮은 Z)으로 하나만 반환한다. 겹치는 hover 대상 사이의 우선순위는 아직 지원하지 않는다.
 
 ## 11. 난수와 재현성
 

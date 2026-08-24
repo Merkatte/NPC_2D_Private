@@ -16,6 +16,26 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
     public float MaxProgress => _definition ? _definition.MaxProgress : 0f;
     public float NormalizedProgress => MaxProgress <= 0f ? 0f : Mathf.Clamp01(_currentProgress / MaxProgress);
 
+    public Object Owner => this;
+    public HoverType HoverType => HoverType.FarmStatus;
+
+    public bool TryGetHoverInfo(out HoverInfo info)
+    {
+        if (!_definition || _definition.MaxProgress <= 0f)
+        {
+            info = default;
+            return false;
+        }
+
+        info = new HoverInfo(
+            title: null,
+            description: null,
+            anchorPosition: transform.position,
+            hasProgress: true,
+            normalizedProgress: NormalizedProgress);
+        return true;
+    }
+
     protected override bool SupportsCore(ActionType type)
         => type == ActionType.Farming;
 
@@ -98,25 +118,6 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
             $"({NormalizedProgress:P0}), stored item {_definition.OutputItemId} x{yield}, phase={_phase}.",
             this);
 
-        return true;
-    }
-
-    public Object Owner => this;
-
-    public bool TryGetHoverInfo(out HoverInfo info)
-    {
-        if (!_definition || _definition.MaxProgress <= 0f)
-        {
-            info = default;
-            return false;
-        }
-
-        info = new HoverInfo(
-            title: null,
-            description: null,
-            anchorPosition: transform.position,
-            hasProgress: true,
-            normalizedProgress: NormalizedProgress);
         return true;
     }
 }
