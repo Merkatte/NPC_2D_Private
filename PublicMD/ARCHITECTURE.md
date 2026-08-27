@@ -46,7 +46,7 @@ BaseNPCActionSelector
 | 영역 | 현재 소유자 | 책임 |
 |---|---|---|
 | actor lifecycle | `WorkerNPC` | action queue 실행, 결과 처리, replan, 풀 반환 |
-| Unity 참조 | `NPCComponent` | Transform, 이동, 방향 전환, Guard 감지 컴포넌트 |
+| Unity 참조 | `NPCComponent` | Transform, Animator, 이동·방향·건물 출입 표현, Guard 감지 컴포넌트 |
 | 개체별 상태 | `NPCStat`, `GuardStat` | 체력, 이동 속도, 욕구, Guard 전투 능력치 |
 | 행동 결정 | selector, `DestinationDecider` | 전투 우선순위, 역할/보급 intent, 이동 목적지, 반복 횟수 |
 | 행동 실행 | `IAction` 구현 | 이동·섭취·수면·농사·순찰·공격의 실행과 종료 규칙 |
@@ -156,7 +156,7 @@ Init(ActionContext)
   -> Clear()
 ```
 
-`DefaultAction`은 공통 result와 lifecycle 보조 메서드를 제공한다.
+`DefaultAction`은 공통 result와 lifecycle 보조 메서드를 제공한다. `BaseBuildingAction`은 `DefaultAction`을 상속하는 abstract base로, 항상 실내 행동인 Eat/Drink/Sleep이 `Start()`에서 `NPCComponent.SetInsideBuilding(true)`를 호출하고 `Complete`/`ReplanRequested`/`Fail`/`Stop`/`Clear` 모든 정리 경로에서 `SetInsideBuilding(false)`를 호출하게 한다. 내부 활성 플래그로 정리 호출을 멱등하게 만들며, `Clear()`는 context가 지워지기 전에 건물 상태부터 해제한다. Move, Farming, Guard, Attack, Idle은 `DefaultAction`을 직접 상속하며 건물 표현을 갖지 않는다.
 
 - `Completed`: 현재 action만 반환하고 queue의 다음 action을 실행한다.
 - `ReplanRequested`: 현재 action과 남은 queue를 모두 취소·반환하고 새 queue를 요청한다.
@@ -272,27 +272,46 @@ DestinationDB.TryGetInteractionProvider(BuildingType, ActionType, out IInteracti
 
 `DestinationDB`는 `BuildingType -> DestinationObject` 매핑만 소유하며 provider component를 직접 scan하거나 cache하지 않는다. domain별 provider dictionary(`TryGetFarmWorkProvider` 같은)는 없다. 한 destination `GameObject`에 서로 다른 `ActionType`을 지원하는 여러 provider component가 함께 존재할 수 있다(Pub는 Eat과 Drink를 한 component로 함께 지원).
 
-## 9. Guard 전투와 감지
+건물 출입 표현은 목적지 metadata가 아니라 action 종류가 결정한다. Eat, Drink, Sleep은 항상 실내 행동이므로 `BaseBuildingAction`을 상속하며, 이 base의 lifecycle이 시작·완료·실패·취소 경계에서 `NPCComponent.SetInsideBuilding`을 호출한다. 이 표현은 action 시간을 막거나 transaction 시점을 변경하지 않는다. `DestinationDB`/`ActionContext`는 이 표현과 무관하며 목적지 배선만 담당한다.
 
-Guard 전투는 다음 책임으로 분리된다.
+Farmer의 호미(도구) 표현은 건물 표현과 다른 성격을 가진다 — 존재/부재를 토글하는 것이 아니라 항상 보이되 두 상태(캐리/작업) 사이만 전환된다. `NPCGirl.prefab`의 `Visual` 아래 `Hoe` child가 이를 담당하며, `NPCComponent.SetToolVisible(bool)`이 표시 여부를, `NPCComponent.SetWorking(bool)`이 Animator의 `IsWorking` bool을 통해 두 번째 Animator layer(`Tool`, `ToolCarry`/`ToolWork` state)의 모션 전환을 담당한다. 표시 여부는 spawn 시 `WorkerNPC.Init`이 role(`NPCType.Farmer`)로 결정하고, 모션 전환은 `FarmingAction`의 lifecycle이 결정한다(시작 시 on, `Complete`/`ReplanRequested`/`Fail`/`Stop`/`Clear` 모든 경로에서 off — `BaseBuildingAction`과 같은 idempotent latch를 인라인으로 사용하되, 소비자가 하나뿐이라 별도 abstract base로 추출하지 않았다). "착!" 타이밍은 실제 게임 tick과 동기화하지 않는 단순 반복 루프다. 현재는 Farmer + 호미로 범위가 제한되어 있으며, Guard 등 다른 role/도구는 `WorkerNPC.Init`의 gate를 확장하는 시점에 추가한다.
+
+## 9. 전투와 감지
+
+전투 감지·타겟팅 파이프라인은 role에 종속되지 않는 공용 컴포넌트로 구성된다(IMP-035에서 `GuardPerception`/`GuardRuntimeState`를 `CombatPerception`/`CombatRuntimeState`로 rename — Enemy가 두 번째 실사용자가 되면서 이름이 실제 책임과 맞도록 정리했다).
 
 ```text
 CircleCollider2D trigger
   -> ProximitySensor2D: layer 기반 collider 감지
-  -> GuardPerception: ICombatTarget 변환·중복 제거
-  -> GuardActionSelector: 현재 후보 중 target 선택
-  -> GuardRuntimeState: per-NPC target handle 보관
+  -> CombatPerception: ICombatTarget 변환·중복 제거
+  -> (Guard/Enemy) ActionSelector: 현재 후보 중 target 선택
+  -> CombatRuntimeState: per-NPC target handle 보관
   -> MoveAction(dynamic target) / AttackAction 실행
 ```
 
-- `GuardPerception`은 대상을 선택하지 않는다.
-- selector가 전투 우선순위와 target 선택을 담당한다.
+- `CombatPerception`은 대상을 선택하지 않는다.
+- selector가 전투 우선순위와 target 선택을 담당한다. 최근접 탐색 알고리즘 자체는 `CombatTargeting.TryFindNearestTarget`(순수 함수, 2D 거리, 상태를 바꾸지 않음)으로 추출돼 있고 `runtimeState.SetTarget(...)`은 호출한 selector가 한다.
 - `CombatTargetHandle`은 interface와 Unity object 생존 확인을 함께 보존한다.
 - `AttackAction`은 `ICombatStatView`만 요구한다.
-- 공격 범위를 벗어나면 target을 버리지 않고 replan하여 추격 queue를 다시 만든다.
-- 현재 감지 범위는 `NPCGirl.prefab`의 Sensor `CircleCollider2D.radius`에 저장되어 있으며 stat과 동기화되지 않는다.
+- 공격 범위를 벗어나면 target을 버리지 않고 replan하여 추격 queue를 다시 만든다(Guard의 sticky 정책 — melee Enemy도 동일).
+- 현재 감지 범위는 각 actor prefab의 Sensor `CircleCollider2D.radius`에 저장되어 있으며 stat과 동기화되지 않는다.
 
 `PatrolArea` GameObject는 `GuardTest.unity`에 존재하지만 사각 영역 순찰 데이터 전달은 아직 구현되지 않았다. 현재 `GuardAction`은 `GuardStat.GuardRadius`로 계산한 결정적 원형 순찰점을 돈다.
+
+### 9.1 Enemy 전투 AI (IMP-035)
+
+Enemy는 Farmer/Guard와 같은 `WorkerNPC` + selector 아키텍처를 쓰지만 **본능이 없다** — `DestinationDecider`도 `DestinationDB`도 참조하지 않고, 오직 `CombatPerception`에만 반응한다. 대상이 없으면 항상 Idle이다.
+
+`EnemyActionSelector`는 `GuardActionSelector`처럼 씬 레벨 공용 컴포넌트다(Enemy prefab에는 붙지 않는다 — prefab은 씬의 `ActionPool`을 직접 참조할 수 없다). `IEnemyStatView.Style`(`AttackStyle.Melee`/`Ranged`)로 행동이 갈린다:
+
+- **Melee**: Guard의 전투 큐와 동일한 모양(sticky target, 사거리 밖이면 `Move`+`Attack`, 안이면 `Attack`만).
+- **Ranged**: 절대 접근하지 않는다("비추격 원거리형"). 매 replan마다 sticky 없이 새로 스캔하고, `AttackRange` 안에 있는 후보만 대상으로 삼는다. 사거리 밖으로 나가면 target을 놓고 Idle로 돌아간다(추격하지 않음).
+
+`AttackAction`은 수정 없이(rename만 반영) 재사용한다.
+
+Enemy 자신의 체력은 `EnemyStat`(`NPCStat` 파생) 하나가 유일한 원본이다. `Enemy`(`Assets/Scripts/Actor/Enemy.cs`)는 `ICombatTarget` 어댑터로만 남아 `EnemyStat`을 참조하며 자체 체력 필드를 갖지 않는다 — 스포너가 같은 `EnemyStat` 인스턴스를 `Enemy.Init(stat)`과 `WorkerNPC.Init(NPCType.Enemy, stat, selector)` 양쪽에 넘긴다.
+
+**Farmer/Guard는 아직 공격 대상이 아니다.** 주민 사망/전투불능 정책(`PublicMD/Game_Plan.md` GD-008)이 미결정이라 `NPCComponent`는 `ICombatTarget`을 구현하지 않는다. Enemy AI 검증은 `Assets/TestOnly/CombatTestDummy.cs`(`"Friendly"` layer)로 한다 — GD-008이 정해지면 실제 대상으로 교체될 잠정 스탠드인이다. `Assets/TestOnly/TestEnemyRainSpawner.cs`는 여전히 TestOnly Play Mode 검증 도구이며, 실제 프로덕션 스폰 경로(웨이브 매니저 등)는 아직 없다.
 
 ## 10. 농경지와 창고
 
@@ -398,7 +417,7 @@ plain runtime/data types
 
 ## 14. 현재 씬과 검증 경계
 
-`SampleScene.unity`는 Farmer 중심 기본 실행 환경이고, `GuardTest.unity`는 Guard selector, 적, PatrolArea, 전투/utility 테스트 도구를 포함한다. `NPCGirl.prefab`은 Farmer와 Guard가 공유하는 actor prefab이며 optional Guard 감지 구성을 포함한다.
+`SampleScene.unity`는 Farmer 중심 기본 실행 환경이고, `GuardTest.unity`는 Guard selector, 적, PatrolArea, 전투/utility 테스트 도구를 포함한다. `NPCGirl.prefab`은 Farmer와 Guard가 공유하는 actor prefab이며 optional Guard 감지 구성과 `NPCGirl_Move.controller` Animator 연결을 포함한다. Animator의 `Speed`는 `NPCComponent.Move` 호출에서 파생되고, `IsInsideBuilding`은 `BaseBuildingAction` lifecycle(Eat/Drink/Sleep)에서 파생된다.
 
 프로젝트에는 `.asmdef`가 없다. 따라서 모든 runtime/TestOnly 스크립트가 기본 `Assembly-CSharp`에 들어간다. `TestDecisionScenarioProbe`, `TestFarmProductionWindow`, `TestNPCSpawnWindow`, `TestEnemyRainSpawner`는 자동화된 Unity Test Framework 테스트가 아니라 개발용 Play Mode 도구다.
 

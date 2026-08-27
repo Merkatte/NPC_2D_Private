@@ -21,7 +21,7 @@ public class AttackAction : DefaultAction
             return;
         }
 
-        GuardRuntimeState runtimeState = actionContext.Component.GuardRuntimeState;
+        CombatRuntimeState runtimeState = actionContext.Component.CombatRuntimeState;
         _combatStat = actionContext.Stat as ICombatStatView;
 
         if (!runtimeState.HasValidTarget)
@@ -54,7 +54,7 @@ public class AttackAction : DefaultAction
             return;
         }
 
-        GuardRuntimeState runtimeState = component.GuardRuntimeState;
+        CombatRuntimeState runtimeState = component.CombatRuntimeState;
         float interval = 1f / _combatStat.AttackSpeed;
         _timer += Time.deltaTime;
 

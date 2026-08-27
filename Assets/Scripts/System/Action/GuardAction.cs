@@ -54,7 +54,7 @@ public class GuardAction : DefaultAction
         ApplyNeedDecay(stat, cost);
 
         // Enemy detection takes priority over need interrupts (approved selector priority order).
-        if (component.GuardPerception && component.GuardPerception.HasCandidate)
+        if (component.CombatPerception && component.CombatPerception.HasCandidate)
         {
             RequestReplan();
             return;

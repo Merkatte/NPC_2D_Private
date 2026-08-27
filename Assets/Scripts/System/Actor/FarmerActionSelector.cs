@@ -106,7 +106,8 @@ public class FarmerActionSelector : BaseNPCActionSelector
             {
                 // 1f is a seam for a future Farmer skill/proficiency system.
                 InteractionRequest request = new InteractionRequest(ActionType.Farming, strength: 1f);
-                return new ActionContext(component, stat, decision.DestinationPos, _farmingActionCostInfo, provider: farmProvider, request: request);
+                return new ActionContext(component, stat, decision.DestinationPos, _farmingActionCostInfo,
+                    provider: farmProvider, request: request);
             }
 
             case NPCIntent.Eat:
@@ -114,7 +115,8 @@ public class FarmerActionSelector : BaseNPCActionSelector
             {
                 ActionType actionType = decision.Request.HasValue ? decision.Request.Value.Type : ToActionType(decision.Intent);
                 _destinationDB.TryGetInteractionProvider(decision.DestinationKey, actionType, out var provider);
-                return new ActionContext(component, stat, decision.DestinationPos, provider: provider, request: decision.Request);
+                return new ActionContext(component, stat, decision.DestinationPos, provider: provider,
+                    request: decision.Request);
             }
 
             case NPCIntent.Sleep:

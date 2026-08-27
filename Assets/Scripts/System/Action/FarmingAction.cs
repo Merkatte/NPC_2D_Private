@@ -6,6 +6,7 @@ public class FarmingAction : DefaultAction
     private float _currentWorkingTime = 0f;
     private IInteractionProvider _interactionProvider;
     private InteractionRequest _request;
+    private bool _isWorking;
 
     public FarmingAction() : base(ActionType.Farming)
     {
@@ -17,6 +18,9 @@ public class FarmingAction : DefaultAction
         if (IsFinished)
             return;
 
+        actionContext.Component.SetWorking(true);
+        _isWorking = true;
+
         _interactionProvider = actionContext.InteractionProvider;
         if (_interactionProvider == null || actionContext.Request == null ||
             !_interactionProvider.CanInteract(GetMyActionType()))
@@ -26,6 +30,12 @@ public class FarmingAction : DefaultAction
         }
 
         _request = actionContext.Request.Value;
+    }
+
+    public override void Stop()
+    {
+        ExitWorking();
+        base.Stop();
     }
 
     public override void Tick()
@@ -48,6 +58,7 @@ public class FarmingAction : DefaultAction
 
     public override void Clear()
     {
+        ExitWorking();
         _currentWorkingTime = 0f;
         _interactionProvider = null;
         _request = default;
@@ -76,5 +87,38 @@ public class FarmingAction : DefaultAction
         stat.ChangeThirst(actionCost.FarmingActionPerThirst);
 
         Complete();
+    }
+
+    protected override void Complete()
+    {
+        ExitWorking();
+        base.Complete();
+    }
+
+    protected override void RequestReplan()
+    {
+        ExitWorking();
+        base.RequestReplan();
+    }
+
+    protected override void Fail(string reason)
+    {
+        ExitWorking();
+        base.Fail(reason);
+    }
+
+    private void ExitWorking()
+    {
+        if (!_isWorking)
+        {
+            return;
+        }
+
+        if (actionContext.Component)
+        {
+            actionContext.Component.SetWorking(false);
+        }
+
+        _isWorking = false;
     }
 }

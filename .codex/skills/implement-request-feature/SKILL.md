@@ -1,16 +1,19 @@
 ---
 name: implement-npc-feature
-description: Plan and implement Unity NPC or worker C# features in NPC_Work_2D, then delegate a read-only architecture review to an independent Codex agent and update PROGRESS.md. Use for feature implementation, script creation, worker behavior, IAction, selector, action plan, destination provider, movement, stats, manager, or Behavior Graph integration requests. Require Opus Plan Mode, explicit user approval, and Sonnet implementation.
+description: Plan and implement Unity NPC or worker C# features in NPC_Work_2D, then delegate a read-only architecture review to an independent Codex agent and update PROGRESS.md. Use for feature implementation, script creation, worker behavior, IAction, selector, action plan, destination provider, movement, stats, manager, or Behavior Graph integration requests. Require the active agent's native planning mode, explicit user approval, and a separate implementation phase.
 ---
 
 # Implement NPC Feature
 
 Follow the phases in order. Do not combine planning and implementation.
 
-## 1. Plan with Opus
+## 1. Plan
 
 1. Capture the requested behavior, boundaries, and observable acceptance criteria.
-2. Ensure the current Claude model is Opus and Plan Mode is active. If either condition is false, stop and ask the user to switch; do not imitate the missing mode.
+2. Apply the planning gate for the active agent environment:
+   - In Claude Code, require the Opus model with Plan Mode active.
+   - In Codex, require Plan collaboration mode. The current Codex model is acceptable unless the user or project instructions require a specific Codex model.
+   - If the applicable planning mode or model requirement is not satisfied, stop and ask the user to switch. Do not imitate a missing mode or another agent's model.
 3. Read these project documents in order:
    - `PublicMD/ARCHITECTURE.md`
    - `PublicMD/ProjectStructure.md`
@@ -19,10 +22,13 @@ Follow the phases in order. Do not combine planning and implementation.
 5. Produce a concrete plan containing scope, responsibility placement, files to create or change, dependency direction, validation, risks, and explicit exclusions.
 6. Ask the user to approve the plan. End the turn without editing implementation files.
 
-## 2. Implement with Sonnet
+## 2. Implement
 
 1. Start only after explicit user approval.
-2. Ensure the current Claude model is Sonnet. If it is not, stop and ask the user to switch before editing code.
+2. Apply the implementation gate for the active agent environment:
+   - In Claude Code, require the Sonnet model.
+   - In Codex, require Default collaboration mode. Use the current Codex model unless the user or project instructions require a specific Codex model.
+   - If the applicable implementation mode or model requirement is not satisfied, stop and ask the user to switch before editing implementation files.
 3. Re-read any project document changed since planning.
 4. Implement only the approved scope. Preserve the documented architecture and local style.
 5. Keep decision policy in selectors, execution lifecycle in actions and plans, shared runtime dependencies in context, destinations in providers, movement in movers, and active-plan lifecycle in `WorkerAI`.

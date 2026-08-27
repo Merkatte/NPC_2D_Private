@@ -2,73 +2,99 @@
 
 ## Purpose
 
-IMP-030 후속 pointer/raycast hover adapter를 읽기 전용으로 감사했다. 아키텍처·책임 경계, 상태 전환과 Unity lifecycle, 직렬화 참조 안전성, 코드 규칙을 우선순위대로 검토했으며 구현 수정은 수행하지 않았다.
+Read-only audit of IMP-033, which moves building-entry presentation ownership from destination metadata to the Eat/Drink/Sleep action lifecycle. The review prioritized architecture, lifecycle correctness, Unity serialized-reference safety, and maintainability. No files were modified.
 
 ## Review Snapshot
 
-- Date: 2026-08-25
+- Date: 2026-08-27
 - Standards:
   - `PublicMD/ARCHITECTURE.md`
   - `PublicMD/ProjectStructure.md`
   - `PublicMD/CodeConvention.md`
   - `reviewing-npc-work-code` audit workflow
-- Primary changed scope:
-  - `Assets/Scripts/Interface/IHoverInfoSource.cs`
-  - `Assets/Scripts/System/Farming/FarmWorkSite.cs`
-  - `Assets/Scripts/UI/PointerHoverRouter.cs`
-  - `Assets/Scripts/UI/PointerHoverRouter.cs.meta`
-  - `Assets/Scripts/UI/FarmGaugeHover.cs`
-  - `ProjectSettings/TagManager.asset`
+- Primary scope:
+  - `Assets/Scripts/System/Action/BaseBuildingAction.cs`
+  - `Assets/Scripts/System/Action/DefaultAction.cs`
+  - `Assets/Scripts/System/Action/EatAction.cs`
+  - `Assets/Scripts/System/Action/DrinkAction.cs`
+  - `Assets/Scripts/System/Action/SleepAction.cs`
+  - `Assets/Data/Struct/ActionContext.cs`
+  - `Assets/Scripts/System/Lib/DestinationDB.cs`
+  - `Assets/Scripts/System/Actor/FarmerActionSelector.cs`
+  - `Assets/Scripts/System/Actor/GuardActionSelector.cs`
+  - `Assets/Scenes/FarmerTest.unity`
+  - `Assets/Scenes/GuardTest.unity`
   - `PublicMD/ARCHITECTURE.md`
   - `PublicMD/ProjectStructure.md`
-- Direct dependency surfaces:
-  - `IUIService`, `HoverInfo`, `HoverType`
-  - `HoverBase`, `UIManager`, `PopBase`
-  - `FarmGauge.prefab`
-  - `FarmerTest.unity`
-  - `Assembly-CSharp.csproj`
   - `PublicMD/PROGRESS.md`
+- Direct dependency surfaces:
+  - All `DefaultAction` subclasses
+  - `WorkerNPC`
+  - `ActionPool`
+  - `BaseNPCActionSelector`
+  - `DestinationDecider`
+  - `NPCComponent`
+  - `WorkerPool`
+  - `NPCGirl_Move.controller`
+  - `NPCGirlAnimatorControllerConfigurator`
+  - `NPCGirl.prefab`
+  - `Assembly-CSharp.csproj`
 - Excluded:
-  - `.agents` additions and `Assets/_Recovery` artifacts
-  - unrelated NPC actions, selectors, and providers
-  - `Assets/BehaviorGraph/CustomActionNode` is absent
+  - Unrelated skill, UI, farming, and accumulated scene changes except where they affected serialization or delivery verification
+  - `.agents` and `Assets/_Recovery`
+  - `Assets/BehaviorGraph/CustomActionNode`, which is absent
 
 ## Verification
 
-- `git status`, changed-file diffs, untracked router source, and targeted reference searches were inspected.
-- `Assembly-CSharp.csproj` currently includes all four relevant scripts, including `PointerHoverRouter.cs:134`. The implementation note saying the router is absent from the explicit compile list is no longer true for the reviewed snapshot.
-- `dotnet build` was not rerun because this audit has a read-only sandbox and a build can write generated output. The reported earlier 0-warning/0-error build therefore remains user-supplied evidence and did not independently cover the router at the time it was run.
-- Generation of a `.meta` file confirms Unity discovered the asset, but does not prove successful C# compilation.
-- `git diff --check` currently fails only on newly generated `FarmerTest.unity` lines 313, 344, 980, 997, and 1329.
-- `TagManager.asset` contains exactly 32 layer entries, with `Hoverable` only at index 7.
-- The router GUID is unique in searched project assets.
-- Play Mode was not run.
-- `FarmerTest.unity` changed during the audit while the Editor was open. Scene findings therefore describe the final observed snapshot, not an atomic implementation snapshot.
+- Ran `git status`, `git diff`, `git diff --stat`, `git diff --name-status`, `git diff --check`, and targeted source/YAML searches.
+- Confirmed that:
+  - `BaseBuildingAction` is the only action implementation that calls `SetInsideBuilding`.
+  - Eat, Drink, and Sleep inherit `BaseBuildingAction`.
+  - Move, Farming, Idle, Guard, and Attack inherit `DefaultAction` directly.
+  - `BaseBuildingAction` clears presentation through `Complete`, `RequestReplan`, `Fail`, `Stop`, and `Clear`.
+  - `Clear` calls `ExitBuilding` before `DefaultAction.Clear` removes `ActionContext`.
+  - `ShouldUseBuildingAnimation` and `UsesBuildingAnimation` have no remaining references under `Assets`, `ARCHITECTURE.md`, or `ProjectStructure.md`.
+  - `ActionContext` and `DestinationInfo` contain no presentation metadata.
+  - Both current scene `DestinationDB` blocks contain only building type, destination Transform, destination object, and manager wiring.
+  - `Assembly-CSharp.csproj` includes `BaseBuildingAction.cs`.
+  - The new script GUID is unique and is not serialized into scenes or prefabs, which is expected for this plain C# action base.
+  - `NPCGirl.prefab` retains valid `NPCComponent`, Animator, Controller, and worker-prefab references.
+- The previous Farmer defect is statically resolved:
+  - Farmer may still share one `ActionContext` between Move and the semantic action, but Move cannot trigger building presentation because it does not inherit `BaseBuildingAction`.
+- The exact slice-local scene delta cannot be reconstructed from Git because the removed metadata existed only in an earlier uncommitted working-tree state. Current scene data confirms the fields are absent.
+- The reported `dotnet build Assembly-CSharp.csproj --no-restore` result of 0 warnings and 0 errors was not independently rerun because the sandbox is read-only and builds write generated output.
+- Play Mode was not run. Travel continuity, animation timing, cancellation visuals, and second-use pooling behavior remain **NOT VERIFIED**.
+- Whole-tree `git diff --check` still fails on accumulated Unity YAML trailing-space lines. No trailing whitespace was found in the IMP-033 handwritten C# or documentation files.
 
 ## Executive Summary
 
-Responsibility placement is sound. `PointerHoverRouter` is a UI-side input adapter, depends only on shared contracts and Unity input/physics types, and does not introduce concrete farm or concrete UI dependencies. Having `IHoverInfoSource` self-declare `HoverType` matches the newly documented routing model and keeps domain-type branching out of the adapter.
+IMP-033 places building presentation responsibility correctly. Building entry is an execution property of the semantic indoor action rather than destination metadata, and the new base class contains meaningful shared lifecycle behavior rather than forming an empty inheritance layer. `DefaultAction`, `ActionContext`, selectors, and `DestinationDB` are correspondingly narrower.
 
-The current change is not ready for runtime acceptance. The existing `FarmGauge.prefab` was not migrated for the renamed class and new required fields. It retains the previous class identifier and contains neither `_progressFill` nor `_worldCamera`. More importantly, `FarmGaugeHover` treats this configuration failure as an `ApplyInfo` no-op while the base class still reports `TryShow` success, allowing the facade and router to believe an invisible view is active.
+The previous high-severity Farmer bug is resolved structurally: `MoveAction` has no path to `SetInsideBuilding`, even when it shares a context with Eat, Drink, Sleep, or Farming.
 
-Two lifecycle gaps also remain in the candidate/active state machine: interface-held sources are not checked through `Owner`, and router state is not synchronized when `HoverBase` or `UIManager` hides an already active view independently.
+No architecture or dependency-direction issue was found in IMP-033. The lifecycle cleanup implementation is idempotent and correctly preserves context until presentation cleanup is attempted.
+
+Acceptance of the complete working tree remains blocked by untracked required files. In particular, the modified Eat/Drink/Sleep classes depend on an untracked `BaseBuildingAction.cs`; a patch containing only tracked Git diffs will not compile. The earlier untracked animation and configurator assets also remain unresolved.
+
+A pre-existing Animator cancellation defect remains directly relevant: setting `IsInsideBuilding` to false during `EnterBuilding` cannot interrupt that state. The C# cleanup signal is correct, but the Controller cannot react until the entry clip finishes.
 
 ## Priority Assessment
 
-1. Architecture and responsibility placement: **None found.**
-2. Correctness, lifecycle, cancellation, and regression risk: H-01, M-01, and M-02 apply.
-3. Unity scene, prefab, component, and serialized-reference safety: H-01 and L-01 apply.
-4. Convention, maintainability, dead code, and magic values: L-01 and L-02 apply. **No dead-code or magic-value issue was found in the changed C# code.**
+1. Architecture and responsibility placement: **No issue found.**
+2. Correctness, lifecycle, cancellation, and regression risks: **M-01 found.** No additional correctness defect was found in the IMP-033 action lifecycle.
+3. Unity scene, prefab, component, and serialized-reference safety: **H-01 found.** No stale building-presentation field or broken current prefab/scene reference was found.
+4. Code convention, maintainability, dead code, and magic values: **M-02, L-01, and L-02 found.** No new dead code, gameplay magic value, repeated component lookup, scene search, or naming violation was found in IMP-033.
 
 ## Improvements Since Previous Review
 
-- `FarmGaugeHover.cs` now has a matching primary class/file name.
-- The throwing `ApplyInfo` stub and empty `Start`/`Update` methods were removed.
-- `HoverBase` refresh is no longer hidden by a derived `Update`.
-- Required view dependencies are checked before the first `ApplyInfo` call.
-- Candidate and successfully displayed active state are separated, so an initial failed `TryShow` is retried.
-- The pointer adapter contains no runtime reference to `FarmWorkSite`, `HoverBase`, or `UIManager`.
-- The prior report concerned `ItemDataContext` injection and is outside this audit; those findings were not revalidated.
+- The previous Farmer context-scoping finding is resolved structurally.
+- Building presentation metadata has been removed from `ActionContext`, `DestinationDB`, and scene destination rows.
+- `DefaultAction` is again limited to common action lifecycle and result handling.
+- Eat, Drink, and Sleep explicitly advertise their indoor lifecycle through inheritance.
+- Movement and non-building actions cannot accidentally opt into presentation through shared context data.
+- Building cleanup remains centralized and idempotent across completion, failure, replan, cancellation, and pool return.
+- Documentation now describes the action-owned presentation model consistently.
+- No new manager lookup, singleton dependency, concrete facility dependency, serialized field, or enum migration was introduced.
 
 ## Findings By Severity
 
@@ -78,194 +104,269 @@ None found.
 
 ### High
 
-#### H-01 — `FarmGauge` serialized migration is incomplete and misconfiguration can be reported as a successful show
+#### H-01 — Required runtime and animation files remain untracked
 
 - Severity: High
-- Category: Unity serialized-reference safety / runtime correctness
+- Category: Changeset completeness / Unity serialized-reference safety
 - Location:
-  - `Assets/Scripts/UI/FarmGaugeHover.cs:6-29`
-  - `Assets/Scripts/UI/HoverBase.cs:16-30`
-  - `Assets/Prefab/UI/FarmGauge.prefab:200-204`
-  - `Assets/Scenes/FarmerTest.unity:1283-1286`
+  - Untracked IMP-033 files:
+    - `Assets/Scripts/System/Action/BaseBuildingAction.cs`
+    - `Assets/Scripts/System/Action/BaseBuildingAction.cs.meta`
+  - Modified dependants:
+    - `Assets/Scripts/System/Action/EatAction.cs:3`
+    - `Assets/Scripts/System/Action/DrinkAction.cs:3`
+    - `Assets/Scripts/System/Action/SleepAction.cs:3`
+  - Untracked earlier animation/configurator files:
+    - `Assets/Animation/DefaultAnim.meta`
+    - `Assets/Animation/DefaultAnim/*`
+    - `Assets/TestOnly/Editor.meta`
+    - `Assets/TestOnly/Editor/NPCGirlAnimatorControllerConfigurator.cs`
+    - `Assets/TestOnly/Editor/NPCGirlAnimatorControllerConfigurator.cs.meta`
+  - Deleted tracked animation paths:
+    - `Assets/Animation/NPCGirl_Idle.anim`
+    - `Assets/Animation/NPCGirl_Idle.anim.meta`
+    - `Assets/Animation/NPCGirl_Move.anim`
+    - `Assets/Animation/NPCGirl_Move.anim.meta`
+  - Controller motion references:
+    - `Assets/Animation/NPCGirl_Move.controller:150,268,295,322,349`
 - Evidence:
-  - `FarmGaugeHover` now requires `_progressFill` and `_worldCamera`.
-  - The prefab contains only `_hoverType` and `_refreshInterval`; neither new required field is serialized.
-  - Its `m_EditorClassIdentifier` still names `Assembly-CSharp::FarmHoverHover`.
-  - The `m_Script` GUID still matches `FarmGaugeHover.cs.meta`, so the GUID reference was preserved, but the stale type identifier has not been reserialized and cannot be treated as verified.
-  - In the final observed scene snapshot, `UIManager._hovers` contains `{fileID: 0}` and the prefab instance has no overrides for the required fields.
-  - When `_isConfigured` is false, `ApplyInfo` returns silently. `HoverBase.TryShow` nevertheless returns true, after which `UIManager` and `PointerHoverRouter` record the source as active.
+  - `git status --untracked-files=all` reports `BaseBuildingAction.cs` and its `.meta` as untracked.
+  - `git ls-files --error-unmatch` confirms neither new base file is known to Git.
+  - Eat, Drink, and Sleep now inherit that new type.
+  - `Assembly-CSharp.csproj` includes the local file, explaining why the reported local build can pass.
+  - The five Controller motion GUIDs resolve only to files under the untracked `DefaultAnim` directory.
+  - The original tracked Idle and Move paths remain deleted.
 - Description:
-  - The class rename and new serialized dependencies require an asset migration, not only preservation of the `.meta` GUID.
-  - The present failure path is not fail-closed: an unusable view can be considered visible and active even though nothing was rendered.
-  - Scene placement was explicitly deferred, but migrating the reusable prefab’s fill reference and ensuring the renamed component resolves are separate serialized-asset requirements.
+  - The current filesystem can compile and resolve animation references because all required files exist locally.
+  - A changeset produced from tracked `git diff` alone omits the new base class and required animation replacements.
+  - IMP-033 therefore strengthens the existing delivery risk: without the new base file, the three modified semantic actions do not compile in a clean checkout.
 - Recommended fix:
-  - After a successful Unity compile/domain reload, open and save `FarmGauge.prefab` so the component is confirmed as `FarmGaugeHover`.
-  - Assign `_progressFill` in the prefab.
-  - Assign the scene camera on the placed instance, then register the actual `FarmGaugeHover` component in `UIManager._hovers`.
-  - Give `HoverBase`/`UIManager` a configuration-readiness contract so an unconfigured concrete view causes `TryShow` to return false instead of succeeding with a no-op.
-  - Confirm no Missing Script state in the Inspector; do not manually infer safety from the preserved GUID alone.
+  - Include `BaseBuildingAction.cs` and its `.meta` in the delivered changeset.
+  - Include all required animation clips, their `.meta` files, folder metadata, and the Editor configurator.
+  - Verify from a clean checkout that the runtime and Editor projects compile and all Controller motion GUIDs resolve.
 - Impact if unfixed:
-  - Farm hover cannot render.
-  - Once registry wiring is added, the router may stop retrying because the facade reports the invisible view as successfully active.
-  - The system can report `HasVisibleHover == true` while presenting no usable UI.
+  - A clean checkout can fail compilation because `BaseBuildingAction` is missing.
+  - Animator states can have missing motion references.
+  - Idle and Move animation references can be broken.
+  - Validation tooling documented by the project may be absent.
 
 ### Medium
 
-#### M-01 — Router ignores the `Owner` validity contract for interface-held Unity objects
+#### M-01 — `EnterBuilding` cannot react promptly to cancellation
 
 - Severity: Medium
-- Category: Unity lifecycle / destroyed-object safety
+- Category: Lifecycle / cancellation correctness / animation regression
 - Location:
-  - `Assets/Scripts/UI/PointerHoverRouter.cs:27-35, 87-94, 120-126`
-  - `Assets/Scripts/Interface/IHoverInfoSource.cs:5`
-  - `Assets/Scripts/UI/HoverBase.cs:77-84`
+  - `Assets/Scripts/System/Action/BaseBuildingAction.cs:19-46`
+  - `Assets/Animation/NPCGirl_Move.controller:106-127`
+  - `Assets/Animation/NPCGirl_Move.controller:281-285`
+  - `Assets/Scripts/Actor/WorkerNPC.cs:61-65`
+  - `Assets/Scripts/Actor/WorkerNPC.cs:105-124`
 - Evidence:
-  - `_candidateSource` and `_activeSource` are stored as `IHoverInfoSource`.
-  - The router tests them with ordinary `== null` and `ReferenceEquals`.
-  - `IHoverInfoSource.Owner` exists specifically to expose Unity destroyed-object validity, and `HoverBase` correctly uses `source.Owner`.
-  - `CodeConvention.md` §9.2 requires a backing Unity object or explicit validity adapter for interfaces holding Unity objects.
+  - `BaseBuildingAction` correctly sets `IsInsideBuilding` to false on completion, replan, failure, stop, and clear.
+  - `EnterBuilding` has exactly one outgoing transition.
+  - That transition is unconditional, waits for exit time 1, targets `InsideBuilding`, and has no interruption source.
+  - There is no `EnterBuilding -> ExitBuilding` or restoration transition conditioned on `IsInsideBuilding == false`.
+  - `WorkerNPC` can discard the failed/replanned action and start a replacement queue immediately.
 - Description:
-  - If a source component is destroyed or replaced while its collider remains the current hit, the interface reference can remain non-null in ordinary C# terms.
-  - `HoverBase` can detect the destroyed owner and hide, while the router can retain the dead candidate/active references and take the `ReferenceEquals` early return.
+  - The C# lifecycle emits the correct cancellation signal, but the Animator cannot consume it while `EnterBuilding` is active.
+  - The entry clip must finish, the Controller must enter `InsideBuilding`, and only then can the false condition trigger `ExitBuilding`.
+  - Gameplay movement or another action can therefore resume while the NPC is still playing the entry/exit visual sequence.
+  - This is pre-existing Controller behavior, not a new IMP-033 ownership defect.
 - Recommended fix:
-  - Centralize a `HasUsableSource` check equivalent to `source != null && source.Owner`.
-  - Re-resolve the hit collider when its cached source becomes unusable, even if the collider itself did not change.
-  - Clear router bookkeeping independently of whether a `TryHide` call can still be delivered.
+  - Add an explicit cancellation/restoration transition from `EnterBuilding` when `IsInsideBuilding` becomes false.
+  - Define whether cancellation should enter `ExitBuilding` or restore directly to an external locomotion state.
+  - Update the configurator and its validator to own that transition.
+  - Run Play Mode cases for stop, replan, transaction failure, disable, and pool return during entry.
 - Impact if unfixed:
-  - Hover state can become stuck until the pointer changes collider.
-  - A replacement source on the same collider may never be discovered.
-  - Router state can disagree with the actual visible state owned by `HoverBase`.
+  - A cancelled NPC can remain shrinking, hidden, or exiting after gameplay has resumed.
+  - Locomotion presentation can be delayed after failure or replan.
+  - C# cleanup appears immediate while the actual visual cleanup is not.
 
-#### M-02 — Router active state is not synchronized when the facade or view hides independently
+#### M-02 — Animator validation still accepts configurations outside its claimed contract
 
 - Severity: Medium
-- Category: State-machine correctness / regression risk
+- Category: Validation reliability / maintainability
 - Location:
-  - `Assets/Scripts/UI/PointerHoverRouter.cs:93-102`
-  - `Assets/Scripts/UI/HoverBase.cs:61-74`
-  - `Assets/Scripts/UI/UIManager.cs:90-104`
+  - `Assets/TestOnly/Editor/NPCGirlAnimatorControllerConfigurator.cs:32-41`
+  - `Assets/TestOnly/Editor/NPCGirlAnimatorControllerConfigurator.cs:80-110`
+  - `Assets/TestOnly/Editor/NPCGirlAnimatorControllerConfigurator.cs:204-248`
 - Evidence:
-  - After one successful `TryShow`, the router returns whenever candidate and active source are reference-equal.
-  - `HoverBase.Update` can call `HideCurrent` when `TryGetHoverInfo` later fails.
-  - `UIManager.HideAll` can also hide the active hover without notifying the router.
-  - Neither path clears `PointerHoverRouter._activeSource`.
+  - `Validate` checks that each required source/destination pair exists exactly once.
+  - It does not reject other managed-state edges or Any State transitions.
+  - Motion validation checks only that each state has a non-null motion; it does not verify the expected clip or GUID.
+  - It does not validate transition offset, interruption source, or ordered-interruption settings.
+  - `Configure` returns without repair whenever this incomplete validation succeeds.
 - Description:
-  - The candidate/active split correctly retries an initial failed `TryShow`, but it assumes that a successful show remains active until the router hides it.
-  - That assumption is already contradicted by the existing `HoverBase` and `UIManager` APIs.
-  - If the source later becomes valid again while the pointer remains on the collider, the router does not retry because of the reference-equality early return.
+  - The validator proves that required pieces exist but does not prove that the Controller exactly matches the accepted state machine.
+  - This becomes more important if the M-01 cancellation transition is added and the tool is expected to remain authoritative.
 - Recommended fix:
-  - Add a narrow facade query or state-change signal that lets the router determine whether its source/type is still the active visible hover.
-  - Alternatively, move candidate ownership and restoration into the facade so only one component owns the complete state machine.
-  - Preserve the deferred popup-policy decision; do not add a popup guard without a corresponding restoration path.
+  - Compare the complete managed transition edge set against the expected set.
+  - Reject unexpected Any State and managed-state transitions.
+  - Validate expected motion assets and all settings owned by the configurator.
+  - Include the intended cancellation path in both configuration and validation.
 - Impact if unfixed:
-  - `HideAll`, transient source failure, or future popup blocking can leave hover permanently absent until pointer exit/re-entry.
-  - Future UI policy changes can reintroduce the stuck-hover regression already identified during planning.
+  - Controller drift or accidental clip replacement can pass validation.
+  - The configurator can incorrectly report “already configured” and decline to repair a divergent Controller.
+  - Reviewers can overestimate what the isolated validation proves.
 
 ### Low
 
-#### L-01 — Empty hover mask logs an error but keeps the polling component active
+#### L-01 — Architecture documents still reference a nonexistent Farmer scene
 
 - Severity: Low
-- Category: Serialized configuration / maintainability
-- Location: `Assets/Scripts/UI/PointerHoverRouter.cs:55-56, 66-82`
-- Evidence:
-  - Missing camera or invalid UI service disables the component.
-  - An empty `_hoverableMask` only logs, then continues polling `Physics2D.OverlapPoint` indefinitely.
-  - `CodeConvention.md` §9.1 requires missing required configuration to log once and disable safely.
-- Description:
-  - An empty mask makes successful routing impossible, so it is a required configuration failure rather than a recoverable gameplay state.
-- Recommended fix:
-  - Disable the router after logging an empty mask, or explicitly document and implement a runtime reconfiguration path.
-- Impact if unfixed:
-  - Misconfigured scenes perform useless polling and remain nonfunctional despite a clear initialization error.
-
-#### L-02 — Architecture and validation documentation contains stale or overstated claims
-
-- Severity: Low
-- Category: Documentation drift / validation accuracy
+- Category: Documentation drift
 - Location:
-  - `PublicMD/ARCHITECTURE.md:5, 401`
-  - `PublicMD/ProjectStructure.md:445-447`
-  - `PublicMD/PROGRESS.md:55-61`
-  - `Assembly-CSharp.csproj:134`
+  - `PublicMD/ARCHITECTURE.md:5`
+  - `PublicMD/ARCHITECTURE.md:403`
+  - `PublicMD/ProjectStructure.md:453`
 - Evidence:
-  - `ARCHITECTURE.md` and the lower scene section of `ProjectStructure.md` still name `SampleScene.unity`, which is absent; the repository contains `FarmerTest.unity` and `GuardTest.unity`.
-  - `PROGRESS.md` says both documents corrected `SampleScene` to `FarmerTest`, but the stale entries remain.
-  - `PROGRESS.md` treats `.meta` generation as minimal syntax validation. Asset discovery does not establish successful compilation.
-  - The current `.csproj` includes `PointerHoverRouter.cs`, so the next build can and should validate it directly.
+  - These locations identify `SampleScene.unity` as the Farmer execution scene.
+  - `Assets/Scenes/SampleScene.unity` does not exist.
+  - `Assets/Scenes/FarmerTest.unity` exists and is listed in the actual file tree.
 - Description:
-  - The routing architecture text is otherwise aligned with the code, but repository-state and validation claims are not fully accurate.
+  - The stale scene name remains in documentation directly edited for IMP-033.
 - Recommended fix:
-  - Replace remaining `SampleScene.unity` references with `FarmerTest.unity`.
-  - After a real build containing the router, update `PROGRESS.md` with the actual 0-warning/error result.
-  - Record `.meta` generation only as asset discovery, not syntax or compile validation.
+  - Replace the stale `SampleScene.unity` references with `FarmerTest.unity`.
 - Impact if unfixed:
-  - Future reviewers and implementers may rely on the wrong integration scene or overestimate the verification performed.
+  - Implementers and reviewers can inspect or attempt to configure the wrong integration scene.
+
+#### L-02 — The complete working tree still fails the documented diff-quality gate
+
+- Severity: Low
+- Category: Repository hygiene / verification
+- Location:
+  - `Assets/Animation/NPCGirl_Move.controller`
+  - `Assets/Scenes/FarmerTest.unity`
+  - `Assets/Scenes/GuardTest.unity`
+- Evidence:
+  - Whole-tree `git diff --check` reports trailing whitespace on empty Unity YAML scalar lines.
+  - `CodeConvention.md` includes `git diff --check` in the minimum validation combination.
+  - A targeted trailing-whitespace search found no violation in the IMP-033 handwritten C# or documentation files.
+- Description:
+  - The failures are accumulated Unity YAML patterns and were not introduced by the new base class.
+  - Nevertheless, the current repository snapshot does not pass the project’s stated whole-tree gate.
+- Recommended fix:
+  - Normalize the affected serialization where practical, or document a narrowly scoped Unity-YAML exception.
+  - Rerun `git diff --check` against the final delivered changeset.
+- Impact if unfixed:
+  - CI or automated review checks can fail.
+  - Genuine whitespace defects become harder to distinguish from serialization noise.
 
 ## Findings By File
 
-- `Assets/Scripts/Interface/IHoverInfoSource.cs`
-  - No responsibility-boundary issue found.
-  - `HoverType` and `Owner` form a narrow routing and Unity-validity contract.
-- `Assets/Scripts/System/Farming/FarmWorkSite.cs`
-  - No issue found in the changed hover members.
-  - It exposes read-only domain state without referencing a concrete UI type.
-- `Assets/Scripts/UI/PointerHoverRouter.cs`
-  - Responsibility placement is appropriate.
-  - M-01, M-02, and L-01 apply.
-- `Assets/Scripts/UI/FarmGaugeHover.cs`
-  - The class/file mismatch, throwing stub, and hidden base refresh were corrected.
-  - H-01 applies to its configuration contract and serialized asset.
-- `Assets/Scripts/UI/HoverBase.cs`
-  - Correctly uses `Owner` for destroyed-object validity.
-  - Its autonomous hide behavior exposes the M-02 synchronization gap.
-- `Assets/Scripts/UI/UIManager.cs`
-  - Remains a generic facade/registry without domain formatting or concrete view fields.
-  - `HideAll` contributes to M-02 because the router receives no invalidation signal.
-- `Assets/Prefab/UI/FarmGauge.prefab`
-  - H-01 applies.
-- `ProjectSettings/TagManager.asset`
-  - No semantic issue found. The 32 layer slots are preserved and index 7 is the only newly named slot.
-- `PublicMD/ARCHITECTURE.md`, `PublicMD/ProjectStructure.md`, `PublicMD/PROGRESS.md`
-  - L-02 applies.
-- `Assets/Scenes/FarmerTest.unity`
-  - Scene wiring was explicitly deferred and changed concurrently during review.
-  - The final observed state has a null hover registry entry and no router/farm layer wiring, so Play Mode readiness is not verified.
+- `Assets/Scripts/System/Action/BaseBuildingAction.cs`
+  - Responsibility placement and naming follow the project conventions.
+  - The base provides real shared lifecycle behavior.
+  - Cleanup is idempotent, handles partial initialization, and runs before context removal.
+  - H-01 applies because the file is untracked.
+  - M-01 applies through the downstream Animator response.
+- `Assets/Scripts/System/Action/DefaultAction.cs`
+  - No building-presentation policy remains.
+  - No issue found.
+- `Assets/Scripts/System/Action/EatAction.cs`
+  - Correctly inherits `BaseBuildingAction`.
+  - Dependency validation failure routes through the overridden `Fail` cleanup.
+  - No new issue found.
+- `Assets/Scripts/System/Action/DrinkAction.cs`
+  - Correctly inherits `BaseBuildingAction`.
+  - Dependency validation failure routes through the overridden `Fail` cleanup.
+  - No new issue found.
+- `Assets/Scripts/System/Action/SleepAction.cs`
+  - Correctly inherits `BaseBuildingAction` and remains sealed.
+  - No new issue found.
+- `Assets/Data/Struct/ActionContext.cs`
+  - Contains no destination-presentation metadata.
+  - The current context remains an execution dependency bundle rather than presentation policy.
+  - No issue found.
+- `Assets/Scripts/System/Lib/DestinationDB.cs`
+  - Contains no building-animation lookup or field.
+  - It remains limited to destination and interaction-provider lookup.
+  - No issue found.
+- `Assets/Scripts/System/Actor/FarmerActionSelector.cs`
+  - The shared Move/semantic context no longer leaks presentation into Move.
+  - The previous high-severity Farmer defect is resolved.
+  - No issue found.
+- `Assets/Scripts/System/Actor/GuardActionSelector.cs`
+  - Supply movement and semantic action construction remain correct.
+  - No issue found.
+- `Assets/Scripts/Actor/WorkerNPC.cs`
+  - Stop precedes action return/clear on cancellation paths.
+  - That ordering allows `BaseBuildingAction` to release presentation before context reset.
+  - M-01 applies to the Animator’s delayed response.
+- `Assets/Scripts/System/Lib/ActionPool.cs`
+  - `ReturnAction` calls `Clear` before enqueueing, preserving pooled-state safety.
+  - No issue found.
+- `Assets/Scripts/System/Actor/NPCComponent.cs`
+  - Remains a thin actor-local Unity adapter.
+  - `ResetRuntimeState` explicitly restores external animation state.
+  - No new issue found.
+- `Assets/Scenes/FarmerTest.unity`, `Assets/Scenes/GuardTest.unity`
+  - No stale `UsesBuildingAnimation` or `ShouldUseBuildingAnimation` field remains.
+  - DestinationDB script GUID and current destination rows match the current class.
+  - L-02 applies to accumulated YAML whitespace.
+- `Assets/Animation/NPCGirl_Move.controller`
+  - Current motion GUIDs and prefab Controller reference are valid in the local filesystem.
+  - H-01 and M-01 apply.
+- `Assets/TestOnly/Editor/NPCGirlAnimatorControllerConfigurator.cs`
+  - Correctly isolated as Editor tooling.
+  - H-01 and M-02 apply.
+- `Assets/Prefab/InGame/NPCGirl.prefab`
+  - `NPCComponent`, Animator, Controller, Transform, visual, and Guard-perception references remain intact.
+  - No issue found.
+- `PublicMD/ARCHITECTURE.md`, `PublicMD/ProjectStructure.md`
+  - The BaseBuildingAction ownership descriptions match the implementation.
+  - L-01 applies.
+- `PublicMD/PROGRESS.md`
+  - The current implementation description matches the inspected source.
+  - The build result remains user-reported rather than independently reproduced.
 
 ## Cross-Cutting Findings
 
-- Candidate, active source, facade-active view, and concrete view visibility currently have multiple owners without an invalidation signal. M-02 should be resolved before popup blocking is added.
-- Preserving a script GUID is necessary but not sufficient when a class is renamed and gains required serialized fields. The affected prefab still requires Editor migration and reference wiring.
-- Interface-held Unity objects must consistently use their explicit owner/backing object contract. `HoverBase` does this; the router currently does not.
-- The documented single-result limitation of `Physics2D.OverlapPoint` is accurate and intentionally accepted for this slice.
+- Building presentation is now structurally tied to semantic action type, eliminating context-data leakage into unrelated actions.
+- Lifecycle cleanup requires cooperation between action state and Animator transition topology. A correct boolean reset does not guarantee prompt visual restoration.
+- Local build success does not establish delivery completeness when required source and asset files remain untracked.
+- Animator validation should distinguish “required pieces exist” from “the Controller exactly matches the accepted state machine.”
 
 ## Positive Notes
 
-- No concrete domain or concrete UI runtime dependency was introduced in `PointerHoverRouter`.
-- `Mouse.current` matches the project’s Input System-only setting.
-- Polling uses unscaled time and a serialized, validated interval.
-- `TryGetComponent` is only performed when the hit collider changes under normal valid-source operation.
-- `OnDisable` attempts to clear active hover state and resets the candidate cache.
-- `FarmGaugeHover.ApplyInfo` is idempotent and does not allocate or search the scene.
-- `HoverInfo` clamps normalized progress before it reaches the view.
-- `FarmWorkSite` keeps progress ownership in the facility rather than moving UI state into a manager.
-- No new selector, action, worker runner, or manager responsibility drift was found.
-- No dead code, repeated LINQ, scene-wide `Find*`, string routing, or new magic tuning value was found in the changed C# code.
+- `BaseBuildingAction` is a justified abstract base with meaningful common lifecycle behavior.
+- The implementation follows the project’s `Base...` naming convention and action folder placement.
+- The new base has no manager, registry, provider, scene-search, or serialized dependency.
+- `DefaultAction` remains generic and reusable by non-building actions.
+- Move, Farming, Idle, Guard, and Attack have no route to building presentation.
+- Eat, Drink, and Sleep share identical entry/cleanup boundaries without duplicating code.
+- Entry is applied only after `DefaultAction.Start` validates `NPCComponent`.
+- Failure after Eat/Drink provider validation clears presentation through virtual dispatch.
+- `Stop` and `Clear` are safe before `Start`.
+- `Clear` preserves `ActionContext` until after presentation release.
+- The internal flag makes repeated completion/stop/clear cleanup idempotent.
+- Worker disable and reinitialization include an additional `NPCComponent.ResetRuntimeState` safety boundary.
+- No serialized destination migration remains necessary for building presentation.
+- No enum value or script GUID migration was introduced.
+- Scene `DestinationDB` rows match the current `DestinationInfo` shape.
+- No new dead code, repeated hot-path lookup, scene search, or gameplay tuning magic value was introduced.
 
 ## Recommended Next Actions
 
-1. Migrate and wire `FarmGauge.prefab`, then make unconfigured views fail `TryShow`.
-2. Use `IHoverInfoSource.Owner` consistently in `PointerHoverRouter`.
-3. Define how router active state is invalidated when `HoverBase` or `UIManager` hides independently.
-4. Disable the router on an empty hover mask.
-5. Finish the explicitly deferred scene wiring and save a stable `FarmerTest.unity`.
-6. Run `dotnet build Assembly-CSharp.csproj --no-restore` now that the router is included.
-7. Run `git diff --check` after Unity finishes saving the scene.
-8. Perform Play Mode cases for enter, exit, target switch, failed show retry, source invalidation, router disable/re-enable, and `HideAll` while the pointer remains stationary.
-9. Correct the stale scene and validation statements in the documentation.
+1. Include all required untracked runtime, animation, metadata, and Editor files in the delivered changeset.
+2. Add and validate an explicit cancellation/restoration path from `EnterBuilding`.
+3. Run Play Mode verification for:
+   - Move-state continuity while traveling to Pub or Inn
+   - Entry beginning only when Eat, Drink, or Sleep starts
+   - Exit after normal completion
+   - Failure, replan, stop, and disable during entry and inside states
+   - Second pooled spawn starting external and Idle
+   - Move, Farming, Guard, Attack, and Idle never triggering building presentation
+4. Make the Animator configurator validate the complete accepted state machine and exact motion assets.
+5. Correct the stale `SampleScene.unity` documentation.
+6. Resolve or formally handle the accumulated Unity YAML whitespace failures.
+7. Rebuild runtime and Editor projects from a clean checkout and verify all Controller GUIDs resolve.
 
 ## Final Verdict
 
-**Changes requested.**
+**Changes requested for the complete working tree.**
 
-The architecture and responsibility placement are approved, but H-01 blocks runtime acceptance. M-01 and M-02 should also be resolved before popup policy or additional hover sources expand the state machine. Scene wiring and Play Mode behavior remain **Not Verified**.
+IMP-033’s architecture and C# ownership model are approved. The previous Farmer movement-time entry defect is statically resolved, and no new architecture problem was found.
+
+Delivery acceptance remains blocked by H-01 because the new base class and required animation assets are untracked. Runtime lifecycle acceptance also remains incomplete because M-01 is still present and all requested Play Mode scenarios are **NOT VERIFIED**.

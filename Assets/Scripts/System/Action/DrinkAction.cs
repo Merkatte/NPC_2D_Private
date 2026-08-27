@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class DrinkAction : DefaultAction
+public class DrinkAction : BaseBuildingAction
 {
     private float drinkTime = 1f; //Temp
     private float currentDrinkTime = 0f;

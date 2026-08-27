@@ -27,6 +27,7 @@ public class WorkerNPC : MonoBehaviour
         _npcType = npcType;
         _stat = stat;
         _component.Init(_stat);
+        _component.SetToolVisible(npcType == NPCType.Farmer);
         _selector = selector;
 
         _isInitialized = true;

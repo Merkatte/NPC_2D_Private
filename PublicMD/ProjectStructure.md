@@ -13,7 +13,7 @@ WorkerNPC                         actor root / action queue runner
        -> ActionPool             IAction 대여·반환
   -> IAction                     선택된 행동 실행
        -> ActionContext          실행에 필요한 값과 capability
-  -> NPCComponent                Unity 참조·이동·Guard 감지
+  -> NPCComponent                Unity 참조·이동·애니메이션·Guard 감지
   -> NPCStat                     개체별 runtime 상태
 ```
 
@@ -116,6 +116,7 @@ Assets/
     System/
       Action/
         AttackAction.cs
+        BaseBuildingAction.cs
         DefaultAction.cs
         DrinkAction.cs
         EatAction.cs
@@ -127,11 +128,13 @@ Assets/
 
       Actor/
         BaseNPCActionSelector.cs
+        CombatPerception.cs
+        CombatRuntimeState.cs
         CombatTargetHandle.cs
+        EnemyActionSelector.cs
+        EnemyStat.cs
         FarmerActionSelector.cs
         GuardActionSelector.cs
-        GuardPerception.cs
-        GuardRuntimeState.cs
         GuardStat.cs
         NPCComponent.cs
         NPCStat.cs
@@ -150,6 +153,7 @@ Assets/
       Lib/
         ActionPool.cs
         CombatRange.cs
+        CombatTargeting.cs
         CSVParser.cs
         DestinationDB.cs
         DestinationDecider.cs
@@ -157,6 +161,9 @@ Assets/
         WorkerPool.cs
 
   TestOnly/
+    Editor/
+      NPCGirlAnimatorControllerConfigurator.cs
+    CombatTestDummy.cs
     TestDecisionScenarioProbe.cs
     TestEnemyRainSpawner.cs
     TestFarmProductionWindow.cs
@@ -176,7 +183,7 @@ Assets/
 | `WorkerNPC` | NPC actor root, action queue lifecycle의 단일 소유자 |
 | `BaseInteractionProvider` | `IInteractionProvider`의 공통 template method base: idempotent 초기화, support/availability/request validation, concrete core로 dispatch |
 | `Pub` | `ItemDataContext`를 직접 참조해 Eat/Drink option과 `StatEffect` 제공 |
-| `Enemy` | 최소 전투 target 구현과 체력·사망 처리 |
+| `Enemy` | `ICombatTarget` 어댑터 — 체력 원본은 `EnemyStat` 하나이며 자체 체력 필드를 갖지 않는다(스포너가 `Init(EnemyStat)`으로 주입) |
 
 `BaseInteractionProvider`는 domain 규칙을 모른다. item catalogue 책임은 `Pub`가, farm progress/yield 책임은 `Assets/Scripts/System/Farming/FarmWorkSite.cs`가 각자 소유한다.
 
@@ -198,11 +205,11 @@ NPC runtime state, role selector, 감지 adapter를 둔다.
 
 | 묶음 | 파일 | 역할 |
 |---|---|---|
-| stat | `NPCStat`, `GuardStat` | 개체별 mutable runtime 상태 |
-| selector | `BaseNPCActionSelector`, `FarmerActionSelector`, `GuardActionSelector` | 다음 queue 결정과 구성 |
-| Unity adapter | `NPCComponent` | 이동·방향·optional perception 접근 |
-| perception | `ProximitySensor2D`, `GuardPerception` | 물리 감지와 combat target 변환 |
-| target state | `GuardRuntimeState`, `CombatTargetHandle` | Guard별 현재 target과 Unity 생존성 |
+| stat | `NPCStat`, `GuardStat`, `EnemyStat` | 개체별 mutable runtime 상태 |
+| selector | `BaseNPCActionSelector`, `FarmerActionSelector`, `GuardActionSelector`, `EnemyActionSelector` | 다음 queue 결정과 구성 |
+| Unity adapter | `NPCComponent` | 이동·방향·Animator 파라미터(optional, `_requiresAnimator`)·건물 출입 표현·optional perception 접근 |
+| perception | `ProximitySensor2D`, `CombatPerception` | 물리 감지와 combat target 변환 — role에 종속되지 않음(Guard와 Enemy가 공유) |
+| target state | `CombatRuntimeState`, `CombatTargetHandle` | actor별 현재 target과 Unity 생존성 — role에 종속되지 않음 |
 
 ### `Assets/Scripts/System/Action`
 
@@ -211,10 +218,11 @@ NPC runtime state, role selector, 감지 adapter를 둔다.
 | Action | 주 책임 |
 |---|---|
 | `DefaultAction` | lifecycle와 `ActionResult` 공통 구현 |
+| `BaseBuildingAction` | Eat/Drink/Sleep의 건물 출입 표현(`IsInsideBuilding`) lifecycle |
 | `MoveAction` | 고정 위치 또는 `IMoveTarget` 추적 이동 |
 | `EatAction`, `DrinkAction` | provider request 실행 후 `StatEffect` 적용 |
 | `SleepAction` | 일정 시간 뒤 fatigue 회복 |
-| `FarmingAction` | 농경지 work 1회와 작업 비용 적용 |
+| `FarmingAction` | 농경지 work 1회와 작업 비용 적용, `IsWorking`(호미 작업 모션) lifecycle 토글 |
 | `GuardAction` | 장기 순찰, 욕구 증가, 감지/interrupt replan |
 | `AttackAction` | 공격 주기, 범위, damage, target 상태 처리 |
 | `IdleAction` | 짧은 안전 대기 |
@@ -298,7 +306,7 @@ selector, action, provider 사이를 전달하는 작은 request/result/value ob
 
 | 종류 | 파일 |
 |---|---|
-| stat factory | `NPCStatDefinition`, `DefaultStatContext`, `GuardStatDefinition` |
+| stat factory | `NPCStatDefinition`, `DefaultStatContext`, `GuardStatDefinition`, `EnemyStatDefinition` |
 | action cost/policy | `DefaultActionCost`, `FarmingActionCost`, `GuardActionCost` |
 | decision tuning | `NPCDecisionTuning` |
 | farming definition | `FarmProductionDefinition` |
@@ -311,9 +319,11 @@ asset instance는 `Assets/Data/ScriptableObject`에 둔다. 공유 asset은 runt
 Play Mode에서 수동 검증하기 위한 개발 도구를 둔다.
 
 - `TestNPCSpawnWindow`: Farmer/Guard spawn
-- `TestEnemyRainSpawner`: Guard 전투용 적 연속 생성
+- `TestEnemyRainSpawner`: Enemy(`WorkerNPC`+`EnemyActionSelector`) 연속 생성 — round-robin으로 melee/ranged `EnemyStatDefinition`을 번갈아 사용. 강제 이동 없음(Enemy가 스스로 움직임). 프로덕션 스폰 경로는 아직 없다
+- `CombatTestDummy`: `NPCComponent`가 아직 `ICombatTarget`을 구현하지 않아(GD-008 미결정) Enemy AI 검증에 쓰는 임시 대상. `"Friendly"` layer
 - `TestDecisionScenarioProbe`: utility decision 결정적 시나리오 probe
 - `TestFarmProductionWindow`: farm gauge와 warehouse 직접 검증
+- `Editor/NPCGirlAnimatorControllerConfigurator`: 기존 NPCGirl 상태와 클립을 보존하며 Animator 파라미터·전이를 멱등 구성하고 검증
 
 이 코드는 production gameplay dependency가 되어서는 안 된다. 현재 assembly가 분리되지 않았으므로 build target 제외가 필요한 시점에 `.asmdef` 또는 Editor/Development conditional 정책을 별도로 도입한다.
 
@@ -401,7 +411,7 @@ Farming:
 ### 새 NPC action
 
 1. `ActionType`에 값을 추가한다.
-2. `System/Action`에 `DefaultAction` 기반 구현을 만든다.
+2. `System/Action`에 `DefaultAction` 기반 구현을 만든다. 항상 실내에서만 실행되는 행동이면 `DefaultAction` 대신 `BaseBuildingAction`을 상속한다.
 3. `ActionPool.Create` factory case를 추가한다.
 4. selector가 명시적 `ActionContext`를 구성한다.
 5. `Clear()`의 pooled-state reset과 모든 결과 경로를 검증한다.
@@ -435,12 +445,22 @@ Farming:
 현재 공유 NPC actor prefab이다.
 
 - `WorkerNPC`
-- `NPCComponent`
-- `GuardPerception`
+- `NPCComponent`(`_requiresAnimator = true`)
+- `CombatPerception`
 - Sensor child의 `ProximitySensor2D`와 `CircleCollider2D(radius 3)`
-- visual child
+- `NPCGirl_Move.controller`가 연결된 `Animator`
+- 애니메이션 클립이 local position/scale을 변경하는 visual child
+- `Visual` 아래 `Hoe` child(`SpriteRenderer`) — Farmer의 호미 표현, 기본 비활성
+
+`NPCComponent`는 모든 이동이 통과하는 `Move()` 호출에서 `Speed`를 갱신하므로 `MoveAction`과 `GuardAction`의 순찰 이동이 같은 Animator 경로를 사용한다. 건물 출입 표현은 목적지가 아니라 action 종류가 결정한다: Eat/Drink/Sleep은 항상 실내 행동이므로 `BaseBuildingAction`을 상속하고, 이 base의 lifecycle이 `IsInsideBuilding`을 시작·정리한다. gameplay action 시간은 기다리지 않는 비차단 표현이다.
+
+호미 표현은 건물 표현과 다르게 존재/부재가 아니라 두 모션(캐리/작업) 사이만 전환된다. `Animator`의 두 번째 layer(`Tool`)가 `IsWorking` bool로 `ToolCarry`/`ToolWork` state를 전환하며, `NPCComponent.SetWorking(bool)`이 이를 구동한다. 표시 여부(`NPCComponent.SetToolVisible(bool)`)는 spawn 시 `WorkerNPC.Init`이 `NPCType.Farmer`인지로 결정하므로 Guard에게는 보이지 않는다. 현재 Farmer + 호미로 범위가 제한되어 있다.
 
 Farmer도 같은 prefab을 사용하므로 Guard 전용 컴포넌트는 optional 경계로 취급한다. Guard selector는 호환 stat과 perception을 검증해야 하며 Farmer action은 이를 알지 않는다.
+
+### `Enemy.prefab` (IMP-035)
+
+`NPCGirl.prefab`과 별개의 actor prefab이다. `WorkerNPC` + `NPCComponent`(`_requiresAnimator = false` — 전용 Animator/애니메이션은 아직 없음, `enemy-slime.png` sprite만 사용) + `CombatPerception`(Sensor child, `_detectionMask = "Friendly"`) + 기존 `Enemy` 컴포넌트(`ICombatTarget` 어댑터, `EnemyStat` 참조)로 구성된다. Melee/Ranged 구분은 prefab이 아니라 spawn 시 넘기는 `EnemyStatDefinition`(`AttackStyle`)로만 갈린다 — prefab은 하나다. `EnemyActionSelector`는 prefab이 아니라 씬(`GuardTest.unity`)의 공용 컴포넌트다.
 
 ### `SampleScene.unity`
 
@@ -448,7 +468,7 @@ Farmer도 같은 prefab을 사용하므로 Guard 전용 컴포넌트는 optional
 
 ### `GuardTest.unity`
 
-Farmer/Guard selector, 적, test spawner, GuardPost/PatrolArea를 포함한 통합 검증 씬이다. `PatrolArea`의 시각 오브젝트가 존재하는 것과 bounds 기반 순찰 기능이 구현된 것은 서로 다른 사실이다. 현재 bounds 기반 순찰은 미구현이다.
+Farmer/Guard selector, `EnemyActionSelector`(scene 공용), 적, `TestEnemyRainSpawner`, `CombatTestDummy`, GuardPost/PatrolArea를 포함한 통합 검증 씬이다. `PatrolArea`의 시각 오브젝트가 존재하는 것과 bounds 기반 순찰 기능이 구현된 것은 서로 다른 사실이다. 현재 bounds 기반 순찰은 미구현이다.
 
 ## 7. 현재 과도기와 주의점
 

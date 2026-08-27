@@ -124,7 +124,7 @@ public class GuardActionSelector : BaseNPCActionSelector
     private bool TryBuildCombatQueue(NPCComponent component, NPCStat stat, IGuardStatView guardStat, out Queue<IAction> queue)
     {
         queue = null;
-        GuardRuntimeState runtimeState = component.GuardRuntimeState;
+        CombatRuntimeState runtimeState = component.CombatRuntimeState;
 
         if (!runtimeState.HasValidTarget && !TryAcquireNearestTarget(component, runtimeState))
         {
@@ -135,41 +135,19 @@ public class GuardActionSelector : BaseNPCActionSelector
         return true;
     }
 
-    private bool TryAcquireNearestTarget(NPCComponent component, GuardRuntimeState runtimeState)
+    private bool TryAcquireNearestTarget(NPCComponent component, CombatRuntimeState runtimeState)
     {
-        GuardPerception perception = component.GuardPerception;
-        if (!perception || !perception.HasCandidate)
-            return false;
-
-        perception.CopyCandidatesTo(_candidateBuffer);
-
-        ICombatTarget bestTarget = null;
-        Component bestOwner = null;
-        float bestSqrDistance = float.PositiveInfinity;
-
-        for (int i = 0; i < _candidateBuffer.Count; ++i)
+        if (!CombatTargeting.TryFindNearestTarget(component.CombatPerception, component.Position, _candidateBuffer,
+                maxRange: null, out ICombatTarget target, out Component owner))
         {
-            (ICombatTarget target, Component owner) = _candidateBuffer[i];
-            if (!CombatTargetHandle.IsValidPair(target, owner))
-                continue;
-
-            float sqrDistance = (target.Position - component.Position).sqrMagnitude;
-            if (sqrDistance < bestSqrDistance)
-            {
-                bestSqrDistance = sqrDistance;
-                bestTarget = target;
-                bestOwner = owner;
-            }
+            return false;
         }
 
-        if (bestTarget == null)
-            return false;
-
-        runtimeState.SetTarget(bestTarget, bestOwner);
+        runtimeState.SetTarget(target, owner);
         return true;
     }
 
-    private Queue<IAction> BuildCombatQueue(NPCComponent component, NPCStat stat, IGuardStatView guardStat, GuardRuntimeState runtimeState)
+    private Queue<IAction> BuildCombatQueue(NPCComponent component, NPCStat stat, IGuardStatView guardStat, CombatRuntimeState runtimeState)
     {
         List<IAction> rented = new List<IAction>();
         CombatTargetHandle handle = runtimeState.TargetHandle;
@@ -214,7 +192,8 @@ public class GuardActionSelector : BaseNPCActionSelector
 
         ActionType actionType = ToActionType(decision.Intent);
         _destinationDB.TryGetInteractionProvider(decision.DestinationKey, actionType, out var provider);
-        ActionContext interactContext = new ActionContext(component, stat, decision.DestinationPos, provider: provider, request: decision.Request);
+        ActionContext interactContext = new ActionContext(component, stat, decision.DestinationPos,
+            provider: provider, request: decision.Request);
 
         if (!TryRentAction(actionType, interactContext, rented))
         {

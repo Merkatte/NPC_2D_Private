@@ -2,11 +2,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Guard-domain adapter over ProximitySensor2D. Resolves sensor colliders into live
-/// ICombatTarget candidates, de-duplicating an enemy's multiple colliders into one entry.
-/// Does not select or store a chosen target - that stays in GuardActionSelector/GuardRuntimeState.
+/// Combat-domain adapter over ProximitySensor2D. Resolves sensor colliders into live
+/// ICombatTarget candidates, de-duplicating a target's multiple colliders into one entry.
+/// Does not select or store a chosen target - that stays in the owning selector/CombatRuntimeState.
+/// Shared by any actor that needs to perceive combat targets (Guard, Enemy, ...).
 /// </summary>
-public class GuardPerception : MonoBehaviour
+public class CombatPerception : MonoBehaviour
 {
     [SerializeField] private ProximitySensor2D _sensor;
 
@@ -142,8 +143,8 @@ public class GuardPerception : MonoBehaviour
     }
 
     /// <summary>
-    /// Copies the current live candidates into the caller's buffer. Intended for
-    /// GuardActionSelector to call only at replan time, not every Tick.
+    /// Copies the current live candidates into the caller's buffer. Intended for the owning
+    /// selector to call only at replan time, not every Tick.
     /// </summary>
     public void CopyCandidatesTo(List<(ICombatTarget Target, Component Owner)> buffer)
     {

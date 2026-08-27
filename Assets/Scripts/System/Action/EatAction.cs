@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class EatAction : DefaultAction
+public class EatAction : BaseBuildingAction
 {
     private float eatTime = 2f; //Temp
     private float currentEatTime = 0f;

@@ -2,88 +2,78 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Development-only enemy stream used to exercise Guard combat in test scenes.
-/// A scene Enemy acts as the visual and collision template; spawned copies move downward.
+/// Development-only Enemy spawner used to exercise EnemyActionSelector's melee/ranged combat AI
+/// (IMP-035) and Guard-vs-Enemy combat in test scenes. Spawned Enemy actors move themselves via
+/// WorkerNPC/NPCComponent - this spawner only places them and hands them a stat + the shared
+/// scene EnemyActionSelector; it no longer pushes their position every frame.
 /// </summary>
 public class TestEnemyRainSpawner : MonoBehaviour
 {
     private const float WindowWidth = 260f;
-    private const float WindowHeight = 310f;
+    private const float WindowHeight = 260f;
     private const float MinimumSpawnInterval = 0.1f;
     private const float MaximumSpawnInterval = 5f;
-    private const float MaximumFallSpeed = 10f;
     private const float MaximumSpawnWidth = 30f;
     private const float MinimumSpawnY = -10f;
     private const float MaximumSpawnY = 30f;
     private const int MaximumEnemyLimit = 100;
 
-    [SerializeField] private Enemy _enemyTemplate;
+    [SerializeField] private WorkerNPC _enemyTemplate;
+    [SerializeField] private EnemyActionSelector _selector;
+    [SerializeField] private EnemyStatDefinition[] _statVariants;
     [SerializeField] private bool _autoSpawn = true;
     [SerializeField] private float _spawnInterval = 1f;
-    [SerializeField] private float _fallSpeed = 1.5f;
     [SerializeField] private float _spawnCenterX;
     [SerializeField] private float _spawnWidth = 10f;
     [SerializeField] private float _spawnY = 9f;
-    [SerializeField] private float _despawnY = -7f;
     [SerializeField] private int _maxActiveEnemies = 30;
 
-    private readonly List<Enemy> spawnedEnemies = new List<Enemy>();
-    private Rect windowRect = new Rect(260f, 20f, WindowWidth, WindowHeight);
-    private float spawnTimer;
+    private readonly List<SpawnedEnemyEntry> _spawnedEnemies = new List<SpawnedEnemyEntry>();
+    private Rect _windowRect = new Rect(260f, 20f, WindowWidth, WindowHeight);
+    private float _spawnTimer;
+    private int _nextVariantIndex;
+    private bool _hasLoggedMissingSelector;
+    private bool _hasLoggedMissingVariants;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void CreateForEnemyTestScene()
+    private readonly struct SpawnedEnemyEntry
     {
-        if (FindFirstObjectByType<TestEnemyRainSpawner>())
-        {
-            return;
-        }
+        public readonly WorkerNPC Worker;
+        public readonly Enemy Enemy;
 
-        Enemy template = FindFirstObjectByType<Enemy>();
-        if (!template)
+        public SpawnedEnemyEntry(WorkerNPC worker, Enemy enemy)
         {
-            return;
+            Worker = worker;
+            Enemy = enemy;
         }
-
-        GameObject host = new GameObject("[TestOnly] Enemy Rain Spawner");
-        TestEnemyRainSpawner spawner = host.AddComponent<TestEnemyRainSpawner>();
-        spawner.SetTemplate(template);
     }
-#endif
 
     private void Awake()
     {
-        if (!_enemyTemplate)
-        {
-            SetTemplate(FindFirstObjectByType<Enemy>());
-        }
-
         ClampSettings();
     }
 
     private void Update()
     {
-        MoveAndRemoveSpawnedEnemies();
+        RemoveDeadOrMissingEnemies();
 
         if (!_autoSpawn)
         {
             return;
         }
 
-        spawnTimer -= Time.deltaTime;
-        if (spawnTimer > 0f)
+        _spawnTimer -= Time.deltaTime;
+        if (_spawnTimer > 0f)
         {
             return;
         }
 
-        spawnTimer = _spawnInterval;
+        _spawnTimer = _spawnInterval;
         SpawnEnemy();
     }
 
     private void OnGUI()
     {
-        windowRect = GUI.Window(GetInstanceID(), windowRect, DrawWindow, "Test Enemy Rain");
+        _windowRect = GUI.Window(GetInstanceID(), _windowRect, DrawWindow, "Test Enemy Spawner");
     }
 
     private void OnDestroy()
@@ -98,18 +88,17 @@ public class TestEnemyRainSpawner : MonoBehaviour
 
     private void DrawWindow(int windowId)
     {
-        GUILayout.Label(_enemyTemplate ? $"Template: {_enemyTemplate.name}" : "Template: Missing Enemy");
+        GUILayout.Label(_enemyTemplate ? $"Template: {_enemyTemplate.name}" : "Template: Missing WorkerNPC");
         _autoSpawn = GUILayout.Toggle(_autoSpawn, "Auto Spawn");
 
         _spawnInterval = DrawSlider("Interval", _spawnInterval, MinimumSpawnInterval, MaximumSpawnInterval, "0.0 s");
-        _fallSpeed = DrawSlider("Fall Speed", _fallSpeed, 0f, MaximumFallSpeed, "0.0");
         _spawnCenterX = DrawSlider("Center X", _spawnCenterX, -15f, 15f, "0.0");
         _spawnWidth = DrawSlider("Spawn Width", _spawnWidth, 0f, MaximumSpawnWidth, "0.0");
         _spawnY = DrawSlider("Spawn Y", _spawnY, MinimumSpawnY, MaximumSpawnY, "0.0");
 
         GUILayout.Label($"Max Enemies: {_maxActiveEnemies}");
         _maxActiveEnemies = Mathf.RoundToInt(GUILayout.HorizontalSlider(_maxActiveEnemies, 1, MaximumEnemyLimit));
-        GUILayout.Label($"Active: {spawnedEnemies.Count}");
+        GUILayout.Label($"Active: {_spawnedEnemies.Count}");
 
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Spawn One"))
@@ -134,89 +123,111 @@ public class TestEnemyRainSpawner : MonoBehaviour
 
     private void SpawnEnemy()
     {
-        RemoveMissingEnemies();
-        if (!_enemyTemplate || spawnedEnemies.Count >= _maxActiveEnemies)
+        if (!_enemyTemplate || _spawnedEnemies.Count >= _maxActiveEnemies)
         {
+            return;
+        }
+
+        if (_statVariants == null || _statVariants.Length == 0)
+        {
+            if (!_hasLoggedMissingVariants)
+            {
+                Debug.LogError("TestEnemyRainSpawner has no EnemyStatDefinition variants assigned; cannot spawn.", this);
+                _hasLoggedMissingVariants = true;
+            }
+            return;
+        }
+
+        if (!_selector)
+        {
+            if (!_hasLoggedMissingSelector)
+            {
+                Debug.LogError("TestEnemyRainSpawner has no EnemyActionSelector assigned; cannot spawn.", this);
+                _hasLoggedMissingSelector = true;
+            }
+            return;
+        }
+
+        EnemyStatDefinition definition = _statVariants[_nextVariantIndex];
+        _nextVariantIndex = (_nextVariantIndex + 1) % _statVariants.Length;
+
+        if (!definition)
+        {
+            Debug.LogError("TestEnemyRainSpawner has a null entry in _statVariants; skipping this spawn.", this);
+            return;
+        }
+
+        EnemyStat stat = definition.CreateRuntimeStat() as EnemyStat;
+        if (stat == null)
+        {
+            Debug.LogError($"EnemyStatDefinition '{definition.name}' did not produce an EnemyStat; skipping this spawn.", this);
+            return;
+        }
+
+        if (!_selector.CanUseStat(stat))
+        {
+            Debug.LogError("EnemyActionSelector rejected the EnemyStat produced by the selected EnemyStatDefinition; skipping this spawn.", this);
             return;
         }
 
         float halfWidth = _spawnWidth * 0.5f;
         float spawnX = Random.Range(_spawnCenterX - halfWidth, _spawnCenterX + halfWidth);
         Vector3 spawnPosition = new Vector3(spawnX, _spawnY, _enemyTemplate.transform.position.z);
-        Enemy enemy = Instantiate(_enemyTemplate, spawnPosition, _enemyTemplate.transform.rotation, transform);
-        enemy.name = $"{_enemyTemplate.name} (Rain)";
-        spawnedEnemies.Add(enemy);
+
+        WorkerNPC worker = Instantiate(_enemyTemplate, spawnPosition, _enemyTemplate.transform.rotation, transform);
+
+        Enemy enemyComponent = worker.GetComponent<Enemy>();
+        if (!enemyComponent)
+        {
+            Debug.LogError("Spawned Enemy prefab has no Enemy component; destroying it.", this);
+            Destroy(worker.gameObject);
+            return;
+        }
+
+        worker.name = $"{_enemyTemplate.name} ({definition.name})";
+        enemyComponent.Init(stat);
+        worker.Init(NPCType.Enemy, stat, _selector);
+
+        _spawnedEnemies.Add(new SpawnedEnemyEntry(worker, enemyComponent));
     }
 
-    private void MoveAndRemoveSpawnedEnemies()
+    private void RemoveDeadOrMissingEnemies()
     {
-        float movement = _fallSpeed * Time.deltaTime;
-        for (int i = spawnedEnemies.Count - 1; i >= 0; i--)
+        for (int i = _spawnedEnemies.Count - 1; i >= 0; i--)
         {
-            Enemy enemy = spawnedEnemies[i];
-            if (!enemy || !enemy.IsAlive)
+            SpawnedEnemyEntry entry = _spawnedEnemies[i];
+
+            // Unity destroyed-object check must come first: calling .IsAlive on an already-
+            // destroyed Enemy would throw MissingReferenceException.
+            if (!entry.Enemy || !entry.Enemy.IsAlive)
             {
-                if (enemy)
+                if (entry.Worker)
                 {
-                    Destroy(enemy.gameObject);
+                    Destroy(entry.Worker.gameObject);
                 }
 
-                spawnedEnemies.RemoveAt(i);
-                continue;
-            }
-
-            enemy.transform.position += Vector3.down * movement;
-            if (enemy.transform.position.y >= _despawnY)
-            {
-                continue;
-            }
-
-            Destroy(enemy.gameObject);
-            spawnedEnemies.RemoveAt(i);
-        }
-    }
-
-    private void RemoveMissingEnemies()
-    {
-        for (int i = spawnedEnemies.Count - 1; i >= 0; i--)
-        {
-            if (!spawnedEnemies[i])
-            {
-                spawnedEnemies.RemoveAt(i);
+                _spawnedEnemies.RemoveAt(i);
             }
         }
     }
 
     private void ClearSpawnedEnemies()
     {
-        for (int i = spawnedEnemies.Count - 1; i >= 0; i--)
+        for (int i = _spawnedEnemies.Count - 1; i >= 0; i--)
         {
-            Enemy enemy = spawnedEnemies[i];
-            if (enemy)
+            SpawnedEnemyEntry entry = _spawnedEnemies[i];
+            if (entry.Worker)
             {
-                Destroy(enemy.gameObject);
+                Destroy(entry.Worker.gameObject);
             }
         }
 
-        spawnedEnemies.Clear();
-    }
-
-    private void SetTemplate(Enemy template)
-    {
-        if (!template)
-        {
-            return;
-        }
-
-        _enemyTemplate = template;
-        _spawnCenterX = template.transform.position.x;
-        _spawnY = template.transform.position.y;
+        _spawnedEnemies.Clear();
     }
 
     private void ClampSettings()
     {
         _spawnInterval = Mathf.Clamp(_spawnInterval, MinimumSpawnInterval, MaximumSpawnInterval);
-        _fallSpeed = Mathf.Clamp(_fallSpeed, 0f, MaximumFallSpeed);
         _spawnWidth = Mathf.Clamp(_spawnWidth, 0f, MaximumSpawnWidth);
         _spawnY = Mathf.Clamp(_spawnY, MinimumSpawnY, MaximumSpawnY);
         _maxActiveEnemies = Mathf.Clamp(_maxActiveEnemies, 1, MaximumEnemyLimit);

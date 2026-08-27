@@ -1,11 +1,11 @@
 using UnityEngine;
 
 /// <summary>
-/// Per-NPC combat target state. Owns one reusable CombatTargetHandle instance so a Guard's
-/// selected target survives perception losing sight of it (GQ-007) until it dies, is
-/// destroyed, or the NPC itself is reset.
+/// Per-NPC combat target state. Owns one reusable CombatTargetHandle instance so a selected
+/// target survives perception losing sight of it (GQ-007) until it dies, is destroyed, or the
+/// NPC itself is reset. Shared by any actor that engages in combat (Guard, Enemy, ...).
 /// </summary>
-public class GuardRuntimeState
+public class CombatRuntimeState
 {
     private readonly CombatTargetHandle _targetHandle = new CombatTargetHandle();
 

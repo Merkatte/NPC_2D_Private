@@ -4,5 +4,6 @@ public enum NPCType
 {
     Farmer,
     Guard,
-    Cook
+    Cook,
+    Enemy
 }

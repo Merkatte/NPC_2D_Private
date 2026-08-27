@@ -202,3 +202,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FarmHoverHover
   _hoverType: 1
   _refreshInterval: 0.1
+  _progressFill: {fileID: 6145848639553797009}
+  _worldCamera: {fileID: 0}

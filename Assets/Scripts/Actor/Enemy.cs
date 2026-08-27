@@ -1,21 +1,28 @@
 using UnityEngine;
 
 /// <summary>
-/// Minimal ICombatTarget test target. No movement or retaliation AI - only the
-/// health/aliveness/damage seam Guard combat validation needs.
+/// ICombatTarget adapter over EnemyStat. Owns no health of its own - EnemyStat.GetCurrentHealth
+/// is the single source of truth so Guard's damage and EnemyActionSelector's own logic never
+/// see two different health values for the same actor. Init(EnemyStat) must be called (by the
+/// spawner, with the same instance handed to WorkerNPC.Init) before this is usable; an
+/// un-initialized Enemy reports IsAlive == false.
 /// </summary>
 public class Enemy : MonoBehaviour, ICombatTarget
 {
-    [SerializeField] private float _maxHealth = 10f;
+    private EnemyStat _stat;
 
-    private float _health;
-
-    public bool IsAlive => _health > 0f;
+    public bool IsAlive => _stat != null && _stat.GetCurrentHealth > 0f;
     public Vector3 Position => transform.position;
 
-    private void Awake()
+    public void Init(EnemyStat stat)
     {
-        _health = _maxHealth;
+        if (stat == null)
+        {
+            Debug.LogError("Enemy.Init called with a null EnemyStat.", this);
+            return;
+        }
+
+        _stat = stat;
     }
 
     public void ApplyDamage(float amount)
@@ -25,8 +32,7 @@ public class Enemy : MonoBehaviour, ICombatTarget
             return;
         }
 
-        _health = Mathf.Max(0f, _health - amount);
-        if (_health <= 0f)
+        if (_stat.ChangeHealth(-amount) <= 0f)
         {
             Destroy(gameObject);
         }

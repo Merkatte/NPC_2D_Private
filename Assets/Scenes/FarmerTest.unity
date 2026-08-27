@@ -1393,7 +1393,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UIManager
   _popups: []
   _hovers:
-  - {fileID: 0}
+  - {fileID: 7815464981047457933}
 --- !u!1 &1535132392
 GameObject:
   m_ObjectHideFlags: 0
@@ -1972,6 +1972,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: FarmGauge
       objectReference: {fileID: 0}
+    - target: {fileID: 4022386952751705070, guid: d14307551688c5042a76d8262e1bb07c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4769280612149501039, guid: d14307551688c5042a76d8262e1bb07c, type: 3}
       propertyPath: _worldCamera
       value: 
@@ -2070,6 +2074,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 7465620858183211013, guid: d14307551688c5042a76d8262e1bb07c, type: 3}
   m_PrefabInstance: {fileID: 7815464981047457931}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &7815464981047457933 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4769280612149501039, guid: d14307551688c5042a76d8262e1bb07c, type: 3}
+  m_PrefabInstance: {fileID: 7815464981047457931}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fdcd0d10f4647545bdf7aca3378efbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FarmHoverHover
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

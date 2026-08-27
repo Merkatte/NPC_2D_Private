@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public sealed class SleepAction : DefaultAction
+public sealed class SleepAction : BaseBuildingAction
 {
     private float sleepTime = 2f; //Temp
     private float currentRestTime = 0f;
