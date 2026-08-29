@@ -1,0 +1,78 @@
+fileFormatVersion: 2
+guid: 3f83d32b38ac4b48b69a6b869609102a
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 9100000000000000008
+    second: crop-potato-stage-04_0
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps: {mipMapMode: 0, enableMipMap: 0, sRGBTexture: 1}
+  isReadable: 0
+  streamingMipmaps: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings: {serializedVersion: 2, filterMode: 1, aniso: 1, mipBias: 0, wrapU: 1, wrapV: 1, wrapW: 1}
+  nPOTScale: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 9
+  spritePivot: {x: 0.5, y: 0}
+  spritePixelsToUnits: 500
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: crop-potato-stage-04_0
+      rect: {serializedVersion: 2, x: 144, y: 297, width: 976, height: 384}
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e0d89529a323478dbb5331e090465411
+      internalID: 9100000000000000008
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    outline: []
+    customData:
+    physicsShape: []
+    bones: []
+    spriteID:
+    internalID: 0
+    vertices: []
+    indices:
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata: {entries: []}
+    nameFileIdTable:
+      crop-potato-stage-04_0: 9100000000000000008
+  mipmapLimitGroupName:
+  pSDRemoveMatte: 0
