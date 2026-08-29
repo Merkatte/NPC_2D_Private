@@ -105,6 +105,7 @@ UI input -> IUIService <- domain IHoverInfoSource
 | 새 gameplay 난수 | `IRandomSource`를 주입받는 domain 계산 |
 | 새 popup·hover | category enum, base view 구현, `UIManager` registry |
 | 새 prefab 형태 | `NPCPrefabType`, prefab catalog, pool/spawn 조립 |
+| 새 crop | `FarmProductionDefinition` asset, `CropCatalog` 등록, 결과 item CSV row, [Farming](Systems/Farming.md) |
 
 구체 절차와 불변 규칙은 표의 대상 기능 문서를 따른다.
 

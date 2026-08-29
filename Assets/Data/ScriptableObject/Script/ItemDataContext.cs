@@ -15,4 +15,22 @@ public class ItemDataContext : ScriptableObject
 
         return _itemInfos;
     }
+
+    public bool TryGetItemInfo(int id, out ItemInfo info)
+    {
+        foreach (List<ItemInfo> items in ItemInfos().Values)
+        {
+            for (int i = 0; i < items.Count; ++i)
+            {
+                if (items[i].ID != id)
+                    continue;
+
+                info = items[i];
+                return true;
+            }
+        }
+
+        info = default;
+        return false;
+    }
 }

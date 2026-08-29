@@ -2,3 +2,5 @@ id,category,itemName,itemDescription,healthDelta,hungerDelta,thirstDelta,fatigue
 1,Drink,Water,Cold well water,0,0,-30,0,0
 2,Drink,Beer,Cheap tavern beer,-2,0,-20,0,10
 3,Food,Bread,Freshly baked bread,0,-25,0,0,0
+4,Food,Carrot,Freshly harvested carrot,0,-15,0,0,0
+5,Food,Potato,Freshly harvested potato,0,-20,0,0,0

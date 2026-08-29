@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ffbe1734e594c29b100a2ec70ba6c58, type: 3}
+  m_Name: CropCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::CropCatalog
+  _definitions:
+  - {fileID: 11400000, guid: eff732f7297c9b64fadddbd75320c624, type: 2}
+  - {fileID: 11400000, guid: 1160f8a4216148adb018af560fdca91d, type: 2}

@@ -1263,7 +1263,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66e6dbe0c4b44b3ea0a4c0f4772a4846, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FarmWorkSite
-  _definition: {fileID: 11400000, guid: eff732f7297c9b64fadddbd75320c624, type: 2}
+  _startingDefinition: {fileID: 11400000, guid: eff732f7297c9b64fadddbd75320c624, type: 2}
   _randomSource: {fileID: 1373381418}
   _outputInventorySource: {fileID: 2106675833}
 --- !u!61 &1373381420

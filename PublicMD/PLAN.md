@@ -1,8 +1,8 @@
 # Project N — Phase Plan
 
-> 문서 상태: 실행 계획 초안 0.2
+> 문서 상태: 실행 계획 초안 0.3
 >
-> 개정일: 2026-08-18
+> 개정일: 2026-08-29
 >
 > 기획 기준: `PublicMD/Game_Plan.md`
 >
@@ -32,6 +32,21 @@
 3. CSV와 ScriptableObject를 통한 최소 데이터 로딩·검증 경로를 고정한다.
 4. 플레이어 또는 개발자가 행동 선택 이유와 결과를 확인하게 한다.
 5. Play Mode에서 반복 동작을 검증한 뒤 Phase B로 이동한다.
+
+### 현재 활성 Implementation Slice — Seed System
+
+씨앗 시스템은 현재 농부 수직 슬라이스의 생산 선택권과 표현을 확장하는 작업이다. 이 slice를 진행한다고 해서 전체 Phase A 또는 Phase B가 자동으로 완료되는 것은 아니다.
+
+상세 범위, 책임 경계, decision gate와 단계별 완료 조건은 [`Plans/Seed_System_Implementation_Plan.md`](Plans/Seed_System_Implementation_Plan.md)를 단일 실행 계획으로 사용한다.
+
+| 순서 | 단계 | 핵심 결과 | 요구사항 | 상태 |
+|---|---|---|---|---|
+| S-01 | Seed Phase 1 — 기본 기능과 데이터 | 선택한 crop에 따라 결과물·요구치·수확량이 달라짐 | `REQ-F-053`~`REQ-F-056`, `REQ-D-016` | implementation complete / verification pending |
+| S-02 | Seed Phase 2 — 작물 실제 표현 | 성장 단계 sprite·idle·성장 transition·수확 소멸 표현 | `REQ-F-057`~`REQ-F-059` | 승인 대기 |
+| S-03 | Seed Phase 3 — 선택 UI와 상호작용 | farm별 씨앗 popup, 선택 mutation, 기존 성장 UI 연동 | `REQ-F-052`, `REQ-F-060` | 승인 대기 |
+| S-04 | 전체 회귀 검증과 문서 종료 | 두 crop·두 farm·실패 transaction·재활성화 시나리오 통과 | 상세 계획 8절 | 승인 대기 |
+
+각 Seed Phase는 별도 승인과 검증을 거친다. 앞 단계의 완료 조건을 통과하기 전 다음 단계의 production 구현을 시작하지 않는다.
 
 ## 2. 전체 로드맵
 
@@ -134,7 +149,7 @@ Phase A: 살아 움직이는 한 명
 |---|---|---|
 | B-01 | 다수 주민 lifecycle과 registry | 생성·제거 후 중복 tick 또는 유실 참조 없음 |
 | B-02 | 공용 아이템·재고 모델 | 생산·이동·소비 전후 총량 일치 |
-| B-03 | 농부 생산 완성 | 원재료가 정의된 재고 소유자에게 들어감 |
+| B-03 | [농부 생산 완성](Plans/Seed_System_Implementation_Plan.md) | 선택한 작물의 원재료가 정의된 재고 소유자에게 들어감 |
 | B-04 | 요리사와 레시피 | 재료가 있을 때만 음식 생산, 원자적 수량 갱신 |
 | B-05 | 음식 소비 | 음식이 있을 때 회복, 없을 때 실패 이유 표시 |
 | B-06 | 모집 | 성공 시 한 번만 비용 차감·합류, 실패 시 상태 보존 |
@@ -240,7 +255,7 @@ Phase A: 살아 움직이는 한 명
 
 | ID | 작업 | 종료 증거 |
 |---|---|---|
-| D-01 | 경비와 전투 | [Guard 구현 계획](./Guard_Action_Implementation_Plan.md)의 탐색→이동→공격→복귀 lifecycle 정상 |
+| D-01 | 경비와 전투 | [Guard 현재 구조](Systems/Combat/Guard.md)의 탐색→이동→공격→복귀 lifecycle 정상 |
 | D-02 | 침공과 표적 규칙 | 동일 조건에서 이해 가능한 웨이브와 표적 선택 |
 | D-03 | 피해와 패배 | 모순 없는 상태 전환과 한 번만 발생하는 게임오버 |
 | D-04 | 치료와 복귀 | 치료 중 업무 중단, 완료 후 점유 해제·복귀 |

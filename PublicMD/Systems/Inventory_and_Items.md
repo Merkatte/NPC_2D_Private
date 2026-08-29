@@ -22,11 +22,13 @@ selector -> IDataManager.TryGetActionCostInfo<T>(ActionType) -> cost asset
 
 `WarehouseInventory`는 현재 용량 제한이 없으며 요청 수량 전체를 받거나 실패한다. 생산 품목과 yield는 농사 definition이 소유한다.
 
+`ItemData.csv`는 농사 crop 결과 item(현재 Carrot=4, Potato=5, Food category)도 다른 item과 동일한 9열 계약으로 보유한다. `ItemDataContext.TryGetItemInfo(id, out info)`가 id 기준 조회를 제공하며, `CropCatalog.TryValidate(itemDataContext, out reason)`가 catalog에 등록된 모든 crop의 `OutputItemId`를 이 조회로 cross-check해 CSV에 없는 id를 가진 crop을 거부한다. 이 검증은 catalog를 소비하는 초기화 경계(현재 `TestFarmProductionWindow`)에서만 실행되며, `FarmWorkSite`가 item table 전체를 들고 있지는 않는다 — `TrySelectCrop`을 catalog를 거치지 않고 직접 호출하면 이 cross-check를 우회한다.
+
 ## 주 소유 스크립트
 
 | 경로 | 한 줄 책임 |
 |---|---|
-| `Assets/Data/ScriptableObject/Script/ItemDataContext.cs` | category별 `ItemInfo` table을 제공하는 공유 item context |
+| `Assets/Data/ScriptableObject/Script/ItemDataContext.cs` | category별 `ItemInfo` table과 id 기준 단건 조회(`TryGetItemInfo`)를 제공하는 공유 item context |
 | `Assets/Data/Struct/ItemInfo.cs` | CSV item row의 ID·category·표시 정보·stat effect 값 |
 | `Assets/Scripts/Enum/ItemCategory.cs` | item table 분류 key |
 | `Assets/Scripts/Interface/IDataManager.cs` | action cost를 type-safe하게 조회하는 서비스 계약 |
@@ -45,6 +47,7 @@ selector -> IDataManager.TryGetActionCostInfo<T>(ActionType) -> cost asset
 | 창고 입고·용량 | `IInventory.cs`, `WarehouseInventory.cs`, 소비 기능 문서 |
 | action cost 조회 | `IDataManager.cs`, `DataManager.cs`, [Action Runtime](NPC_Decision_and_Actions/Action_Runtime.md) |
 | 농장 수확물 | [Farming](Farming.md) |
+| item id 조회·cross-validation | `ItemDataContext.cs`, [Farming](Farming.md)의 `CropCatalog.TryValidate` |
 
 ## 불변 규칙
 

@@ -1,7 +1,7 @@
 # SPEC
 
-> 문서 상태: 초안 0.2  
-> 작성 기준: 2026-06-22  
+> 문서 상태: 초안 0.3
+> 작성 기준: 2026-08-29
 > 수치 정책: 사용자가 확정하지 않은 수치는 `TBD`로 표기하며 구현 단계에서 임의로 확정하지 않는다.
 
 ## 1. Purpose
@@ -92,6 +92,7 @@ flowchart LR
 | SRC-021 | 네임드 주민은 간헐적으로 모집 후보에 등장하며 고정된 외모와 고정된 스탯을 가진다. |
 | SRC-022 | 병사 주민은 전투 중 부상·전투 불능·사망할 수 있으며, 성곽이 뚫리고 병사 주민이 모두 전투 불능이면 다른 주민도 같은 위험에 노출된다. |
 | SRC-023 | 부상 또는 전투 불능 상태가 된 AI 주민은 병원 또는 치료소에서 치료받고 나온다. |
+| SRC-024 | 플레이어는 농경지에 심을 씨앗을 선택하며, 씨앗별 결과물·작업 요구치·수확량을 데이터로 관리하고 성장·수확 상태를 sprite, animation과 UI로 확인한다. |
 
 ## 4. Glossary
 
@@ -110,6 +111,8 @@ flowchart LR
 | 불쾌 수치 | 충족되지 않은 욕구로 인해 누적되며 폭동 발생에 영향을 주는 값. |
 | 폭동 | 불쾌 수치 임계 도달 후 주민이 정상 업무를 중단하는 위기 상태. 상세 행동은 미정이다. |
 | 생산물 | 주민의 업무로 생성되어 운반·보관·판매할 수 있는 자원 또는 물품. |
+| 씨앗 선택 | 플레이어가 빈 농경지의 다음 생산 cycle에 사용할 crop definition을 지정하는 관리 행동. 실제 seed item 소비 여부는 TBD다. |
+| 작물 정의 | 결과 item, 성장·수확 요구치, 수확량과 presentation reference를 가진 변경 불가능한 공유 설정. 현재 runtime progress를 저장하지 않는다. |
 | 성곽 | 외곽 방어선이며 독립된 체력을 가진 방어 대상. |
 | 시청 | 정착지 성장의 중심 시설이자 적에게 파괴될 경우 게임오버를 발생시키는 핵심 건물. 명칭은 임시다. |
 | 웨이브 | 외곽에서 출현한 적 집단을 모두 처치할 때까지의 침공 단위. |
@@ -238,6 +241,20 @@ flowchart LR
 | REQ-F-025 | State-driven | 전직한 주민이 전직 전용 공방 업무 조건을 충족한 동안, 게임은 해당 특화 물품의 생산을 허용해야 한다. | SRC-009 | 유효한 전직자는 전용 제작을 시작할 수 있고 자격 없는 주민은 시작할 수 없다. |
 | REQ-F-026 | State-driven | 주민이 성장 또는 전직 조건을 충족하고 시청을 이용할 수 있는 동안, 게임은 확정된 성장 절차를 제공해야 한다. | SRC-010 | 조건을 충족하지 않거나 시청을 이용할 수 없으면 절차가 완료되지 않는다. |
 
+### 씨앗과 작물 선택
+
+| ID | EARS Type | Requirement | Source | Acceptance Criteria |
+|---|---|---|---|---|
+| REQ-F-052 | Event-driven | 플레이어가 씨앗 선택이 가능한 농경지를 조작하면, 게임은 그 농경지에 적용할 수 있는 crop definition 목록을 표시해야 한다. | SRC-024 | 유효한 농경지에서 popup이 열리고 catalog의 유효 항목과 표시 정보가 일치한다. |
+| REQ-F-053 | Event-driven | 플레이어가 유효한 씨앗 선택을 확정하면, 게임은 선택된 crop definition을 해당 `FarmWorkSite`의 다음 생산 cycle에 저장해야 한다. | SRC-024 | 다른 농경지나 Farmer NPC 상태는 바뀌지 않고 대상 농경지의 current definition만 정확히 한 번 변경된다. |
+| REQ-F-054 | State-driven | 농경지에 crop definition이 선택된 동안, 게임은 그 definition에 지정된 결과 item을 수확 결과로 사용해야 한다. | SRC-024 | 서로 다른 두 definition의 cycle을 완료하면 각자 설정된 서로 다른 item ID의 재고가 증가한다. |
+| REQ-F-055 | State-driven | crop definition이 선택된 동안, 게임은 그 definition의 성장 요구치, 수확 요구치와 최소·최대 수확량을 적용해야 한다. | SRC-024 | 데이터 값만 다른 crop을 같은 조건에서 비교하면 완료 작업량과 수확량이 각 definition 범위에 맞게 달라진다. |
+| REQ-F-056 | Ubiquitous | crop별 결과 item, 요구치, 수확량과 presentation reference는 코드 변경 없이 검증 가능한 외부 definition으로 편집할 수 있어야 한다. | SRC-024 | ScriptableObject 값을 변경하면 재컴파일 없이 새 cycle에 반영되고 invalid 값은 초기화 또는 선택 경계에서 거부된다. |
+| REQ-F-057 | State-driven | 선택된 작물이 성장 중인 동안, 게임은 current progress에 대응하는 성장 stage sprite와 stage별 idle 표현을 표시해야 한다. | SRC-024 | 각 threshold 전후에서 올바른 sprite로 전환되고 progress가 멈춘 동안 해당 idle이 안정적으로 반복된다. |
+| REQ-F-058 | Event-driven | 작물이 다음 성장 stage threshold를 처음 통과하면, 게임은 해당 stage의 성장 transition을 한 번 재생해야 한다. | SRC-024 | 하나의 threshold를 한 번 통과하는 동안 중복 transition이 발생하지 않고 runtime stage와 최종 sprite가 일치한다. |
+| REQ-F-059 | Event-driven | 작물의 수확 cycle이 완전히 끝나면, 게임은 수확 소멸 animation을 한 번 재생하고 작물 visual을 빈 상태로 전환해야 한다. | SRC-024 | 수확 transaction 하나당 소멸이 한 번만 재생되고 완료 후 이전 crop sprite가 남지 않는다. |
+| REQ-F-060 | Ubiquitous | 농경지 UI는 current crop, 성장 stage와 progress를 실제 `FarmWorkSite` 상태와 일치하게 표시하고 유효하지 않은 선택은 상태를 바꾸지 않은 채 이유를 제공해야 한다. | SRC-024 | 여러 농경지를 번갈아 조작해도 popup·gauge source가 섞이지 않고 실패한 입력 뒤 기존 definition과 progress가 보존된다. |
+
 ### 적 침공과 방어
 
 ```mermaid
@@ -342,6 +359,7 @@ flowchart LR
 | REQ-D-013 | 주민 모집 | 후보 ID, 일반·네임드 구분, 후보 스탯, 외모, 이주 정착금, 등장 규칙, 모집 가능 상태 | SRC-020, SRC-021 |
 | REQ-D-014 | 치료 | 치료 대상 상태, 시설 수용량, 치료 시간, 회복 결과, 필요 자원 또는 비용, 퇴소 조건 | SRC-023 |
 | REQ-D-015 | 전투 피해 상태 | 부상·전투 불능·사망 판정 조건, 상태별 행동 제한, 공격 대상 조건 | SRC-022 |
+| REQ-D-016 | 작물과 씨앗 | crop ID, 표시명, 결과 item ID, 성장·수확 요구치, 수확량 범위, stage threshold, stage별 sprite와 animation reference | SRC-024 |
 
 ## 9. Telemetry / Debug Requirements
 
@@ -379,6 +397,7 @@ flowchart LR
 | SRC-021 | REQ-F-046, REQ-F-047, REQ-D-013 |
 | SRC-022 | REQ-F-050, REQ-F-051, REQ-D-015 |
 | SRC-023 | REQ-F-048, REQ-F-049, REQ-D-014 |
+| SRC-024 | REQ-F-052~REQ-F-060, REQ-D-016 |
 
 ## 11. Open Questions
 
@@ -415,3 +434,17 @@ flowchart LR
 | Q-027 | 네임드 주민의 등장 확률, 중복 등장 가능 여부와 재등장 규칙은 무엇인가? | 희소성과 수집 경험 | 기획자 |
 | Q-028 | 병원 또는 치료소의 수용 인원, 치료 시간, 치료 비용이나 소모 자원은 무엇인가? | 방어 실패 복구 속도와 시설 가치 | 기획자 |
 | Q-029 | 치료 완료 시 체력만 회복하는가, 부상·전투 불능 상태도 모두 해제하는가? | 치료 결과와 AI 업무 복귀 조건 | 기획자 |
+| Q-033 | 첫 crop은 몇 개의 성장 stage를 사용하며 threshold를 균등 배치하는가? | sprite·animation 산출물과 stage 계산 | 기획자/아트 |
+| Q-034 | 모든 crop을 처음부터 선택할 수 있는가, 해금·재고·계절 조건으로 후보를 제한하는가? | catalog filtering과 popup 상태 | 기획자 |
+
+Q-030~Q-032는 Seed Phase 1 시작 전 결정됐다. [12절 Decision Log](#12-decision-log)를 본다.
+
+## 12. Decision Log
+
+Open Question이 시스템 규칙으로 확정되면 이 절로 옮기고 표에서는 제거한다. 수치는 여전히 asset 값으로 조정 가능하며 이 절이 수치 자체를 고정하지 않는다.
+
+| ID | 확정된 규칙 | 결정일 | 근거/영향 |
+|---|---|---|---|
+| Q-030 (구 SG-001) | 씨앗은 빈 농경지(current crop 없음, 또는 Growing phase에서 progress가 0)에서만 선택할 수 있다. 성장·수확 중 선택 시도는 기존 crop과 progress를 보존한 채 거부하고 사유를 반환한다. | 2026-08-29 | [Seed System Implementation Plan](Plans/Seed_System_Implementation_Plan.md) SG-001, [Farming](Systems/Farming.md) |
+| Q-031 (구 SG-002) | Seed Phase 1은 실제 seed item을 inventory에서 소비하지 않는다. 씨앗 선택은 농경지의 생산 설정(current crop)만 변경한다. seed item 소비는 이후 slice로 보류한다. | 2026-08-29 | [Seed System Implementation Plan](Plans/Seed_System_Implementation_Plan.md) SG-002 |
+| Q-032 (구 SG-003) | 첫 vertical slice의 crop은 Carrot(cropId 1, output item 4)과 Potato(cropId 2, output item 5) 2종이며, 둘 다 `ItemData.csv`에 기존 Food category로 추가한다. | 2026-08-29 | [Seed System Implementation Plan](Plans/Seed_System_Implementation_Plan.md) SG-003, [Inventory and Items](Systems/Inventory_and_Items.md) |

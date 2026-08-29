@@ -3,6 +3,10 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "FarmProductionDefinition", menuName = "Scriptable Objects/FarmProductionDefinition")]
 public class FarmProductionDefinition : ScriptableObject
 {
+    [Header("Identity")]
+    [SerializeField] private int _cropId = -1;
+    [SerializeField] private string _displayName;
+
     [Header("Gauge")]
     [SerializeField] private float _maxProgress = 100f;
     [SerializeField] private float _growthPerWork = 10f;
@@ -13,6 +17,8 @@ public class FarmProductionDefinition : ScriptableObject
     [SerializeField] private int _minimumYield = 1;
     [SerializeField] private int _maximumYield = 1;
 
+    public int CropId => _cropId;
+    public string DisplayName => _displayName;
     public float MaxProgress => _maxProgress;
     public float GrowthPerWork => _growthPerWork;
     public float HarvestProgressPerWork => _harvestProgressPerWork;
@@ -20,7 +26,8 @@ public class FarmProductionDefinition : ScriptableObject
     public int MinimumYield => _minimumYield;
     public int MaximumYield => _maximumYield;
 
-    public bool IsValid => _maxProgress > 0f && _growthPerWork > 0f && _harvestProgressPerWork > 0f
+    public bool IsValid => _cropId >= 0 && !string.IsNullOrWhiteSpace(_displayName)
+        && _maxProgress > 0f && _growthPerWork > 0f && _harvestProgressPerWork > 0f
         && _outputItemId >= 0 && _minimumYield >= 1 && _maximumYield >= _minimumYield;
 
     private void OnValidate()

@@ -10,11 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f2d47ab1e0f7407ea6111d2f7fbc9c69, type: 3}
-  m_Name: FarmProductionDefinition
+  m_Name: FarmProductionDefinition_Carrot
   m_EditorClassIdentifier: Assembly-CSharp::FarmProductionDefinition
+  _cropId: 1
+  _displayName: Carrot
   _maxProgress: 100
   _growthPerWork: 10
   _harvestProgressPerWork: 10
-  _outputItemId: 2
+  _outputItemId: 4
   _minimumYield: 1
-  _maximumYield: 1
+  _maximumYield: 3
