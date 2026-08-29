@@ -1,5 +1,8 @@
 # IInteractionProvider Common Protocol Unification Plan
 
+> 보관 경로: `PublicMD/Archive/Plans/InteractionProvider_Unification_Plan.md`
+> 구현이 완료된 계획 문서이며 현재 구조의 기준은 루트 아키텍처 문서와 기능별 문서를 따릅니다.
+
 > 작성일: 2026-08-22
 > 상태: 구현 전 사용자 검토·승인 대기
 > 구현 대상: 현재 공급 전용 `IInteractionProvider`와 농사 전용 `IFarmWorkProvider`의 단일 실행 프로토콜 통합
@@ -625,9 +628,9 @@ utility 판단, `RepeatCount`, 이동 queue 구성은 변경하지 않는다.
 - `PublicMD/ARCHITECTURE.md`: 과도기 `IFarmWorkProvider` 설명을 완료 구조로 변경
 - `PublicMD/ProjectStructure.md`: 실제 파일 tree와 interaction flow 갱신
 - `PublicMD/CodeConvention.md`: 과도기 경고를 제거하고 확정 protocol을 현재 규칙으로 변경
-- `PublicMD/PROGRESS.md`: 실제 구현·검증 결과 기록
+- `PublicMD/Status/PROGRESS.md`: 실제 구현·검증 결과 기록
 
-`PublicMD/Code_Evaluation_Result.md`는 구현자가 수정하지 않는다. 독립 Codex review agent가 소유한다.
+`PublicMD/Status/Code_Evaluation_Result.md`는 구현자가 수정하지 않는다. 독립 Codex review agent가 소유한다.
 
 ## 15. 구현 순서
 

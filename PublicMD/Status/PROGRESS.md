@@ -1,5 +1,8 @@
 # PROGRESS
 
+> 현재 경로: `PublicMD/Status/PROGRESS.md`
+> 2026-08-29 이전 기록에 등장하는 `PublicMD/PROGRESS.md`는 이 문서의 이전 경로입니다.
+
 ## Current Reset Snapshot
 
 2026-08-01: The project has been reset to a new lightweight NPC/action skeleton. The old `WorkerAI`, `WorkerActionPlan`, `WorkerActionContext`, Behavior Graph, animation, combat, recruitment, and UI implementation described by older IMP records is not present in the current `Assets/Scripts` tree.
@@ -46,6 +49,12 @@ Immediate next actions:
 5. Keep `WorkerNPC` narrow; do not make it the dependency bucket for every NPC concern.
 
 ## Current Status
+DOC-001 completed on 2026-08-29 (PublicMD 점진적 공개 구조 전환 완료): 에이전트가 큰 공통 문서와 관련 없는 코드를 반복해서 읽지 않도록 `AGENTS.md -> ProjectStructure.md -> Systems 기능 문서/인덱스 -> leaf의 최소 파일` 읽기 흐름을 도입했다. 최상위 기능 영역은 9개로 유지하고, 독립 세부 기능이 4개 이상인 판단·action과 전투만 폴더형 인덱스로 분할했다. 판단·action은 5개 leaf, 전투는 4개 leaf가 현재 흐름·불변 규칙·변경 유형별 최소 확인 범위를 소유한다.
+
+production C# 89개를 각 하나의 `주 소유 스크립트` 표에 등록하고 한 줄 책임을 기록했다. 검증 결과 production 89개 / owner row 89개 / 누락 0 / extra 0 / 중복 0이다. 활성 문서 24개의 Markdown local link는 깨진 링크 0개다. 공통 문서는 `ProjectStructure.md` 130줄, `ARCHITECTURE.md` 164줄, `CodeConvention.md` 199줄로 합계 493줄이며, 전환 전 합계 1,471줄에서 기능 세부 내용을 Systems로 이동했다. 모든 Systems 문서는 250줄 이하이다.
+
+`AGENTS.md`, `.codex`와 `.agents`의 구현·리뷰 skill, 독립 reviewer prompt를 새 라우팅으로 동기화했다. 고정된 공통 3문서 전체 읽기와 과거 `WorkerAI`/Behavior Graph 책임 안내를 제거하고, whole-project review가 아닌 경우 관련 leaf와 직접 dependency만 읽도록 했다. reviewer launcher 두 개는 PowerShell parser 오류 0개다. C# production 코드, scene, prefab, animation, ScriptableObject asset은 이 문서 전환에서 수정하지 않았다. 승인 계획은 `PublicMD/Archive/Plans/PublicMD_Progressive_Disclosure_Plan.md`로 보관했다.
+
 IMP-035 completed on 2026-08-28 (코드·prefab·씬 구현 완료 / Codex 리뷰 백그라운드 실행 / Play Mode 검증은 사용자 대기): Enemy를 임시 `ICombatTarget` 표적에서 `WorkerNPC` + selector 아키텍처를 쓰는 진짜 전투 AI 유닛으로 편입했다. 계획은 Opus Plan Mode에서 작성했고, Codex 리뷰 게이트를 4라운드 거치며(구현 전) 수정됐다 — 매 라운드의 지적과 사용자 결정을 아래에 요약한다.
 
 **Codex 리뷰 라운드 요약**: 1차는 `NPCComponent`에 `ICombatTarget`을 추가해 Farmer/Guard까지 공격 대상으로 만드는 안이었으나, (a) 주민 사망/전투불능 정책(`PublicMD/Game_Plan.md` GD-008)이 미결정이고 (b) `GuardPerception`/`GuardRuntimeState`가 이름만 Guard 전용이지 실질적으로 공용이라는 지적을 받았다. 사용자가 직접 "Farmer/Guard 피해는 이번엔 보류, 전투 코드 이름은 지금 중립화"로 확정했다. 2차는 `Enemy.cs`를 그대로 두면 체력이 두 곳(자체 필드 + `EnemyStat`)으로 이중화된다는 지적, `NPCGirl.prefab`을 "건드리지 않음"이라 해놓고 rename 마이그레이션이 필요하다는 모순 지적, Rigidbody2D 부재로 트리거 콜백이 안 뜰 수 있다는 지적, Animator 필수 검증이 Enemy마다 에러 로그를 남긴다는 지적을 받아 `Enemy.cs`를 stat adapter로 개조하고 `NPCComponent._requiresAnimator` 플래그를 추가했다. 3차는 `AttackAction.cs`가 `GuardRuntimeState`를 직접 참조하는데 rename 목록에서 빠졌던 것(빌드 깨짐 직결)과 `.csproj` 재생성 순서를 지적받았다. 4차는 승인하되 10개 구현 지침(EnemyActionSelector를 prefab이 아니라 씬 공용 컴포넌트로, 스폰 전 사전 검증 순서, destroyed-object 체크 순서, 낙하 테스트 요소 완전 제거, Enemy prefab 정적 배선 체크리스트 등)을 확정했다.

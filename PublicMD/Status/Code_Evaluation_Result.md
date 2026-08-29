@@ -1,5 +1,7 @@
 # Code Evaluation Result
 
+> 현재 경로: `PublicMD/Status/Code_Evaluation_Result.md`
+
 ## Purpose
 
 Read-only audit of IMP-033, which moves building-entry presentation ownership from destination metadata to the Eat/Drink/Sleep action lifecycle. The review prioritized architecture, lifecycle correctness, Unity serialized-reference safety, and maintainability. No files were modified.
@@ -26,7 +28,7 @@ Read-only audit of IMP-033, which moves building-entry presentation ownership fr
   - `Assets/Scenes/GuardTest.unity`
   - `PublicMD/ARCHITECTURE.md`
   - `PublicMD/ProjectStructure.md`
-  - `PublicMD/PROGRESS.md`
+  - `PublicMD/Status/PROGRESS.md`
 - Direct dependency surfaces:
   - All `DefaultAction` subclasses
   - `WorkerNPC`
@@ -317,7 +319,7 @@ None found.
 - `PublicMD/ARCHITECTURE.md`, `PublicMD/ProjectStructure.md`
   - The BaseBuildingAction ownership descriptions match the implementation.
   - L-01 applies.
-- `PublicMD/PROGRESS.md`
+- `PublicMD/Status/PROGRESS.md`
   - The current implementation description matches the inspected source.
   - The build result remains user-reported rather than independently reproduced.
 

@@ -60,7 +60,7 @@ public class TestFarmProductionWindow : MonoBehaviour
     }
 
     // Records state directly before/after the call: the common InteractionResult intentionally
-    // carries no farm-specific payload (see PublicMD/InteractionProvider_Unification_Plan.md
+    // carries no farm-specific payload (see PublicMD/Archive/Plans/InteractionProvider_Unification_Plan.md
     // section 8.2), so the previous dedicated result type no longer exists.
     private void ApplyWork()
     {

@@ -8,7 +8,7 @@
 >
 > 상세 요구 기준: 현재 Phase에 배정되고 확정된 `PublicMD/SPEC.md` 항목
 >
-> 진행 기준: 실제 코드와 `PublicMD/PROGRESS.md`
+> 진행 기준: 실제 코드와 `PublicMD/Status/PROGRESS.md`
 
 ## 0. 계획 원칙
 

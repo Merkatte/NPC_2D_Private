@@ -1,19 +1,16 @@
 ---
 name: implement-npc-feature
-description: Plan and implement Unity NPC or worker C# features in NPC_Work_2D, then delegate a read-only architecture review to an independent Codex agent and update PROGRESS.md. Use for feature implementation, script creation, worker behavior, IAction, selector, decision policy, destination provider, movement, stats, manager, or Unity wiring requests. Require the active agent's native planning mode, explicit user approval, and a separate implementation phase.
+description: Plan and implement Unity NPC or worker C# features in NPC_Work_2D, then delegate a read-only architecture review to an independent Codex agent and update PROGRESS.md. Use for feature implementation, script creation, worker behavior, IAction, selector, decision policy, destination provider, movement, stats, manager, or Unity wiring requests. Require Opus Plan Mode, explicit user approval, and Sonnet implementation.
 ---
 
 # Implement NPC Feature
 
 Follow the phases in order. Do not combine planning and implementation.
 
-## 1. Plan
+## 1. Plan with Opus
 
 1. Capture the requested behavior, boundaries, and observable acceptance criteria.
-2. Apply the planning gate for the active agent environment:
-   - In Claude Code, require the Opus model with Plan Mode active.
-   - In Codex, require Plan collaboration mode. The current Codex model is acceptable unless the user or project instructions require a specific Codex model.
-   - If the applicable planning mode or model requirement is not satisfied, stop and ask the user to switch. Do not imitate a missing mode or another agent's model.
+2. Ensure the current Codex model is Opus and Plan Mode is active. If either condition is false, stop and ask the user to switch; do not imitate the missing mode.
 3. Read `PublicMD/ProjectStructure.md`, use its routing table, and then read only the relevant `PublicMD/Systems` leaf documents. When a feature is a folder, read its `README.md` only to select the needed leaf; do not automatically read every sibling leaf.
 4. Add conditional project documents only when applicable:
    - game rules or player experience: `PublicMD/Game_Plan.md` and `PublicMD/SPEC.md`;
@@ -24,13 +21,10 @@ Follow the phases in order. Do not combine planning and implementation.
 6. Produce a concrete plan containing scope, responsibility placement, files to create or change, dependency direction, validation, risks, and explicit exclusions.
 7. Ask the user to approve the plan. End the turn without editing implementation files.
 
-## 2. Implement
+## 2. Implement with Sonnet
 
 1. Start only after explicit user approval.
-2. Apply the implementation gate for the active agent environment:
-   - In Claude Code, require the Sonnet model.
-   - In Codex, require Default collaboration mode. Use the current Codex model unless the user or project instructions require a specific Codex model.
-   - If the applicable implementation mode or model requirement is not satisfied, stop and ask the user to switch before editing implementation files.
+2. Ensure the current Codex model is Sonnet. If it is not, stop and ask the user to switch before editing code.
 3. Re-read any project document changed since planning.
 4. Implement only the approved scope. Preserve the documented architecture and local style.
 5. Keep utility policy in decision code, role priority and queue composition in selectors, selected behavior lifecycle in actions, execution dependencies in `ActionContext`, facility transactions in providers, movement/presentation in `NPCComponent`, and active queue lifecycle in `WorkerNPC`.

@@ -1,445 +1,164 @@
 # NPC Work 2D Architecture
 
-> 문서 기준일: 2026-08-25
-> 대상 버전: Unity 6000.3.9f1, URP 2D
-> 현재 실행 씬: `Assets/Scenes/SampleScene.unity`, `Assets/Scenes/GuardTest.unity`
+> 문서 기준일: 2026-08-29
+> 이 문서는 여러 기능에 공통으로 적용되는 안정적인 구조 원칙과 의존 방향만 소유한다. 현재 기능별 클래스와 배선은 `PublicMD/Systems`를 따른다.
 
-## 1. 문서 목적
+## 1. 목적
 
-이 문서는 현재 저장소에 실제로 존재하는 NPC 프로토타입의 런타임 구조와 책임 경계를 정의한다. 장기 게임 기획은 `Game_Plan.md`, 작업 우선순위와 완료 조건은 `PLAN.md`, 실제 파일 위치는 `ProjectStructure.md`, 작성 규칙은 `CodeConvention.md`를 따른다.
+이 프로젝트는 Unity 2D 정착지 prototype으로, NPC가 자신의 runtime 상태와 주변 capability를 바탕으로 행동을 선택하고 pooled action을 실행한다. 구조의 목표는 기능을 늘릴 때 actor root, selector, action, provider와 UI가 서로의 세부 구현을 흡수하지 않게 하는 것이다.
 
-과거 프로젝트에 존재했던 `WorkerAI`, `WorkerActionPlan`, `WorkerActionContext`, Behavior Graph, 모집·상인·치료·대규모 물류 시스템은 현재 런타임에 존재하지 않는다. 해당 이름을 현재 구조의 일부로 간주하지 않는다.
+전체 기능 지도는 [ProjectStructure](ProjectStructure.md), 실제 구현은 [Systems](Systems/README.md), 보편적 작성 규칙은 [CodeConvention](CodeConvention.md)을 기준으로 한다.
 
-이 문서에서는 사실의 수준을 다음처럼 구분한다.
+## 2. 핵심 설계 원칙
 
-- **현재 구현**: 현재 C# 코드나 씬에 존재하고 실행되는 구조
-- **과도기 구현**: 작동하지만 다음 통합 작업에서 교체하기로 한 구조
-- **확정 방향**: 새 코드를 추가할 때 지켜야 할 목표 경계
-- **미구현**: 기획 또는 후속 과제이며 현재 API로 가정하면 안 되는 기능
-
-## 2. 현재 아키텍처 요약
-
-현재 NPC 실행의 중심 흐름은 다음과 같다.
+### 2.1 결정과 실행을 분리한다
 
 ```text
-NPCManager
-  -> NPCType별 NPCCreationEntry 선택
-  -> NPCStatDefinition.CreateRuntimeStat()
-  -> WorkerPool에서 WorkerNPC 획득
-  -> WorkerNPC.Init(npcType, stat, selector)
-
-WorkerNPC.Update()
-  -> selector.RequestNewActionQueue(...)
-  -> Queue<IAction>에서 action 하나 시작
-  -> action.Tick()
-  -> ActionResult에 따라 다음 action / 전체 replan / 실패 처리
-
-BaseNPCActionSelector
-  -> DestinationDecider 또는 전투 상태로 intent 결정
-  -> ActionPool에서 action을 빌림
-  -> ActionContext를 주입
-  -> 실행할 Queue<IAction> 반환
+Policy/Selector: 무엇을 할지, 어떤 순서로 할지
+Action: 선택된 행동을 어떻게 끝낼지
+Actor runtime: queue와 현재 action을 언제 진행·폐기할지
 ```
 
-핵심 책임은 다음과 같이 나뉜다.
+- policy는 action instance, queue와 mutable actor state를 소유하지 않는다.
+- selector는 점수 공식을 복제하지 않고 semantic decision을 queue로 번역한다.
+- action은 다음 장기 목표를 고르거나 scene registry를 검색하지 않는다.
+- actor root는 role별 우선순위와 domain transaction을 소유하지 않는다.
 
-| 영역 | 현재 소유자 | 책임 |
-|---|---|---|
-| actor lifecycle | `WorkerNPC` | action queue 실행, 결과 처리, replan, 풀 반환 |
-| Unity 참조 | `NPCComponent` | Transform, Animator, 이동·방향·건물 출입 표현, Guard 감지 컴포넌트 |
-| 개체별 상태 | `NPCStat`, `GuardStat` | 체력, 이동 속도, 욕구, Guard 전투 능력치 |
-| 행동 결정 | selector, `DestinationDecider` | 전투 우선순위, 역할/보급 intent, 이동 목적지, 반복 횟수 |
-| 행동 실행 | `IAction` 구현 | 이동·섭취·수면·농사·순찰·공격의 실행과 종료 규칙 |
-| 씬 목적지 | `DestinationDB` | `BuildingType`에서 위치와 상호작용 제공자 조회 |
-| 공유 정의 | ScriptableObject | 초기 stat, action 비용, utility tuning, 생산 규칙 |
-| 런타임 시설 상태 | scene component | 농경지 게이지, 창고 수량, 감지 범위 등 인스턴스 상태 |
+### 2.2 정의와 runtime 상태를 분리한다
 
-## 3. 핵심 설계 원칙
+- ScriptableObject: 여러 인스턴스가 공유하는 초기 definition, cost, tuning.
+- plain runtime object: NPC별 stat, 현재 target, action timer.
+- scene component: 농장 progress, 창고 수량, facility availability처럼 배치별 상태.
 
-### 3.1 결정과 실행을 분리한다
+공유 asset에 현재 체력, target, progress, inventory 수량을 기록하지 않는다.
 
-selector와 `DestinationDecider`는 무엇을 할지 결정한다. `IAction`은 선택된 행동을 실행한다. `WorkerNPC`는 둘을 연결하고 queue lifecycle만 관리한다.
+### 2.3 Unity object와 순수 규칙을 분리한다
 
-- selector는 위치를 직접 이동시키거나 stat을 직접 변경하지 않는다.
-- action은 다음 직업 행동을 선택하지 않는다.
-- `WorkerNPC`는 Farmer/Guard의 세부 우선순위를 알지 않는다.
-- 시설은 NPC의 다음 행동을 결정하지 않고, 요청받은 상호작용의 도메인 규칙만 실행한다.
+- MonoBehaviour는 scene reference, lifecycle, physics, transform과 presentation adapter를 담당한다.
+- 순수 계산은 가능한 한 명시적 입력과 작은 interface/value를 사용한다.
+- Unity interface reference의 생존성은 backing `UnityEngine.Object`와 함께 검증한다.
+- hot path에서 scene-wide search나 반복 component lookup을 하지 않는다.
 
-### 3.2 정의와 런타임 상태를 분리한다
+### 2.4 의미가 같은 capability만 공유한다
 
-ScriptableObject는 공유 정의와 튜닝이다. 개체별 또는 씬 인스턴스별로 달라지는 값은 ScriptableObject에 저장하지 않는다.
+공통 interface는 소비자가 concrete type을 몰라도 동일한 의미로 사용할 수 있는 최소 protocol이어야 한다. 미래 가능성만으로 일대일 interface를 만들거나 domain마다 provider 계약을 복제하지 않는다.
 
 ```text
-NPCStatDefinition asset -> NPCStat / GuardStat runtime instance
-DefaultActionCost asset  -> 여러 action이 읽는 공유 비용·판정 값
-NPCDecisionTuning asset  -> utility 계산용 공유 가중치
-FarmProductionDefinition -> FarmWorkSite가 읽는 생산 규칙
+IInteractionProvider -> 지원 조회, option, request 실행, result
+IInventory           -> 수량 transaction
+ICombatTarget        -> 생존, 위치, damage
+IHoverInfoSource     -> UI가 읽을 표시 정보
 ```
 
-예시는 다음과 같다.
+domain별 phase, recipe, item table, target 정책은 concrete owner가 유지한다.
 
-- Guard의 공격력·공격속도·공격범위·순찰반경은 `GuardStat`의 개체별 값이다.
-- 순찰 도착 거리, 욕구 증가율, interrupt threshold는 `GuardActionCost`의 공유 정책 값이다.
-- 농경지의 현재 phase/progress는 `FarmWorkSite`의 씬 인스턴스 상태다.
-- 창고 수량은 `WarehouseInventory`의 런타임 상태다.
+## 3. 조립과 runtime 경계
 
-런타임 코드가 ScriptableObject 필드를 변경해서는 안 된다.
+### 3.1 생성
 
-### 3.3 공통 계약은 의미가 같을 때만 공유한다
+scene composition root가 role, selector, stat definition과 prefab/pool을 조립한다. spawn 전에 selector와 runtime stat의 호환성을 검사하고, actor root에는 이미 조립된 dependency를 전달한다.
 
-범용화의 목적은 이름을 하나로 합치는 것이 아니라, 호출자가 동일한 프로토콜로 서로 다른 구현을 안전하게 실행하도록 만드는 것이다.
+세부 구조: [Spawning and Pooling](Systems/Spawning_and_Pooling.md)
 
-- `IStatView`는 모든 NPC가 실제로 공유하는 stat 조회만 가진다.
-- `ICombatStatView`는 전투 능력치만 가진 독립 계약이다.
-- `IGuardStatView`는 `ICombatStatView`를 확장한다.
-- 런타임 객체는 `GuardStat : NPCStat, IGuardStatView` 하나이며 stat 객체를 세 개 만들지 않는다.
-- 새 인터페이스는 실제 소비자나 두 번째 구현이 있을 때 추가한다.
-- 도메인마다 `IFarmProvider`, `ICookProvider`, `IWhateverProvider`를 계속 만드는 구조는 기본 방향이 아니다.
-
-### 3.4 Unity 오브젝트와 순수 규칙을 분리한다
-
-MonoBehaviour는 씬 참조, lifecycle, 물리, Transform처럼 Unity가 소유하는 책임을 담당한다. 계산과 런타임 상태는 가능한 한 plain C# 타입에 둔다.
-
-- `WorkerNPC`, `NPCComponent`, selector, manager, provider는 현재 MonoBehaviour다.
-- `NPCStat`, `GuardStat`, `DestinationDecider`, action 구현은 plain C# 객체다.
-- Transform이나 Collider 판정은 stat 객체가 소유하지 않는다.
-- 전투 거리 계산은 `CombatRange` utility가 담당한다.
-
-## 4. 생성과 조립
-
-### 4.1 NPC 생성
-
-`NPCManager`는 `NPCType`을 key로 사용하는 `NPCCreationEntry` 목록을 Inspector에서 받는다. 한 row가 selector와 stat definition을 함께 보유하므로 잘못된 역할 조합을 구조적으로 줄인다.
+### 3.2 Action lifecycle
 
 ```text
-Farmer -> FarmerActionSelector + DefaultStatContext
-Guard  -> GuardActionSelector  + GuardStatDefinition
-Cook   -> 현재 등록 정책에 따라 selector + DefaultStatContext
+Init -> Start -> Tick* -> Completed | ReplanRequested | Failed
+                         cancellation -> Stop
+Return -> Clear -> pool
 ```
 
-생성 과정은 다음 순서를 따른다.
+- `Completed`: 선택 행동이 정상 완료되어 다음 queue 항목으로 진행한다.
+- `ReplanRequested`: 정상적인 환경 변화로 남은 예측을 버리고 다시 판단한다.
+- `Failed`: 구성 또는 transaction 전제가 깨져 남은 queue를 폐기한다.
+- `Clear()` 뒤에는 이전 actor의 context, timer, target, flag가 없어야 한다.
 
-1. `NPCType`에 맞는 entry를 조회한다.
-2. `NPCStatDefinition.CreateRuntimeStat()`으로 새 runtime stat을 만든다.
-3. selector의 `CanUseStat`으로 역할 호환성을 확인한다.
-4. `WorkerPool`에서 actor를 가져온다.
-5. `WorkerNPC.Init`으로 type, stat, selector를 주입한다.
+세부 구조: [Action Runtime](Systems/NPC_Decision_and_Actions/Action_Runtime.md), [NPC Runtime](Systems/NPC_Runtime.md)
 
-직업은 현재 생성 후 고정이다. runtime 전직과 stat migration은 미구현이다.
+### 3.3 판단
 
-### 4.2 씬 서비스와 registry
+공통 판단은 stat, 현재 위치, destination과 provider option을 입력받고 하나의 semantic decision을 반환한다. role selector는 combat처럼 즉시 처리해야 하는 role 우선순위와 decision-to-queue 변환만 소유한다.
 
-현재 씬에는 다음 조립 요소가 있다.
+세부 구조: [NPC Decision and Actions](Systems/NPC_Decision_and_Actions/README.md)
 
-- `ActionPool`: `ActionType`별 plain C# action 재사용
-- `WorkerPool`: `NPCGirl.prefab` 기반 `WorkerNPC` 재사용
-- `DataManager`: action cost 제공
-- `DestinationDB`: 건물별 위치 조회, provider 조회는 `InteractableManager`에 위임
-- `NPCManager`: NPC 생성과 role composition
-- `InteractableManager`: scene의 `BaseInteractionProvider` 초기화·등록·`(GameObject, ActionType)` 조회 registry
+### 3.4 상호작용과 transaction
 
-`DataManager.instance`는 현재 존재하는 전역 접근점이지만 권장되는 새 의존성 전달 방식은 아니다. 새 코드는 가능하면 serialized reference, 초기화 인자 또는 명시적 context를 사용한다.
+selector는 registry에서 capability를 선택해 request와 함께 action context에 넣는다. provider는 request를 검증하고 domain transaction을 실행한다. 외부 상태와 내부 상태를 함께 변경할 때는 외부 성공을 확인한 뒤 내부 상태를 소모한다.
 
-## 5. Action 실행 모델
+세부 구조: [Interaction and Destinations](Systems/Interaction_and_Destinations.md)
 
-### 5.1 Action lifecycle
+### 3.5 전투
 
-`IAction`의 lifecycle은 다음과 같다.
+물리 감지는 후보만 제공하고 role selector가 target 선택·유지 정책을 결정한다. 선택 target은 actor별 runtime state가 소유하며 이동과 공격 action은 그 handle을 소비한다.
+
+세부 구조: [Combat](Systems/Combat/README.md)
+
+### 3.6 UI
+
+domain은 표시 가능한 read model을 제공하고 UI facade는 category별 view lifecycle을 조정한다. 입력 adapter는 domain concrete type이나 concrete view를 몰라야 한다.
+
+세부 구조: [UI](Systems/UI.md)
+
+## 4. 의존 방향
+
+허용되는 기본 방향:
 
 ```text
-Init(ActionContext)
-  -> Start()
-  -> Tick() 반복
-  -> Result가 Running이 아니면 WorkerNPC가 처리
-  -> Stop() (취소·replan 때)
-  -> ActionPool.ReturnAction()
-  -> Clear()
+Scene composition / Manager
+  -> Actor runtime + Selector
+     -> pure policy / registry / pool
+     -> Action
+        -> Context + capability interface
+Domain runtime -> small UI source contract -> UI facade/view
+ScriptableObject definition -> creates/configures runtime object
 ```
 
-`DefaultAction`은 공통 result와 lifecycle 보조 메서드를 제공한다. `BaseBuildingAction`은 `DefaultAction`을 상속하는 abstract base로, 항상 실내 행동인 Eat/Drink/Sleep이 `Start()`에서 `NPCComponent.SetInsideBuilding(true)`를 호출하고 `Complete`/`ReplanRequested`/`Fail`/`Stop`/`Clear` 모든 정리 경로에서 `SetInsideBuilding(false)`를 호출하게 한다. 내부 활성 플래그로 정리 호출을 멱등하게 만들며, `Clear()`는 context가 지워지기 전에 건물 상태부터 해제한다. Move, Farming, Guard, Attack, Idle은 `DefaultAction`을 직접 상속하며 건물 표현을 갖지 않는다.
-
-- `Completed`: 현재 action만 반환하고 queue의 다음 action을 실행한다.
-- `ReplanRequested`: 현재 action과 남은 queue를 모두 취소·반환하고 새 queue를 요청한다.
-- `Failed`: 현재 action과 남은 queue를 모두 정리한 뒤 새 계획을 요청한다.
-- `Running`: 계속 Tick한다.
-
-`Clear()`는 풀링된 인스턴스의 context, timer, cached interface, target 등 모든 실행 상태를 초기화해야 한다.
-
-### 5.2 Queue 소유권
-
-`WorkerNPC`만 active queue와 current action을 소유한다. selector는 완성된 queue를 반환한 뒤 그 lifecycle을 소유하지 않는다. action은 queue를 직접 교체하지 않고 `ReplanRequested`로 의사를 표현한다.
-
-selector가 action을 빌리는 중 실패하면 이미 빌린 action을 모두 반환해야 한다. 부분적으로 구성된 queue를 실행해서는 안 된다.
-
-### 5.3 ActionContext
-
-`ActionContext`는 해당 action 실행에 필요한 actor 참조와 request/capability를 전달하는 값이다.
-
-현재 공통 값은 다음과 같다.
-
-- `NPCComponent`, `NPCStat`
-- 고정 destination 또는 `MoveRequest`
-- `DefaultActionCost`
-- `IInteractionProvider`, `InteractionRequest`
-
-Eat/Drink/Farming 모두 같은 `IInteractionProvider` + `InteractionRequest` 경로 하나만 사용한다. domain별 provider 필드는 없다. `ActionContext`에 역할별 nullable provider를 계속 추가하면 service locator와 유사한 dependency bag이 되므로 금지한다.
-
-## 6. 판단 모델
-
-### 6.1 Selector의 역할
-
-`BaseNPCActionSelector`는 action 대여/반환과 공통 queue 보조 로직을 제공한다. 역할 selector가 우선순위와 queue 구성을 담당한다.
-
-`FarmerActionSelector`의 현재 흐름:
-
-1. `DestinationDecider.Decide`로 Work/Eat/Drink/Sleep/Idle 중 하나를 얻는다.
-2. 목적지가 있으면 Move를 앞에 둔다.
-3. 결정의 `RepeatCount`만큼 semantic action을 queue에 넣는다.
-4. 농사 provider가 유효하지 않으면 현재는 Idle로 낮춘다.
-
-`GuardActionSelector`의 현재 흐름:
-
-1. 유효한 감지 대상이 있으면 combat queue를 최우선으로 만든다.
-2. 그렇지 않으면 매 replan마다 utility decider를 호출한다.
-3. 보급 intent면 Move + 공급 action을 만든다.
-4. 높은 욕구인데 공급 행동을 만들 수 없으면 짧은 Idle로 replan spin을 막는다.
-5. 그 외에는 Guard queue를 만든다.
-
-### 6.2 DestinationDecider
-
-`DestinationDecider`는 stat과 현재 위치, 역할별 work cost를 입력받아 `NPCDecision` 하나를 반환하는 plain C# 정책 객체다. action을 만들거나 stat을 변경하지 않는다.
-
-현재 모델은 다음 특성을 가진다.
-
-- Idle, 공급, FarmerWork, GuardDuty 후보를 같은 점수 공간에서 비교
-- 비선형 need/health 위험 곡선
-- 이동 시간, 행동 시간, 위험 노출, 역할 보상 반영
-- 깊이 1~3의 bounded look-ahead
-- critical need에서 역할 행동을 막는 안전 tier
-- 점수 동률 시 고정 순서로 결정하는 deterministic tie-break
-- 한 번의 공급 행동만 반환하고 실제 stat과 위치로 다시 판단
-
-예측된 미래 행동을 미리 queue에 넣지 않는다. 예측 시간은 runtime action 시간의 권위 있는 값이 아니라 utility 계산용 추정치다.
-
-현재 `NPCIntent`에는 Guard 전용 intent가 없다. decider의 plain Idle과 GuardDuty가 모두 비-공급 결과로 selector에 전달되어 동일한 Guard queue로 매핑될 수 있다. 이는 현재 알려진 의미 표현 한계이며, 문서상 의도적인 영구 계약으로 확대하지 않는다.
-
-## 7. Stat 구조
-
-```text
-IStatView
-  <- NPCStat
-       <- GuardStat implements IGuardStatView
-
-ICombatStatView
-  <- IGuardStatView
-```
-
-`NPCStat`은 모든 NPC가 실제로 가지는 체력, 이동 속도, 피로, 배고픔, 갈증을 소유하고 자체 invariant를 clamp한다. `GuardStat`은 전투 능력치와 순찰 반경을 추가한다.
-
-`ICombatStatView`가 `IStatView`를 상속하지 않는 이유는 공격 실행 코드가 생활 욕구와 체력을 필요로 하지 않기 때문이다. 인터페이스 상속은 객체의 계보가 아니라 소비자가 요구하는 계약을 기준으로 결정한다.
-
-role별 stat subclass는 실제 role 데이터가 생길 때 만든다. 아직 전용 능력치가 없는 Farmer를 위해 빈 `FarmStat`을 만들지 않는다.
-
-## 8. 목적지와 상호작용
-
-### 8.1 현재 구현
-
-`IInteractionProvider`는 Eat, Drink, Farming이 공유하는 공통 실행 프로토콜이다.
-
-```text
-Supports(ActionType)
-CanInteract(ActionType)
-AppendOptions(ActionType, buffer)
-TryInteract(InteractionRequest, out InteractionResult)
-```
-
-- `Supports`는 구조적 capability(초기화 상태와 무관), `CanInteract`는 `Supports && 현재 operational` 의미다.
-- `InteractionRequest`는 `ActionType + OptionId(기본값 없음, item ID 등 안정적 식별자) + Strength(실행 강도, 기본 1)`를 가진다.
-- `InteractionResult`는 `ActorEffect` 하나만 노출한다. 성공 여부는 `TryInteract`의 반환값 하나로만 표현하고, `InteractionResult.Success` 같은 별도 필드는 없다.
-- 농경지 게이지, item catalogue 같은 도메인 상태는 `InteractionResult`에 담기지 않고 concrete provider(`FarmWorkSite`, `Pub`)가 자신의 read-only property로 노출한다.
-
-`BaseInteractionProvider`(`Assets/Scripts/Actor/BaseInteractionProvider.cs`)가 idempotent 초기화 lifecycle, `Supports`/`CanInteract`/`AppendOptions`/`TryInteract`의 공통 validation과 실패 처리, protected core method로의 dispatch를 소유한다. `Pub`와 `FarmWorkSite`는 이 base를 상속해 각자 `SupportsCore`/`TryInitializeCore`/`AppendOptionsCore`/`TryInteractCore`만 구현한다.
-
-### 8.2 Provider 조회 경로
-
-```text
-DestinationDB.TryGetInteractionProvider(BuildingType, ActionType, out IInteractionProvider)
-  -> BuildingType으로 DestinationInfo.DestinationObject를 찾는다
-  -> InteractableManager.TryGetInteractionProvider(DestinationObject, ActionType, out provider)로 위임
-```
-
-`InteractableManager`는 `BaseInteractionProvider[] _interactables`를 명시적 등록 목록으로 갖고, `(GameObject owner, ActionType)` -> provider component cache를 소유한다. 초기화 시 각 provider의 `TryInitialize`를 한 번 호출하고, 안정적인 `Supports(type)`로 cache key를 구성한다. 조회 성공 조건은 cache entry 존재 + backing component가 destroyed되지 않음 + `CanInteract(type)`이 현재 true. 같은 `(GameObject, ActionType)`에 provider가 둘 이상 등록되면 오류를 한 번 로그하고 `_interactables` 배열에서 먼저 나온 provider만 유지한다.
-
-`DestinationDB`는 `BuildingType -> DestinationObject` 매핑만 소유하며 provider component를 직접 scan하거나 cache하지 않는다. domain별 provider dictionary(`TryGetFarmWorkProvider` 같은)는 없다. 한 destination `GameObject`에 서로 다른 `ActionType`을 지원하는 여러 provider component가 함께 존재할 수 있다(Pub는 Eat과 Drink를 한 component로 함께 지원).
-
-건물 출입 표현은 목적지 metadata가 아니라 action 종류가 결정한다. Eat, Drink, Sleep은 항상 실내 행동이므로 `BaseBuildingAction`을 상속하며, 이 base의 lifecycle이 시작·완료·실패·취소 경계에서 `NPCComponent.SetInsideBuilding`을 호출한다. 이 표현은 action 시간을 막거나 transaction 시점을 변경하지 않는다. `DestinationDB`/`ActionContext`는 이 표현과 무관하며 목적지 배선만 담당한다.
-
-Farmer의 호미(도구) 표현은 건물 표현과 다른 성격을 가진다 — 존재/부재를 토글하는 것이 아니라 항상 보이되 두 상태(캐리/작업) 사이만 전환된다. `NPCGirl.prefab`의 `Visual` 아래 `Hoe` child가 이를 담당하며, `NPCComponent.SetToolVisible(bool)`이 표시 여부를, `NPCComponent.SetWorking(bool)`이 Animator의 `IsWorking` bool을 통해 두 번째 Animator layer(`Tool`, `ToolCarry`/`ToolWork` state)의 모션 전환을 담당한다. 표시 여부는 spawn 시 `WorkerNPC.Init`이 role(`NPCType.Farmer`)로 결정하고, 모션 전환은 `FarmingAction`의 lifecycle이 결정한다(시작 시 on, `Complete`/`ReplanRequested`/`Fail`/`Stop`/`Clear` 모든 경로에서 off — `BaseBuildingAction`과 같은 idempotent latch를 인라인으로 사용하되, 소비자가 하나뿐이라 별도 abstract base로 추출하지 않았다). "착!" 타이밍은 실제 게임 tick과 동기화하지 않는 단순 반복 루프다. 현재는 Farmer + 호미로 범위가 제한되어 있으며, Guard 등 다른 role/도구는 `WorkerNPC.Init`의 gate를 확장하는 시점에 추가한다.
-
-## 9. 전투와 감지
-
-전투 감지·타겟팅 파이프라인은 role에 종속되지 않는 공용 컴포넌트로 구성된다(IMP-035에서 `GuardPerception`/`GuardRuntimeState`를 `CombatPerception`/`CombatRuntimeState`로 rename — Enemy가 두 번째 실사용자가 되면서 이름이 실제 책임과 맞도록 정리했다).
-
-```text
-CircleCollider2D trigger
-  -> ProximitySensor2D: layer 기반 collider 감지
-  -> CombatPerception: ICombatTarget 변환·중복 제거
-  -> (Guard/Enemy) ActionSelector: 현재 후보 중 target 선택
-  -> CombatRuntimeState: per-NPC target handle 보관
-  -> MoveAction(dynamic target) / AttackAction 실행
-```
-
-- `CombatPerception`은 대상을 선택하지 않는다.
-- selector가 전투 우선순위와 target 선택을 담당한다. 최근접 탐색 알고리즘 자체는 `CombatTargeting.TryFindNearestTarget`(순수 함수, 2D 거리, 상태를 바꾸지 않음)으로 추출돼 있고 `runtimeState.SetTarget(...)`은 호출한 selector가 한다.
-- `CombatTargetHandle`은 interface와 Unity object 생존 확인을 함께 보존한다.
-- `AttackAction`은 `ICombatStatView`만 요구한다.
-- 공격 범위를 벗어나면 target을 버리지 않고 replan하여 추격 queue를 다시 만든다(Guard의 sticky 정책 — melee Enemy도 동일).
-- 현재 감지 범위는 각 actor prefab의 Sensor `CircleCollider2D.radius`에 저장되어 있으며 stat과 동기화되지 않는다.
-
-`PatrolArea` GameObject는 `GuardTest.unity`에 존재하지만 사각 영역 순찰 데이터 전달은 아직 구현되지 않았다. 현재 `GuardAction`은 `GuardStat.GuardRadius`로 계산한 결정적 원형 순찰점을 돈다.
-
-### 9.1 Enemy 전투 AI (IMP-035)
-
-Enemy는 Farmer/Guard와 같은 `WorkerNPC` + selector 아키텍처를 쓰지만 **본능이 없다** — `DestinationDecider`도 `DestinationDB`도 참조하지 않고, 오직 `CombatPerception`에만 반응한다. 대상이 없으면 항상 Idle이다.
-
-`EnemyActionSelector`는 `GuardActionSelector`처럼 씬 레벨 공용 컴포넌트다(Enemy prefab에는 붙지 않는다 — prefab은 씬의 `ActionPool`을 직접 참조할 수 없다). `IEnemyStatView.Style`(`AttackStyle.Melee`/`Ranged`)로 행동이 갈린다:
-
-- **Melee**: Guard의 전투 큐와 동일한 모양(sticky target, 사거리 밖이면 `Move`+`Attack`, 안이면 `Attack`만).
-- **Ranged**: 절대 접근하지 않는다("비추격 원거리형"). 매 replan마다 sticky 없이 새로 스캔하고, `AttackRange` 안에 있는 후보만 대상으로 삼는다. 사거리 밖으로 나가면 target을 놓고 Idle로 돌아간다(추격하지 않음).
-
-`AttackAction`은 수정 없이(rename만 반영) 재사용한다.
-
-Enemy 자신의 체력은 `EnemyStat`(`NPCStat` 파생) 하나가 유일한 원본이다. `Enemy`(`Assets/Scripts/Actor/Enemy.cs`)는 `ICombatTarget` 어댑터로만 남아 `EnemyStat`을 참조하며 자체 체력 필드를 갖지 않는다 — 스포너가 같은 `EnemyStat` 인스턴스를 `Enemy.Init(stat)`과 `WorkerNPC.Init(NPCType.Enemy, stat, selector)` 양쪽에 넘긴다.
-
-**Farmer/Guard는 아직 공격 대상이 아니다.** 주민 사망/전투불능 정책(`PublicMD/Game_Plan.md` GD-008)이 미결정이라 `NPCComponent`는 `ICombatTarget`을 구현하지 않는다. Enemy AI 검증은 `Assets/TestOnly/CombatTestDummy.cs`(`"Friendly"` layer)로 한다 — GD-008이 정해지면 실제 대상으로 교체될 잠정 스탠드인이다. `Assets/TestOnly/TestEnemyRainSpawner.cs`는 여전히 TestOnly Play Mode 검증 도구이며, 실제 프로덕션 스폰 경로(웨이브 매니저 등)는 아직 없다.
-
-## 10. 농경지와 창고
-
-농경지 기능은 현재 작업 중인 vertical slice다.
-
-```text
-FarmingAction 완료
-  -> IInteractionProvider.TryInteract(InteractionRequest(Farming, strength: 1f))
-  -> FarmWorkSite
-       Growing: progress 증가, max에서 Harvesting 전환
-       Harvesting: 수확량 생성 -> IInventory.TryAdd -> 성공 시 progress 감소
-  -> WarehouseInventory 수량 증가
-```
-
-`FarmWorkSite`는 `BaseInteractionProvider`를 상속해 `ActionType.Farming`만 지원하는 `IInteractionProvider`다. `AppendOptions`는 base의 기본 empty 구현을 그대로 쓴다(Farming은 선택 가능한 option이 없는 interaction). `Strength`는 현재 worker efficiency로 사용되며 항상 1이다(향후 Farmer 숙련도 seam).
-
-현재 invariant:
-
-- 완료한 Farming action 하나가 work 한 번을 적용한다.
-- Growing에서 max에 도달한 같은 work가 수확까지 동시에 수행하지 않는다.
-- 창고가 전체 수량을 받지 못하면 수확 게이지를 줄이지 않는다.
-- 생산 정의는 `FarmProductionDefinition`, runtime phase/progress는 `FarmWorkSite`가 소유한다.
-- 난수는 `SeededRandomSource`를 통해 결정적으로 생성한다.
-
-현재 직접 farm→warehouse 적재는 운반 시스템 전의 임시 수직 슬라이스다. 운반·용량·예약·저장/불러오기·숙련도 반영은 미구현이다.
-
-## 10.5 UI 기본 라우팅
-
-```text
-PointerHoverRouter (world pointer adapter)
-  -> Physics2D.OverlapPoint(world pointer, hoverable layer mask)
-  -> hit GameObject의 IHoverInfoSource (TryGetComponent)
-  -> IUIService.TryShow(source.HoverType, source) / TryHide(...)
-  -> UIManager
-       PopupType -> PopBase registry -> popup open/close stack
-       HoverType + IHoverInfoSource -> HoverBase registry -> current hover
-```
-
-`UIManager`는 외부 facade이자 popup/hover category coordinator다. 개별 화면의 Text, gauge, animation, domain formatting은 알지 않으며 `PopBase[]`와 `HoverBase[]` 두 serialized registry만 dictionary로 변환한다. `PopBase`는 popup open/close hook을, `HoverBase`는 현재 source의 소유권과 주기적 `HoverInfo` 갱신을 소유한다. 다른 source의 종료 요청이 현재 hover를 닫지 않도록 source identity를 확인한다.
-
-게임 도메인 component는 concrete UI view나 `UIManager`를 직접 참조하지 않는다. `FarmWorkSite`처럼 hover 가능한 도메인 component가 `IHoverInfoSource`를 직접 구현해 `HoverInfo`와 `HoverType`을 스스로 노출하고, `IUIService`에 표시 의도를 전달하는 것은 `PointerHoverRouter`(`Assets/Scripts/UI/PointerHoverRouter.cs`)의 책임이다.
-
-`IHoverInfoSource`는 `HoverType`을 스스로 선언한다. 이 값이 없으면 pointer adapter가 "이 오브젝트는 어떤 hover 창으로 보여줘야 하는가"를 판단하기 위해 도메인 타입별로 분기해야 하고, 그 순간 adapter는 도메인을 알게 된다. source가 `HoverType`을 노출하면 adapter는 `IHoverInfoSource`/`IUIService`/`HoverType`/`Collider2D`/`Camera`만 알면 되고, 어떤 concrete 도메인 타입도 참조하지 않는다.
-
-`PointerHoverRouter`는 마우스 아래 대상이 바뀌었을 때만 `TryGetComponent<IHoverInfoSource>`를 호출한다(hot path에서 반복 `GetComponent` 금지, `CodeConvention.md` §12.3). **`Collider2D`와 `IHoverInfoSource`는 반드시 같은 GameObject에 있어야 한다** — `TryGetComponent`가 hit GameObject 자신만 조회하기 때문이다. 자식 collider 구조가 필요해지면 `GetComponentInParent` 확장이 필요하다.
-
-Layer(`Hoverable`, `TagManager.asset` 인덱스 7)는 레이캐스트 후보를 줄이는 필터로만 쓴다. "이게 hover 가능한가"의 실제 판단은 `IHoverInfoSource` 구현 여부이며, Layer나 Tag로 그 판단을 대신하지 않는다.
-
-popup이 열려 있을 때 hover 표시를 차단하는 정책은 아직 없다 — `PopupType`에 `None`뿐이라 concrete popup이 없기 때문이다. 나중에 추가할 때는 "UIManager가 hover 후보를 보관했다가 popup 종료 시 복구" 또는 "UIManager가 hover 허용 상태 변경 이벤트 제공" 중 하나를 선택해야 한다.
-
-제한 사항: `Physics2D.OverlapPoint`는 여러 collider가 겹칠 때 sprite sorting order가 아니라 Unity 내부 기준(가장 낮은 Z)으로 하나만 반환한다. 겹치는 hover 대상 사이의 우선순위는 아직 지원하지 않는다.
-
-## 11. 난수와 재현성
-
-게임플레이 결과에 영향을 주는 난수는 `UnityEngine.Random`을 직접 사용하지 않고 `IRandomSource`를 통해 공급한다. 현재 `SeededRandomSource`는 `System.Random`과 serialized seed를 사용한다.
-
-`DestinationDecider`는 난수를 사용하지 않고 고정 tie-break를 적용한다. 같은 stat, 위치, scene data, tuning에는 같은 결정을 반환해야 한다.
-
-`Assets/TestOnly/TestEnemyRainSpawner.cs`는 개발 전용 시각 테스트 도구이므로 `UnityEngine.Random` 사용 예외다. 이 예외를 production gameplay 코드로 복사하지 않는다.
-
-## 12. 의존 방향
-
-허용되는 주 의존 방향은 다음과 같다.
-
-```text
-Manager / Scene composition
-  -> selector / pool / definition / scene provider
-
-WorkerNPC
-  -> selector + IAction + NPCComponent + NPCStat
-
-selector
-  -> decider + destination lookup + action pool + request/context
-
-action
-  -> ActionContext 안의 명시적 capability + stat/component
-
-provider
-  -> 자신의 definition + 자신의 runtime state + 좁은 외부 capability
-
-plain runtime/data types
-  -X-> scene manager lookup
-```
-
-금지하는 방향:
-
-- `NPCStat`이 selector, destination, manager 또는 Transform을 참조
-- action이 `Find*`, singleton, scene registry로 의존성을 직접 찾음
-- provider가 selector나 `WorkerNPC`의 다음 계획을 결정
-- `DestinationDecider`가 action을 생성하거나 runtime stat을 변경
-- `ActionContext`에 모든 서비스와 모든 역할 전용 provider를 누적
-- shared ScriptableObject에 per-NPC 또는 per-facility runtime 값을 기록
-
-## 13. 실패와 안전성
-
-- 필수 serialized reference가 없으면 `Awake`/`Start` 경계에서 원인을 한 번 명확히 로그한다.
-- action 시작 전제 실패는 `Failed`로 종료하고 stat 또는 시설 상태를 부분 변경하지 않는다.
-- 재판단이 필요한 정상 상황은 `ReplanRequested`를 사용한다.
-- 시설 transaction은 외부 저장 성공과 내부 상태 변경 순서를 명시해야 한다.
-- pooled action은 성공·실패·중단 경로 모두에서 반환 가능해야 한다.
-- Unity object를 interface로 보관할 때 destroyed-object의 fake null을 고려한다.
-- fallback은 crash와 frame-by-frame replan spin을 막아야 하며, 조용히 잘못된 역할 행동을 수행하게 해서는 안 된다.
-
-## 14. 현재 씬과 검증 경계
-
-`SampleScene.unity`는 Farmer 중심 기본 실행 환경이고, `GuardTest.unity`는 Guard selector, 적, PatrolArea, 전투/utility 테스트 도구를 포함한다. `NPCGirl.prefab`은 Farmer와 Guard가 공유하는 actor prefab이며 optional Guard 감지 구성과 `NPCGirl_Move.controller` Animator 연결을 포함한다. Animator의 `Speed`는 `NPCComponent.Move` 호출에서 파생되고, `IsInsideBuilding`은 `BaseBuildingAction` lifecycle(Eat/Drink/Sleep)에서 파생된다.
-
-프로젝트에는 `.asmdef`가 없다. 따라서 모든 runtime/TestOnly 스크립트가 기본 `Assembly-CSharp`에 들어간다. `TestDecisionScenarioProbe`, `TestFarmProductionWindow`, `TestNPCSpawnWindow`, `TestEnemyRainSpawner`는 자동화된 Unity Test Framework 테스트가 아니라 개발용 Play Mode 도구다.
-
-문서나 command-line build 통과만으로 다음을 검증했다고 주장하지 않는다.
-
-- scene serialized reference의 실제 연결
-- collider/layer/trigger 설정
-- Play Mode에서 queue와 animation/이동의 시간 흐름
-- pooling 후 두 번째 spawn의 runtime reset
-- 실제 농경지와 창고의 반복 cycle
-
-## 15. 알려진 구조 부채와 다음 경계
-
-우선순위가 높은 구조 부채:
-
-1. action 내부 하드코딩 지속시간과 `NPCDecisionTuning`의 예측 시간을 단일 정의로 맞춘다.
-2. GuardDuty와 plain Idle을 `NPCDecision`에서 구별할 필요가 있는지 결정한다.
-3. 감지 범위와 향후 성장 stat의 동기화 책임을 정한다.
-4. `DataManager.instance` 전역 접근을 명시적 조립으로 점진적으로 대체한다.
-5. production 코드와 `TestOnly` 코드를 assembly definition으로 격리할지 결정한다.
-6. `Pub`(및 향후 Cook/Shop 등)이 `[SerializeField] ItemDataContext`를 각자 직접 참조하는 현재 방식은 시설마다 Inspector에 같은 asset을 반복 배선해야 하고, 서로 다른 asset을 잘못 물리는 참조 drift를 구조적으로 막지 못한다. 매니저 주입으로 되돌리는 것은 `InteractableManager`의 domain 무지 원칙을 다시 깨므로 피한다. 검토할 대안: (a) `Reset()`에서 `AssetDatabase.FindAssets`로 프로젝트에 하나뿐인 asset을 자동 채우는 editor-only 편의 기능(명시적 `SerializeField`는 유지, override 가능), (b) `ItemDataContext`에 static self-reference singleton을 둬 `SerializeField` 자체를 없애는 방법(단, `DataManager.instance`와 같은 전역 접근점 계열이므로 이 asset이 앞으로도 프로젝트에 항상 정확히 하나임이 보장될 때만 고려). 2026-08-22 사용자 논의, 아직 미결정·미구현.
-
-`IInteractionProvider`/`IFarmWorkProvider` 통합(Eat/Drink/Farming 공통 프로토콜)과 `BaseInteractable`의 item table 책임 분리는 2026-08-22 `PublicMD/InteractionProvider_Unification_Plan.md` 구현으로 완료되었다.
-
-아직 구현되지 않은 모집, 상인, 치료, 정식 물류, 직업 성장, 저장/불러오기와 concrete UI 화면은 `Game_Plan.md`와 `PLAN.md`에서 관리한다. 해당 시스템이 생기기 전에는 이 문서에 가상의 class/API를 현재 구조처럼 기록하지 않는다.
+피해야 하는 역방향:
+
+- action -> manager·selector·scene search
+- provider -> actor root·role selector
+- UI view -> gameplay mutation과 domain search
+- definition asset -> per-instance mutable state
+- actor root -> role별 utility와 facility transaction
+- TestOnly -> production gameplay dependency
+
+## 5. 실패와 안전성
+
+- 필수 dependency 누락은 초기화 경계에서 한 번 진단하고 안전하게 실행을 거부한다.
+- 정상 gameplay 변화와 구성 오류를 같은 결과로 숨기지 않는다.
+- 여러 action을 대여하는 queue 구성은 원자적이어야 한다.
+- 외부 transaction 반환값을 확인하기 전에 내부 자원을 소모하지 않는다.
+- pooled object는 첫 실행뿐 아니라 반환 후 두 번째 실행까지 같은 불변식을 만족해야 한다.
+- 반복 오류 로그는 frame마다 출력하지 않고 초기화 검증이나 latch를 사용한다.
+
+## 6. 결정성과 시간
+
+- production gameplay 난수는 주입된 `IRandomSource`를 사용한다.
+- 같은 seed와 호출 순서는 같은 결과를 내야 한다.
+- runtime duration과 decision prediction duration은 의미를 구분한다.
+- 동일 의미의 tuning을 selector, action과 asset에 중복 저장하지 않는다.
+
+## 7. Unity와 직렬화 경계
+
+- scene dependency는 serialized reference 또는 명시적 init으로 조립한다.
+- enum은 Unity YAML에 정수로 저장되므로 재정렬·중간 삽입 시 migration이 필요하다.
+- script·asset 이동 시 `.meta` GUID를 보존한다.
+- pooled GameObject는 enable/disable 반복을 전제로 subscription과 runtime state를 정리한다.
+- scene·prefab·controller 상세 배선은 해당 Systems 문서가 유일하게 소유한다.
+
+## 8. 현재 구조 부채
+
+- production과 TestOnly assembly가 분리되지 않았다.
+- Worker pool의 active actor 제거·despawn lifecycle이 완성되지 않았다.
+- prefab catalog와 기존 단일 worker pool이 아직 하나의 생성 경로로 통합되지 않았다.
+- NPC의 일반 combat target 정책과 Enemy production spawn 경로가 미결정이다.
+- 씨앗 선택을 포함한 농장 생산 대상 변경 규칙이 미결정이다.
+
+세부 상태와 변경 위치는 각 Systems 문서의 `알려진 제약과 TBD`를 따른다.
+
+## 9. 구조 변경 시 갱신 규칙
+
+- 한 기능 내부 구현 변경: 해당 leaf 문서만 갱신한다.
+- 기능 간 책임·의존 방향 변경: 이 문서와 관련 leaf 문서를 함께 갱신한다.
+- 새 시스템 추가: `ProjectStructure.md` 라우팅과 `Systems/README.md`를 갱신한다.
+- 세부 기능이 4개 이상이 된 영역: 폴더형 인덱스로 분할한다.
