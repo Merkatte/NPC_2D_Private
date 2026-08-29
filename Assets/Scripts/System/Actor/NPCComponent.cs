@@ -7,14 +7,14 @@ public class NPCComponent : MonoBehaviour
     private static readonly int IsInsideBuildingParameterHash = Animator.StringToHash("IsInsideBuilding");
     private static readonly int IsWorkingParameterHash = Animator.StringToHash("IsWorking");
     private static readonly int IdleStateHash = Animator.StringToHash("Idle");
+    private static readonly Vector3 FacingRight = new Vector3(-1, 1, 1);
+    private static readonly Vector3 FacingLeft = new Vector3(1, 1, 1);
 
     [SerializeField] private Transform _transform;
     [SerializeField] private Animator _animator;
     [SerializeField] private GameObject _gameObject;
-    [SerializeField] private SpriteRenderer _spriteRenderer;
     [SerializeField] [FormerlySerializedAs("_guardPerception")] private CombatPerception _combatPerception;
     [SerializeField] private SpriteRenderer _toolRenderer;
-    [SerializeField] private Transform _toolAnchor;
 
     // Farmer/Guard require a fully-parameterized Animator (Speed/IsInsideBuilding/IsWorking) and
     // CacheAnimatorParameters logs loudly if any is missing. Roles without art yet (e.g. Enemy)
@@ -82,16 +82,9 @@ public class NPCComponent : MonoBehaviour
         _movedThisFrame |= displacement.sqrMagnitude > 0f;
     }
 
-    public void Flip(bool isRight)
+    public void Flip(bool isLeft)
     {
-        _spriteRenderer.flipX = isRight;
-
-        if (_toolAnchor)
-        {
-            Vector3 anchorScale = _toolAnchor.localScale;
-            anchorScale.x = isRight ? -Mathf.Abs(anchorScale.x) : Mathf.Abs(anchorScale.x);
-            _toolAnchor.localScale = anchorScale;
-        }
+        _transform.localScale = isLeft ? FacingLeft : FacingRight;
     }
 
     public void SetInsideBuilding(bool isInsideBuilding)

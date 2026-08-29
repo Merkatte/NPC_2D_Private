@@ -66,10 +66,9 @@ MonoBehaviour:
   _transform: {fileID: 8897052129786213200}
   _animator: {fileID: 6100000000000000003}
   _gameObject: {fileID: 707006814188362246}
-  _spriteRenderer: {fileID: 1088676394719337693}
   _combatPerception: {fileID: 1174116944258746633}
   _toolRenderer: {fileID: 605568054530221740}
-  _toolAnchor: {fileID: 636310529330828333}
+  _requiresAnimator: 1
 --- !u!114 &1174116944258746633
 MonoBehaviour:
   m_ObjectHideFlags: 0
