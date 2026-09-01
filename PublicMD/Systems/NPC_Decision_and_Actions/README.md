@@ -46,7 +46,7 @@ NPC Runtime -> 완성된 queue를 소비
 
 ## 외부 기능 연결
 
-- Farmer의 농사 실행: [Farming](../Farming.md)
+- Farmer의 농사 실행: [Farming](../Farming/README.md)
 - Guard·Enemy의 role 우선순위와 전투 queue: [Combat](../Combat/README.md)
 - 목적지와 provider: [Interaction and Destinations](../Interaction_and_Destinations.md)
 - queue 소비: [NPC Runtime](../NPC_Runtime.md)

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -16,7 +17,7 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
 
     // Set once a yield has been rolled for the current harvest attempt and cleared only after the
     // inventory accepts it in full. Keeps a rejected deposit from silently reshuffling the
-    // deterministic random stream (see Farming.md invariants).
+    // deterministic random stream (see Farming/Runtime_and_Transactions.md invariants).
     private int _pendingYield = -1;
 
     public FarmProductionDefinition CurrentDefinition => _currentDefinition;
@@ -28,8 +29,10 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
     public float MaxProgress => _currentDefinition ? _currentDefinition.MaxProgress : 0f;
     public float NormalizedProgress => MaxProgress <= 0f ? 0f : Mathf.Clamp01(_currentProgress / MaxProgress);
 
-    public Object Owner => this;
+    public UnityEngine.Object Owner => this;
     public HoverType HoverType => HoverType.FarmStatus;
+
+    public event Action StateChanged;
 
     public bool TryGetHoverInfo(out HoverInfo info)
     {
@@ -76,6 +79,7 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
         _pendingYield = -1;
 
         failureReason = null;
+        StateChanged?.Invoke();
         return true;
     }
 
@@ -115,9 +119,14 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
         result = default;
         float workerEfficiency = request.Strength;
 
-        return _phase == FarmWorkPhase.Growing
+        bool succeeded = _phase == FarmWorkPhase.Growing
             ? ApplyGrowingWork(workerEfficiency)
             : ApplyHarvestingWork(workerEfficiency);
+
+        if (succeeded)
+            StateChanged?.Invoke();
+
+        return succeeded;
     }
 
     private bool ApplyGrowingWork(float workerEfficiency)
@@ -142,8 +151,11 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
         if (_pendingYield < 0)
             _pendingYield = _randomSource.NextInclusive(_currentDefinition.MinimumYield, _currentDefinition.MaximumYield);
 
+        FarmProductionDefinition harvestedDefinition = _currentDefinition;
+        int outputItemId = harvestedDefinition.OutputItemId;
+        float maxProgress = harvestedDefinition.MaxProgress;
         int yield = _pendingYield;
-        bool accepted = _outputInventory.TryAdd(_currentDefinition.OutputItemId, yield, out int acceptedQuantity);
+        bool accepted = _outputInventory.TryAdd(outputItemId, yield, out int acceptedQuantity);
 
         // A partial accept already banked real quantity in the inventory. Shrink the pending yield
         // by what landed so a retry only asks for the remainder instead of re-requesting the full
@@ -163,15 +175,19 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
         _pendingYield = -1;
 
         float previousProgress = _currentProgress;
-        float delta = _currentDefinition.HarvestProgressPerWork * workerEfficiency;
+        float delta = harvestedDefinition.HarvestProgressPerWork * workerEfficiency;
         _currentProgress = Mathf.Max(0f, _currentProgress - delta);
+        float normalizedProgress = maxProgress <= 0f ? 0f : Mathf.Clamp01(_currentProgress / maxProgress);
 
         if (_currentProgress <= 0f)
+        {
             _phase = FarmWorkPhase.Growing;
+            _currentDefinition = null;
+        }
 
         Debug.Log(
-            $"FarmWorkSite '{name}': harvest gauge {previousProgress:F1} -> {_currentProgress:F1} / {MaxProgress:F1} " +
-            $"({NormalizedProgress:P0}), stored item {_currentDefinition.OutputItemId} x{yield}, phase={_phase}.",
+            $"FarmWorkSite '{name}': harvest gauge {previousProgress:F1} -> {_currentProgress:F1} / {maxProgress:F1} " +
+            $"({normalizedProgress:P0}), stored item {outputItemId} x{yield}, phase={_phase}, hasCrop={HasCrop}.",
             this);
 
         return true;

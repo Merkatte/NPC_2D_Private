@@ -29,7 +29,7 @@ public class CropCatalog : ScriptableObject
     }
 
     // itemDataContext is required so output items are cross-checked against real item data, not
-    // just structurally validated (see PublicMD/Systems/Farming.md invariants).
+    // just structurally validated (see PublicMD/Systems/Farming/Definition_and_Catalog.md invariants).
     public bool TryValidate(ItemDataContext itemDataContext, out string failureReason)
     {
         if (_definitions == null)

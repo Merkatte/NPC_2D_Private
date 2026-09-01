@@ -16,6 +16,7 @@
 ## 전체 흐름
 
 ```text
+CombatTarget(ICombatTarget) <- IHealthState
 ProximitySensor2D -> CombatPerception -> target candidates
 role selector -> CombatTargeting -> CombatRuntimeState
   -> target이 멀면 MoveAction(dynamic CombatTargetHandle)
@@ -39,6 +40,7 @@ Movement -> 동적 target 추적
 - perception은 후보만 관리하며 선택된 target을 소유하지 않는다.
 - 선택된 target은 actor별 `CombatRuntimeState`가 소유한다.
 - target interface의 Unity 생존성은 backing `Component`와 함께 검증한다.
+- 범용 `CombatTarget`은 target 가능·무적 상태를 소유하고 실제 health mutation은 주입된 `IHealthState`에 위임한다.
 - 거리와 nearest 계산은 2D 기준으로 일치시킨다.
 - role selector가 target 교체·유지 정책을 결정하고 공통 targeting helper는 상태를 mutation하지 않는다.
 

@@ -41,8 +41,8 @@
 
 | 순서 | 단계 | 핵심 결과 | 요구사항 | 상태 |
 |---|---|---|---|---|
-| S-01 | Seed Phase 1 — 기본 기능과 데이터 | 선택한 crop에 따라 결과물·요구치·수확량이 달라짐 | `REQ-F-053`~`REQ-F-056`, `REQ-D-016` | implementation complete / verification pending |
-| S-02 | Seed Phase 2 — 작물 실제 표현 | 성장 단계 sprite·idle·성장 transition·수확 소멸 표현 | `REQ-F-057`~`REQ-F-059` | 승인 대기 |
+| S-01 | Seed Phase 1 — 기본 기능과 데이터 | 선택한 crop에 따라 결과물·요구치·수확량이 달라짐 | `REQ-F-053`~`REQ-F-056`, `REQ-D-016` | completed |
+| S-02 | Seed Phase 2 — 작물 실제 표현 | 성장 단계 sprite·idle·성장 transition·수확 소멸 표현 | `REQ-F-057`~`REQ-F-059` | implementation complete / verification pending |
 | S-03 | Seed Phase 3 — 선택 UI와 상호작용 | farm별 씨앗 popup, 선택 mutation, 기존 성장 UI 연동 | `REQ-F-052`, `REQ-F-060` | 승인 대기 |
 | S-04 | 전체 회귀 검증과 문서 종료 | 두 crop·두 farm·실패 transaction·재활성화 시나리오 통과 | 상세 계획 8절 | 승인 대기 |
 

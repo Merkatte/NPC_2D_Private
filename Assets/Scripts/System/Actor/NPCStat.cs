@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class NPCStat : IStatView
+public class NPCStat : IStatView, IHealthState
 {
     public NPCStat(string name, float health, float healthMax, float moveSpeed,
         float fatigue, float hunger, float thirst, float fatigueMax, float hungerMax, float thirstMax)
@@ -35,6 +35,7 @@ public class NPCStat : IStatView
     public float GetCurrentHealth => _health;
     public float GetMaxHealth => _healthMax;
     public float GetMoveSpeed => _moveSpeed;
+    public float CurrentHealth => _health;
 
     public float GetFatigue => _fatigue;
     public float GetHunger => _hunger;

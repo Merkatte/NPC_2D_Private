@@ -25,7 +25,7 @@ NPCManager / WorkerPool          생성과 조립
 |---|---|---|
 | NPC 공통 runtime | [NPC Runtime](Systems/NPC_Runtime.md) | queue 소비, 공통 stat, disable/reset |
 | 판단과 action | [NPC Decision and Actions](Systems/NPC_Decision_and_Actions/README.md) | utility, selector, action lifecycle, 이동, 생활 action |
-| 농사 | [Farming](Systems/Farming.md) | 농장 progress, 수확, 생산 definition, 씨앗 선택 |
+| 농사 | [Farming](Systems/Farming/README.md) | 농장 progress, 수확, 생산 definition, 씨앗 선택·작물 표현 |
 | 전투 | [Combat](Systems/Combat/README.md) | 감지, target, 공격, Guard, Enemy |
 | 상호작용과 목적지 | [Interaction and Destinations](Systems/Interaction_and_Destinations.md) | provider, destination, 건물 action |
 | 아이템과 inventory | [Inventory and Items](Systems/Inventory_and_Items.md) | CSV, item data, 창고, cost registry |
@@ -105,7 +105,7 @@ UI input -> IUIService <- domain IHoverInfoSource
 | 새 gameplay 난수 | `IRandomSource`를 주입받는 domain 계산 |
 | 새 popup·hover | category enum, base view 구현, `UIManager` registry |
 | 새 prefab 형태 | `NPCPrefabType`, prefab catalog, pool/spawn 조립 |
-| 새 crop | `FarmProductionDefinition` asset, `CropCatalog` 등록, 결과 item CSV row, [Farming](Systems/Farming.md) |
+| 새 crop | `FarmProductionDefinition` asset, `CropCatalog` 등록, 결과 item CSV row, [Farming](Systems/Farming/README.md) |
 
 구체 절차와 불변 규칙은 표의 대상 기능 문서를 따른다.
 

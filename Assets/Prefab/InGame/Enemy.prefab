@@ -192,7 +192,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6e5d7dce3af29dc4faa4665526de53cf, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Enemy
+  m_EditorClassIdentifier: Assembly-CSharp::CombatTarget
+  _targetPoint: {fileID: 260597803006785775}
+  _targetableOnInitialize: 1
+  _invulnerableOnInitialize: 0
 --- !u!58 &849285006969771076
 CircleCollider2D:
   m_ObjectHideFlags: 0

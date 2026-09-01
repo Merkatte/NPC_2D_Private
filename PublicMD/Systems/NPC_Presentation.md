@@ -66,7 +66,7 @@ WorkerNPC.Init(Farmer) -> SetToolVisible(true)
 
 - [NPC Runtime](NPC_Runtime.md)
 - [Movement](NPC_Decision_and_Actions/Movement.md)
-- [Farming](Farming.md)
+- [Farming](Farming/README.md)
 - [Spawning and Pooling](Spawning_and_Pooling.md)
 
 ## 문서 갱신 조건

@@ -48,7 +48,7 @@ popup은 `PopupType`, hover는 `HoverType`으로 등록한다. `UIManager`는 co
 | 새 popup | `PopupType.cs`, `PopBase.cs`, `UIManager.cs` |
 | 새 hover | `HoverType.cs`, `HoverBase.cs`, `IHoverInfoSource.cs`, `UIManager.cs` |
 | pointer 감지 | `PointerHoverRouter.cs`, source collider와 layer 배선 |
-| 농장 gauge | `FarmGaugeHover.cs`, `HoverInfo.cs`, `Assets/Prefab/UI/FarmGauge.prefab`, [Farming](Farming.md) |
+| 농장 gauge | `FarmGaugeHover.cs`, `HoverInfo.cs`, `Assets/Prefab/UI/FarmGauge.prefab`, [Farming](Farming/README.md) |
 
 ## 불변 규칙
 
@@ -69,7 +69,7 @@ popup은 `PopupType`, hover는 `HoverType`으로 등록한다. `UIManager`는 co
 
 ## 관련 문서
 
-- [Farming](Farming.md)
+- [Farming](Farming/README.md)
 - [Interaction and Destinations](Interaction_and_Destinations.md)
 
 ## 문서 갱신 조건

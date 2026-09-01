@@ -57,7 +57,7 @@ DestinationDB.TryGetInteractionProvider(BuildingType, ActionType)
 | 새 facility provider | `IInteractionProvider.cs`, `BaseInteractionProvider.cs`, `InteractableManager.cs` |
 | Eat·Drink option | `Pub.cs`, interaction value types, [Needs Actions](NPC_Decision_and_Actions/Needs_Actions.md) |
 | 실내 표현 | `BaseBuildingAction.cs`, [NPC Presentation](NPC_Presentation.md) |
-| 농장 interaction | [Farming](Farming.md) |
+| 농장 interaction | [Farming](Farming/README.md) |
 
 ## 불변 규칙
 
@@ -65,7 +65,7 @@ DestinationDB.TryGetInteractionProvider(BuildingType, ActionType)
 - provider는 자신의 domain transaction만 실행하고 NPC의 다음 행동을 결정하지 않는다.
 - action은 scene registry를 직접 검색하지 않고 selector가 주입한 provider와 request를 사용한다.
 - provider 초기화는 idempotent해야 하며 중복 `(object, action)` 등록은 첫 항목을 보존하고 오류로 보고한다.
-- provider는 고정 scene dependency 부재만 초기화 실패로 취급한다. 정상적으로 바뀔 수 있는 domain 상태(예: 농경지에 아직 아무것도 안 심긴 상태)로 인터랙션을 막을 때는 `CanInteractCore`를 override해서 게이트하고, `TryInitializeCore`를 실패시키지 않는다 — `BaseInteractionProvider._isOperational`은 첫 초기화에서 latch되므로 여기서 실패시키면 이후 상태가 바뀌어도 영구히 복구되지 않는다. 예시: [Farming](Farming.md)의 `FarmWorkSite.CanInteractCore`.
+- provider는 고정 scene dependency 부재만 초기화 실패로 취급한다. 정상적으로 바뀔 수 있는 domain 상태(예: 농경지에 아직 아무것도 안 심긴 상태)로 인터랙션을 막을 때는 `CanInteractCore`를 override해서 게이트하고, `TryInitializeCore`를 실패시키지 않는다 — `BaseInteractionProvider._isOperational`은 첫 초기화에서 latch되므로 여기서 실패시키면 이후 상태가 바뀌어도 영구히 복구되지 않는다. 예시: [Farming Runtime](Farming/Runtime_and_Transactions.md)의 `FarmWorkSite.CanInteractCore`.
 
 ## Unity 배선
 
@@ -80,7 +80,7 @@ DestinationDB.TryGetInteractionProvider(BuildingType, ActionType)
 
 - [Decision Policy](NPC_Decision_and_Actions/Decision_Policy.md)
 - [Action Runtime](NPC_Decision_and_Actions/Action_Runtime.md)
-- [Farming](Farming.md)
+- [Farming](Farming/README.md)
 
 ## 문서 갱신 조건
 

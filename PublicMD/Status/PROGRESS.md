@@ -49,13 +49,42 @@ Immediate next actions:
 5. Keep `WorkerNPC` narrow; do not make it the dependency bucket for every NPC concern.
 
 ## Current Status
+
+### S-02 implementation complete / visual verification pending (2026-09-01)
+
+이 항목은 아래의 과거 S-01 `verification pending` 기록을 최신 상태로 대체한다. 사용자가 `FarmerTest` Play Mode에서 Seed Phase 1 생산·입고 흐름이 정상 동작함을 확인했으므로 S-01은 완료되었다. 단, Warehouse 용량 부족 시의 부분 입고 거부 시나리오는 여전히 `NOT VERIFIED`다.
+
+Seed Phase 2의 작물 표현 코드를 구현했다. `FarmWorkSite`는 성공적으로 상태가 변경된 뒤 `StateChanged` 이벤트만 발행하며, 표현 계층을 직접 참조하지 않는다. 최종 수확 성공 시 생산물 입고와 동시에 현재 작물을 비우고 Growing 상태로 돌아간다. 시각 효과가 생산 transaction이나 다음 작물 선택을 지연시키지 않는다.
+
+추가·변경한 핵심 구성은 다음과 같다.
+
+- `CropVisualStage`: 정규화 임계값과 단계별 Sprite를 보관하는 직렬화 값 형식
+- `FarmProductionDefinition`: crop별 Animator Controller와 오름차순 visual stage 목록 소유 및 검증
+- `CropVisualAnimator`: 개별 작물 표현의 즉시 표시, 단계 전환(Disappear -> Sprite 교체 -> Appear), 최종 Disappear 실행
+- `FarmCropPresenter`: `FarmWorkSite.StateChanged` 구독, 약 10개의 concrete `CropVisualAnimator` 무작위 순서 관리, 0.08초 기본 cascade, 명령 queue 및 새 작물 표시 지연 처리
+- Carrot/Potato definition: 각각 0 / 0.33333334 / 0.6666667 / 1 임계값의 4단계 Sprite와 controller 연결
+
+표현용 무작위 순서는 yield 계산과 분리된 `System.Random`을 사용한다. 최초 선택과 `OnEnable` 동기화는 cascade 없이 즉시 표시하며, 성장 단계 상승은 섞인 순서로 겹쳐 재생한다. 최종 수확은 섞인 순서로 Disappear만 수행하고, 그 도중 선택된 새 작물의 시각 동기화는 기존 disappear 완료 뒤 실행한다. `IVisualAnim` 추상화는 현재 동일 구현만 사용하므로 도입하지 않았다.
+
+Farming 문서는 `PublicMD/Systems/Farming/README.md`와 네 leaf 문서로 분리했다. 새 표현 책임과 scene wiring은 `Crop_Presentation.md`, runtime transaction은 `Runtime_and_Transactions.md`, definition 규칙은 `Definition_and_Catalog.md`가 소유한다. 관련 활성 문서의 로컬 링크도 새 경로로 갱신했다.
+
+검증 결과:
+
+- `dotnet build Assembly-CSharp.csproj --no-restore`: 경고 0, 오류 0
+- 활성 Markdown 로컬 링크 검사: 깨진 링크 0
+- 새 script/controller/sprite GUID 참조 검사: 누락 0
+- 새 코드의 `UnityEngine.Random`, `Find*`, `GetComponent` 의존 검사: 0건
+- 변경 범위 `git diff --check`: 통과
+- 독립 Codex read-only 검토를 background로 시작함(PID 38940). 검토 결과는 아직 수신하지 않았으며 통과로 간주하지 않는다.
+
+Scene의 작물 표현 오브젝트 약 10개 배치와 Inspector 연결은 합의한 범위대로 자동 수정하지 않았다. 따라서 S-02의 Play Mode 시각 검증은 `NOT VERIFIED`다. 다음 작업은 각 표현 오브젝트에 `CropVisualAnimator`를 연결하고, farm 또는 sibling 오브젝트의 `FarmCropPresenter`에 `FarmWorkSite`와 animator 배열을 지정한 뒤 최초 표시, 33%/67%/100% cascade, 최종 disappear, disappear 중 새 작물 선택 순서를 확인하는 것이다.
 S-01 implementation complete / verification pending on 2026-08-29 (Seed Phase 1 — 기본 기능과 데이터): Seed System Implementation Plan(`PublicMD/Plans/Seed_System_Implementation_Plan.md`)의 Phase 1을 구현했다. Play Mode 수동 검증 전이므로 `completed`가 아니라 `verification pending`으로 기록한다 — 프로젝트 공통 Definition of Done(runtime 기능은 Play Mode 검증 후에만 completed)을 따른다. 사용자가 SG-001(빈 농경지에서만 씨앗 선택)·SG-002(첫 slice는 seed item 미소비)·SG-003(Carrot=item 4, Potato=item 5, Food category 신규)을 확정했고 `SPEC.md` 12절 Decision Log로 옮겼다.
 
 구현 결정 3가지가 설계를 좌우했다: (1) `BaseInteractionProvider._isOperational`이 첫 초기화에서 latch되므로 definition 부재를 `TryInitializeCore` 실패로 두면 런타임 씨앗 선택이 영구히 막힌다 — 검사를 새 `CanInteractCore` override로 옮겼다. (2) `FarmWorkSite`가 기존에 `CanInteractCore`를 override하지 않았던 것이 정확한 게이트 seam이었다 — 여기서 막으면 `FarmerActionSelector`의 기존 one-shot 로그 + Idle fallback 경로가 그대로 동작해 selector 변경이 불필요했다. (3) `ApplyHarvestingWork`가 입고 실패 시에도 난수를 소비하던 문제를 `_pendingYield` sentinel로 고쳐 거부된 yield를 재사용하게 했다.
 
 변경 파일: `FarmProductionDefinition.cs`(crop ID·표시 이름 추가) 수정, `CropCatalog.cs` 신규, `FarmWorkSite.cs`(선택 API·게이트·pending yield) 수정, `TestFarmProductionWindow.cs`(catalog 기반 선택 UI) 수정, `ItemData.csv`(Carrot/Potato 2행) 수정, `FarmProductionDefinition.asset` → `FarmProductionDefinition_Carrot.asset` rename(GUID 보존), `FarmProductionDefinition_Potato.asset`·`CropCatalog.asset` 신규, `FarmerTest.unity`(`_definition` → `_startingDefinition` 필드명, 참조 GUID는 불변), `Assembly-CSharp.csproj`(새 스크립트 compile entry). `FarmerActionSelector`, `DestinationDecider`, `WorkerNPC`, `FarmingAction`, `IInteractionProvider`, `IInventory`는 계획대로 변경하지 않았다.
 
-검증: `dotnet build Assembly-CSharp.csproj --no-restore` 0 경고/0 오류. `_definition` 잔존 참조 정적 검색 0건. `WarehouseInventory`가 무제한 용량이라 입고 거부 시나리오는 `NOT VERIFIED`(코드 검토로만 확인). Play Mode 수동 검증은 미실행 — `TestFarmProductionWindow`가 scene에 아직 GameObject로 배치되지 않아 `_farmWorkSite`/`_warehouse`/`_cropCatalog` Inspector 배선이 남아 있다.
+검증: `dotnet build Assembly-CSharp.csproj --no-restore` 0 경고/0 오류. `_definition` 잔존 참조 정적 검색 0건. `WarehouseInventory`가 무제한 용량이라 입고 거부 시나리오는 `NOT VERIFIED`(코드 검토로만 확인). Play Mode 수동 검증은 미실행이다.
 
 문서 갱신: `Systems/Farming.md`(실행 흐름·불변 규칙·TBD·분할 트리거), `Systems/Inventory_and_Items.md`(신규 crop item 사실), `Systems/Interaction_and_Destinations.md`(`CanInteractCore` 게이트 패턴), `ProjectStructure.md`(새 crop 배치 행), `SPEC.md`(12절 Decision Log 신설), `Plans/Seed_System_Implementation_Plan.md`(SG-001~003 확정 기록, Phase 1 구현 기록), `PLAN.md`(S-01 상태).
 
@@ -68,9 +97,9 @@ S-01 implementation complete / verification pending on 2026-08-29 (Seed Phase 1 
 - **M-02(TryValidate 미호출)**: `CropCatalog.TryValidate`가 이제 `ItemDataContext`를 받아 구조 검증과 함께 output item 존재 여부까지 확인한다. `TestFarmProductionWindow`가 window 생성 시 1회 호출해 결과를 캐시하고, catalog가 invalid하면 선택 버튼 대신 실패 사유를 표시한다(`_definitions == null`도 이제 성공이 아니라 명시적 실패로 처리).
 - **M-03(부분 수락 시 비원자적 transaction)**: `FarmWorkSite.ApplyHarvestingWork`가 부분 수락 시 `_pendingYield`를 수락된 만큼만 줄여, 재시도가 이미 입고된 수량을 다시 요청하지 않게 했다.
 
-검증: `dotnet build Assembly-CSharp.csproj --no-restore` 0 경고/0 오류. Play Mode는 여전히 미실행 — `TestFarmProductionWindow`의 scene 배치·배선(`_farmWorkSite`/`_warehouse`/`_cropCatalog`/`_itemDataContext`)이 남아 있다.
+검증: `dotnet build Assembly-CSharp.csproj --no-restore` 0 경고/0 오류. `TestFarmProductionWindow`를 `FarmerTest` 농장 GameObject에 배치하고 `_farmWorkSite`/`_warehouse`/`_cropCatalog`/`_itemDataContext`를 연결했다. Play Mode 수동 검증은 여전히 미실행이다.
 
-다음 액션: 사용자가 `TestFarmProductionWindow`를 scene에 배치·배선하고 계획서 5절의 Play Mode 시나리오를 수동 검증한다. 통과 후에만 S-01을 completed로 전환하고 Seed Phase 2(작물 표현) 승인·구현을 시작한다.
+다음 액션: 사용자가 `FarmerTest` Play Mode에서 계획서 5절 시나리오를 수동 검증한다. 통과 후에만 S-01을 completed로 전환하고 Seed Phase 2(작물 표현) 구현을 시작한다.
 
 DOC-001 completed on 2026-08-29 (PublicMD 점진적 공개 구조 전환 완료): 에이전트가 큰 공통 문서와 관련 없는 코드를 반복해서 읽지 않도록 `AGENTS.md -> ProjectStructure.md -> Systems 기능 문서/인덱스 -> leaf의 최소 파일` 읽기 흐름을 도입했다. 최상위 기능 영역은 9개로 유지하고, 독립 세부 기능이 4개 이상인 판단·action과 전투만 폴더형 인덱스로 분할했다. 판단·action은 5개 leaf, 전투는 4개 leaf가 현재 흐름·불변 규칙·변경 유형별 최소 확인 범위를 소유한다.
 

@@ -38,6 +38,6 @@ public class CombatTargetHandle : IMoveTarget
 
     public static bool IsValidPair(ICombatTarget target, Component owner)
     {
-        return owner && target != null && target.IsAlive;
+        return owner && target != null && target.CanBeTargeted;
     }
 }

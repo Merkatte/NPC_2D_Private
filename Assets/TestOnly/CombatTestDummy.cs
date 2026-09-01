@@ -1,38 +1,45 @@
 using UnityEngine;
 
 /// <summary>
-/// TestOnly stand-in target for validating Enemy's own combat AI (IMP-035). Farmer/Guard are
-/// deliberately NOT made attackable in this slice - resident death/incapacitation policy
-/// (PublicMD/Game_Plan.md GD-008) is not yet decided, so NPCComponent does not implement
-/// ICombatTarget. This dummy has the same minimal shape as Enemy.cs's original test-target role:
-/// health, IsAlive, ApplyDamage -> Destroy. Once GD-008 is settled and residents become a real
-/// combat target, this file can be removed.
+/// TestOnly health owner for validating Enemy combat. CombatTarget supplies the common targeting
+/// and damage gate while this component keeps only the dummy-specific health and death response.
 /// </summary>
-public class CombatTestDummy : MonoBehaviour, ICombatTarget
+public class CombatTestDummy : MonoBehaviour, IHealthState
 {
     [SerializeField] private float _maxHealth = 10f;
 
+    private CombatTarget _combatTarget;
     private float _health;
 
-    public bool IsAlive => _health > 0f;
-    public Vector3 Position => transform.position;
+    public float CurrentHealth => _health;
 
     private void Awake()
     {
         _health = _maxHealth;
+
+        if (!TryGetComponent(out _combatTarget))
+        {
+            _combatTarget = gameObject.AddComponent<CombatTarget>();
+        }
+
+        _combatTarget.Initialize(this);
+        _combatTarget.Died += HandleDied;
     }
 
-    public void ApplyDamage(float amount)
+    private void OnDestroy()
     {
-        if (amount <= 0f || !IsAlive)
-        {
-            return;
-        }
+        if (_combatTarget)
+            _combatTarget.Died -= HandleDied;
+    }
 
-        _health = Mathf.Max(0f, _health - amount);
-        if (_health <= 0f)
-        {
-            Destroy(gameObject);
-        }
+    public float ChangeHealth(float amount)
+    {
+        _health = Mathf.Clamp(_health + amount, 0f, _maxHealth);
+        return _health;
+    }
+
+    private void HandleDied()
+    {
+        Destroy(gameObject);
     }
 }

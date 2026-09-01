@@ -1,10 +1,10 @@
 # Seed System Implementation Plan
 
-> 상태: Seed Phase 1 implementation complete / verification pending (Play Mode 수동 검증 전에는 completed로 기록하지 않음), Phase 2 이후 승인 대기
+> 상태: Seed Phase 1 completed, Seed Phase 2 implementation complete / verification pending, Phase 3 이후 승인 대기
 > 작성일: 2026-08-29
 > 상위 roadmap: `PublicMD/PLAN.md`
 > 요구사항: `PublicMD/SPEC.md`의 `SRC-024`, `REQ-F-052`~`REQ-F-060`, `REQ-D-016`
-> 현재 구현 지도: `PublicMD/Systems/Farming.md`
+> 현재 구현 지도: `PublicMD/Systems/Farming/README.md`
 
 ## 1. 목표와 플레이 경험
 
@@ -74,9 +74,9 @@ CSV는 Phase 1 범위에 추가하지 않는다. crop 수가 늘어 숫자 일�
 | SG-001 | 씨앗을 언제 변경할 수 있는가? | 빈 농경지에서만 선택, 성장·수확 중 변경 금지 | **확정(2026-08-29)**: 권장 기본안대로. `SPEC.md` 12절 Decision Log Q-030 참고. |
 | SG-002 | 실제 seed item을 inventory에서 소비하는가? | 첫 vertical slice는 선택만 하고 소비는 후속 단계로 보류 | **확정(2026-08-29)**: 권장 기본안대로. `SPEC.md` 12절 Decision Log Q-031 참고. |
 | SG-003 | 첫 구현 crop 종류와 output item ID | 기존 item data에서 검증 가능한 2종부터 시작 | **확정(2026-08-29)**: Carrot(cropId 1, item 4), Potato(cropId 2, item 5), 둘 다 Food category로 `ItemData.csv`에 신규 추가. `SPEC.md` 12절 Decision Log Q-032 참고. |
-| SG-004 | 첫 crop의 성장 stage 수 | 데이터는 가변 배열, 첫 art는 4단계 | 미확정 — Seed Phase 2 시작 전 결정 |
+| SG-004 | 첫 crop의 성장 stage 수 | 데이터는 가변 배열, 첫 art는 4단계 | **확정(2026-09-01)**: Carrot·Potato 모두 `0 / 0.3333 / 0.6667 / 1` 네 stage. `SPEC.md` Decision Log Q-033 참고. |
 | SG-005 | popup 진입 입력 | 기존 hover collider를 재사용하되 click은 별도 interaction adapter가 처리 | 미확정 — Seed Phase 3 시작 전 결정 |
-| SG-006 | 수확 완료 뒤 다음 cycle | 소멸 animation 완료 후 빈 상태로 전환하고 다시 선택 요구 | 미확정 — Seed Phase 2/3 시작 전 결정 |
+| SG-006 | 수확 완료 뒤 다음 cycle | 소멸 animation 완료 후 빈 상태로 전환하고 다시 선택 요구 | **확정(2026-09-01)**: 최종 수확 transaction 직후 current crop을 비우고 선택을 허용한다. 소멸 중 선택된 새 visual은 기존 소멸 완료 뒤 표시한다. `SPEC.md` Decision Log Q-035 참고. |
 
 ## 5. Seed Phase 1 — 기본 기능과 데이터
 
@@ -120,7 +120,7 @@ Farmer selector, `WorkerNPC`, `NPCStat`, decision utility는 기본적으로 변
 
 작업 순서 1~10을 구현했다. `FarmProductionDefinition`에 `_cropId`/`_displayName`을 추가하고, `CropCatalog` ScriptableObject를 신설했다. `FarmWorkSite`는 `_startingDefinition`(구 `_definition`, `FormerlySerializedAs`로 scene 참조 보존)과 런타임 `_currentDefinition`을 분리하고 `TrySelectCrop`/`CanSelectCrop`/`HasCrop`을 추가했다. `CanInteractCore`를 override해 crop 없음을 게이트했고, `TryInitializeCore`에서는 definition 검사를 제거해 `BaseInteractionProvider._isOperational` latch로 인해 씨앗 선택이 영구히 막히는 문제를 피했다. `ApplyHarvestingWork`는 거부된 yield를 `_pendingYield`로 보존해 재시도 시 재사용한다. `TestFarmProductionWindow`에 catalog 기반 crop 선택 버튼과 crop별 창고 수량 표시를 추가했다. `ItemData.csv`에 Carrot(4)·Potato(5)를 추가하고, 기존 `FarmProductionDefinition.asset`을 `FarmProductionDefinition_Carrot.asset`으로 rename(GUID 보존)한 뒤 새 필드로 채우고, `FarmProductionDefinition_Potato.asset`과 `CropCatalog.asset`을 신규 작성했다.
 
-`Assembly-CSharp.csproj` compile 통과(0 경고/0 오류, `dotnet build`). `WarehouseInventory`가 용량 제한이 없어 입고 거부 경로는 코드 검토로만 확인했고 완료 조건 5는 `NOT VERIFIED`로 남겼다. Play Mode 수동 검증은 사용자 확인 대기 — `TestFarmProductionWindow`가 아직 scene에 GameObject로 배치되지 않아 `_farmWorkSite`/`_warehouse`/`_cropCatalog`/`_itemDataContext` Inspector 배선이 수동 작업으로 남아 있다.
+`Assembly-CSharp.csproj` compile 통과(0 경고/0 오류, `dotnet build`). `WarehouseInventory`가 용량 제한이 없어 입고 거부 경로는 코드 검토로만 확인했고 완료 조건 5는 `NOT VERIFIED`로 남겼다. `TestFarmProductionWindow`는 `FarmerTest` 농장 GameObject에 배치되어 `_farmWorkSite`/`_warehouse`/`_cropCatalog`/`_itemDataContext`가 연결됐다. 2026-09-01 사용자가 Carrot/Potato 선택·진행·입고와 선택 거부 Play Mode 시나리오 통과를 확인했다.
 
 **Codex 리뷰 후속 수정(2026-08-29)**: 독립 Codex 리뷰(`Status/Code_Evaluation_Result.md`)가 H-01(신규 파일 Git 미추적), M-01(output item id 미검증), M-02(`CropCatalog.TryValidate` 미호출), M-03(부분 수락 시 비원자적 transaction), L-01(상태 문구 모순)을 지적했다. M-04(yield가 cycle 총량이 아니라 작업당)는 사용자가 작업당이 의도한 설계임을 확정해 결함에서 제외했다. 나머지는 모두 수정했다: `ItemDataContext.TryGetItemInfo` 추가, `CropCatalog.TryValidate`에 `ItemDataContext` cross-reference 검증 추가 및 `TestFarmProductionWindow`의 실제 초기화 경계에 연결, `FarmWorkSite.ApplyHarvestingWork`가 부분 수락 시 남은 수량만 재요청하도록 수정, Seed Phase 1 관련 신규 파일을 명시적으로 stage(커밋은 아직 하지 않음), 상태 문구를 `completed`에서 `implementation complete / verification pending`으로 정정.
 
@@ -158,6 +158,12 @@ Farmer selector, `WorkerNPC`, `NPCStat`, decision utility는 기본적으로 변
 - crop definition을 바꾸면 해당 crop의 sprite와 animation reference를 사용한다.
 - presentation이 inventory, yield 계산 또는 NPC 판단을 변경하지 않는다.
 - scene 재진입 또는 component 재활성화 후 runtime state와 visual이 일치한다.
+
+### 구현 기록 (2026-09-01)
+
+`FarmProductionDefinition`에 visual controller와 가변 `CropVisualStage` 배열을 추가하고 Carrot·Potato asset을 `0 / 0.3333 / 0.6667 / 1` 네 stage로 배선했다. `FarmWorkSite`는 성공한 상태 변경 뒤 `StateChanged`를 발행하며 최종 수확 성공 시 current crop을 즉시 비운다. `FarmCropPresenter`는 이 이벤트를 구독해 stage command를 queue하고 별도 visual seed로 `CropVisualAnimator` 배열을 shuffle한다. 각 visual은 0.08초 간격으로 disappear→sprite 교체→appear를 실행하고 최종 수확에서는 disappear 후 숨는다. disable/re-enable과 소멸 중 새 crop 선택은 현재 runtime state로 안전하게 동기화한다.
+
+명령행 compile과 script·asset GUID 정적 검사는 통과했다. 약 10개 `CropVisualAnimator`의 scene 위치와 `FarmCropPresenter` Inspector 배열은 사용자 수동 배선 범위이므로 Play Mode visual 완료 조건은 `NOT VERIFIED`다.
 
 ## 7. Seed Phase 3 — 선택 UI와 상호작용
 

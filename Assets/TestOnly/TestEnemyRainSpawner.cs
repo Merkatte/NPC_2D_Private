@@ -38,12 +38,12 @@ public class TestEnemyRainSpawner : MonoBehaviour
     private readonly struct SpawnedEnemyEntry
     {
         public readonly WorkerNPC Worker;
-        public readonly Enemy Enemy;
+        public readonly CombatTarget CombatTarget;
 
-        public SpawnedEnemyEntry(WorkerNPC worker, Enemy enemy)
+        public SpawnedEnemyEntry(WorkerNPC worker, CombatTarget combatTarget)
         {
             Worker = worker;
-            Enemy = enemy;
+            CombatTarget = combatTarget;
         }
     }
 
@@ -176,19 +176,19 @@ public class TestEnemyRainSpawner : MonoBehaviour
 
         WorkerNPC worker = Instantiate(_enemyTemplate, spawnPosition, _enemyTemplate.transform.rotation, transform);
 
-        Enemy enemyComponent = worker.GetComponent<Enemy>();
-        if (!enemyComponent)
+        CombatTarget combatTarget = worker.GetComponent<CombatTarget>();
+        if (!combatTarget)
         {
-            Debug.LogError("Spawned Enemy prefab has no Enemy component; destroying it.", this);
+            Debug.LogError("Spawned Enemy prefab has no CombatTarget component; destroying it.", this);
             Destroy(worker.gameObject);
             return;
         }
 
         worker.name = $"{_enemyTemplate.name} ({definition.name})";
-        enemyComponent.Init(stat);
+        combatTarget.Initialize(stat);
         worker.Init(NPCType.Enemy, stat, _selector);
 
-        _spawnedEnemies.Add(new SpawnedEnemyEntry(worker, enemyComponent));
+        _spawnedEnemies.Add(new SpawnedEnemyEntry(worker, combatTarget));
     }
 
     private void RemoveDeadOrMissingEnemies()
@@ -199,7 +199,7 @@ public class TestEnemyRainSpawner : MonoBehaviour
 
             // Unity destroyed-object check must come first: calling .IsAlive on an already-
             // destroyed Enemy would throw MissingReferenceException.
-            if (!entry.Enemy || !entry.Enemy.IsAlive)
+            if (!entry.CombatTarget || !entry.CombatTarget.IsAlive)
             {
                 if (entry.Worker)
                 {

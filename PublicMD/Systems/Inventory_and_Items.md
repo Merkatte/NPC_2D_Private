@@ -46,8 +46,8 @@ selector -> IDataManager.TryGetActionCostInfo<T>(ActionType) -> cost asset
 | item category·효과 | `ItemCategory.cs`, `ItemInfo.cs`, `ItemDataContext.cs` |
 | 창고 입고·용량 | `IInventory.cs`, `WarehouseInventory.cs`, 소비 기능 문서 |
 | action cost 조회 | `IDataManager.cs`, `DataManager.cs`, [Action Runtime](NPC_Decision_and_Actions/Action_Runtime.md) |
-| 농장 수확물 | [Farming](Farming.md) |
-| item id 조회·cross-validation | `ItemDataContext.cs`, [Farming](Farming.md)의 `CropCatalog.TryValidate` |
+| 농장 수확물 | [Farming](Farming/README.md) |
+| item id 조회·cross-validation | `ItemDataContext.cs`, [Farming Definition](Farming/Definition_and_Catalog.md)의 `CropCatalog.TryValidate` |
 
 ## 불변 규칙
 
@@ -67,7 +67,7 @@ selector -> IDataManager.TryGetActionCostInfo<T>(ActionType) -> cost asset
 
 ## 관련 문서
 
-- [Farming](Farming.md)
+- [Farming](Farming/README.md)
 - [Interaction and Destinations](Interaction_and_Destinations.md)
 - [Action Runtime](NPC_Decision_and_Actions/Action_Runtime.md)
 

@@ -20,3 +20,13 @@ MonoBehaviour:
   _outputItemId: 4
   _minimumYield: 1
   _maximumYield: 3
+  _visualController: {fileID: 9100000, guid: a71d576838594db2960df645004c20f8, type: 2}
+  _visualStages:
+  - _normalizedThreshold: 0
+    _sprite: {fileID: 9100000000000000001, guid: a61901293d4a5d44080af4a6e53b6509, type: 3}
+  - _normalizedThreshold: 0.33333334
+    _sprite: {fileID: 9100000000000000001, guid: 9156d0326dd307d4e94ef696edafaac7, type: 3}
+  - _normalizedThreshold: 0.6666667
+    _sprite: {fileID: 9100000000000000001, guid: f3cf9ca2f31a06940b4cd5f568bd518c, type: 3}
+  - _normalizedThreshold: 1
+    _sprite: {fileID: 9100000000000000001, guid: 1c2e1c055f33cde46af64eff42c4f716, type: 3}

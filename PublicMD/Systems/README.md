@@ -17,7 +17,7 @@
 |---|---|
 | `NPC_Runtime.md` | 단일 기능 문서 |
 | `NPC_Decision_and_Actions/` | 5개 leaf를 가진 기능 인덱스 |
-| `Farming.md` | 단일 기능 문서 |
+| `Farming/` | 4개 leaf를 가진 기능 인덱스 |
 | `Combat/` | 4개 leaf를 가진 기능 인덱스 |
 | `Interaction_and_Destinations.md` | 단일 기능 문서 |
 | `Inventory_and_Items.md` | 단일 기능 문서 |

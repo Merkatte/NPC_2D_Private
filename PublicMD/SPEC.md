@@ -434,10 +434,9 @@ flowchart LR
 | Q-027 | 네임드 주민의 등장 확률, 중복 등장 가능 여부와 재등장 규칙은 무엇인가? | 희소성과 수집 경험 | 기획자 |
 | Q-028 | 병원 또는 치료소의 수용 인원, 치료 시간, 치료 비용이나 소모 자원은 무엇인가? | 방어 실패 복구 속도와 시설 가치 | 기획자 |
 | Q-029 | 치료 완료 시 체력만 회복하는가, 부상·전투 불능 상태도 모두 해제하는가? | 치료 결과와 AI 업무 복귀 조건 | 기획자 |
-| Q-033 | 첫 crop은 몇 개의 성장 stage를 사용하며 threshold를 균등 배치하는가? | sprite·animation 산출물과 stage 계산 | 기획자/아트 |
 | Q-034 | 모든 crop을 처음부터 선택할 수 있는가, 해금·재고·계절 조건으로 후보를 제한하는가? | catalog filtering과 popup 상태 | 기획자 |
 
-Q-030~Q-032는 Seed Phase 1 시작 전 결정됐다. [12절 Decision Log](#12-decision-log)를 본다.
+Q-030~Q-033과 Q-035는 Seed Phase 1·2 시작 전에 결정됐다. [12절 Decision Log](#12-decision-log)를 본다.
 
 ## 12. Decision Log
 
@@ -445,6 +444,8 @@ Open Question이 시스템 규칙으로 확정되면 이 절로 옮기고 표에
 
 | ID | 확정된 규칙 | 결정일 | 근거/영향 |
 |---|---|---|---|
-| Q-030 (구 SG-001) | 씨앗은 빈 농경지(current crop 없음, 또는 Growing phase에서 progress가 0)에서만 선택할 수 있다. 성장·수확 중 선택 시도는 기존 crop과 progress를 보존한 채 거부하고 사유를 반환한다. | 2026-08-29 | [Seed System Implementation Plan](Plans/Seed_System_Implementation_Plan.md) SG-001, [Farming](Systems/Farming.md) |
+| Q-030 (구 SG-001) | 씨앗은 빈 농경지(current crop 없음, 또는 Growing phase에서 progress가 0)에서만 선택할 수 있다. 성장·수확 중 선택 시도는 기존 crop과 progress를 보존한 채 거부하고 사유를 반환한다. | 2026-08-29 | [Seed System Implementation Plan](Plans/Seed_System_Implementation_Plan.md) SG-001, [Farming](Systems/Farming/README.md) |
 | Q-031 (구 SG-002) | Seed Phase 1은 실제 seed item을 inventory에서 소비하지 않는다. 씨앗 선택은 농경지의 생산 설정(current crop)만 변경한다. seed item 소비는 이후 slice로 보류한다. | 2026-08-29 | [Seed System Implementation Plan](Plans/Seed_System_Implementation_Plan.md) SG-002 |
 | Q-032 (구 SG-003) | 첫 vertical slice의 crop은 Carrot(cropId 1, output item 4)과 Potato(cropId 2, output item 5) 2종이며, 둘 다 `ItemData.csv`에 기존 Food category로 추가한다. | 2026-08-29 | [Seed System Implementation Plan](Plans/Seed_System_Implementation_Plan.md) SG-003, [Inventory and Items](Systems/Inventory_and_Items.md) |
+| Q-033 (구 SG-004) | crop stage 데이터는 가변 배열로 유지하고 첫 Carrot·Potato asset은 normalized threshold `0 / 0.3333 / 0.6667 / 1`의 네 단계를 사용한다. | 2026-09-01 | [Seed System Implementation Plan](Plans/Seed_System_Implementation_Plan.md) SG-004, [Crop Presentation](Systems/Farming/Crop_Presentation.md) |
+| Q-035 (구 SG-006) | 최종 수확 transaction이 성공하면 current crop을 즉시 비우고 다음 선택을 허용한다. 수확 소멸은 gameplay를 지연시키지 않으며, 소멸 중 선택된 새 crop visual은 기존 소멸 완료 뒤 표시한다. | 2026-09-01 | [Seed System Implementation Plan](Plans/Seed_System_Implementation_Plan.md) SG-006, [Farming Runtime](Systems/Farming/Runtime_and_Transactions.md) |

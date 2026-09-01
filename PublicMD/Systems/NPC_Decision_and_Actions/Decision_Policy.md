@@ -64,7 +64,7 @@ DestinationDecider.Decide(stat, role, position, work cost)
 
 - [Selector and Queue](Selector_and_Queue.md)
 - [Interaction and Destinations](../Interaction_and_Destinations.md)
-- [Farming](../Farming.md)
+- [Farming](../Farming/README.md)
 - [Guard](../Combat/Guard.md)
 
 ## 문서 갱신 조건

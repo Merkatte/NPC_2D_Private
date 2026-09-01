@@ -41,6 +41,7 @@ Enemy의 `AttackStyle`과 preferred range는 selector의 접근 거리 정책에
 
 - attack speed와 range가 유효하지 않으면 구성 오류로 실패한다.
 - target의 현재 위치와 생존 상태를 매 attack tick에 검증한다.
+- target 불가능 상태는 재판단 대상으로 취급하고, 무적 상태는 target을 유지한 채 damage만 차단한다.
 - damage source와 target health source를 중복 보관하지 않는다.
 - selector와 action이 동일한 `CombatRange` 규칙을 사용한다.
 - `Clear()`에서 combat stat, timer와 cached reference를 모두 초기화한다.
