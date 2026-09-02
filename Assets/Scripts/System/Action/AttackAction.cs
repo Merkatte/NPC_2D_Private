@@ -71,7 +71,7 @@ public class AttackAction : DefaultAction
                 break;
             }
 
-            if (!CombatRange.IsInRange(component.Position, handle.Target.Position, _combatStat.AttackRange))
+            if (!CombatLib.IsInRange(component.Position, handle.Target.Position, _combatStat.AttackRange))
             {
                 outOfRange = true;
                 break;

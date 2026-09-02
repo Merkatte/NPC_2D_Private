@@ -8,7 +8,7 @@
 
 ```text
 role selector
-  -> CombatRange.IsInRange
+  -> CombatLib.IsInRange
   -> 필요하면 MoveAction(dynamic target)
   -> AttackAction
      -> ICombatStatView와 CombatRuntimeState 검증
@@ -26,14 +26,14 @@ Enemy의 `AttackStyle`과 preferred range는 selector의 접근 거리 정책에
 | `Assets/Scripts/Enum/AttackStyle.cs` | melee·ranged 공격 방식 식별 |
 | `Assets/Scripts/Interface/ICombatStatView.cs` | 공격력·공격 속도·공격 범위 read model |
 | `Assets/Scripts/System/Action/AttackAction.cs` | 선택 target에 대한 주기적 damage와 target 상태 처리 |
-| `Assets/Scripts/System/Lib/CombatRange.cs` | Z축을 제외한 공통 2D 사거리 판정 |
+| `Assets/Scripts/System/Lib/CombatLib.cs` | Z축을 제외한 공통 2D 사거리 판정과 nearest-target 검색 |
 
 ## 변경 유형별 최소 확인 범위
 
 | 변경 | 최소 파일·문서 |
 |---|---|
 | damage·attack interval | `AttackAction.cs`, `ICombatStatView.cs`, 공격 role의 stat |
-| range 판정 | `CombatRange.cs`, `AttackAction.cs`, role selector |
+| range 판정 | `CombatLib.cs`, `AttackAction.cs`, role selector |
 | melee/ranged 접근 거리 | `AttackStyle.cs`, [Enemy](Enemy.md), [Movement](../NPC_Decision_and_Actions/Movement.md) |
 | target 사망·소실 | `AttackAction.cs`, [Targeting and Perception](Targeting_and_Perception.md) |
 
@@ -43,7 +43,7 @@ Enemy의 `AttackStyle`과 preferred range는 selector의 접근 거리 정책에
 - target의 현재 위치와 생존 상태를 매 attack tick에 검증한다.
 - target 불가능 상태는 재판단 대상으로 취급하고, 무적 상태는 target을 유지한 채 damage만 차단한다.
 - damage source와 target health source를 중복 보관하지 않는다.
-- selector와 action이 동일한 `CombatRange` 규칙을 사용한다.
+- selector와 action이 동일한 `CombatLib.IsInRange` 규칙을 사용한다.
 - `Clear()`에서 combat stat, timer와 cached reference를 모두 초기화한다.
 
 ## 관련 문서

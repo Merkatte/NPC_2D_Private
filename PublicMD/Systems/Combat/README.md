@@ -18,7 +18,7 @@
 ```text
 CombatTarget(ICombatTarget) <- IHealthState
 ProximitySensor2D -> CombatPerception -> target candidates
-role selector -> CombatTargeting -> CombatRuntimeState
+role selector -> CombatLib.TryFindNearestTarget -> CombatRuntimeState
   -> target이 멀면 MoveAction(dynamic CombatTargetHandle)
   -> AttackAction
   -> target 사망·소실 시 replan

@@ -2,14 +2,18 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Pure nearest-target search shared by any selector that owns a CombatPerception/CombatRuntimeState
-/// pair. This does not mutate runtime state - the caller decides whether to call
-/// CombatRuntimeState.SetTarget(...) (and whether to gate the call behind an existing sticky
-/// target, as GuardActionSelector does) and whether to clear it when no candidate is found.
-/// Distance is 2D (Z excluded), matching CombatRange.IsInRange.
+/// Shared stateless combat queries. Distance calculations use 2D positions with Z excluded.
+/// Target search does not mutate runtime state; the caller owns target selection and clearing.
 /// </summary>
-public static class CombatTargeting
+public static class CombatLib
 {
+    public static bool IsInRange(Vector3 from, Vector3 to, float range)
+    {
+        Vector3 offset = to - from;
+        offset.z = 0f;
+        return offset.sqrMagnitude <= range * range;
+    }
+
     public static bool TryFindNearestTarget(
         CombatPerception perception, Vector3 fromPosition,
         List<(ICombatTarget Target, Component Owner)> scratchBuffer,

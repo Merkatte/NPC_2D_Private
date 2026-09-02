@@ -9,7 +9,7 @@
 - `ProximitySensor2D`: layer mask에 맞는 collider 출입만 추적한다.
 - `CombatTarget`: 타겟 가능·무적 상태를 판정하고 실제 health owner에 damage를 전달한다.
 - `CombatPerception`: collider를 live `ICombatTarget` 후보로 변환하고 중복 collider를 합친다.
-- `CombatTargeting`: 후보 중 nearest target을 계산하지만 runtime state를 변경하지 않는다.
+- `CombatLib.TryFindNearestTarget`: 후보 중 nearest target을 계산하지만 runtime state를 변경하지 않는다.
 - `CombatRuntimeState`: 선택 target 한 개와 sticky lifetime을 actor별로 소유한다.
 - `CombatTargetHandle`: interface와 Unity owner를 묶어 생존성과 동적 위치를 제공한다.
 
@@ -19,7 +19,7 @@
 Trigger enter/exit
   -> ProximitySensor2D candidate list/event
   -> CombatPerception resolves CombatTarget(ICombatTarget) + Component owner
-  -> selector calls CombatTargeting.TryFindNearestTarget
+  -> selector calls CombatLib.TryFindNearestTarget
   -> selector decides whether to CombatRuntimeState.SetTarget
   -> CombatTargetHandle used as IMoveTarget
 ```
@@ -37,7 +37,7 @@ Trigger enter/exit
 | `Assets/Scripts/System/Actor/CombatRuntimeState.cs` | actor별 선택 target과 reusable handle 상태 |
 | `Assets/Scripts/System/Actor/CombatTargetHandle.cs` | target interface와 Unity owner의 생존성·동적 위치 adapter |
 | `Assets/Scripts/System/Actor/ProximitySensor2D.cs` | layer-filtered Trigger2D collider 후보 감지 |
-| `Assets/Scripts/System/Lib/CombatTargeting.cs` | 후보를 mutation하지 않는 2D nearest-target 검색 |
+| `Assets/Scripts/System/Lib/CombatLib.cs` | 후보를 mutation하지 않는 2D nearest-target 검색과 공통 사거리 판정 |
 
 ## 변경 유형별 최소 확인 범위
 
@@ -46,7 +46,7 @@ Trigger enter/exit
 | sensor mask·trigger | `ProximitySensor2D.cs`, prefab sensor child, physics layer |
 | target 가능·무적·damage 전달 | `CombatTarget.cs`, `ICombatTarget.cs`, `IHealthState.cs` |
 | collider→target 변환 | `CombatPerception.cs`, `ICombatTarget.cs` |
-| nearest target 규칙 | `CombatTargeting.cs`, 사용하는 role 문서 |
+| nearest target 규칙 | `CombatLib.cs`, 사용하는 role 문서 |
 | sticky target·Unity null | `CombatRuntimeState.cs`, `CombatTargetHandle.cs`, role selector |
 | target 추적 이동 | `CombatTargetHandle.cs`, [Movement](../NPC_Decision_and_Actions/Movement.md) |
 

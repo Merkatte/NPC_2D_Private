@@ -137,7 +137,7 @@ public class GuardActionSelector : BaseNPCActionSelector
 
     private bool TryAcquireNearestTarget(NPCComponent component, CombatRuntimeState runtimeState)
     {
-        if (!CombatTargeting.TryFindNearestTarget(component.CombatPerception, component.Position, _candidateBuffer,
+        if (!CombatLib.TryFindNearestTarget(component.CombatPerception, component.Position, _candidateBuffer,
                 maxRange: null, out ICombatTarget target, out Component owner))
         {
             return false;
@@ -152,7 +152,7 @@ public class GuardActionSelector : BaseNPCActionSelector
         List<IAction> rented = new List<IAction>();
         CombatTargetHandle handle = runtimeState.TargetHandle;
 
-        if (!CombatRange.IsInRange(component.Position, handle.Target.Position, guardStat.AttackRange))
+        if (!CombatLib.IsInRange(component.Position, handle.Target.Position, guardStat.AttackRange))
         {
             float stoppingDistance = guardStat.AttackRange * _guardActionCostInfo.AttackStoppingDistanceRatio;
             ActionContext moveContext = new ActionContext(component, stat, moveRequest: MoveRequest.Dynamic(handle, stoppingDistance));

@@ -56,7 +56,7 @@ public class EnemyActionSelector : BaseNPCActionSelector
 
         if (!runtimeState.HasValidTarget)
         {
-            if (!CombatTargeting.TryFindNearestTarget(component.CombatPerception, component.Position, _candidateBuffer,
+            if (!CombatLib.TryFindNearestTarget(component.CombatPerception, component.Position, _candidateBuffer,
                     maxRange: null, out ICombatTarget target, out Component owner))
             {
                 return BuildIdleQueue(component, stat);
@@ -68,7 +68,7 @@ public class EnemyActionSelector : BaseNPCActionSelector
         List<IAction> rented = new List<IAction>();
         CombatTargetHandle handle = runtimeState.TargetHandle;
 
-        if (!CombatRange.IsInRange(component.Position, handle.Target.Position, enemyStat.AttackRange))
+        if (!CombatLib.IsInRange(component.Position, handle.Target.Position, enemyStat.AttackRange))
         {
             float stoppingDistance = enemyStat.AttackRange * enemyStat.PreferredAttackRangeRatio;
             ActionContext moveContext = new ActionContext(component, stat, moveRequest: MoveRequest.Dynamic(handle, stoppingDistance));
@@ -98,7 +98,7 @@ public class EnemyActionSelector : BaseNPCActionSelector
     {
         CombatRuntimeState runtimeState = component.CombatRuntimeState;
 
-        if (!CombatTargeting.TryFindNearestTarget(component.CombatPerception, component.Position, _candidateBuffer,
+        if (!CombatLib.TryFindNearestTarget(component.CombatPerception, component.Position, _candidateBuffer,
                 maxRange: enemyStat.AttackRange, out ICombatTarget target, out Component owner))
         {
             runtimeState.ClearTarget();
