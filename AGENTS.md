@@ -23,6 +23,8 @@
 
 새 기능 구현을 시작하기 전 현재 우선순위, 선행 작업, 완료 조건과 QA checkpoint를 확인해야 할 때 읽는다.
 
+`PLAN.md`가 선택한 기능의 활성 상세 계획을 `PublicMD/Plans` 아래에서 연결하면 그 문서도 읽는다. 완료된 상세 계획은 `PublicMD/Archive/Plans`로 이동한다.
+
 ### `PublicMD/ARCHITECTURE.md`
 
 둘 이상의 기능 사이에서 책임을 옮기거나 공통 interface, dependency direction, runtime ownership을 변경할 때 읽는다. 한 기능 내부의 일반 수정에는 해당 Systems 문서를 우선한다.

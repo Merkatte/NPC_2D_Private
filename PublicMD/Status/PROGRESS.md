@@ -50,6 +50,28 @@ Immediate next actions:
 
 ## Current Status
 
+### Farmer 수확물 운반·창고 입고 구현 — C# 완료 / Unity 배선 진행 중 / 봇짐 스프라이트 자산 대기 (2026-09-04)
+
+Farmer가 수확한 작물을 창고로 순간이동시키던 것을 실제로 지고 운반하도록 바꿨다. `FarmWorkSite`는 Farming/Harvest를 phase 게이트된 두 capability로 분리하고, 수확물은 신규 `InteractionRequest.Cargo`(plain C# `ICarriedInventory`)를 통해 NPC의 `WorkerInventory`(용량 10, 단일 item type, `NPCComponent`가 `CombatRuntimeState`와 같은 방식으로 인라인 소유)로 들어간다. 신규 `HarvestAction`/`DepositAction`이 각각 수확·입고를 실행하고, 신규 `WarehouseDepositPoint`(`Assets/Scripts/Actor/`)가 창고 입고 provider를 맡는다. `FarmerActionSelector`는 긴급 욕구 > (Harvest, cargo에 room 있을 때만) > (Deposit, cargo 있을 때만) > 기존 decider 순으로 우선순위를 게이트해, 창고 provider가 없거나 cargo가 가득 차도 busy loop가 생기지 않는다.
+
+설계는 Codex와 2차례 검토를 거쳐 확정했다: 수확 결과는 `InteractionResult`가 아니라 요청 쪽 cargo로 실어 "외부 수락 확인 후 내부 상태 변경" 순서를 지켰고, 부분 수락은 1개 이상이면 성공으로 처리하며 progress는 전량이 봇짐으로 넘어간 뒤에만 소모한다(roll-once 불변식 유지). 빈 밭 진단은 `BuildingType.Farm`이 `DestinationDB`에 아예 미등록일 때만 오류로 남기고, 등록은 됐지만 지금 상호작용 불가(빈 밭·Harvesting phase)한 정상 상태는 무음 처리하도록 기존 로직도 함께 고쳤다(`DestinationDecider.AddFarmerWorkCandidate`가 `CanInteract`를 확인하지 않는다는 사실을 코드로 직접 확인). `WarehouseDepositPoint`는 `ProjectStructure.md`의 "`Assets/Scripts/Actor` = facility component" 라우팅에 따라 그 폴더에 배치했다(`FarmWorkSite`가 `System/Farming`에 있는 것은 선례가 아니라 기존 예외로 판단).
+
+변경 파일: `Assets/Scripts/Enum/{ActionType,BuildingType}.cs`, `Assets/Scripts/System/Lib/{ActionPool,DestinationDecider}.cs`, `Assets/Scripts/Interface/{IInventory,ICarriedInventory}.cs`(후자 신규), `Assets/Scripts/System/Inventory/WorkerInventory.cs`(신규), `Assets/Scripts/Actor/WarehouseDepositPoint.cs`(신규), `Assets/Scripts/System/Actor/{NPCComponent,FarmerActionSelector}.cs`, `Assets/Scripts/System/Farming/FarmWorkSite.cs`, `Assets/Scripts/System/Action/{BaseWorkingAction,HarvestAction,DepositAction}.cs`(신규)·`FarmingAction.cs`(리팩터), `Assets/Data/Struct/InteractionRequest.cs`, `Assets/TestOnly/TestFarmProductionWindow.cs`.
+
+검증: `dotnet build Assembly-CSharp.csproj --no-restore` 경고 0/오류 0. `git diff --stat Assets/Data/Struct/ActionContext.cs` 비어 있음(도메인 전용 provider 필드를 추가하지 않는다는 불변 주석 준수 확인). `_outputInventorySource` 정적 검색 `*.cs` 0건. `ActionPool.Create`에 `Harvest`/`Deposit` case 확인. `FarmWorkSite` 참조 확산 없음(`PointerHoverRouter.cs`의 주석 언급 1건뿐, 실제 참조 아님). `git diff --check`는 이번에 만든 파일에는 걸리지 않고 기존 미커밋 파일(Carrot.prefab, NPCGirl.prefab, FarmerTest.unity, GuardTest.unity)의 기존 trailing whitespace만 걸린다. C# 변경만 정확히 22개 파일로 분리해 커밋 `f35cb65`(원격 push 완료, `dbb094c..f35cb65`) — 무관한 기존 미커밋 변경(AGENTS.md, .codex, PublicMD 초안, art, `_Recovery`, `NPCPrefabCatalog.asset`)은 그대로 두었다.
+
+Unity 씬 배선은 `FarmerTest.unity`에서 사용자가 진행했고 씬 파일을 직접 grep해 다음을 확인했다: `Warehouse` 오브젝트에 `WarehouseDepositPoint` 추가 및 `_inventorySource`가 같은 오브젝트의 `WarehouseInventory`를 정확히 참조, `DestinationDB._destionations`에 `BuildingType: 6`(Warehouse) 행이 `Warehouse`의 Transform/GameObject를 정확히 참조, `InteractableManager._interactables`에 `WarehouseDepositPoint` 등록(3개 → 4개). `TestFarmProductionWindow`는 별도 오브젝트가 아니라 Farm 자체인 `Square` 오브젝트에 붙어 있음을 확인해 안내했고, `_depositPoint` 연결은 진행 중이다. `GuardTest.unity`에는 아직 같은 배선을 하지 않았다.
+
+**블로킹**: `NPCGirl.prefab`에 봇짐(`CarryAnchor`/`Carry`) 앵커를 추가하려면 `Assets/Art/Generated/worker-cargo-sack.png` 스프라이트가 먼저 필요하다. 이 프로젝트의 기존 픽셀아트(`farmer-hoe.png` 등 — 따뜻한 halo 발광이 있는 픽셀아트 스타일, `spritePixelsToUnits: 900`)는 ChatGPT로 생성해왔는데, 2026-09-04 기준 ChatGPT 토큰이 소진되어 당장 생성할 수 없다고 사용자가 확인했다. Claude Code에는 이미지 생성 도구가 없어 대신 만들 수 없다 — 사용자에게 이 제약을 알리고 이 기록으로 대체했다.
+
+다음 액션(ChatGPT 사용 가능해지면):
+
+1. `Assets/Art/Generated/worker-cargo-sack.png` 생성 — `farmer-hoe.png`와 동일 화풍, PPU는 900 근사치로 통일.
+2. Import 설정을 `farmer-hoe.png.meta`와 맞춘다(filterMode, `alphaIsTransparency: 1`, textureCompression).
+3. `NPCGirl.prefab`의 `Visual` 아래 `ToolAnchor`의 형제로 `CarryAnchor`/`Carry`(SpriteRenderer, 기본 `m_IsActive: 0`)를 추가하고 `NPCComponent._carryRenderer`에 연결한다.
+4. `TestFarmProductionWindow._depositPoint` 연결을 마무리하고, `GuardTest.unity`에 `WarehouseDepositPoint`/`DestinationDB`/`InteractableManager` 배선을 동일하게 반복한다.
+5. Play Mode 전체 검증 — 세부 20개 항목은 `C:\Users\Merkatte\.claude\plans\proposed-plan-farmer-majestic-turing.md`의 검증 섹션을 따른다(정적 검증은 이미 통과, Play Mode는 전부 `NOT VERIFIED`).
+
 ### Farmer 작업 영역 분산 구현 완료 / Play Mode 검증 대기 (2026-09-04)
 
 `IInteractionProvider`에 action 실행 위치 조회 계약을 추가하고, `BaseInteractionProvider`가 사용 가능한 action에는 등록 목적지를 기본 위치로 돌려주도록 확장했다. `FarmWorkSite`는 기존 생산 transaction과 별개로 `BoxCollider2D` 작업 영역을 기본 4 x 2 셀로 나누며, seed 2의 전용 `SeededRandomSource`로 셀 순서를 섞어 한 순환 안에서 중복 없이 배정한다. 셀 안에는 크기의 최대 20% jitter를 적용하고, 새 순환의 첫 셀이 직전 마지막 셀과 같으면 교환한다. 위치 dependency나 영역이 유효하지 않으면 한 번만 경고하고 등록된 농장 중심을 반환해 생산 흐름을 유지한다.

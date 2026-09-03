@@ -1,102 +1,94 @@
 # Code Evaluation Result
 
-> 현재 경로: `PublicMD/Status/Code_Evaluation_Result.md`
-
 ## Purpose
 
-Read-only audit of IMP-033, which moves building-entry presentation ownership from destination metadata to the Eat/Drink/Sleep action lifecycle. The review prioritized architecture, lifecycle correctness, Unity serialized-reference safety, and maintainability. No files were modified.
+FarmCropPresenter crop presentation slice를 대상으로 architecture·책임 경계, runtime lifecycle, Unity 직렬화 배선, changeset 완결성과 문서 일치 여부를 읽기 전용으로 감사했다.
 
 ## Review Snapshot
 
-- Date: 2026-08-27
+- Date: 2026-09-01
+- Scope:
+  - 요청에 명시된 Farming C#·ScriptableObject·scene·문서 변경
+  - `FarmWorkSite`, `FarmCropPresenter`, `CropVisualAnimator`, `CropVisualStage`
+  - Carrot/Potato definition과 직접 참조하는 controller·sprite·crop prefab
+  - 직접 dependency surface인 `BaseInteractionProvider`, `IInventory`, `WarehouseInventory`, `ItemDataContext`, `TestFarmProductionWindow`
 - Standards:
-  - `PublicMD/ARCHITECTURE.md`
   - `PublicMD/ProjectStructure.md`
   - `PublicMD/CodeConvention.md`
-  - `reviewing-npc-work-code` audit workflow
-- Primary scope:
-  - `Assets/Scripts/System/Action/BaseBuildingAction.cs`
-  - `Assets/Scripts/System/Action/DefaultAction.cs`
-  - `Assets/Scripts/System/Action/EatAction.cs`
-  - `Assets/Scripts/System/Action/DrinkAction.cs`
-  - `Assets/Scripts/System/Action/SleepAction.cs`
-  - `Assets/Data/Struct/ActionContext.cs`
-  - `Assets/Scripts/System/Lib/DestinationDB.cs`
-  - `Assets/Scripts/System/Actor/FarmerActionSelector.cs`
-  - `Assets/Scripts/System/Actor/GuardActionSelector.cs`
-  - `Assets/Scenes/FarmerTest.unity`
-  - `Assets/Scenes/GuardTest.unity`
   - `PublicMD/ARCHITECTURE.md`
-  - `PublicMD/ProjectStructure.md`
-  - `PublicMD/Status/PROGRESS.md`
-- Direct dependency surfaces:
-  - All `DefaultAction` subclasses
-  - `WorkerNPC`
-  - `ActionPool`
-  - `BaseNPCActionSelector`
-  - `DestinationDecider`
-  - `NPCComponent`
-  - `WorkerPool`
-  - `NPCGirl_Move.controller`
-  - `NPCGirlAnimatorControllerConfigurator`
-  - `NPCGirl.prefab`
-  - `Assembly-CSharp.csproj`
-- Excluded:
-  - Unrelated skill, UI, farming, and accumulated scene changes except where they affected serialization or delivery verification
-  - `.agents` and `Assets/_Recovery`
-  - `Assets/BehaviorGraph/CustomActionNode`, which is absent
-
-## Verification
-
-- Ran `git status`, `git diff`, `git diff --stat`, `git diff --name-status`, `git diff --check`, and targeted source/YAML searches.
-- Confirmed that:
-  - `BaseBuildingAction` is the only action implementation that calls `SetInsideBuilding`.
-  - Eat, Drink, and Sleep inherit `BaseBuildingAction`.
-  - Move, Farming, Idle, Guard, and Attack inherit `DefaultAction` directly.
-  - `BaseBuildingAction` clears presentation through `Complete`, `RequestReplan`, `Fail`, `Stop`, and `Clear`.
-  - `Clear` calls `ExitBuilding` before `DefaultAction.Clear` removes `ActionContext`.
-  - `ShouldUseBuildingAnimation` and `UsesBuildingAnimation` have no remaining references under `Assets`, `ARCHITECTURE.md`, or `ProjectStructure.md`.
-  - `ActionContext` and `DestinationInfo` contain no presentation metadata.
-  - Both current scene `DestinationDB` blocks contain only building type, destination Transform, destination object, and manager wiring.
-  - `Assembly-CSharp.csproj` includes `BaseBuildingAction.cs`.
-  - The new script GUID is unique and is not serialized into scenes or prefabs, which is expected for this plain C# action base.
-  - `NPCGirl.prefab` retains valid `NPCComponent`, Animator, Controller, and worker-prefab references.
-- The previous Farmer defect is statically resolved:
-  - Farmer may still share one `ActionContext` between Move and the semantic action, but Move cannot trigger building presentation because it does not inherit `BaseBuildingAction`.
-- The exact slice-local scene delta cannot be reconstructed from Git because the removed metadata existed only in an earlier uncommitted working-tree state. Current scene data confirms the fields are absent.
-- The reported `dotnet build Assembly-CSharp.csproj --no-restore` result of 0 warnings and 0 errors was not independently rerun because the sandbox is read-only and builds write generated output.
-- Play Mode was not run. Travel continuity, animation timing, cancellation visuals, and second-use pooling behavior remain **NOT VERIFIED**.
-- Whole-tree `git diff --check` still fails on accumulated Unity YAML trailing-space lines. No trailing whitespace was found in the IMP-033 handwritten C# or documentation files.
+  - Farming의 네 leaf 문서
+  - Inventory·Interaction의 직접 관련 계약
+- Repository checks:
+  - `git status`, tracked·cached diff, target `git diff --check`
+  - script·asset GUID resolution과 scene/prefab reference 검색
+  - 금지 pattern·직접 사용처·Markdown link 검색
+- Excluded unrelated worktree changes:
+  - `GuardTest.unity`, NPC animation, agent skill, NPC prefab catalog, Recovery assets 등
+- Verification:
+  - 대상 tracked diff의 `git diff --check`는 통과했다.
+  - 선택 문서의 local Markdown link는 모두 존재한다.
+  - Carrot/Potato controller·stage GUID는 현재 local workspace에서 각각 정확히 한 `.meta`로 해석된다.
+  - 사용자 보고상 `dotnet build`는 0 warnings / 0 errors다. 읽기 전용 조건상 빌드는 독립 재실행하지 않았다.
+  - crop visual scene 배선과 Play Mode 동작은 검증되지 않았다.
 
 ## Executive Summary
 
-IMP-033 places building presentation responsibility correctly. Building entry is an execution property of the semantic indoor action rather than destination metadata, and the new base class contains meaningful shared lifecycle behavior rather than forming an empty inheritance layer. `DefaultAction`, `ActionContext`, selectors, and `DestinationDB` are correspondingly narrower.
+`FarmWorkSite`가 상태만 소유하고 `FarmCropPresenter`가 read-only event subscriber로 동작하는 기본 책임 배치는 적절하다. stage command queue, 별도 visual random stream, disable 시 구독·coroutine 정리와 re-enable 즉시 동기화도 코드상 일관된다. 최종 수확 전에 필요한 definition 값을 지역 변수에 보존한 뒤 current crop을 즉시 비우는 변경도 안전하다.
 
-The previous high-severity Farmer bug is resolved structurally: `MoveAction` has no path to `SetInsideBuilding`, even when it shares a context with Eat, Drink, Sleep, or Farming.
+그러나 현재 S-02는 실행 가능한 상태로 통합되지 않았다. `FarmCropPresenter`와 `CropVisualAnimator` script GUID는 어떤 scene이나 prefab에도 참조되지 않으며, `FarmerTest.unity` 변경도 Phase 1 test window 배선만 포함한다. 따라서 현재 빌드에서는 `StateChanged`를 소비하는 component가 없고 crop presentation 기능이 실행되지 않는다.
 
-No architecture or dependency-direction issue was found in IMP-033. The lifecycle cleanup implementation is idempotent and correctly preserves context until presentation cleanup is attempted.
+또한 새 production C#·meta, Farming leaf 문서와 definition이 참조하는 stage sprite 다수가 Git 미추적 상태이며 cached diff는 비어 있다. tracked 변경만 전달하면 `CropVisualStage` type이 누락되어 컴파일이 깨지고 새 문서 routing과 sprite reference도 불완전해진다.
 
-Acceptance of the complete working tree remains blocked by untracked required files. In particular, the modified Eat/Drink/Sleep classes depend on an untracked `BaseBuildingAction.cs`; a patch containing only tracked Git diffs will not compile. The earlier untracked animation and configurator assets also remain unresolved.
+Architecture 측면에서는 `FarmProductionDefinition.IsValid`가 production 규칙과 presentation 유효성을 하나로 묶어 `FarmWorkSite`가 visual controller·sprite 누락 때문에 crop 선택과 farming interaction을 거부하게 됐다. 이는 presentation 실패가 gameplay transaction에 영향을 주지 않아야 한다는 문서화된 경계와 충돌한다.
 
-A pre-existing Animator cancellation defect remains directly relevant: setting `IsInsideBuilding` to false during `EnterBuilding` cannot interrupt that state. The C# cleanup signal is correct, but the Controller cannot react until the entry clip finishes.
-
-## Priority Assessment
-
-1. Architecture and responsibility placement: **No issue found.**
-2. Correctness, lifecycle, cancellation, and regression risks: **M-01 found.** No additional correctness defect was found in the IMP-033 action lifecycle.
-3. Unity scene, prefab, component, and serialized-reference safety: **H-01 found.** No stale building-presentation field or broken current prefab/scene reference was found.
-4. Code convention, maintainability, dead code, and magic values: **M-02, L-01, and L-02 found.** No new dead code, gameplay magic value, repeated component lookup, scene search, or naming violation was found in IMP-033.
+최종 판정은 **Changes requested — 구조적 기반은 양호하지만 S-02 runtime integration 및 changeset 완결성이 미완료**다.
 
 ## Improvements Since Previous Review
 
-- The previous Farmer context-scoping finding is resolved structurally.
-- Building presentation metadata has been removed from `ActionContext`, `DestinationDB`, and scene destination rows.
-- `DefaultAction` is again limited to common action lifecycle and result handling.
-- Eat, Drink, and Sleep explicitly advertise their indoor lifecycle through inheritance.
-- Movement and non-building actions cannot accidentally opt into presentation through shared context data.
-- Building cleanup remains centralized and idempotent across completion, failure, replan, cancellation, and pool return.
-- Documentation now describes the action-owned presentation model consistently.
-- No new manager lookup, singleton dependency, concrete facility dependency, serialized field, or enum migration was introduced.
+- `ItemDataContext.TryGetItemInfo`와 `CropCatalog.TryValidate(ItemDataContext)`가 output item cross-reference를 검사한다.
+- `TestFarmProductionWindow`가 catalog validation을 한 번 실행하며 `FarmerTest`에 실제 배선됐다.
+- 부분 수락 시 `_pendingYield`에서 실제 수락량을 차감하여 전체 yield 중복 재요청 위험을 줄였다.
+- Phase 1 신규 production 파일은 현재 Git 추적 대상이다.
+- Carrot/Potato 선택·진행·입고 Play Mode 검증 결과가 문서에 기록됐고 S-01 상태가 `completed`로 정리됐다.
+- Farming 문서가 네 leaf로 분리됐으며 각 production C#의 주 소유 문서가 명확하다.
+- crop presentation이 NPC selector, action과 inventory transaction에 직접 의존하지 않는다.
+
+## Priority Assessment
+
+### 1. Architecture and Responsibility Placement
+
+M-01이 확인됐다. Shared definition에 production과 presentation 값을 함께 두는 것은 허용 가능하지만, gameplay 실행 유효성까지 presentation 데이터에 종속시킨 것은 책임 경계를 넘는다.
+
+### 2. Correctness, Lifecycle, Cancellation, and Regression Risks
+
+확인된 독립 결함은 없다.
+
+정적 코드 기준으로 다음 경로는 일관된다.
+
+- 성공한 상태 변경 뒤에만 `StateChanged`가 발행된다.
+- 최종 수확은 definition 값을 보존한 뒤 current crop을 즉시 제거한다.
+- 여러 threshold를 넘으면 각 stage command를 순서대로 한 번씩 queue한다.
+- harvest 중에는 마지막 visual stage를 유지한다.
+- `OnDisable`에서 subscription과 presenter-owned coroutine·queue를 정리한다.
+- `OnEnable`에서 현재 runtime state로 즉시 재동기화한다.
+- visual RNG는 `System.Random`을 사용해 production random stream과 분리된다.
+
+다만 실제 Animator timing, 빠른 다중 threshold 진행, 수확 중 새 crop 선택과 disable/re-enable은 Play Mode에서 검증되지 않았다.
+
+### 3. Unity Scene, Prefab, Component, and Serialized-Reference Safety
+
+H-01과 H-02가 확인됐다. Local GUID 자체는 해석되지만 신규 component의 runtime 배선과 changeset 포함 상태가 모두 미완료다.
+
+### 4. Code Convention, Maintainability, Dead Code, and Magic Values
+
+별도 finding은 없다.
+
+- Inspector dependency는 serialized private field다.
+- cascade 값은 named constant와 serialized tuning으로 표현된다.
+- Animator state hash는 static readonly로 캐시된다.
+- scene search, repeated component lookup, `UnityEngine.Random`, per-frame LINQ가 없다.
+- null·duplicate visual은 cache 구축 시 한 번 진단한다.
+- component가 미배선되어 현재 runtime에서 도달하지 못하는 문제는 H-01에서 다룬다.
 
 ## Findings By Severity
 
@@ -106,269 +98,250 @@ None found.
 
 ### High
 
-#### H-01 — Required runtime and animation files remain untracked
+#### H-01 — Crop presentation component가 어떤 scene이나 prefab에도 배선되지 않았다
 
 - Severity: High
-- Category: Changeset completeness / Unity serialized-reference safety
+- Category: Unity integration / Serialized-reference safety
 - Location:
-  - Untracked IMP-033 files:
-    - `Assets/Scripts/System/Action/BaseBuildingAction.cs`
-    - `Assets/Scripts/System/Action/BaseBuildingAction.cs.meta`
-  - Modified dependants:
-    - `Assets/Scripts/System/Action/EatAction.cs:3`
-    - `Assets/Scripts/System/Action/DrinkAction.cs:3`
-    - `Assets/Scripts/System/Action/SleepAction.cs:3`
-  - Untracked earlier animation/configurator files:
-    - `Assets/Animation/DefaultAnim.meta`
-    - `Assets/Animation/DefaultAnim/*`
-    - `Assets/TestOnly/Editor.meta`
-    - `Assets/TestOnly/Editor/NPCGirlAnimatorControllerConfigurator.cs`
-    - `Assets/TestOnly/Editor/NPCGirlAnimatorControllerConfigurator.cs.meta`
-  - Deleted tracked animation paths:
-    - `Assets/Animation/NPCGirl_Idle.anim`
-    - `Assets/Animation/NPCGirl_Idle.anim.meta`
-    - `Assets/Animation/NPCGirl_Move.anim`
-    - `Assets/Animation/NPCGirl_Move.anim.meta`
-  - Controller motion references:
-    - `Assets/Animation/NPCGirl_Move.controller:150,268,295,322,349`
+  - `Assets/Scripts/System/Farming/FarmCropPresenter.cs`
+  - `Assets/Scripts/System/Farming/CropVisualAnimator.cs`
+  - `Assets/Scripts/System/Farming/FarmCropPresenter.cs.meta:2`
+  - `Assets/Scripts/System/Farming/CropVisualAnimator.cs.meta:2`
+  - `Assets/Scenes/FarmerTest.unity:1267-1285`
+  - `PublicMD/PLAN.md:45`
+  - `PublicMD/Plans/Seed_System_Implementation_Plan.md:153-166`
 - Evidence:
-  - `git status --untracked-files=all` reports `BaseBuildingAction.cs` and its `.meta` as untracked.
-  - `git ls-files --error-unmatch` confirms neither new base file is known to Git.
-  - Eat, Drink, and Sleep now inherit that new type.
-  - `Assembly-CSharp.csproj` includes the local file, explaining why the reported local build can pass.
-  - The five Controller motion GUIDs resolve only to files under the untracked `DefaultAnim` directory.
-  - The original tracked Idle and Move paths remain deleted.
+  - `FarmCropPresenter` GUID `c1b9efbd29444a108e630c65debb3702`는 자체 `.meta` 외에 repository 내 참조가 없다.
+  - `CropVisualAnimator` GUID `e43ab01182bd4c4098d39cb81d425b1f`도 자체 `.meta` 외에 참조가 없다.
+  - 모든 `.unity`·`.prefab` 대상 검색 결과 두 GUID의 serialized reference는 0건이다.
+  - `FarmCropPresenter`·`CropVisualAnimator`를 runtime에서 동적으로 추가하는 코드도 없다.
+  - `FarmerTest.unity`의 변경은 `TestFarmProductionWindow`와 Phase 1 dependency 배선만 추가한다.
+  - 계획 문서는 약 10개 visual과 presenter 배선이 아직 수동 작업이라고 명시한다.
 - Description:
-  - The current filesystem can compile and resolve animation references because all required files exist locally.
-  - A changeset produced from tracked `git diff` alone omits the new base class and required animation replacements.
-  - IMP-033 therefore strengthens the existing delivery risk: without the new base file, the three modified semantic actions do not compile in a clean checkout.
+  - `FarmWorkSite.StateChanged`는 정상 발행되지만 이를 소비하는 runtime instance가 없다.
+  - 따라서 sprite stage, cascade, idle, 수확 disappear와 lifecycle resync 중 어떤 기능도 현재 scene에서 실행되지 않는다.
+  - 이는 단순히 Play Mode 검증이 빠진 상태가 아니라 runtime integration 자체가 빠진 상태다.
 - Recommended fix:
-  - Include `BaseBuildingAction.cs` and its `.meta` in the delivered changeset.
-  - Include all required animation clips, their `.meta` files, folder metadata, and the Editor configurator.
-  - Verify from a clean checkout that the runtime and Editor projects compile and all Controller motion GUIDs resolve.
+  - 실제 farming scene 또는 crop visual prefab에 `FarmCropPresenter`와 각 `CropVisualAnimator`를 추가한다.
+  - `_workSite`, `_visuals`, 각 `_animator`·`_spriteRenderer`를 명시적으로 배선한다.
+  - scene/prefab YAML을 changeset에 포함하고 S-02 상태를 그전까지 `implementation/integration pending`으로 기록한다.
+  - 배선 후 threshold 전환, 최종 수확, 즉시 새 crop 선택, disable/re-enable을 Play Mode에서 검증한다.
 - Impact if unfixed:
-  - A clean checkout can fail compilation because `BaseBuildingAction` is missing.
-  - Animator states can have missing motion references.
-  - Idle and Move animation references can be broken.
-  - Validation tooling documented by the project may be absent.
+  - S-02의 사용자 가시 기능이 전혀 실행되지 않는다.
+  - `implementation complete / verification pending` 상태가 실제 repository 상태를 과대평가한다.
+  - S-02 완료 조건을 검증할 수 없으며 후속 S-03 작업이 비활성 presentation 기반 위에서 진행된다.
+
+#### H-02 — 필수 신규 코드·sprite·문서가 Git 미추적 상태라 tracked changeset만으로는 빌드와 asset routing이 깨진다
+
+- Severity: High
+- Category: Changeset completeness / Unity asset delivery
+- Location:
+  - `Assets/Data/Struct/CropVisualStage.cs`와 `.meta`
+  - `Assets/Scripts/System/Farming/CropVisualAnimator.cs`와 `.meta`
+  - `Assets/Scripts/System/Farming/FarmCropPresenter.cs`와 `.meta`
+  - `Assets/Art/Generated/Rigged/Carrot_Progress1.png`~`Progress3.png`와 `.meta`
+  - `Assets/Art/Generated/crop-potato-single-stage-01.png`~`04.png`와 `.meta`
+  - `PublicMD/Systems/Farming/`
+  - `Assets/Data/ScriptableObject/FarmProductionDefinition_Carrot.asset:24-32`
+  - `Assets/Data/ScriptableObject/FarmProductionDefinition_Potato.asset:24-32`
+  - `PublicMD/Plans/Seed_System_Implementation_Plan.md:125`
+- Evidence:
+  - `git status --untracked-files=all`에서 위 신규 production code, meta, referenced sprite와 Farming leaf 문서가 `??`로 표시된다.
+  - `git diff --cached --name-status`는 비어 있다.
+  - tracked `FarmProductionDefinition.cs`는 untracked `CropVisualStage` type을 직접 참조한다.
+  - tracked Carrot/Potato assets는 미추적 sprite GUID 7개를 참조한다.
+  - tracked `ProjectStructure.md`는 새 `Systems/Farming/README.md`로 routing하고 기존 `Systems/Farming.md`는 삭제 상태지만 새 폴더는 미추적이다.
+  - Seed plan은 Phase 1 관련 신규 파일이 stage됐다고 기록하지만 현재 index에는 staged entry가 없다.
+- Description:
+  - 현재 dirty workspace에서는 파일이 존재하므로 csproj와 GUID 검색이 성공한다.
+  - tracked diff나 commit 기준으로 전달하면 `CropVisualStage` 정의가 없어 C# compile이 실패하고 crop sprite reference와 Farming 문서 link가 누락된다.
+  - 사용되지 않는 추가 carrot sprite도 미추적 상태이므로 실제 필요 asset과 작업 중 산출물을 구분해야 한다.
+- Recommended fix:
+  - S-02에 실제 필요한 C#·meta, 참조되는 sprite·meta, Farming leaf 문서와 scene/prefab integration만 명시적으로 stage한다.
+  - 사용하지 않는 `crop-carrot-single-stage-*` 산출물은 changeset 필요성을 별도로 판단한다.
+  - clean checkout 또는 staged-only 기준으로 compile, GUID resolution, Markdown links와 scene reference를 다시 확인한다.
+  - Seed plan의 “staged” 기록은 실제 index 상태와 일치시키거나 staging 전에는 제거한다.
+- Impact if unfixed:
+  - 다른 환경이나 clean checkout에서 build가 실패한다.
+  - crop definition에 Missing sprite가 발생한다.
+  - `ProjectStructure`가 존재하지 않는 Farming 문서를 가리킨다.
+  - local workspace 검증 결과를 재현할 수 없다.
 
 ### Medium
 
-#### M-01 — `EnterBuilding` cannot react promptly to cancellation
+#### M-01 — Farming gameplay 유효성이 presentation asset 유효성에 종속됐다
 
 - Severity: Medium
-- Category: Lifecycle / cancellation correctness / animation regression
+- Category: Architecture / Responsibility and dependency direction
 - Location:
-  - `Assets/Scripts/System/Action/BaseBuildingAction.cs:19-46`
-  - `Assets/Animation/NPCGirl_Move.controller:106-127`
-  - `Assets/Animation/NPCGirl_Move.controller:281-285`
-  - `Assets/Scripts/Actor/WorkerNPC.cs:61-65`
-  - `Assets/Scripts/Actor/WorkerNPC.cs:105-124`
+  - `Assets/Data/ScriptableObject/Script/FarmProductionDefinition.cs:35-38`
+  - `Assets/Data/ScriptableObject/Script/FarmProductionDefinition.cs:81-105`
+  - `Assets/Scripts/System/Farming/FarmWorkSite.cs:64-68`
+  - `Assets/Scripts/System/Farming/FarmWorkSite.cs:89-90`
+  - `PublicMD/Systems/Farming/README.md`
+  - `PublicMD/Systems/Farming/Crop_Presentation.md`
+  - `PublicMD/Plans/Seed_System_Implementation_Plan.md:159`
 - Evidence:
-  - `BaseBuildingAction` correctly sets `IsInsideBuilding` to false on completion, replan, failure, stop, and clear.
-  - `EnterBuilding` has exactly one outgoing transition.
-  - That transition is unconditional, waits for exit time 1, targets `InsideBuilding`, and has no interruption source.
-  - There is no `EnterBuilding -> ExitBuilding` or restoration transition conditioned on `IsInsideBuilding == false`.
-  - `WorkerNPC` can discard the failed/replanned action and start a replacement queue immediately.
+  - `FarmProductionDefinition.IsValid`는 production 값뿐 아니라 `HasValidPresentation()`도 요구한다.
+  - `HasValidPresentation()`은 controller, 최소 두 stage, sprite, threshold 배열이 모두 유효해야 성공한다.
+  - `FarmWorkSite.TrySelectCrop`과 `CanInteractCore`는 이 통합 `IsValid`를 사용한다.
+  - 따라서 controller 또는 sprite 하나가 누락되면 crop selection이 거부되고 이미 선택된 farm도 interaction 불가가 된다.
+  - Farming 문서는 presentation 부재나 비활성화가 gameplay transaction에 영향을 주지 않아야 한다고 규정한다.
 - Description:
-  - The C# lifecycle emits the correct cancellation signal, but the Animator cannot consume it while `EnterBuilding` is active.
-  - The entry clip must finish, the Controller must enter `InsideBuilding`, and only then can the false condition trigger `ExitBuilding`.
-  - Gameplay movement or another action can therefore resume while the NPC is still playing the entry/exit visual sequence.
-  - This is pre-existing Controller behavior, not a new IMP-033 ownership defect.
+  - 하나의 ScriptableObject에 production과 presentation reference를 보관하는 것은 source-of-truth 측면에서 타당하다.
+  - 그러나 transaction owner가 presentation의 완전성을 실행 전제에 포함하면서 presentation failure가 production을 중단시킨다.
+  - 현재 Carrot/Potato asset은 local workspace에서 유효하므로 즉시 재현되는 데이터 결함은 아니지만, 향후 art reference 손실·headless test·presentation 없는 crop 정의가 gameplay 장애로 확대된다.
 - Recommended fix:
-  - Add an explicit cancellation/restoration transition from `EnterBuilding` when `IsInsideBuilding` becomes false.
-  - Define whether cancellation should enter `ExitBuilding` or restore directly to an external locomotion state.
-  - Update the configurator and its validator to own that transition.
-  - Run Play Mode cases for stop, replan, transaction failure, disable, and pool return during entry.
+  - definition validation을 `IsProductionValid`와 `HasValidPresentation`처럼 책임별로 분리한다.
+  - `FarmWorkSite`는 production validation만 사용한다.
+  - `CropCatalog`의 전체 content validation 또는 `FarmCropPresenter` 초기화 경계에서는 production과 presentation을 모두 검증한다.
+  - invalid presentation은 presenter만 안전하게 비활성화하고 farming transaction은 유지한다.
 - Impact if unfixed:
-  - A cancelled NPC can remain shrinking, hidden, or exiting after gameplay has resumed.
-  - Locomotion presentation can be delayed after failure or replan.
-  - C# cleanup appears immediate while the actual visual cleanup is not.
-
-#### M-02 — Animator validation still accepts configurations outside its claimed contract
-
-- Severity: Medium
-- Category: Validation reliability / maintainability
-- Location:
-  - `Assets/TestOnly/Editor/NPCGirlAnimatorControllerConfigurator.cs:32-41`
-  - `Assets/TestOnly/Editor/NPCGirlAnimatorControllerConfigurator.cs:80-110`
-  - `Assets/TestOnly/Editor/NPCGirlAnimatorControllerConfigurator.cs:204-248`
-- Evidence:
-  - `Validate` checks that each required source/destination pair exists exactly once.
-  - It does not reject other managed-state edges or Any State transitions.
-  - Motion validation checks only that each state has a non-null motion; it does not verify the expected clip or GUID.
-  - It does not validate transition offset, interruption source, or ordered-interruption settings.
-  - `Configure` returns without repair whenever this incomplete validation succeeds.
-- Description:
-  - The validator proves that required pieces exist but does not prove that the Controller exactly matches the accepted state machine.
-  - This becomes more important if the M-01 cancellation transition is added and the tool is expected to remain authoritative.
-- Recommended fix:
-  - Compare the complete managed transition edge set against the expected set.
-  - Reject unexpected Any State and managed-state transitions.
-  - Validate expected motion assets and all settings owned by the configurator.
-  - Include the intended cancellation path in both configuration and validation.
-- Impact if unfixed:
-  - Controller drift or accidental clip replacement can pass validation.
-  - The configurator can incorrectly report “already configured” and decline to repair a divergent Controller.
-  - Reviewers can overestimate what the isolated validation proves.
+  - art asset 누락이나 Animator 변경이 농사 생산을 중단시킨다.
+  - gameplay와 presentation 사이의 dependency direction이 흐려진다.
+  - presentation 없는 자동 test definition을 만들기 어렵고 이후 crop 추가 시 실패 범위가 불필요하게 커진다.
 
 ### Low
 
-#### L-01 — Architecture documents still reference a nonexistent Farmer scene
-
-- Severity: Low
-- Category: Documentation drift
-- Location:
-  - `PublicMD/ARCHITECTURE.md:5`
-  - `PublicMD/ARCHITECTURE.md:403`
-  - `PublicMD/ProjectStructure.md:453`
-- Evidence:
-  - These locations identify `SampleScene.unity` as the Farmer execution scene.
-  - `Assets/Scenes/SampleScene.unity` does not exist.
-  - `Assets/Scenes/FarmerTest.unity` exists and is listed in the actual file tree.
-- Description:
-  - The stale scene name remains in documentation directly edited for IMP-033.
-- Recommended fix:
-  - Replace the stale `SampleScene.unity` references with `FarmerTest.unity`.
-- Impact if unfixed:
-  - Implementers and reviewers can inspect or attempt to configure the wrong integration scene.
-
-#### L-02 — The complete working tree still fails the documented diff-quality gate
-
-- Severity: Low
-- Category: Repository hygiene / verification
-- Location:
-  - `Assets/Animation/NPCGirl_Move.controller`
-  - `Assets/Scenes/FarmerTest.unity`
-  - `Assets/Scenes/GuardTest.unity`
-- Evidence:
-  - Whole-tree `git diff --check` reports trailing whitespace on empty Unity YAML scalar lines.
-  - `CodeConvention.md` includes `git diff --check` in the minimum validation combination.
-  - A targeted trailing-whitespace search found no violation in the IMP-033 handwritten C# or documentation files.
-- Description:
-  - The failures are accumulated Unity YAML patterns and were not introduced by the new base class.
-  - Nevertheless, the current repository snapshot does not pass the project’s stated whole-tree gate.
-- Recommended fix:
-  - Normalize the affected serialization where practical, or document a narrowly scoped Unity-YAML exception.
-  - Rerun `git diff --check` against the final delivered changeset.
-- Impact if unfixed:
-  - CI or automated review checks can fail.
-  - Genuine whitespace defects become harder to distinguish from serialization noise.
+None found.
 
 ## Findings By File
 
-- `Assets/Scripts/System/Action/BaseBuildingAction.cs`
-  - Responsibility placement and naming follow the project conventions.
-  - The base provides real shared lifecycle behavior.
-  - Cleanup is idempotent, handles partial initialization, and runs before context removal.
-  - H-01 applies because the file is untracked.
-  - M-01 applies through the downstream Animator response.
-- `Assets/Scripts/System/Action/DefaultAction.cs`
-  - No building-presentation policy remains.
-  - No issue found.
-- `Assets/Scripts/System/Action/EatAction.cs`
-  - Correctly inherits `BaseBuildingAction`.
-  - Dependency validation failure routes through the overridden `Fail` cleanup.
-  - No new issue found.
-- `Assets/Scripts/System/Action/DrinkAction.cs`
-  - Correctly inherits `BaseBuildingAction`.
-  - Dependency validation failure routes through the overridden `Fail` cleanup.
-  - No new issue found.
-- `Assets/Scripts/System/Action/SleepAction.cs`
-  - Correctly inherits `BaseBuildingAction` and remains sealed.
-  - No new issue found.
-- `Assets/Data/Struct/ActionContext.cs`
-  - Contains no destination-presentation metadata.
-  - The current context remains an execution dependency bundle rather than presentation policy.
-  - No issue found.
-- `Assets/Scripts/System/Lib/DestinationDB.cs`
-  - Contains no building-animation lookup or field.
-  - It remains limited to destination and interaction-provider lookup.
-  - No issue found.
-- `Assets/Scripts/System/Actor/FarmerActionSelector.cs`
-  - The shared Move/semantic context no longer leaks presentation into Move.
-  - The previous high-severity Farmer defect is resolved.
-  - No issue found.
-- `Assets/Scripts/System/Actor/GuardActionSelector.cs`
-  - Supply movement and semantic action construction remain correct.
-  - No issue found.
-- `Assets/Scripts/Actor/WorkerNPC.cs`
-  - Stop precedes action return/clear on cancellation paths.
-  - That ordering allows `BaseBuildingAction` to release presentation before context reset.
-  - M-01 applies to the Animator’s delayed response.
-- `Assets/Scripts/System/Lib/ActionPool.cs`
-  - `ReturnAction` calls `Clear` before enqueueing, preserving pooled-state safety.
-  - No issue found.
-- `Assets/Scripts/System/Actor/NPCComponent.cs`
-  - Remains a thin actor-local Unity adapter.
-  - `ResetRuntimeState` explicitly restores external animation state.
-  - No new issue found.
-- `Assets/Scenes/FarmerTest.unity`, `Assets/Scenes/GuardTest.unity`
-  - No stale `UsesBuildingAnimation` or `ShouldUseBuildingAnimation` field remains.
-  - DestinationDB script GUID and current destination rows match the current class.
-  - L-02 applies to accumulated YAML whitespace.
-- `Assets/Animation/NPCGirl_Move.controller`
-  - Current motion GUIDs and prefab Controller reference are valid in the local filesystem.
-  - H-01 and M-01 apply.
-- `Assets/TestOnly/Editor/NPCGirlAnimatorControllerConfigurator.cs`
-  - Correctly isolated as Editor tooling.
-  - H-01 and M-02 apply.
-- `Assets/Prefab/InGame/NPCGirl.prefab`
-  - `NPCComponent`, Animator, Controller, Transform, visual, and Guard-perception references remain intact.
-  - No issue found.
-- `PublicMD/ARCHITECTURE.md`, `PublicMD/ProjectStructure.md`
-  - The BaseBuildingAction ownership descriptions match the implementation.
-  - L-01 applies.
-- `PublicMD/Status/PROGRESS.md`
-  - The current implementation description matches the inspected source.
-  - The build result remains user-reported rather than independently reproduced.
+- `FarmWorkSite.cs`
+  - runtime crop·phase·progress·yield transaction 소유 위치는 적절하다.
+  - 성공 변경 뒤 event 발행과 최종 수확 즉시 clear가 안전하다.
+  - M-01의 통합 `IsValid` 소비가 적용된다.
+- `FarmCropPresenter.cs`
+  - event subscription, command queue, shuffle와 farm 단위 visual orchestration 책임이 응집돼 있다.
+  - disable/re-enable 정리와 즉시 resync 경로가 존재한다.
+  - H-01과 H-02 때문에 현재 runtime에서 사용되지 않는다.
+- `CropVisualAnimator.cs`
+  - 단일 visual의 Animator/SpriteRenderer adapter 역할에 한정돼 있다.
+  - 상태 존재 여부와 필수 reference를 검사하고 반복 오류를 latch한다.
+  - H-01과 H-02가 적용된다.
+- `CropVisualStage.cs`
+  - 작은 serializable value로 배치가 적절하다.
+  - H-02가 적용된다.
+- `FarmProductionDefinition.cs`
+  - 공유 production·presentation reference를 asset에 저장하는 위치는 적절하다.
+  - M-01처럼 두 validation 의미를 하나의 `IsValid`로 합친 것은 수정이 필요하다.
+- `CropCatalog.cs`
+  - duplicate crop과 output item cross-reference를 검사하며 이전 dead validation 문제가 개선됐다.
+- Carrot/Potato definition assets
+  - 두 asset 모두 `0 / 0.33333334 / 0.6666667 / 1` 네 stage를 가진다.
+  - 모든 local GUID는 정확히 한 `.meta`로 해석된다.
+  - H-02의 미추적 sprite delivery 위험이 적용된다.
+- `FarmerTest.unity`
+  - Phase 1 `TestFarmProductionWindow` dependency는 직렬화돼 있다.
+  - H-01처럼 crop visual component와 배열 배선은 없다.
+- Farming documentation
+  - leaf 소유권과 변경 유형별 최소 범위가 명확하다.
+  - H-01의 integration 상태와 H-02의 staging 기록 불일치를 교정해야 한다.
 
 ## Cross-Cutting Findings
 
-- Building presentation is now structurally tied to semantic action type, eliminating context-data leakage into unrelated actions.
-- Lifecycle cleanup requires cooperation between action state and Animator transition topology. A correct boolean reset does not guarantee prompt visual restoration.
-- Local build success does not establish delivery completeness when required source and asset files remain untracked.
-- Animator validation should distinguish “required pieces exist” from “the Controller exactly matches the accepted state machine.”
+- `FarmWorkSite -> StateChanged -> FarmCropPresenter` 방향은 domain runtime이 concrete presentation을 참조하지 않는 올바른 의존 방향이다.
+- production과 presentation이 동일 crop definition을 source of truth로 사용하는 선택은 합리적이지만 validation 소비자는 책임별로 분리해야 한다.
+- local asset GUID 완전성과 deliverable changeset 완전성은 별개다. 현재는 전자는 통과하지만 후자는 실패한다.
+- component가 scene/prefab에 존재하지 않으면 C# compile 성공만으로 presentation slice 구현 완료를 판단할 수 없다.
+- 이번 변경은 Farming 내부 presentation slice이므로 새로운 cross-system runtime owner나 공통 interface 추가는 필요하지 않다.
 
 ## Positive Notes
 
-- `BaseBuildingAction` is a justified abstract base with meaningful common lifecycle behavior.
-- The implementation follows the project’s `Base...` naming convention and action folder placement.
-- The new base has no manager, registry, provider, scene-search, or serialized dependency.
-- `DefaultAction` remains generic and reusable by non-building actions.
-- Move, Farming, Idle, Guard, and Attack have no route to building presentation.
-- Eat, Drink, and Sleep share identical entry/cleanup boundaries without duplicating code.
-- Entry is applied only after `DefaultAction.Start` validates `NPCComponent`.
-- Failure after Eat/Drink provider validation clears presentation through virtual dispatch.
-- `Stop` and `Clear` are safe before `Start`.
-- `Clear` preserves `ActionContext` until after presentation release.
-- The internal flag makes repeated completion/stop/clear cleanup idempotent.
-- Worker disable and reinitialization include an additional `NPCComponent.ResetRuntimeState` safety boundary.
-- No serialized destination migration remains necessary for building presentation.
-- No enum value or script GUID migration was introduced.
-- Scene `DestinationDB` rows match the current `DestinationInfo` shape.
-- No new dead code, repeated hot-path lookup, scene search, or gameplay tuning magic value was introduced.
+- NPC, selector와 `FarmingAction`에 crop stage·sprite 지식이 추가되지 않았다.
+- `FarmWorkSite`는 concrete presenter를 참조하지 않는다.
+- final harvest 시 log와 progress 계산에 필요한 definition 값을 clear 전에 보존한다.
+- visual random은 production `IRandomSource`와 완전히 분리돼 yield 결정성을 오염시키지 않는다.
+- stage가 여러 개 상승하면 누락 없이 순차 command를 만든다.
+- harvesting 중 progress 감소는 visual stage를 역행시키지 않는다.
+- duplicate/null visual은 cache 구축 시 한 번만 진단하고 제외한다.
+- Animator controller에는 `Appear`, `Disappear`, `Leaf Sway`가 존재하며 appear/disappear clip은 non-looping이다.
+- Carrot stage sprite는 동일한 3-bone 이름·topology를 유지한다.
+- cascade interval `0.08f`는 named default와 serialized tuning으로 관리된다.
+- 대상 코드에는 scene-wide `Find*`, repeated `GetComponent`, `UnityEngine.Random`, per-frame allocation loop가 없다.
+- Farming의 네 production 책임이 각각 하나의 leaf에서 주 소유된다.
+
+## Verification Limits
+
+- 읽기 전용 조건 때문에 `dotnet build`를 재실행하지 않았다. 0 warnings / 0 errors는 사용자 제공 결과다.
+- Unity Editor import, console warning과 Play Mode를 실행하지 않았다.
+- stage threshold 전후의 정확한 animation 횟수, Animator transition timing과 idle loop는 정적으로만 확인했다.
+- 수확 중 새 crop 선택, 빠른 다중 threshold, disable/re-enable과 scene reload는 Play Mode 미검증이다.
+- Potato의 leaf sway는 rig 부재로 정적으로 보일 수 있으며 실제 화면 결과를 확인하지 않았다.
+- global `git diff --check`에는 범위 밖 `GuardTest.unity`의 trailing whitespace가 존재한다. 요청된 대상 tracked diff는 별도로 검사해 통과했다.
+- production scene이 명확히 지정되지 않았으므로 모든 scene/prefab을 GUID 검색해 신규 component 참조가 0건임을 확인했다.
 
 ## Recommended Next Actions
 
-1. Include all required untracked runtime, animation, metadata, and Editor files in the delivered changeset.
-2. Add and validate an explicit cancellation/restoration path from `EnterBuilding`.
-3. Run Play Mode verification for:
-   - Move-state continuity while traveling to Pub or Inn
-   - Entry beginning only when Eat, Drink, or Sleep starts
-   - Exit after normal completion
-   - Failure, replan, stop, and disable during entry and inside states
-   - Second pooled spawn starting external and Idle
-   - Move, Farming, Guard, Attack, and Idle never triggering building presentation
-4. Make the Animator configurator validate the complete accepted state machine and exact motion assets.
-5. Correct the stale `SampleScene.unity` documentation.
-6. Resolve or formally handle the accumulated Unity YAML whitespace failures.
-7. Rebuild runtime and Editor projects from a clean checkout and verify all Controller GUIDs resolve.
+1. production validation과 presentation validation을 분리해 `FarmWorkSite`가 art reference에 종속되지 않게 한다.
+2. 필요한 신규 C#·meta, 실제 참조 sprite·meta와 Farming leaf 문서를 명시적으로 stage한다.
+3. farming scene 또는 owning prefab에 `FarmCropPresenter`와 `CropVisualAnimator` 배열을 배치·배선한다.
+4. staged-only 또는 clean checkout 기준으로 compile, GUID, Markdown link와 serialized reference 검사를 다시 실행한다.
+5. Play Mode에서 네 stage, 빠른 threshold 횡단, 최종 disappear 1회, 소멸 중 새 crop 선택, disable/re-enable와 Carrot/Potato 교체를 검증한다.
+6. 배선 전에는 S-02를 `implementation/integration pending`으로 기록하고, 검증 통과 후에만 완료 처리한다.
 
 ## Final Verdict
 
-**Changes requested for the complete working tree.**
+**Changes requested.**
 
-IMP-033’s architecture and C# ownership model are approved. The previous Farmer movement-time entry defect is statically resolved, and no new architecture problem was found.
+Architecture의 기본 방향과 lifecycle 코드는 양호하지만, crop presentation이 runtime에 전혀 배선되지 않았고 필수 신규 파일이 changeset에 포함되지 않았다. 또한 gameplay validation과 presentation validation의 결합을 해소해야 한다. H-01·H-02를 해결하고 M-01을 교정 또는 명시적으로 설계 승인한 뒤 Play Mode 검증을 통과하기 전에는 S-02를 완료로 닫거나 S-03 production 구현을 시작하면 안 된다.
 
-Delivery acceptance remains blocked by H-01 because the new base class and required animation assets are untracked. Runtime lifecycle acceptance also remains incomplete because M-01 is still present and all requested Play Mode scenarios are **NOT VERIFIED**.
+---
+
+## Documentation Coverage Audit — 2026-09-02
+
+### Purpose
+
+현재 프로젝트 소유 C# 스크립트가 `ProjectStructure.md`의 구조 지도와 그 문서가 연결하는 `PublicMD/Systems` leaf 문서에 빠짐없이 라우팅되는지 확인했다. 이번 부록은 위 Farming 변경 리뷰를 대체하지 않는다.
+
+### Review Snapshot
+
+- Scope: `Assets/Scripts`, `Assets/Data`, `Assets/TestOnly`의 C# 및 `PublicMD/ProjectStructure.md`, 모든 `PublicMD/Systems` 문서
+- Excluded: `Assets/Plugins/Demigiant/DOTween`의 third-party module 10개와 `Assets/_Recovery`
+- Verification: production C# 95개와 각 leaf의 `주 소유 스크립트` 표를 경로 기준 대조, TestOnly 7개의 기능 문서 언급 확인, `dotnet build Assembly-CSharp.csproj --no-restore`
+- Build: 0 warnings, 0 errors
+
+### Executive Summary
+
+production C# 95개 중 94개는 정확히 하나의 Systems leaf 또는 단일 기능 문서에 주 소유가 등록되어 있다. 중복 소유와 문서에만 남은 삭제 파일은 없다. 유일한 누락은 `Assets/Data/Class/CONST.cs`이며, 해당 폴더도 `ProjectStructure.md`의 최상위 폴더 책임 표에 없다. 이 파일의 `DefineString.Define.COSNT_ASDF` 상수는 프로젝트 내 사용처가 없어 현재는 문서화 누락인 동시에 dead placeholder 후보로 판단된다.
+
+TestOnly C# 7개는 `ProjectStructure.md`에서 폴더 책임이 정의되어 있고 모두 관련 Systems 문서에 파일명 또는 전체 경로로 언급된다. 따라서 production 주 소유 표의 누락으로 계산하지 않았다.
+
+### Findings By Severity
+
+#### Critical
+
+None found.
+
+#### High
+
+None found.
+
+#### Medium
+
+None found.
+
+#### Low
+
+##### L-01 — `CONST.cs`가 구조 지도와 Systems 주 소유 문서에서 누락되어 있다
+
+- File: `Assets/Data/Class/CONST.cs`
+- Evidence: production C# 95개 중 이 파일만 어떤 `주 소유 스크립트` 표에도 없고, `Assets/Data/Class`도 `ProjectStructure.md`의 최상위 폴더 책임 표에 없다.
+- Additional evidence: `DefineString`과 `COSNT_ASDF`는 선언 파일 외 사용처가 없으며 파일 내용은 `"ASDF"` placeholder 상수 하나뿐이다.
+- Recommendation: 실제 용도가 없다면 파일과 `.meta`를 삭제한다. 유지할 이유가 있다면 명확한 이름과 책임으로 교정하고 적절한 기존 폴더로 이동한 뒤 하나의 Systems 문서에 주 소유를 등록한다. 현재 상태 그대로 `ProjectStructure.md`에 새 공통 폴더를 추가하는 것은 권장하지 않는다.
+
+### Cross-Cutting Findings
+
+- production 문서 소유율은 94/95이며, 등록된 94개에는 중복 소유가 없다.
+- Systems 문서에 등록됐지만 실제 파일이 없는 stale path는 없다.
+- DOTween module은 외부 plugin code이므로 프로젝트의 기능 문서 소유 대상에서 제외했다.
+
+### Positive Notes
+
+- production C#의 one-leaf ownership 규칙이 `CONST.cs` 한 개를 제외하고 지켜지고 있다.
+- TestOnly 도구도 관련 기능 문서의 배선·검증 항목에서 추적되고 있다.
+
+### Recommended Next Actions
+
+1. `CONST.cs`가 불필요한 placeholder인지 확인한 뒤 삭제를 우선 검토한다.
+2. 유지한다면 파일명·namespace·상수명을 실제 책임에 맞게 바꾸고 기존 owning system으로 이동·등록한다.

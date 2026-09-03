@@ -17,7 +17,7 @@ Follow the phases in order. Do not combine planning and implementation.
 3. Read `PublicMD/ProjectStructure.md`, use its routing table, and then read only the relevant `PublicMD/Systems` leaf documents. When a feature is a folder, read its `README.md` only to select the needed leaf; do not automatically read every sibling leaf.
 4. Add conditional project documents only when applicable:
    - game rules or player experience: `PublicMD/Game_Plan.md` and `PublicMD/SPEC.md`;
-   - roadmap, prerequisite, or completion status: `PublicMD/PLAN.md`;
+   - roadmap, prerequisite, or completion status: `PublicMD/PLAN.md` and the selected feature's active document linked under `PublicMD/Plans`;
    - cross-system ownership or dependency changes: `PublicMD/ARCHITECTURE.md`;
    - planned C# creation or modification: `PublicMD/CodeConvention.md`.
 5. Follow the selected leaf document's change-routing table and inspect only the relevant code, scenes, prefabs, tests, and additional specifications.

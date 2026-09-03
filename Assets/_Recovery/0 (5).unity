@@ -359,7 +359,6 @@ MonoBehaviour:
   - {fileID: 797661897}
   - {fileID: 2104496465}
   - {fileID: 1373381419}
-  - {fileID: 2106675836}
 --- !u!1 &316712739
 GameObject:
   m_ObjectHideFlags: 0
@@ -1932,7 +1931,6 @@ GameObject:
   - component: {fileID: 1373381418}
   - component: {fileID: 1373381420}
   - component: {fileID: 1373381421}
-  - component: {fileID: 1373381422}
   m_Layer: 7
   m_Name: Square
   m_TagString: Untagged
@@ -2041,11 +2039,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FarmWorkSite
   _startingDefinition: {fileID: 11400000, guid: eff732f7297c9b64fadddbd75320c624, type: 2}
   _randomSource: {fileID: 1373381418}
-  _workArea: {fileID: 1373381420}
-  _workPositionRandomSource: {fileID: 1373381422}
-  _workGridColumns: 4
-  _workGridRows: 2
-  _workPositionJitter: 0.2
+  _outputInventorySource: {fileID: 2106675833}
 --- !u!61 &1373381420
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -2106,22 +2100,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TestFarmProductionWindow
   _farmWorkSite: {fileID: 1373381419}
   _warehouse: {fileID: 2106675833}
-  _depositPoint: {fileID: 2106675836}
   _cropCatalog: {fileID: 11400000, guid: 438d66d42c5e491ca877e19caeceaa77, type: 2}
   _itemDataContext: {fileID: 11400000, guid: df1cde6d9ea68634494a9967845fe8ad, type: 2}
---- !u!114 &1373381422
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1373381415}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 11f5310043904c2e910af5c48be5993c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SeededRandomSource
-  _seed: 2
 --- !u!1 &1434616969
 GameObject:
   m_ObjectHideFlags: 0
@@ -3011,9 +2991,6 @@ MonoBehaviour:
   - BuildingType: 4
     DestinationLoc: {fileID: 1373381417}
     DestinationObject: {fileID: 1373381415}
-  - BuildingType: 6
-    DestinationLoc: {fileID: 2106675835}
-    DestinationObject: {fileID: 2106675832}
   _interactableManager: {fileID: 267677647}
 --- !u!95 &1969603245 stripped
 Animator:
@@ -3277,7 +3254,6 @@ GameObject:
   - component: {fileID: 2106675835}
   - component: {fileID: 2106675834}
   - component: {fileID: 2106675833}
-  - component: {fileID: 2106675836}
   m_Layer: 0
   m_Name: Warehouse
   m_TagString: Untagged
@@ -3371,19 +3347,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 638045448}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2106675836
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2106675832}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5986253299b83b74cb7afc8d19f9095d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WarehouseDepositPoint
-  _inventorySource: {fileID: 2106675833}
 --- !u!212 &2107807901 stripped
 SpriteRenderer:
   m_CorrespondingSourceObject: {fileID: 212300, guid: 8ce24538a57042898c3698cb3fac48da, type: 3}
