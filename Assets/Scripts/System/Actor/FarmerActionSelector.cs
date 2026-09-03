@@ -10,6 +10,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
     private FarmingActionCost _farmingActionCostInfo;
     private StatEffect _workCost;
     private bool _hasLoggedMissingFarmProvider;
+    private bool _hasLoggedMissingDepositTarget;
 
     protected override void Start()
     {
@@ -44,16 +45,39 @@ public class FarmerActionSelector : BaseNPCActionSelector
         if (!component)
             return new Queue<IAction>();
 
-        NPCDecision decision;
         if (_decider == null || _decisionTuning == null || stat == null)
         {
             Debug.LogError("FarmerActionSelector is missing required setup (decider/tuning/stat); falling back to Idle.");
-            decision = NPCDecision.Idle(component.Position);
+            return BuildIdleQueue(component, stat);
         }
-        else
+
+        // Logistics (deliver/harvest cargo) takes priority over ordinary Work/Eat/Drink/Sleep
+        // decisions, but never over a critical need — matches the approved priority order.
+        if (!_decider.HasCriticalNeed(stat))
         {
-            decision = _decider.Decide(stat, npcType, component.Position, _workCost);
+            if (TryBuildHarvestQueue(component, stat, out Queue<IAction> harvestQueue))
+                return harvestQueue;
+
+            if (!component.Cargo.IsEmpty)
+            {
+                if (TryBuildDepositQueue(component, stat, out Queue<IAction> depositQueue))
+                    return depositQueue;
+
+                // Cargo exists but there is nowhere to take it — a real configuration problem,
+                // not a normal environment change. Warn once and park safely instead of
+                // busy-replanning every frame.
+                if (!_hasLoggedMissingDepositTarget)
+                {
+                    Debug.LogError(
+                        "FarmerActionSelector: cargo is non-empty but no usable Warehouse Deposit provider; parking Idle.");
+                    _hasLoggedMissingDepositTarget = true;
+                }
+
+                return BuildIdleQueue(component, stat);
+            }
         }
+
+        NPCDecision decision = _decider.Decide(stat, npcType, component.Position, _workCost);
 
         IInteractionProvider farmProvider = null;
         if (decision.Intent == NPCIntent.Work)
@@ -67,11 +91,15 @@ public class FarmerActionSelector : BaseNPCActionSelector
 
             if (!hasWorkPosition)
             {
-                if (!_hasLoggedMissingFarmProvider)
+                // Farm not registered at all in DestinationDB would be a real config error, but it
+                // is effectively unreachable here: AddFarmerWorkCandidate already requires
+                // TryGetDestinationPos(Farm) to succeed before the decider ever offers Work. What
+                // actually reaches this branch is the farm being registered but not currently
+                // interactable for Farming (empty crop, or already flipped to Harvesting) — a
+                // normal state, so stay silent unless the registration itself is truly missing.
+                if (!_destinationDB.TryGetDestinationPos(BuildingType.Farm, out _) && !_hasLoggedMissingFarmProvider)
                 {
-                    Debug.LogError(
-                        $"FarmerActionSelector: no usable IInteractionProvider or action position for " +
-                        $"{decision.DestinationKey}/{ActionType.Farming}; falling back to Idle.");
+                    Debug.LogError("FarmerActionSelector: BuildingType.Farm is not registered in DestinationDB; falling back to Idle.");
                     _hasLoggedMissingFarmProvider = true;
                 }
 
@@ -110,6 +138,83 @@ public class FarmerActionSelector : BaseNPCActionSelector
                 ReturnAll(rented);
                 return new Queue<IAction>();
             }
+        }
+
+        return new Queue<IAction>(rented);
+    }
+
+    /// <summary>
+    /// One Harvest per queue build (not decision.RepeatCount): capacity boundaries are already
+    /// handled by replanning after every attempt (HarvestAction RequestReplans the moment cargo
+    /// stops accepting more), so there is nothing to gain from renting several at once.
+    /// </summary>
+    private bool TryBuildHarvestQueue(NPCComponent component, NPCStat stat, out Queue<IAction> queue)
+    {
+        queue = null;
+
+        if (component.Cargo.IsFull)
+            return false;
+
+        if (!_destinationDB.TryGetDestinationPos(BuildingType.Farm, out Vector3 farmPos))
+            return false;
+
+        if (!_destinationDB.TryGetInteractionProvider(BuildingType.Farm, ActionType.Harvest, out var provider))
+            return false;
+
+        if (!provider.TryGetActionPosition(ActionType.Harvest, farmPos, out Vector3 workPos))
+            return false;
+
+        InteractionRequest request = new InteractionRequest(ActionType.Harvest, strength: 1f, cargo: component.Cargo);
+        ActionContext context = new ActionContext(component, stat, workPos, _farmingActionCostInfo,
+            provider: provider, request: request);
+
+        List<IAction> rented = new List<IAction>();
+        if (!TryRentAction(ActionType.Move, context, rented) || !TryRentAction(ActionType.Harvest, context, rented))
+        {
+            ReturnAll(rented);
+            return false;
+        }
+
+        queue = new Queue<IAction>(rented);
+        return true;
+    }
+
+    private bool TryBuildDepositQueue(NPCComponent component, NPCStat stat, out Queue<IAction> queue)
+    {
+        queue = null;
+
+        if (!_destinationDB.TryGetDestinationPos(BuildingType.Warehouse, out Vector3 warehousePos))
+            return false;
+
+        if (!_destinationDB.TryGetInteractionProvider(BuildingType.Warehouse, ActionType.Deposit, out var provider))
+            return false;
+
+        if (!provider.TryGetActionPosition(ActionType.Deposit, warehousePos, out Vector3 depositPos))
+            return false;
+
+        InteractionRequest request = new InteractionRequest(ActionType.Deposit, cargo: component.Cargo);
+        ActionContext context = new ActionContext(component, stat, depositPos, provider: provider, request: request);
+
+        List<IAction> rented = new List<IAction>();
+        if (!TryRentAction(ActionType.Move, context, rented) || !TryRentAction(ActionType.Deposit, context, rented))
+        {
+            ReturnAll(rented);
+            return false;
+        }
+
+        queue = new Queue<IAction>(rented);
+        return true;
+    }
+
+    private Queue<IAction> BuildIdleQueue(NPCComponent component, NPCStat stat)
+    {
+        List<IAction> rented = new List<IAction>();
+        ActionContext context = new ActionContext(component, stat);
+
+        if (!TryRentAction(ActionType.Idle, context, rented))
+        {
+            ReturnAll(rented);
+            return new Queue<IAction>();
         }
 
         return new Queue<IAction>(rented);

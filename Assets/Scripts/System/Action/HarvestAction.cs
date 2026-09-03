@@ -1,13 +1,13 @@
 using UnityEngine;
 
-public class FarmingAction : BaseWorkingAction
+public class HarvestAction : BaseWorkingAction
 {
     private float _workingTime = 3f;
     private float _currentWorkingTime = 0f;
     private IInteractionProvider _interactionProvider;
     private InteractionRequest _request;
 
-    public FarmingAction() : base(ActionType.Farming)
+    public HarvestAction() : base(ActionType.Harvest)
     {
     }
 
@@ -19,7 +19,13 @@ public class FarmingAction : BaseWorkingAction
 
         if (actionContext.InteractionProvider == null || actionContext.Request == null)
         {
-            Fail("FarmingAction started without a usable IInteractionProvider");
+            Fail("HarvestAction started without a usable IInteractionProvider");
+            return;
+        }
+
+        if (!actionContext.Request.Value.HasCargo)
+        {
+            Fail("HarvestAction started without carried cargo (selector wiring error)");
             return;
         }
 
@@ -27,8 +33,8 @@ public class FarmingAction : BaseWorkingAction
 
         if (!_interactionProvider.CanInteract(GetMyActionType()))
         {
-            // The site flipped out of Growing (e.g. reached max progress) between queue build
-            // and this action starting — a normal environment change, not a config error.
+            // Another Farmer may have emptied the crop, or the site is no longer in Harvesting
+            // phase — a normal environment change, not a config error.
             RequestReplan();
             return;
         }
@@ -45,7 +51,7 @@ public class FarmingAction : BaseWorkingAction
 
         if (!actionContext.Component)
         {
-            Fail("FarmingAction lost its NPCComponent reference");
+            Fail("HarvestAction lost its NPCComponent reference");
             return;
         }
 
@@ -75,18 +81,19 @@ public class FarmingAction : BaseWorkingAction
 
         if (actionCost == null)
         {
-            Fail("FarmingAction has no valid FarmingActionCost in ActionContext");
+            Fail("HarvestAction has no valid FarmingActionCost in ActionContext");
             return;
         }
 
         if (!_interactionProvider.TryInteract(_request, out _))
         {
-            // ApplyGrowingWork always succeeds internally, so a false result here can only mean
-            // CanInteract flipped between Tick's check and this call — a normal race, not a failure.
+            // Cargo is already full, or holds a different item type — normal, not a failure.
             RequestReplan();
             return;
         }
 
+        // Reached even on a partial carry: the worker genuinely worked, so the cost applies
+        // whether or not the whole yield fit in cargo this attempt.
         stat.ChangeFatigue(actionCost.FarmingActionPerFatigue);
         stat.ChangeHunger(actionCost.FarmingActionPerHunger);
         stat.ChangeThirst(actionCost.FarmingActionPerThirst);

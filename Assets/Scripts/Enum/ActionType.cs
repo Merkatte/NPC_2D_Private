@@ -8,4 +8,6 @@ public enum ActionType
     Idle,
     Guard,
     Attack,
+    Harvest,
+    Deposit,
 }

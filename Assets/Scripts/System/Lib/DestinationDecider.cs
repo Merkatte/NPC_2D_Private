@@ -107,6 +107,19 @@ public class DestinationDecider
     /// detection or GuardActionCost.ShouldInterrupt(...) fires. Pass null when the role has no
     /// activity to offer.
     /// </param>
+    /// <summary>
+    /// Read-only query so role selectors can gate logistics behavior (e.g. "deliver cargo before
+    /// harvesting more") on the same critical-need definition Decide() uses internally, without
+    /// duplicating the threshold formula (Selector_and_Queue.md invariant).
+    /// </summary>
+    public bool HasCriticalNeed(IStatView stat)
+    {
+        if (stat == null)
+            return false;
+
+        return BuildCriticalMask(ToSnapshot(stat)) != 0;
+    }
+
     public NPCDecision Decide(IStatView stat, NPCType npcType, Vector3 npcLoc, StatEffect workCost)
     {
         if (!_destinationDB || !_tuning || stat == null)

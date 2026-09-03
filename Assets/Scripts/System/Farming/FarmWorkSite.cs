@@ -9,7 +9,6 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
     [FormerlySerializedAs("_definition")]
     [SerializeField] private FarmProductionDefinition _startingDefinition;
     [SerializeField] private SeededRandomSource _randomSource;
-    [SerializeField] private MonoBehaviour _outputInventorySource;
     [SerializeField] private BoxCollider2D _workArea;
     // Position draws stay separate from yield draws so routing cannot change production results.
     [SerializeField] private SeededRandomSource _workPositionRandomSource;
@@ -17,14 +16,12 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
     [SerializeField, Min(1)] private int _workGridRows = 2;
     [SerializeField, Range(0f, 0.45f)] private float _workPositionJitter = 0.2f;
 
-    private IInventory _outputInventory;
-
     private FarmProductionDefinition _currentDefinition;
     private FarmWorkPhase _phase = FarmWorkPhase.Growing;
     private float _currentProgress;
 
     // Set once a yield has been rolled for the current harvest attempt and cleared only after the
-    // inventory accepts it in full. Keeps a rejected deposit from silently reshuffling the
+    // carrier accepts it in full. Keeps a rejected/partial deposit from silently reshuffling the
     // deterministic random stream (see Farming/Runtime_and_Transactions.md invariants).
     private int _pendingYield = -1;
 
@@ -32,6 +29,7 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
     private int _nextWorkCellIndex;
     private int _lastWorkCell = -1;
     private bool _hasLoggedWorkPositionFallback;
+    private bool _hasLoggedMissingHarvestCargo;
 
     public FarmProductionDefinition CurrentDefinition => _currentDefinition;
     public bool HasCrop => _currentDefinition;
@@ -97,10 +95,20 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
     }
 
     protected override bool SupportsCore(ActionType type)
-        => type == ActionType.Farming;
+        => type == ActionType.Farming || type == ActionType.Harvest;
 
+    // Farming and Harvest are mutually exclusive by phase, so an ordinary CanInteract lookup
+    // through DestinationDB/InteractableManager doubles as "is this farm ready to harvest?" —
+    // the selector never needs to know about FarmWorkPhase directly.
     protected override bool CanInteractCore(ActionType type)
-        => _currentDefinition && _currentDefinition.IsValid;
+    {
+        if (!_currentDefinition || !_currentDefinition.IsValid)
+            return false;
+
+        return type == ActionType.Harvest
+            ? _phase == FarmWorkPhase.Harvesting
+            : _phase == FarmWorkPhase.Growing;
+    }
 
     protected override bool TryGetActionPositionCore(ActionType type, Vector3 fallbackPosition, out Vector3 position)
     {
@@ -137,17 +145,9 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
 
     protected override bool TryInitializeCore(out string failureReason)
     {
-        _outputInventory = _outputInventorySource as IInventory;
-
         if (!_randomSource)
         {
             failureReason = "missing SeededRandomSource";
-            return false;
-        }
-
-        if (_outputInventory == null)
-        {
-            failureReason = "_outputInventorySource does not implement IInventory";
             return false;
         }
 
@@ -163,11 +163,10 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
     protected override bool TryInteractCore(InteractionRequest request, out InteractionResult result)
     {
         result = default;
-        float workerEfficiency = request.Strength;
 
-        bool succeeded = _phase == FarmWorkPhase.Growing
-            ? ApplyGrowingWork(workerEfficiency)
-            : ApplyHarvestingWork(workerEfficiency);
+        bool succeeded = request.Type == ActionType.Harvest
+            ? ApplyHarvestingWork(request.Strength, request.Cargo)
+            : ApplyGrowingWork(request.Strength);
 
         if (succeeded)
             StateChanged?.Invoke();
@@ -298,31 +297,43 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
         return true;
     }
 
-    private bool ApplyHarvestingWork(float workerEfficiency)
+    private bool ApplyHarvestingWork(float workerEfficiency, ICarriedInventory destination)
     {
+        if (destination == null)
+        {
+            LogMissingHarvestCargoOnce();
+            return false;
+        }
+
         if (_pendingYield < 0)
+        {
             _pendingYield = _randomSource.NextInclusive(_currentDefinition.MinimumYield, _currentDefinition.MaximumYield);
+            Debug.Log($"FarmWorkSite '{name}': rolled harvest yield {_pendingYield}.", this);
+        }
 
         FarmProductionDefinition harvestedDefinition = _currentDefinition;
         int outputItemId = harvestedDefinition.OutputItemId;
         float maxProgress = harvestedDefinition.MaxProgress;
-        int yield = _pendingYield;
-        bool accepted = _outputInventory.TryAdd(outputItemId, yield, out int acceptedQuantity);
 
-        // A partial accept already banked real quantity in the inventory. Shrink the pending yield
-        // by what landed so a retry only asks for the remainder instead of re-requesting the full
-        // amount (WarehouseInventory is currently all-or-nothing, but the contract allows partial).
-        if (acceptedQuantity > 0 && acceptedQuantity < yield)
-        {
-            _pendingYield -= acceptedQuantity;
-            Debug.LogWarning(
-                $"FarmWorkSite '{name}': inventory partially accepted harvest ({acceptedQuantity}/{yield}); " +
-                $"retrying remaining {_pendingYield} next attempt.",
-                this);
-        }
+        bool accepted = destination.TryAdd(outputItemId, _pendingYield, out int acceptedQuantity);
 
-        if (!accepted || acceptedQuantity != yield)
+        // Nothing moved (cargo already full, or holding a different item type) — a pure no-op.
+        // No internal state changed; the caller should RequestReplan, not Fail.
+        if (!accepted || acceptedQuantity <= 0)
             return false;
+
+        _pendingYield -= acceptedQuantity;
+
+        // Any accepted quantity is a real, successful work outcome. Progress only moves once the
+        // full pending yield has left the farm — this preserves the roll-once invariant (no
+        // re-roll on a later attempt) while still letting a partial carry count as success.
+        if (_pendingYield > 0)
+        {
+            Debug.Log(
+                $"FarmWorkSite '{name}': cargo accepted {acceptedQuantity}, {_pendingYield} left to collect.",
+                this);
+            return true;
+        }
 
         _pendingYield = -1;
 
@@ -339,9 +350,18 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
 
         Debug.Log(
             $"FarmWorkSite '{name}': harvest gauge {previousProgress:F1} -> {_currentProgress:F1} / {maxProgress:F1} " +
-            $"({normalizedProgress:P0}), stored item {outputItemId} x{yield}, phase={_phase}, hasCrop={HasCrop}.",
+            $"({normalizedProgress:P0}), stored item {outputItemId} x{acceptedQuantity}, phase={_phase}, hasCrop={HasCrop}.",
             this);
 
         return true;
+    }
+
+    private void LogMissingHarvestCargoOnce()
+    {
+        if (_hasLoggedMissingHarvestCargo)
+            return;
+
+        Debug.LogError($"FarmWorkSite '{name}': Harvest request arrived without carried cargo.", this);
+        _hasLoggedMissingHarvestCargo = true;
     }
 }

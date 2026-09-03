@@ -3,13 +3,18 @@ using UnityEngine;
 public class TestFarmProductionWindow : MonoBehaviour
 {
     private const float WindowWidth = 320f;
-    private const float WindowHeight = 320f;
+    private const float WindowHeight = 360f;
     private const int ApplyManyCount = 10;
+    private const int ProbeCargoCapacity = 10;
 
     [SerializeField] private FarmWorkSite _farmWorkSite;
     [SerializeField] private WarehouseInventory _warehouse;
+    [SerializeField] private WarehouseDepositPoint _depositPoint;
     [SerializeField] private CropCatalog _cropCatalog;
     [SerializeField] private ItemDataContext _itemDataContext;
+
+    // No visual is exercised from this probe, so the carry-visible callback is a no-op.
+    private readonly WorkerInventory _probeCargo = new WorkerInventory(ProbeCargoCapacity, _ => { });
 
     private Rect _windowRect = new Rect(20f, 300f, WindowWidth, WindowHeight);
 
@@ -24,6 +29,11 @@ public class TestFarmProductionWindow : MonoBehaviour
     private float _lastPreviousProgress;
     private float _lastCurrentProgress;
     private int _lastWarehouseDelta;
+    private int _lastCargoDelta;
+
+    private bool _hasLastDeposit;
+    private bool _lastDepositSuccess;
+    private int _lastDepositWarehouseDelta;
 
     private bool _hasLastSelection;
     private string _lastSelectionLabel;
@@ -59,6 +69,18 @@ public class TestFarmProductionWindow : MonoBehaviour
                 ApplyWork();
         }
 
+        if (_depositPoint)
+        {
+            if (GUILayout.Button("Deposit Probe Cargo", GUILayout.Height(32f)))
+            {
+                DepositProbeCargo();
+            }
+        }
+        else
+        {
+            GUILayout.Label("Missing WarehouseDepositPoint reference — cannot test Deposit.");
+        }
+
         GUILayout.Label($"Crop: {(_farmWorkSite.HasCrop ? _farmWorkSite.CurrentDefinition.DisplayName : "(none)")}");
         GUILayout.Label($"Phase: {_farmWorkSite.Phase}");
         GUILayout.Label($"Progress: {_farmWorkSite.CurrentProgress:F1} / {_farmWorkSite.MaxProgress:F1}");
@@ -66,6 +88,7 @@ public class TestFarmProductionWindow : MonoBehaviour
         GUILayout.Label($"Can select crop: {_farmWorkSite.CanSelectCrop}");
 
         DrawWarehouseQuantities();
+        DrawProbeCargoQuantities();
 
         if (_hasLastSelection)
         {
@@ -77,7 +100,13 @@ public class TestFarmProductionWindow : MonoBehaviour
         if (_hasLastResult)
         {
             GUILayout.Label($"Last work: success={_lastSuccess} phase={_lastPreviousPhase}->{_lastCurrentPhase} " +
-                $"progress={_lastPreviousProgress:F1}->{_lastCurrentProgress:F1} warehouseDelta={_lastWarehouseDelta}");
+                $"progress={_lastPreviousProgress:F1}->{_lastCurrentProgress:F1} " +
+                $"warehouseDelta={_lastWarehouseDelta} cargoDelta={_lastCargoDelta}");
+        }
+
+        if (_hasLastDeposit)
+        {
+            GUILayout.Label($"Last deposit: success={_lastDepositSuccess} warehouseDelta={_lastDepositWarehouseDelta}");
         }
 
         GUI.DragWindow();
@@ -140,6 +169,22 @@ public class TestFarmProductionWindow : MonoBehaviour
         }
     }
 
+    private void DrawProbeCargoQuantities()
+    {
+        if (!_cropCatalog)
+            return;
+
+        var definitions = _cropCatalog.Definitions;
+        for (int i = 0; i < definitions.Count; ++i)
+        {
+            FarmProductionDefinition definition = definitions[i];
+            if (!definition)
+                continue;
+
+            GUILayout.Label($"Probe cargo[{definition.DisplayName}]: {_probeCargo.GetQuantity(definition.OutputItemId)}");
+        }
+    }
+
     private void SelectCrop(FarmProductionDefinition definition)
     {
         bool success = _farmWorkSite.TrySelectCrop(definition, out string failureReason);
@@ -153,14 +198,23 @@ public class TestFarmProductionWindow : MonoBehaviour
     // Records state directly before/after the call: the common InteractionResult intentionally
     // carries no farm-specific payload (see PublicMD/Archive/Plans/InteractionProvider_Unification_Plan.md
     // section 8.2), so the previous dedicated result type no longer exists.
+    //
+    // Growing phase sends a Farming request (unchanged). Harvesting phase sends a Harvest
+    // request carrying this window's own probe cargo — Harvest no longer touches the warehouse
+    // directly, so exercising it here requires a carrier exactly like a real Farmer's.
     private void ApplyWork()
     {
         FarmWorkPhase previousPhase = _farmWorkSite.Phase;
         float previousProgress = _farmWorkSite.CurrentProgress;
         int outputItemId = _farmWorkSite.HasCrop ? _farmWorkSite.CurrentDefinition.OutputItemId : -1;
-        int previousQuantity = outputItemId >= 0 ? _warehouse.GetQuantity(outputItemId) : 0;
+        int previousWarehouseQuantity = outputItemId >= 0 ? _warehouse.GetQuantity(outputItemId) : 0;
+        int previousCargoQuantity = outputItemId >= 0 ? _probeCargo.GetQuantity(outputItemId) : 0;
 
-        bool success = _farmWorkSite.TryInteract(new InteractionRequest(ActionType.Farming, strength: 1f), out _);
+        InteractionRequest request = previousPhase == FarmWorkPhase.Growing
+            ? new InteractionRequest(ActionType.Farming, strength: 1f)
+            : new InteractionRequest(ActionType.Harvest, strength: 1f, cargo: _probeCargo);
+
+        bool success = _farmWorkSite.TryInteract(request, out _);
 
         int currentOutputItemId = _farmWorkSite.HasCrop ? _farmWorkSite.CurrentDefinition.OutputItemId : outputItemId;
 
@@ -170,8 +224,45 @@ public class TestFarmProductionWindow : MonoBehaviour
         _lastPreviousProgress = previousProgress;
         _lastCurrentProgress = _farmWorkSite.CurrentProgress;
         _lastWarehouseDelta = currentOutputItemId >= 0
-            ? _warehouse.GetQuantity(currentOutputItemId) - previousQuantity
+            ? _warehouse.GetQuantity(currentOutputItemId) - previousWarehouseQuantity
+            : 0;
+        _lastCargoDelta = currentOutputItemId >= 0
+            ? _probeCargo.GetQuantity(currentOutputItemId) - previousCargoQuantity
             : 0;
         _hasLastResult = true;
+    }
+
+    // Goes through WarehouseDepositPoint.TryInteract exactly like a real DepositAction would —
+    // calling _probeCargo.TryTransferAllTo(_warehouse, ...) directly would skip the provider and
+    // InteractionRequest.Cargo path entirely, defeating the point of this probe.
+    private void DepositProbeCargo()
+    {
+        int previousWarehouseTotal = SumWarehouseQuantities();
+
+        _lastDepositSuccess = _depositPoint.TryInteract(
+            new InteractionRequest(ActionType.Deposit, cargo: _probeCargo),
+            out _);
+
+        _lastDepositWarehouseDelta = SumWarehouseQuantities() - previousWarehouseTotal;
+        _hasLastDeposit = true;
+    }
+
+    private int SumWarehouseQuantities()
+    {
+        if (!_cropCatalog)
+            return 0;
+
+        int total = 0;
+        var definitions = _cropCatalog.Definitions;
+        for (int i = 0; i < definitions.Count; ++i)
+        {
+            FarmProductionDefinition definition = definitions[i];
+            if (!definition)
+                continue;
+
+            total += _warehouse.GetQuantity(definition.OutputItemId);
+        }
+
+        return total;
     }
 }

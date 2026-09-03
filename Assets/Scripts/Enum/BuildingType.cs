@@ -5,5 +5,6 @@ public enum BuildingType
     Well,
     Inn,
     Farm,
-    GuardPost
+    GuardPost,
+    Warehouse
 }

@@ -81,6 +81,12 @@ public class ActionPool : MonoBehaviour
             case ActionType.Attack:
                 _actionDictionary[actionType].Enqueue(new AttackAction());
                 break;
+            case ActionType.Harvest:
+                _actionDictionary[actionType].Enqueue(new HarvestAction());
+                break;
+            case ActionType.Deposit:
+                _actionDictionary[actionType].Enqueue(new DepositAction());
+                break;
             default:
                 Debug.LogError($"ActionPool.Create has no case for {actionType}");
                 break;

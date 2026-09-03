@@ -15,6 +15,8 @@ public class NPCComponent : MonoBehaviour
     [SerializeField] private GameObject _gameObject;
     [SerializeField] [FormerlySerializedAs("_guardPerception")] private CombatPerception _combatPerception;
     [SerializeField] private SpriteRenderer _toolRenderer;
+    [SerializeField] private SpriteRenderer _carryRenderer;
+    [SerializeField, Min(1)] private int _cargoCapacity = 10;
 
     // Farmer/Guard require a fully-parameterized Animator (Speed/IsInsideBuilding/IsWorking) and
     // CacheAnimatorParameters logs loudly if any is missing. Roles without art yet (e.g. Enemy)
@@ -23,6 +25,7 @@ public class NPCComponent : MonoBehaviour
 
     private NPCStat _stat;
     private readonly CombatRuntimeState _combatRuntimeState = new CombatRuntimeState();
+    private WorkerInventory _cargo;
     private bool _hasSpeedParameter;
     private bool _hasInsideBuildingParameter;
     private bool _hasIsWorkingParameter;
@@ -34,10 +37,14 @@ public class NPCComponent : MonoBehaviour
     public CombatPerception CombatPerception => _combatPerception;
     public CombatRuntimeState CombatRuntimeState => _combatRuntimeState;
 
+    // Read-only view: callers transact through ICarriedInventory but cannot swap or clear it.
+    public ICarriedInventory Cargo => _cargo;
+
     private Transform MoveRoot => _transform ? _transform : transform;
 
     void Awake()
     {
+        _cargo = new WorkerInventory(_cargoCapacity, SetCarryVisible);
         CacheAnimatorParameters();
     }
 
@@ -66,6 +73,7 @@ public class NPCComponent : MonoBehaviour
     public void ResetRuntimeState()
     {
         _combatRuntimeState.ClearTarget();
+        _cargo.Clear();
         _movedThisFrame = false;
         ResetAnimationState();
     }
@@ -114,6 +122,17 @@ public class NPCComponent : MonoBehaviour
     public void EnableObject(bool isEnable)
     {
         _gameObject.SetActive(isEnable);
+    }
+
+    // The sole place _carryRenderer is mutated — WorkerInventory decides *when* to show the
+    // sack (empty/non-empty), NPCComponent (the presentation adapter) performs the actual
+    // Unity mutation via this callback.
+    private void SetCarryVisible(bool visible)
+    {
+        if (_carryRenderer)
+        {
+            _carryRenderer.gameObject.SetActive(visible);
+        }
     }
 
     private void CacheAnimatorParameters()

@@ -1,13 +1,16 @@
 using UnityEngine;
 
-public class FarmingAction : BaseWorkingAction
+// Deliberately DefaultAction, not BaseWorkingAction: the Tool animator layer's ToolWork state
+// is gated on IsWorking, and swinging the hoe while setting cargo down at the warehouse would
+// look wrong. This is one second of standing still with no stat cost.
+public class DepositAction : DefaultAction
 {
-    private float _workingTime = 3f;
+    private float _workingTime = 1f;
     private float _currentWorkingTime = 0f;
     private IInteractionProvider _interactionProvider;
     private InteractionRequest _request;
 
-    public FarmingAction() : base(ActionType.Farming)
+    public DepositAction() : base(ActionType.Deposit)
     {
     }
 
@@ -19,7 +22,13 @@ public class FarmingAction : BaseWorkingAction
 
         if (actionContext.InteractionProvider == null || actionContext.Request == null)
         {
-            Fail("FarmingAction started without a usable IInteractionProvider");
+            Fail("DepositAction started without a usable IInteractionProvider");
+            return;
+        }
+
+        if (!actionContext.Request.Value.HasCargo)
+        {
+            Fail("DepositAction started without carried cargo (selector wiring error)");
             return;
         }
 
@@ -27,8 +36,6 @@ public class FarmingAction : BaseWorkingAction
 
         if (!_interactionProvider.CanInteract(GetMyActionType()))
         {
-            // The site flipped out of Growing (e.g. reached max progress) between queue build
-            // and this action starting — a normal environment change, not a config error.
             RequestReplan();
             return;
         }
@@ -45,13 +52,7 @@ public class FarmingAction : BaseWorkingAction
 
         if (!actionContext.Component)
         {
-            Fail("FarmingAction lost its NPCComponent reference");
-            return;
-        }
-
-        if (!ProviderStillUsable())
-        {
-            RequestReplan();
+            Fail("DepositAction lost its NPCComponent reference");
             return;
         }
 
@@ -70,26 +71,21 @@ public class FarmingAction : BaseWorkingAction
 
     protected override void UpdateCompletion()
     {
-        var stat = actionContext.Stat;
-        var actionCost = actionContext.CostInfo as FarmingActionCost;
-
-        if (actionCost == null)
+        // Cargo already empty (e.g. two Deposit queues raced) is not a failure — nothing to do.
+        if (_request.Cargo.IsEmpty)
         {
-            Fail("FarmingAction has no valid FarmingActionCost in ActionContext");
+            Complete();
             return;
         }
 
         if (!_interactionProvider.TryInteract(_request, out _))
         {
-            // ApplyGrowingWork always succeeds internally, so a false result here can only mean
-            // CanInteract flipped between Tick's check and this call — a normal race, not a failure.
+            // Warehouse refused (or accepted only part of) the transfer. Cargo already reflects
+            // whatever WarehouseInventory actually took, and any remainder stays carried — this
+            // is a normal outcome, not a config error, so replan rather than fail.
             RequestReplan();
             return;
         }
-
-        stat.ChangeFatigue(actionCost.FarmingActionPerFatigue);
-        stat.ChangeHunger(actionCost.FarmingActionPerHunger);
-        stat.ChangeThirst(actionCost.FarmingActionPerThirst);
 
         Complete();
     }
