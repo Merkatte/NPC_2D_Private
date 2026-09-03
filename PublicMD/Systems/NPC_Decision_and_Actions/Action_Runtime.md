@@ -21,8 +21,9 @@ ReturnAction -> Clear -> pool
 
 ## 책임 경계
 
-- `ActionContext`에는 현재 action 실행에 필요한 actor-local 값과 선택된 capability만 넣는다.
+- `ActionContext`에는 현재 action 실행에 필요한 actor-local 값과 선택된 capability만 넣는다. 아이템 payload는 별도 필드가 아니라 `Request`가 들고 있는 cargo로 전달한다.
 - `DefaultAction`은 lifecycle와 결과 전이를 소유하고 concrete action이 반복 구현하지 않게 한다.
+- `BaseWorkingAction`은 작업 표현(`SetWorking`) 배관과 실행 중 provider 재확인을 소유한다.
 - action은 manager, registry, selector를 직접 찾거나 다음 목표를 판단하지 않는다.
 
 ## 주 소유 스크립트
@@ -34,6 +35,7 @@ ReturnAction -> Clear -> pool
 | `Assets/Scripts/Enum/ActionResult.cs` | Running·Completed·ReplanRequested·Failed 결과 식별 |
 | `Assets/Scripts/Enum/ActionType.cs` | pool, cost, interaction이 공유하는 action key |
 | `Assets/Scripts/Interface/IAction.cs` | action lifecycle와 결과·type의 공통 계약 |
+| `Assets/Scripts/System/Action/BaseWorkingAction.cs` | 작업 표현 lifecycle와 캐싱된 provider 재확인(`ProviderStillUsable`)을 제공하는 작업 action base |
 | `Assets/Scripts/System/Action/DefaultAction.cs` | action lifecycle, pause, stop, clear, 결과 전이 base |
 
 ## 변경 유형별 최소 확인 범위
@@ -41,8 +43,9 @@ ReturnAction -> Clear -> pool
 | 변경 | 최소 파일·문서 |
 |---|---|
 | lifecycle·결과 의미 | `IAction.cs`, `DefaultAction.cs`, `ActionResult.cs`, [NPC Runtime](../NPC_Runtime.md) |
+| 작업 표현·provider 재확인 | `BaseWorkingAction.cs`, [NPC Presentation](../NPC_Presentation.md) |
 | context field | `ActionContext.cs`, 값을 구성하는 selector, 소비 action |
-| 새 action type | `ActionType.cs`, `DefaultActionCost.cs`, [Selector and Queue](Selector_and_Queue.md) |
+| 새 action type | `ActionType.cs`, `DefaultActionCost.cs`, `ActionPool.cs`, [Selector and Queue](Selector_and_Queue.md) |
 | pool reset | `DefaultAction.cs`, concrete action `Clear()`, `ActionPool.cs` |
 
 ## 불변 규칙
@@ -51,7 +54,9 @@ ReturnAction -> Clear -> pool
 - side effect는 정상 완료 경로에서 정확히 한 번 발생한다.
 - `Stop()`과 `Clear()`는 부분 초기화 상태에서도 안전해야 한다.
 - `Clear()`는 context, timer, target, flag를 모두 초기화한다.
-- `ActionContext`를 manager/service locator로 확장하지 않는다.
+- `ActionContext`를 manager/service locator로 확장하거나 domain 전용 payload 필드를 추가하지 않는다.
+- 정상적으로 바뀔 수 있는 환경 상태는 `ReplanRequested`, 필수 dependency나 배선 전제가 깨진 경우만 `Failed`로 보고한다.
+- `Tick()`에서 하는 provider 재확인은 캐싱된 참조 호출만 사용한다.
 
 ## 관련 문서
 

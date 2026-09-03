@@ -45,12 +45,15 @@ Actor runtime: queue와 현재 action을 언제 진행·폐기할지
 
 ```text
 IInteractionProvider -> 지원 조회, action 위치, option, request 실행, result
-IInventory           -> 수량 transaction
+IInventory           -> 수량 transaction (부분 수락 허용)
+ICarriedInventory    -> 운반 중 수량과 목적지로의 전량 이관
 ICombatTarget        -> 생존, 위치, damage
 IHoverInfoSource     -> UI가 읽을 표시 정보
 ```
 
 domain별 phase, recipe, item table, target 정책은 concrete owner가 유지한다.
+
+request는 값만이 아니라 transaction에 참여하는 capability도 나를 수 있다. `InteractionRequest.Cargo`가 그 예로, 요청자가 자기 inventory를 실어 보내면 provider는 방향(생산이면 넣고, 수령이면 뺀다)만 결정한다. 이렇게 하면 result에 domain 전용 payload를 추가하지 않고도 외부 수락 확인 후 내부 상태를 소모하는 순서를 유지할 수 있다.
 
 ## 3. 조립과 runtime 경계
 
@@ -84,6 +87,8 @@ Return -> Clear -> pool
 ### 3.4 상호작용과 transaction
 
 selector는 registry에서 capability를 선택해 request와 함께 action context에 넣는다. provider는 request를 검증하고 domain transaction을 실행한다. 외부 상태와 내부 상태를 함께 변경할 때는 외부 성공을 확인한 뒤 내부 상태를 소모한다.
+
+아이템은 생산 시설에서 소비 시설로 순간이동하지 않고 actor를 거친다. 현재 방향은 `Farm -> NPC cargo -> Warehouse`이며, 각 단계는 목적지가 수락한 만큼만 이동하고 거부된 잔량은 이전 소유자에게 남아 소실되지 않는다.
 
 세부 구조: [Interaction and Destinations](Systems/Interaction_and_Destinations.md)
 

@@ -1,6 +1,6 @@
 # Project Structure
 
-> 문서 기준일: 2026-08-29
+> 문서 기준일: 2026-09-04
 > 이 문서는 전체 구조 지도와 기능 문서 라우팅만 소유한다. 구체 클래스 흐름과 Unity 배선은 `PublicMD/Systems`의 해당 문서가 소유한다.
 
 ## 1. 구조 한눈에 보기
@@ -14,7 +14,7 @@ NPCManager / WorkerPool          생성과 조립
         -> ActionPool           action 대여와 반환
      -> IAction                 선택된 행동 실행
      -> NPCStat                 actor별 runtime 상태
-     -> NPCComponent            이동과 presentation adapter
+     -> NPCComponent            이동·presentation adapter와 운반 cargo 소유
 ```
 
 현재 프로젝트에는 `WorkerAI`, `WorkerActionPlan`, `WorkerActionContext`, Behavior Graph 기반 실행기가 없다. 과거 구조를 전제로 새 코드를 배치하지 않는다.
@@ -25,15 +25,15 @@ NPCManager / WorkerPool          생성과 조립
 |---|---|---|
 | NPC 공통 runtime | [NPC Runtime](Systems/NPC_Runtime.md) | queue 소비, 공통 stat, disable/reset |
 | 판단과 action | [NPC Decision and Actions](Systems/NPC_Decision_and_Actions/README.md) | utility, selector, action lifecycle, 이동, 생활 action |
-| 농사 | [Farming](Systems/Farming/README.md) | 농장 progress, 수확, 생산 definition, 씨앗 선택·작물 표현 |
+| 농사 | [Farming](Systems/Farming/README.md) | 농장 progress, 수확 transaction, 생산 definition, 씨앗 선택·작물 표현, Farming/Harvest action |
 | 전투 | [Combat](Systems/Combat/README.md) | 감지, target, 공격, Guard, Enemy |
 | 상호작용과 목적지 | [Interaction and Destinations](Systems/Interaction_and_Destinations.md) | provider, destination, 건물 action |
-| 아이템과 inventory | [Inventory and Items](Systems/Inventory_and_Items.md) | CSV, item data, 창고, cost registry |
+| 아이템과 inventory | [Inventory and Items](Systems/Inventory_and_Items.md) | CSV, item data, 창고와 NPC 봇짐, 운반·입고 transaction, cost registry |
 | NPC 표현 | [NPC Presentation](Systems/NPC_Presentation.md) | 이동 animation, Flip, 건물·도구 표현 |
 | UI | [UI](Systems/UI.md) | popup, hover, gauge, pointer routing |
 | 생성과 pooling | [Spawning and Pooling](Systems/Spawning_and_Pooling.md) | role 생성, prefab catalog, worker pool |
 
-판단·action과 전투는 독립 세부 기능이 4개 이상이므로 폴더 `README.md`가 필요한 leaf 문서를 다시 선택한다. 상위 README에는 전체 파일 목록이 없다.
+판단·action, 농사, 전투는 독립 세부 기능이 4개 이상이므로 폴더 `README.md`가 필요한 leaf 문서를 다시 선택한다. 상위 README에는 전체 파일 목록이 없다.
 
 ## 3. 작업별 읽기 라우팅
 
@@ -44,6 +44,7 @@ NPCManager / WorkerPool          생성과 조립
 | selector·새 action | Selector and Queue, Action Runtime | concrete action leaf |
 | 이동·동적 target | Movement | Presentation, Combat Targeting |
 | Farmer·농장·씨앗 | Farming | Decision Policy, Inventory, UI |
+| 수확물 운반·창고 입고 | Inventory and Items | Farming Runtime, Selector and Queue, Interaction |
 | Guard 순찰·판단 | Combat/Guard | Targeting, Attack, Decision Policy |
 | Enemy 판단·stat | Combat/Enemy | Targeting, Attack, Spawning |
 | 감지·target lifecycle | Combat/Targeting and Perception | Guard 또는 Enemy |
@@ -64,8 +65,8 @@ NPCManager / WorkerPool          생성과 조립
 | `Assets/Scripts/Manager` | scene 조립과 registry 진입점 |
 | `Assets/Scripts/System/Actor` | actor runtime state, selector, Unity adapter |
 | `Assets/Scripts/System/Action` | `IAction` 실행 구현 |
-| `Assets/Scripts/System/Farming` | 농경지 runtime 상태 |
-| `Assets/Scripts/System/Inventory` | 시설 inventory runtime 상태 |
+| `Assets/Scripts/System/Farming` | 농경지 runtime 상태와 작물 표현 |
+| `Assets/Scripts/System/Inventory` | 시설과 NPC 운반 inventory runtime 상태 |
 | `Assets/Scripts/System/Lib` | 둘 이상의 흐름이 공유하는 계산·pool·registry 보조 |
 | `Assets/Scripts/System/Mapper` | 외부 row를 runtime value로 변환 |
 | `Assets/Scripts/UI` | UI facade, routing과 concrete view lifecycle |
@@ -102,6 +103,7 @@ UI input -> IUIService <- domain IHoverInfoSource
 | 새 role | selector, 필요한 stat/definition, `NPCManager` creation entry |
 | 새 destination | `BuildingType`, scene `DestinationDB` row, 공통 provider registration |
 | 새 facility runtime state | 해당 domain의 scene component |
+| 새 item 운반·입고 흐름 | `ICarriedInventory` 소비 provider, `InteractionRequest.Cargo`, 실행 action, [Inventory and Items](Systems/Inventory_and_Items.md) |
 | 새 gameplay 난수 | `IRandomSource`를 주입받는 domain 계산 |
 | 새 popup·hover | category enum, base view 구현, `UIManager` registry |
 | 새 prefab 형태 | `NPCPrefabType`, prefab catalog, pool/spawn 조립 |

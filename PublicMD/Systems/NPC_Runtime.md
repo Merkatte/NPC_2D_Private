@@ -51,7 +51,7 @@ WorkerNPC.Init(role, runtime stat, selector)
 
 - runtime stat은 NPC 인스턴스마다 새로 생성하며 ScriptableObject에 현재값을 저장하지 않는다.
 - action instance를 반환하기 전에 `Stop()`과 selector의 반환 경로를 거친다.
-- 비활성화된 pooled NPC에는 이전 queue, stat, target, animation state가 남지 않아야 한다.
+- 비활성화된 pooled NPC에는 이전 queue, stat, target, cargo, animation state가 남지 않아야 한다. `NPCComponent.ResetRuntimeState`가 `WorkerNPC.Init`과 `OnDisable` 양쪽에서 이를 처리한다.
 - `WorkerNPC`에 role별 우선순위, destination 조회, action 세부 로직을 추가하지 않는다.
 
 ## Unity 배선
@@ -60,7 +60,7 @@ WorkerNPC.Init(role, runtime stat, selector)
 
 ## 알려진 제약과 TBD
 
-- 현재 active worker 목록의 despawn·제거 lifecycle은 별도 정책이 없다.
+- 현재 active worker 목록의 despawn·제거 lifecycle은 별도 정책이 없다. despawn 경로가 생기면 `ResetRuntimeState`가 운반 중이던 생산물을 조용히 없애므로 그 시점에 정책이 필요하다.
 - need의 장기 성장·밸런스 규칙은 아직 프로토타입 수준이다.
 
 ## 관련 문서

@@ -7,6 +7,7 @@ NPC stat, 현재 위치, destination과 provider option을 비교해 하나의 s
 ## 책임 경계
 
 - `DestinationDecider`는 후보 생성, 안전 filtering, utility 계산, bounded look-ahead를 소유한다.
+- 긴급 욕구 여부의 정의도 decider가 소유한다. selector는 `HasCriticalNeed(stat)`으로 같은 임계 판정을 재사용하고 자체 임계값을 두지 않는다.
 - `NPCDecision`은 “한 목적지에서 한 행동”과 Work 반복 횟수를 표현한다.
 - selector는 결과를 queue로 변환할 뿐 점수 공식을 다시 계산하지 않는다.
 - runtime action duration과 예측용 duration은 같은 값으로 간주하지 않는다.
@@ -43,6 +44,7 @@ DestinationDecider.Decide(stat, role, position, work cost)
 | utility 식·위험 곡선 | `DestinationDecider.cs`, `NPCDecisionTuning.cs`, `NPCDecision.cs` |
 | 후보 destination·provider | `DestinationDecider.cs`, [Interaction and Destinations](../Interaction_and_Destinations.md) |
 | Farmer decision 변환 | `DestinationDecider.cs`, [Selector and Queue](Selector_and_Queue.md) |
+| 긴급 욕구 임계 | `DestinationDecider.cs`(`HasCriticalNeed`), `NPCDecisionTuning.cs` |
 | Guard의 공급·경비 판단 | `DestinationDecider.cs`, [Guard](../Combat/Guard.md) |
 | 결정적 난수 | `IRandomSource.cs`, `SeededRandomSource.cs`, 난수를 소비하는 기능 문서 |
 

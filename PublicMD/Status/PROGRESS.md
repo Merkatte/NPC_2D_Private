@@ -50,6 +50,31 @@ Immediate next actions:
 
 ## Current Status
 
+### PublicMD 문서를 Harvest/Deposit 구현 기준으로 최신화 (2026-09-04)
+
+커밋 `f35cb65`(C#)와 `fd279f6`(씬 배선)로 Farmer 수확물 운반 기능이 들어갔지만 `Systems/` 문서와 `ProjectStructure.md`에는 반영되지 않은 상태였다. 실제로 `HarvestAction`, `DepositAction`, `WorkerInventory`, `ICarriedInventory`, `WarehouseDepositPoint`, `BaseWorkingAction`을 `PublicMD` 전체에서 검색하면 이 `PROGRESS.md` 외에는 0건이었다. 코드를 현재 사실로 보고 문서를 교정했다.
+
+갱신 문서:
+
+- `ProjectStructure.md`: 기준일 2026-09-04, "수확물 운반·창고 입고" 라우팅 행, 새 기능 배치표의 운반·입고 흐름 행, `System/Inventory`·`System/Farming` 폴더 책임, Farming이 폴더형 인덱스라는 사실 누락 수정
+- `Systems/Inventory_and_Items.md`: `ICarriedInventory`/`WorkerInventory`/`WarehouseDepositPoint`/`DepositAction` 주 소유 등록, `IInventory.TryAdd` 부분 수락 계약, 봇짐 단일 item type·용량·`Clear()` 권한 규칙
+- `Systems/Farming/Runtime_and_Transactions.md`: Farming/Harvest 두 capability의 phase 게이트, cargo 인도, roll-once 유지, `_outputInventorySource` 제거
+- `Systems/Farming/Farming_Action.md`: `HarvestAction` 포함(제목을 "Farming and Harvest Actions"로 변경, 파일명은 링크 안정성 때문에 유지), `Fail` vs `RequestReplan` 기준
+- `Systems/Farming/README.md`, `Systems/NPC_Decision_and_Actions/README.md`: 흐름도와 소유 문서 라우팅
+- `Systems/Interaction_and_Destinations.md`: `InteractionRequest.Cargo` 계약과 Warehouse 배선
+- `Systems/NPC_Decision_and_Actions/Selector_and_Queue.md`: Farmer 우선순위(긴급 욕구 > Harvest > Deposit > decider), 빈 밭 진단 분리
+- `Systems/NPC_Decision_and_Actions/Action_Runtime.md`: `BaseWorkingAction` 주 소유와 `ProviderStillUsable`
+- `Systems/NPC_Decision_and_Actions/Decision_Policy.md`: `DestinationDecider.HasCriticalNeed`
+- `Systems/NPC_Presentation.md`: 봇짐 표시 책임 분리(`WorkerInventory`가 판단, `NPCComponent.SetCarryVisible`이 조작)
+- `Systems/NPC_Runtime.md`: pool 재사용 시 cargo 초기화
+- `ARCHITECTURE.md` §2.4·§3.4, `SPEC.md` Decision Log Q-037(봇짐 단일 item type, 용량 10, 부분 수락 의미)
+
+문서 구조 판단 2건: `Inventory_and_Items.md`는 세부 기능 4개 분할 기준을 적용하지 않고 단일 문서로 유지했다 — 봇짐과 창고가 `IInventory.TryAdd`라는 같은 계약·같은 변경 진입점을 공유하므로 Runtime inventory 하나로 묶는 것이 맞다고 봤고, 107줄로 250줄 가이드 안이다. 이 판단과 "독립 세부 기능이 4개가 되면 분할" 조건을 문서 안에 명시했다. `Farming_Action.md`는 링크가 1곳뿐이라 rename도 가능했지만 이력 연속성을 택했다.
+
+미완 상태는 문서에 사실대로 기록했다: 봇짐 스프라이트 대기로 `CarryAnchor`/`Carry` prefab 배선 없음(운반은 동작하지만 화면에 안 보임), `GuardTest.unity` 미배선, Harvest/cargo 경로 Play Mode `NOT VERIFIED`.
+
+검증: `git diff --check` 통과. 새 스크립트 6개가 각각 정확히 한 문서에서만 `주 소유 스크립트`로 등록되는지 확인(중복 0). `FarmerTest.unity`의 `InteractableManager._interactables` 4개 항목을 fileID → `m_EditorClassIdentifier`로 해석해 Pub/Pub(Well)/`FarmWorkSite`/`WarehouseDepositPoint`임을 확인한 뒤 문서에 기록. 코드 변경은 없다.
+
 ### Farmer 수확물 운반·창고 입고 구현 — C# 완료 / Unity 배선 진행 중 / 봇짐 스프라이트 자산 대기 (2026-09-04)
 
 Farmer가 수확한 작물을 창고로 순간이동시키던 것을 실제로 지고 운반하도록 바꿨다. `FarmWorkSite`는 Farming/Harvest를 phase 게이트된 두 capability로 분리하고, 수확물은 신규 `InteractionRequest.Cargo`(plain C# `ICarriedInventory`)를 통해 NPC의 `WorkerInventory`(용량 10, 단일 item type, `NPCComponent`가 `CombatRuntimeState`와 같은 방식으로 인라인 소유)로 들어간다. 신규 `HarvestAction`/`DepositAction`이 각각 수확·입고를 실행하고, 신규 `WarehouseDepositPoint`(`Assets/Scripts/Actor/`)가 창고 입고 provider를 맡는다. `FarmerActionSelector`는 긴급 욕구 > (Harvest, cargo에 room 있을 때만) > (Deposit, cargo 있을 때만) > 기존 decider 순으로 우선순위를 게이트해, 창고 provider가 없거나 cargo가 가득 차도 busy loop가 생기지 않는다.
