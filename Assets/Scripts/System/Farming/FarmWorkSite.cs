@@ -4,10 +4,18 @@ using UnityEngine.Serialization;
 
 public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
 {
+    private const int WorkPositionRandomResolution = 10000;
+
     [FormerlySerializedAs("_definition")]
     [SerializeField] private FarmProductionDefinition _startingDefinition;
     [SerializeField] private SeededRandomSource _randomSource;
     [SerializeField] private MonoBehaviour _outputInventorySource;
+    [SerializeField] private BoxCollider2D _workArea;
+    // Position draws stay separate from yield draws so routing cannot change production results.
+    [SerializeField] private SeededRandomSource _workPositionRandomSource;
+    [SerializeField, Min(1)] private int _workGridColumns = 4;
+    [SerializeField, Min(1)] private int _workGridRows = 2;
+    [SerializeField, Range(0f, 0.45f)] private float _workPositionJitter = 0.2f;
 
     private IInventory _outputInventory;
 
@@ -19,6 +27,11 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
     // inventory accepts it in full. Keeps a rejected deposit from silently reshuffling the
     // deterministic random stream (see Farming/Runtime_and_Transactions.md invariants).
     private int _pendingYield = -1;
+
+    private int[] _workCellOrder;
+    private int _nextWorkCellIndex;
+    private int _lastWorkCell = -1;
+    private bool _hasLoggedWorkPositionFallback;
 
     public FarmProductionDefinition CurrentDefinition => _currentDefinition;
     public bool HasCrop => _currentDefinition;
@@ -89,6 +102,39 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
     protected override bool CanInteractCore(ActionType type)
         => _currentDefinition && _currentDefinition.IsValid;
 
+    protected override bool TryGetActionPositionCore(ActionType type, Vector3 fallbackPosition, out Vector3 position)
+    {
+        position = fallbackPosition;
+
+        if (!TryGetWorkAreaValues(out Vector2 localMinimum, out Vector2 cellSize, out int cellCount,
+                out string failureReason))
+        {
+            LogWorkPositionFallbackOnce(failureReason);
+            return true;
+        }
+
+        EnsureWorkCellOrder(cellCount);
+
+        int cellIndex = _workCellOrder[_nextWorkCellIndex++];
+        _lastWorkCell = cellIndex;
+
+        int column = cellIndex % _workGridColumns;
+        int row = cellIndex / _workGridColumns;
+        float jitterRatio = Mathf.Clamp(_workPositionJitter, 0f, 0.45f);
+        float localX = localMinimum.x + (column + 0.5f) * cellSize.x
+            + NextSignedUnit() * cellSize.x * jitterRatio;
+        float localY = localMinimum.y + (row + 0.5f) * cellSize.y
+            + NextSignedUnit() * cellSize.y * jitterRatio;
+
+        position = _workArea.transform.TransformPoint(new Vector3(localX, localY, 0f));
+        if (IsFinite(position))
+            return true;
+
+        position = fallbackPosition;
+        LogWorkPositionFallbackOnce("work-area transform produced a non-finite world position");
+        return true;
+    }
+
     protected override bool TryInitializeCore(out string failureReason)
     {
         _outputInventory = _outputInventorySource as IInventory;
@@ -128,6 +174,112 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
 
         return succeeded;
     }
+
+    private void OnValidate()
+    {
+        _workGridColumns = Mathf.Max(1, _workGridColumns);
+        _workGridRows = Mathf.Max(1, _workGridRows);
+        _workPositionJitter = Mathf.Clamp(_workPositionJitter, 0f, 0.45f);
+    }
+
+    private bool TryGetWorkAreaValues(out Vector2 localMinimum, out Vector2 cellSize, out int cellCount,
+        out string failureReason)
+    {
+        localMinimum = default;
+        cellSize = default;
+        cellCount = 0;
+
+        if (!_workArea)
+        {
+            failureReason = "missing work-area BoxCollider2D";
+            return false;
+        }
+
+        if (!_workPositionRandomSource)
+        {
+            failureReason = "missing work-position SeededRandomSource";
+            return false;
+        }
+
+        if (float.IsNaN(_workPositionJitter) || float.IsInfinity(_workPositionJitter))
+        {
+            failureReason = $"invalid work-position jitter {_workPositionJitter}";
+            return false;
+        }
+
+        if (_workGridColumns <= 0 || _workGridRows <= 0 || _workGridRows > int.MaxValue / _workGridColumns)
+        {
+            failureReason = $"invalid work grid {_workGridColumns}x{_workGridRows}";
+            return false;
+        }
+
+        Vector2 areaSize = _workArea.size;
+        Vector2 areaOffset = _workArea.offset;
+        if (!IsFinite(areaSize) || !IsFinite(areaOffset) || areaSize.x <= 0f || areaSize.y <= 0f)
+        {
+            failureReason = $"invalid work-area geometry (offset={areaOffset}, size={areaSize})";
+            return false;
+        }
+
+        cellCount = _workGridColumns * _workGridRows;
+        cellSize = new Vector2(areaSize.x / _workGridColumns, areaSize.y / _workGridRows);
+        localMinimum = areaOffset - areaSize * 0.5f;
+        failureReason = null;
+        return true;
+    }
+
+    private void EnsureWorkCellOrder(int cellCount)
+    {
+        if (_workCellOrder == null || _workCellOrder.Length != cellCount)
+        {
+            _workCellOrder = new int[cellCount];
+            _nextWorkCellIndex = cellCount;
+            _lastWorkCell = -1;
+        }
+
+        if (_nextWorkCellIndex < cellCount)
+            return;
+
+        for (int i = 0; i < cellCount; ++i)
+            _workCellOrder[i] = i;
+
+        for (int i = cellCount - 1; i > 0; --i)
+        {
+            int swapIndex = _workPositionRandomSource.NextInclusive(0, i);
+            (_workCellOrder[i], _workCellOrder[swapIndex]) = (_workCellOrder[swapIndex], _workCellOrder[i]);
+        }
+
+        if (cellCount > 1 && _workCellOrder[0] == _lastWorkCell)
+            (_workCellOrder[0], _workCellOrder[1]) = (_workCellOrder[1], _workCellOrder[0]);
+
+        _nextWorkCellIndex = 0;
+    }
+
+    private float NextSignedUnit()
+    {
+        return _workPositionRandomSource.NextInclusive(-WorkPositionRandomResolution, WorkPositionRandomResolution)
+            / (float)WorkPositionRandomResolution;
+    }
+
+    private void LogWorkPositionFallbackOnce(string failureReason)
+    {
+        if (_hasLoggedWorkPositionFallback)
+            return;
+
+        Debug.LogWarning(
+            $"FarmWorkSite '{name}': cannot provide a distributed Farming position ({failureReason}); " +
+            "using the registered farm destination instead.",
+            this);
+        _hasLoggedWorkPositionFallback = true;
+    }
+
+    private static bool IsFinite(Vector2 value)
+        => !float.IsNaN(value.x) && !float.IsInfinity(value.x)
+            && !float.IsNaN(value.y) && !float.IsInfinity(value.y);
+
+    private static bool IsFinite(Vector3 value)
+        => IsFinite(new Vector2(value.x, value.y))
+            && !float.IsNaN(value.z) && !float.IsInfinity(value.z);
 
     private bool ApplyGrowingWork(float workerEfficiency)
     {

@@ -17,8 +17,9 @@ role 판단 결과를 실행 순서가 있는 `Queue<IAction>`으로 원자적�
 FarmerActionSelector.RequestNewActionQueue
   -> DestinationDecider.Decide
   -> destination/provider 유효성 확인
+  -> Work이면 같은 provider에서 batch 작업 위치를 한 번 결정
   -> 필요한 경우 MoveAction
-  -> Farming/Eat/Drink/Sleep/Idle action
+  -> 같은 위치를 공유하는 Farming batch 또는 Eat/Drink/Sleep/Idle action
   -> 모든 action Init 완료 후 queue 반환
 ```
 
@@ -46,6 +47,7 @@ FarmerActionSelector.RequestNewActionQueue
 - `TryRentAction`으로 초기화된 action만 queue에 넣는다.
 - queue 구성 실패 시 대여 목록 전체를 반환한다.
 - selector 안에서 거리·욕구 utility 공식을 복제하지 않는다.
+- `DestinationDecider`는 등록된 농장 중심으로 Work utility를 계산하고, 분산 위치 난수는 Work 선택 뒤 selector의 queue 구성에서만 소비한다.
 - `CanUseStat`으로 role selector와 runtime stat의 호환성을 spawn 전에 확인한다.
 - action pool factory와 `ActionType`은 함께 갱신한다.
 

@@ -15,7 +15,9 @@
 
 ```text
 crop 선택 -> FarmWorkSite runtime state
-Farmer selector -> FarmingAction -> FarmWorkSite.TryInteract
+Farmer selector -> FarmWorkSite.TryGetActionPosition (batch당 1회)
+  -> MoveAction + 같은 위치를 공유하는 FarmingAction batch
+  -> FarmWorkSite.TryInteract
   -> Growing progress 증가 / Harvesting inventory transaction
   -> StateChanged
      -> FarmCropPresenter -> CropVisualAnimator[]
@@ -29,6 +31,7 @@ Farmer selector -> FarmingAction -> FarmWorkSite.TryInteract
 - presentation은 inventory, progress, phase나 current definition을 변경하지 않는다.
 - 최종 수확 transaction이 성공하면 runtime crop은 즉시 비워지고 visual 소멸은 비동기로 완료된다.
 - crop별 공유 값은 ScriptableObject, 농장 배치별 상태는 scene의 `FarmWorkSite`가 소유한다.
+- 작업 위치 난수와 yield 난수는 서로 다른 `SeededRandomSource`를 사용한다.
 
 ## 관련 문서
 

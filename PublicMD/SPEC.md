@@ -93,6 +93,7 @@ flowchart LR
 | SRC-022 | 병사 주민은 전투 중 부상·전투 불능·사망할 수 있으며, 성곽이 뚫리고 병사 주민이 모두 전투 불능이면 다른 주민도 같은 위험에 노출된다. |
 | SRC-023 | 부상 또는 전투 불능 상태가 된 AI 주민은 병원 또는 치료소에서 치료받고 나온다. |
 | SRC-024 | 플레이어는 농경지에 심을 씨앗을 선택하며, 씨앗별 결과물·작업 요구치·수확량을 데이터로 관리하고 성장·수확 상태를 sprite, animation과 UI로 확인한다. |
+| SRC-025 | Farmer는 한 지점에 겹치지 않고 농경지 작업 영역에 분산되어 일하며, 한 작업 batch 동안에는 같은 위치를 사용한다. |
 
 ## 4. Glossary
 
@@ -254,6 +255,7 @@ flowchart LR
 | REQ-F-058 | Event-driven | 작물이 다음 성장 stage threshold를 처음 통과하면, 게임은 해당 stage의 성장 transition을 한 번 재생해야 한다. | SRC-024 | 하나의 threshold를 한 번 통과하는 동안 중복 transition이 발생하지 않고 runtime stage와 최종 sprite가 일치한다. |
 | REQ-F-059 | Event-driven | 작물의 수확 cycle이 완전히 끝나면, 게임은 수확 소멸 animation을 한 번 재생하고 작물 visual을 빈 상태로 전환해야 한다. | SRC-024 | 수확 transaction 하나당 소멸이 한 번만 재생되고 완료 후 이전 crop sprite가 남지 않는다. |
 | REQ-F-060 | Ubiquitous | 농경지 UI는 current crop, 성장 stage와 progress를 실제 `FarmWorkSite` 상태와 일치하게 표시하고 유효하지 않은 선택은 상태를 바꾸지 않은 채 이유를 제공해야 한다. | SRC-024 | 여러 농경지를 번갈아 조작해도 popup·gauge source가 섞이지 않고 실패한 입력 뒤 기존 definition과 progress가 보존된다. |
+| REQ-F-061 | Event-driven | Farmer의 Farming batch가 구성되면, 게임은 농경지 작업 영역의 분산 위치를 한 번 배정하고 해당 batch의 이동과 모든 농사 action에 같은 위치를 사용해야 한다. | SRC-025 | 첫 8개 batch가 기본 4 x 2 셀에 중복 없이 배정되고, 같은 batch 안에서는 위치가 바뀌지 않으며 다음 batch에서 다음 위치를 받는다. |
 
 ### 적 침공과 방어
 
@@ -398,6 +400,7 @@ flowchart LR
 | SRC-022 | REQ-F-050, REQ-F-051, REQ-D-015 |
 | SRC-023 | REQ-F-048, REQ-F-049, REQ-D-014 |
 | SRC-024 | REQ-F-052~REQ-F-060, REQ-D-016 |
+| SRC-025 | REQ-F-061 |
 
 ## 11. Open Questions
 
@@ -436,7 +439,7 @@ flowchart LR
 | Q-029 | 치료 완료 시 체력만 회복하는가, 부상·전투 불능 상태도 모두 해제하는가? | 치료 결과와 AI 업무 복귀 조건 | 기획자 |
 | Q-034 | 모든 crop을 처음부터 선택할 수 있는가, 해금·재고·계절 조건으로 후보를 제한하는가? | catalog filtering과 popup 상태 | 기획자 |
 
-Q-030~Q-033과 Q-035는 Seed Phase 1·2 시작 전에 결정됐다. [12절 Decision Log](#12-decision-log)를 본다.
+Q-030~Q-033, Q-035와 Q-036은 구현 전에 결정됐다. [12절 Decision Log](#12-decision-log)를 본다.
 
 ## 12. Decision Log
 
@@ -449,3 +452,4 @@ Open Question이 시스템 규칙으로 확정되면 이 절로 옮기고 표에
 | Q-032 (구 SG-003) | 첫 vertical slice의 crop은 Carrot(cropId 1, output item 4)과 Potato(cropId 2, output item 5) 2종이며, 둘 다 `ItemData.csv`에 기존 Food category로 추가한다. | 2026-08-29 | [Seed System Implementation Plan](Plans/Seed_System_Implementation_Plan.md) SG-003, [Inventory and Items](Systems/Inventory_and_Items.md) |
 | Q-033 (구 SG-004) | crop stage 데이터는 가변 배열로 유지하고 첫 Carrot·Potato asset은 normalized threshold `0 / 0.3333 / 0.6667 / 1`의 네 단계를 사용한다. | 2026-09-01 | [Seed System Implementation Plan](Plans/Seed_System_Implementation_Plan.md) SG-004, [Crop Presentation](Systems/Farming/Crop_Presentation.md) |
 | Q-035 (구 SG-006) | 최종 수확 transaction이 성공하면 current crop을 즉시 비우고 다음 선택을 허용한다. 수확 소멸은 gameplay를 지연시키지 않으며, 소멸 중 선택된 새 crop visual은 기존 소멸 완료 뒤 표시한다. | 2026-09-01 | [Seed System Implementation Plan](Plans/Seed_System_Implementation_Plan.md) SG-006, [Farming Runtime](Systems/Farming/Runtime_and_Transactions.md) |
+| Q-036 | Farmer는 Farming batch마다 농경지의 4 x 2 작업 셀 순환에서 위치를 하나 배정받고 batch 안에서는 그 위치를 유지한다. 셀 내부에는 최대 20% jitter를 적용한다. 첫 구현은 위치 예약·반납과 최대 작업 인원 제한을 지원하지 않아 8명을 초과하거나 순환이 겹치면 같은 위치가 재사용될 수 있다. | 2026-09-03 | [Farming Runtime](Systems/Farming/Runtime_and_Transactions.md), [Selector and Queue](Systems/NPC_Decision_and_Actions/Selector_and_Queue.md) |

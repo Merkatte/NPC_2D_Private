@@ -44,7 +44,7 @@ Actor runtime: queue와 현재 action을 언제 진행·폐기할지
 공통 interface는 소비자가 concrete type을 몰라도 동일한 의미로 사용할 수 있는 최소 protocol이어야 한다. 미래 가능성만으로 일대일 interface를 만들거나 domain마다 provider 계약을 복제하지 않는다.
 
 ```text
-IInteractionProvider -> 지원 조회, option, request 실행, result
+IInteractionProvider -> 지원 조회, action 위치, option, request 실행, result
 IInventory           -> 수량 transaction
 ICombatTarget        -> 생존, 위치, damage
 IHoverInfoSource     -> UI가 읽을 표시 정보

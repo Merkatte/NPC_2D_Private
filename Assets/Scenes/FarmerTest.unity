@@ -1157,6 +1157,7 @@ GameObject:
   - component: {fileID: 1373381419}
   - component: {fileID: 1373381418}
   - component: {fileID: 1373381420}
+  - component: {fileID: 1373381422}
   m_Layer: 7
   m_Name: Square
   m_TagString: Untagged
@@ -1251,6 +1252,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SeededRandomSource
   _seed: 1
+--- !u!114 &1373381422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1373381415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11f5310043904c2e910af5c48be5993c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SeededRandomSource
+  _seed: 2
 --- !u!114 &1373381419
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1266,6 +1280,11 @@ MonoBehaviour:
   _startingDefinition: {fileID: 11400000, guid: eff732f7297c9b64fadddbd75320c624, type: 2}
   _randomSource: {fileID: 1373381418}
   _outputInventorySource: {fileID: 2106675833}
+  _workArea: {fileID: 1373381420}
+  _workPositionRandomSource: {fileID: 1373381422}
+  _workGridColumns: 4
+  _workGridRows: 2
+  _workPositionJitter: 0.2
 --- !u!61 &1373381420
 BoxCollider2D:
   m_ObjectHideFlags: 0

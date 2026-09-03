@@ -10,7 +10,7 @@ NPC가 목적지를 찾고, 그 장소가 제공하는 capability를 조회하�
 |---|---|
 | Destination registry | `BuildingType`을 위치와 destination object로 변환 |
 | Provider registry | destination object와 `ActionType`으로 provider 조회 |
-| Interaction protocol | 지원 여부, option 열거, request 실행, result 반환 |
+| Interaction protocol | 지원 여부, action 위치, option 열거, request 실행, result 반환 |
 
 세부 기능이 4개 미만이므로 현재는 단일 문서로 유지한다.
 
@@ -23,6 +23,11 @@ DestinationDB.TryGetInteractionProvider(BuildingType, ActionType)
   -> destination row의 GameObject
   -> InteractableManager.TryGetInteractionProvider(GameObject, ActionType)
   -> IInteractionProvider
+
+선택된 action의 실행 위치:
+  provider.TryGetActionPosition(ActionType, registered destination)
+  -> 위치 제공 facility는 action별 위치 반환
+  -> 기본 provider는 registered destination 반환
 
 공급 action:
   provider.AppendOptions()
@@ -44,7 +49,7 @@ DestinationDB.TryGetInteractionProvider(BuildingType, ActionType)
 | `Assets/Scripts/Actor/BaseInteractionProvider.cs` | 공통 초기화·검증·dispatch template을 제공하는 provider base |
 | `Assets/Scripts/Actor/Pub.cs` | item table을 이용해 Eat·Drink option과 결과를 제공하는 facility |
 | `Assets/Scripts/Enum/BuildingType.cs` | destination registry의 안정적인 건물 key |
-| `Assets/Scripts/Interface/IInteractionProvider.cs` | support·availability·option·execute 공통 계약 |
+| `Assets/Scripts/Interface/IInteractionProvider.cs` | support·availability·action position·option·execute 공통 계약 |
 | `Assets/Scripts/Manager/InteractableManager.cs` | scene provider 초기화와 `(GameObject, ActionType)` registry |
 | `Assets/Scripts/System/Action/BaseBuildingAction.cs` | 실내 action의 건물 출입 표현 lifecycle |
 | `Assets/Scripts/System/Lib/DestinationDB.cs` | 건물 위치 조회와 provider registry 위임 진입점 |
@@ -63,6 +68,8 @@ DestinationDB.TryGetInteractionProvider(BuildingType, ActionType)
 
 - 새 facility마다 domain 전용 provider interface나 `TryGetXxxProvider`를 추가하지 않는다.
 - provider는 자신의 domain transaction만 실행하고 NPC의 다음 행동을 결정하지 않는다.
+- selector는 semantic action을 선택한 뒤 같은 provider에서 action 위치를 한 번 조회하며, action은 이미 확정된 위치만 받는다.
+- action 위치를 별도로 제공하지 않는 provider는 등록된 destination 위치를 그대로 사용한다.
 - action은 scene registry를 직접 검색하지 않고 selector가 주입한 provider와 request를 사용한다.
 - provider 초기화는 idempotent해야 하며 중복 `(object, action)` 등록은 첫 항목을 보존하고 오류로 보고한다.
 - provider는 고정 scene dependency 부재만 초기화 실패로 취급한다. 정상적으로 바뀔 수 있는 domain 상태(예: 농경지에 아직 아무것도 안 심긴 상태)로 인터랙션을 막을 때는 `CanInteractCore`를 override해서 게이트하고, `TryInitializeCore`를 실패시키지 않는다 — `BaseInteractionProvider._isOperational`은 첫 초기화에서 latch되므로 여기서 실패시키면 이후 상태가 바뀌어도 영구히 복구되지 않는다. 예시: [Farming Runtime](Farming/Runtime_and_Transactions.md)의 `FarmWorkSite.CanInteractCore`.

@@ -50,6 +50,37 @@ Immediate next actions:
 
 ## Current Status
 
+### Farmer 작업 영역 분산 구현 완료 / Play Mode 검증 대기 (2026-09-04)
+
+`IInteractionProvider`에 action 실행 위치 조회 계약을 추가하고, `BaseInteractionProvider`가 사용 가능한 action에는 등록 목적지를 기본 위치로 돌려주도록 확장했다. `FarmWorkSite`는 기존 생산 transaction과 별개로 `BoxCollider2D` 작업 영역을 기본 4 x 2 셀로 나누며, seed 2의 전용 `SeededRandomSource`로 셀 순서를 섞어 한 순환 안에서 중복 없이 배정한다. 셀 안에는 크기의 최대 20% jitter를 적용하고, 새 순환의 첫 셀이 직전 마지막 셀과 같으면 교환한다. 위치 dependency나 영역이 유효하지 않으면 한 번만 경고하고 등록된 농장 중심을 반환해 생산 흐름을 유지한다.
+
+`FarmerActionSelector`는 Work가 선택된 뒤 이미 조회한 동일 provider에서 위치를 한 번만 받고, 그 좌표를 하나의 `ActionContext`를 통해 Move와 전체 Farming 반복 batch에 공유한다. `DestinationDecider`는 변경하지 않아 계속 농장 중심으로 utility를 계산하고 위치 난수는 queue 구성 시점에만 소비한다. yield용 `_randomSource`와 위치용 `_workPositionRandomSource`는 분리되어 위치 요청이 수확량 난수열을 바꾸지 않는다. 위치 예약·반납과 8명 초과 시 중복 방지는 이번 범위에 포함하지 않았다.
+
+변경 파일:
+
+- `Assets/Scripts/Interface/IInteractionProvider.cs`
+- `Assets/Scripts/Actor/BaseInteractionProvider.cs`
+- `Assets/Scripts/System/Farming/FarmWorkSite.cs`
+- `Assets/Scripts/System/Actor/FarmerActionSelector.cs`
+- `Assets/Scenes/FarmerTest.unity`, `Assets/Scenes/GuardTest.unity`
+- `PublicMD/Systems/Interaction_and_Destinations.md`
+- `PublicMD/Systems/Farming/README.md`, `Runtime_and_Transactions.md`
+- `PublicMD/Systems/NPC_Decision_and_Actions/Selector_and_Queue.md`
+- `PublicMD/ARCHITECTURE.md`, `PublicMD/SPEC.md`
+
+Scene 배선은 두 FarmWorkSite에 작업 영역과 별도 위치 RNG를 연결했다. `FarmerTest`는 기존 `BoxCollider2D`를 재사용했고, 실제 scene 상태에 콜라이더가 없던 `GuardTest`에는 같은 농장 GameObject의 trigger `BoxCollider2D`를 추가했다. Guard selector, `GuardAction`, GuardPost는 변경하지 않았다.
+
+검증 결과:
+
+- `dotnet build Assembly-CSharp.csproj --no-restore`: 경고 0, 오류 0
+- `FarmerTest.unity`, `GuardTest.unity`: document fileID 중복 0, work area·position RNG·4 x 2 grid·0.2 jitter·seed 2 참조 확인
+- 위치 난수와 yield 난수 사용처 정적 검색: 별도 source 사용 확인, `UnityEngine.Random` 사용 0건
+- 변경한 C#과 문서의 `git diff --check`: 통과
+- 두 scene 전체 diff의 `git diff --check`: 기존 사용자 crop/scene 변경에 포함된 `m_Name: ` trailing whitespace 때문에 실패. 이번에 추가한 component 행에는 새 trailing whitespace를 남기지 않았다.
+- Farmer 8명 분산, batch 내부 위치 유지, 다음 batch 위치 변경, collider 내부 실제 도착, fallback 경고 1회와 Eat/Drink 회귀는 Unity Play Mode에서 `NOT VERIFIED`
+
+독립 Codex read-only review agent를 비동기로 시작했다(PID 35868). 결과는 아직 수신하지 않았으며 통과로 간주하지 않는다. 다음 작업은 `FarmerTest` Play Mode에서 8명 첫 batch 분산과 다음 batch 재배정, fallback 및 기존 생산·공급 회귀 시나리오를 확인하는 것이다.
+
 ### S-02 implementation complete / visual verification pending (2026-09-01)
 
 이 항목은 아래의 과거 S-01 `verification pending` 기록을 최신 상태로 대체한다. 사용자가 `FarmerTest` Play Mode에서 Seed Phase 1 생산·입고 흐름이 정상 동작함을 확인했으므로 S-01은 완료되었다. 단, Warehouse 용량 부족 시의 부분 입고 거부 시나리오는 여전히 `NOT VERIFIED`다.

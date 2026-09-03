@@ -30,6 +30,20 @@ public abstract class BaseInteractionProvider : MonoBehaviour, IInteractionProvi
         return SupportsCore(type) && _isOperational && CanInteractCore(type);
     }
 
+    public bool TryGetActionPosition(ActionType type, Vector3 fallbackPosition, out Vector3 position)
+    {
+        position = fallbackPosition;
+
+        if (!CanInteract(type))
+            return false;
+
+        if (TryGetActionPositionCore(type, fallbackPosition, out position))
+            return true;
+
+        position = fallbackPosition;
+        return false;
+    }
+
     public void AppendOptions(ActionType type, List<InteractionOption> buffer)
     {
         if (buffer == null || !CanInteract(type))
@@ -52,6 +66,12 @@ public abstract class BaseInteractionProvider : MonoBehaviour, IInteractionProvi
 
     protected virtual bool CanInteractCore(ActionType type)
         => true;
+
+    protected virtual bool TryGetActionPositionCore(ActionType type, Vector3 fallbackPosition, out Vector3 position)
+    {
+        position = fallbackPosition;
+        return true;
+    }
 
     protected abstract bool TryInitializeCore(out string failureReason);
 

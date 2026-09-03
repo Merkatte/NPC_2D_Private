@@ -58,17 +58,34 @@ public class FarmerActionSelector : BaseNPCActionSelector
         IInteractionProvider farmProvider = null;
         if (decision.Intent == NPCIntent.Work)
         {
+            Vector3 workPosition = decision.DestinationPos;
             bool hasProvider = _destinationDB.TryGetInteractionProvider(decision.DestinationKey, ActionType.Farming, out farmProvider);
-            if (!hasProvider)
+            bool hasWorkPosition = hasProvider && farmProvider.TryGetActionPosition(
+                ActionType.Farming,
+                decision.DestinationPos,
+                out workPosition);
+
+            if (!hasWorkPosition)
             {
                 if (!_hasLoggedMissingFarmProvider)
                 {
-                    Debug.LogError($"FarmerActionSelector: no usable IInteractionProvider for {decision.DestinationKey}/{ActionType.Farming}; falling back to Idle.");
+                    Debug.LogError(
+                        $"FarmerActionSelector: no usable IInteractionProvider or action position for " +
+                        $"{decision.DestinationKey}/{ActionType.Farming}; falling back to Idle.");
                     _hasLoggedMissingFarmProvider = true;
                 }
 
                 decision = NPCDecision.Idle(component.Position);
                 farmProvider = null;
+            }
+            else
+            {
+                decision = new NPCDecision(
+                    decision.Intent,
+                    decision.DestinationKey,
+                    workPosition,
+                    decision.RepeatCount,
+                    decision.Request);
             }
         }
 
