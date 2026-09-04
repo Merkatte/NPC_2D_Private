@@ -15,7 +15,7 @@ public class NPCComponent : MonoBehaviour
     [SerializeField] private GameObject _gameObject;
     [SerializeField] [FormerlySerializedAs("_guardPerception")] private CombatPerception _combatPerception;
     [SerializeField] private SpriteRenderer _toolRenderer;
-    [SerializeField] private SpriteRenderer _carryRenderer;
+    [SerializeField] private CarryVisualPresenter _carryPresenter;
     [SerializeField, Min(1)] private int _cargoCapacity = 10;
 
     // Farmer/Guard require a fully-parameterized Animator (Speed/IsInsideBuilding/IsWorking) and
@@ -46,6 +46,11 @@ public class NPCComponent : MonoBehaviour
     {
         _cargo = new WorkerInventory(_cargoCapacity, SetCarryVisible);
         CacheAnimatorParameters();
+
+        if (_carryPresenter)
+        {
+            _carryPresenter.ResetImmediate();
+        }
     }
 
     void LateUpdate()
@@ -74,6 +79,14 @@ public class NPCComponent : MonoBehaviour
     {
         _combatRuntimeState.ClearTarget();
         _cargo.Clear();
+
+        // Clear() may have just kicked off a Hide motion via the carry callback below — snap it
+        // back to Hidden immediately so pool reuse never plays a departing NPC's exit animation.
+        if (_carryPresenter)
+        {
+            _carryPresenter.ResetImmediate();
+        }
+
         _movedThisFrame = false;
         ResetAnimationState();
     }
@@ -124,14 +137,14 @@ public class NPCComponent : MonoBehaviour
         _gameObject.SetActive(isEnable);
     }
 
-    // The sole place _carryRenderer is mutated — WorkerInventory decides *when* to show the
-    // sack (empty/non-empty), NPCComponent (the presentation adapter) performs the actual
-    // Unity mutation via this callback.
+    // The sole place _carryPresenter is driven — WorkerInventory decides *when* to show the
+    // basket (empty/non-empty), NPCComponent (the presentation adapter) forwards that to the
+    // presenter, which owns the actual Animator playback and repeat-call guard.
     private void SetCarryVisible(bool visible)
     {
-        if (_carryRenderer)
+        if (_carryPresenter)
         {
-            _carryRenderer.gameObject.SetActive(visible);
+            _carryPresenter.SetVisible(visible);
         }
     }
 

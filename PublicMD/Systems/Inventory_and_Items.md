@@ -84,7 +84,7 @@ DepositAction -> WarehouseDepositPoint.TryInteract(Deposit, cargo)
 
 ## Unity 배선
 
-`DataManager._costInfos`에는 같은 `ActionType`의 cost가 중복되지 않아야 한다. `WarehouseDepositPoint._inventorySource`는 `IInventory`를 구현한 `MonoBehaviour`(현재 같은 오브젝트의 `WarehouseInventory`)여야 하며, 이 provider도 `InteractableManager._interactables`와 `DestinationDB`의 `BuildingType.Warehouse` row에 함께 등록해야 Farmer가 입고 목적지를 찾는다. `NPCComponent._cargoCapacity`(기본 10)와 `_carryRenderer`는 NPC prefab에서 설정한다.
+`DataManager._costInfos`에는 같은 `ActionType`의 cost가 중복되지 않아야 한다. `WarehouseDepositPoint._inventorySource`는 `IInventory`를 구현한 `MonoBehaviour`(현재 같은 오브젝트의 `WarehouseInventory`)여야 하며, 이 provider도 `InteractableManager._interactables`와 `DestinationDB`의 `BuildingType.Warehouse` row에 함께 등록해야 Farmer가 입고 목적지를 찾는다. `NPCComponent._cargoCapacity`(기본 10)와 `_carryPresenter`(화물 등장/퇴장 연출을 소유하는 `CarryVisualPresenter`, [NPC Presentation](NPC_Presentation.md) 참고)는 NPC prefab에서 설정한다.
 
 `FarmerTest.unity` 배선은 완료됐고 `GuardTest.unity`는 아직 같은 배선을 하지 않았다(2026-09-04 기준).
 

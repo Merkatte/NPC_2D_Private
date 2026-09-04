@@ -50,6 +50,22 @@ Immediate next actions:
 
 ## Current Status
 
+### NPCGirl 화물 바구니 등장/퇴장 애니메이션 구현 (2026-09-04)
+
+사용자가 `Assets/Art/Generated/worker-cargo-basket.png`를 확보하고 `NPCGirl.prefab`에 `Visual/Harvest/Image` 계층과 `NPCComponent._carryRenderer` 배선을 직접 마쳤다(이전 세션의 "블로킹" 항목이 해소된 상태로 이 세션이 시작됨 — `_carryRenderer`가 이미 `{fileID: 3983399424345232820}`를 가리키고 있었고 `NPC_Presentation.md`의 "아직 prefab에 없다"는 서술이 stale이었음을 코드로 확인). 이번 세션에서는 그 on/off 스위치를 "머리 위에서 뿅 나타나 떨어지며 착지 후 반동" 등장 모션과 "위로 튀며 축소" 퇴장 모션으로 바꿨다.
+
+설계: 기존 `NPCGirl_Idle/Move/ToolWork` 클립은 `Visual`의 `localPosition.y`/`localScale`을 이미 애니메이션하므로 손대지 않았다. 대신 `Harvest`를 `CarryAnchor`로 이름만 바꿔 재사용하고, 그 아래 신규 `CarryMotion`(전용 Animator + `Assets/Animation/Carry/NPCGirl_Carry.controller`, 파라미터 `HasCargo` 하나, `Hidden -> Show -> Visible -> Hide -> Hidden` 4상태)을 두어 1회성 등장/퇴장 모션만 합성했다. 기존 `Image`는 `Basket`으로 이름을 바꿔 `CarryMotion`의 자식으로 재부모화했다 — SpriteRenderer 컴포넌트(fileID `3983399424345232820`)와 스프라이트 참조는 그대로 보존. `CarryMotion`의 prefab 기본 `m_LocalScale`을 `(0, 0, 1)`로 저장해 코드 없이도 시작 시 항상 숨김 상태다(이전에는 `Harvest`/`Image` 둘 다 `m_IsActive: 1`이라 `ResetRuntimeState()`가 돌기 전까지 항상 보이는 버그가 있었다).
+
+신규 `Assets/Scripts/System/Actor/CarryVisualPresenter.cs`가 화물 Animator 재생을 전담한다. `SetVisible(bool)`은 이전과 같은 상태 요청을 무시해 `WorkerInventory.TryAdd`가 매 수확마다 `callback(true)`를 던져도 이미 보이는 상태면 Show를 재생하지 않는다. `ResetImmediate()`는 코루틴 없이 `SetBool(false)` + `Play(Hidden, 0, 0f)` + `Update(0f)`로 즉시 스냅해 pool 재사용 시 이전 NPC의 Hide 연출이 남지 않는다. `NPCComponent._carryRenderer`(SpriteRenderer)를 `_carryPresenter`(CarryVisualPresenter)로 교체했고 — 렌더러 on/off 권한이 완전히 presenter로 넘어갔으므로 미사용 필드가 남지 않는다 — `SetCarryVisible`은 `_carryPresenter.SetVisible`을 호출하는 한 줄로 남았다. `Awake`와 `ResetRuntimeState`(`_cargo.Clear()` 다음)에서 `ResetImmediate()`를 호출해 초기 상태와 pool 재사용 상태를 모두 즉시 Hidden으로 보장한다. `HarvestAction`/`DepositAction`은 이번에도 손대지 않았다 — 화물 Animator를 만지는 코드는 `CarryVisualPresenter` 한 곳뿐이다.
+
+변경 파일: `Assets/Scripts/System/Actor/CarryVisualPresenter.cs`(신규), `Assets/Scripts/System/Actor/NPCComponent.cs`(필드 교체 + reset 경로 2곳), `Assets/Prefab/InGame/NPCGirl.prefab`(이름 변경 2개, `CarryMotion` GameObject 신규, 재부모화, Animator+Presenter 컴포넌트 추가), `Assets/Animation/Carry/NPCGirl_Carry.controller`(신규)와 그 클립 4개(`NPCGirl_CarryHidden/Show/Visible/Hide.anim`, 신규), `Assets/TestOnly/Editor/NPCGirlCarryVisualConfigurator.cs`(신규, `Tools/NPC/Validate NPC Girl Carry Visual` — 기존 두 configurator와 같은 형태의 읽기 전용 검증 도구). `worker-cargo-basket.png`와 그 `.meta`, 기존 7개 NPC 클립, `NPCGirl_Move.controller`, 씬 파일은 수정하지 않았다.
+
+검증: `dotnet build Assembly-CSharp.csproj --no-restore`와 `Assembly-CSharp-Editor.csproj --no-restore` 둘 다 경고 0/오류 0(두 csproj는 Unity가 아직 재생성하지 않아 신규 파일 compile item을 임시로 추가한 뒤 빌드 확인 — csproj 자체는 git 미추적 생성물이라 커밋 대상 아님). `_carryRenderer` 잔존 참조 전체 검색 0건. `CarryMotion` 경로의 CRC32(`273173623`)를 재계산해 클립의 `m_ClipBindingConstant.path`와 대조 일치 확인. 프리팹·컨트롤러 YAML을 fileID 앵커/참조 그래프로 정합성 검사(중복 앵커 0, 로컬 미해결 참조 0 — cross-asset guid 참조만 남음). `git diff --check` 통과, `git status`로 무관한 기존 미커밋 변경(`Code_Evaluation_Result.md`, `worker-cargo-basket.png`)과 분리 확인.
+
+**Unity Editor에서 사용자 확인 필요 (NOT VERIFIED)**: Play Mode에서 첫 수확 시 Show 재생·머리 착지, 재수확 시 재생 안 됨, 부분 입고 시 계속 표시, 전량 입고 시 Hide 1회, 걷는 동안 부모 움직임 상속, Idle/ToolWork 전환 시 순간이동 없음, 풀 재사용 후 잔상 없음, 기존 ToolCarry/Flip/Move 회귀 없음, Console에 Animator parameter/missing binding 오류 없음. `Tools/NPC/Validate NPC Girl Carry Visual`과 기존 두 검증 메뉴 실행도 에디터에서 확인 필요.
+
+다음 액션: 위 Play Mode 항목을 `FarmerTest.unity`에서 확인하고, 필요하면 `NPCGirl_CarryShow`/`CarryHide`의 오프셋·타이밍을 튜닝한다.
+
 ### PublicMD 문서를 Harvest/Deposit 구현 기준으로 최신화 (2026-09-04)
 
 커밋 `f35cb65`(C#)와 `fd279f6`(씬 배선)로 Farmer 수확물 운반 기능이 들어갔지만 `Systems/` 문서와 `ProjectStructure.md`에는 반영되지 않은 상태였다. 실제로 `HarvestAction`, `DepositAction`, `WorkerInventory`, `ICarriedInventory`, `WarehouseDepositPoint`, `BaseWorkingAction`을 `PublicMD` 전체에서 검색하면 이 `PROGRESS.md` 외에는 0건이었다. 코드를 현재 사실로 보고 문서를 교정했다.
