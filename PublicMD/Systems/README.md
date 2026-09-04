@@ -21,6 +21,7 @@
 | `Combat/` | 4개 leaf를 가진 기능 인덱스 |
 | `Interaction_and_Destinations.md` | 단일 기능 문서 |
 | `Inventory_and_Items.md` | 단일 기능 문서 |
+| `Player_Gold.md` | 단일 기능 문서 |
 | `NPC_Presentation.md` | 단일 기능 문서 |
 | `UI.md` | 단일 기능 문서 |
 | `Spawning_and_Pooling.md` | 단일 기능 문서 |

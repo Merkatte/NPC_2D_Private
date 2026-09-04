@@ -1,6 +1,6 @@
 # Project Structure
 
-> 문서 기준일: 2026-09-04
+> 문서 기준일: 2026-09-05
 > 이 문서는 전체 구조 지도와 기능 문서 라우팅만 소유한다. 구체 클래스 흐름과 Unity 배선은 `PublicMD/Systems`의 해당 문서가 소유한다.
 
 ## 1. 구조 한눈에 보기
@@ -29,6 +29,7 @@ NPCManager / WorkerPool          생성과 조립
 | 전투 | [Combat](Systems/Combat/README.md) | 감지, target, 공격, Guard, Enemy |
 | 상호작용과 목적지 | [Interaction and Destinations](Systems/Interaction_and_Destinations.md) | provider, destination, 건물 action |
 | 아이템과 inventory | [Inventory and Items](Systems/Inventory_and_Items.md) | CSV, item data, 창고와 NPC 봇짐, 운반·입고 transaction, cost registry |
+| 플레이어 골드 | [Player Gold](Systems/Player_Gold.md) | 전역 골드 잔액, 획득·지출 transaction |
 | NPC 표현 | [NPC Presentation](Systems/NPC_Presentation.md) | 이동 animation, Flip, 건물·도구 표현 |
 | UI | [UI](Systems/UI.md) | popup, hover, gauge, pointer routing |
 | 생성과 pooling | [Spawning and Pooling](Systems/Spawning_and_Pooling.md) | role 생성, prefab catalog, worker pool |
@@ -51,6 +52,7 @@ NPCManager / WorkerPool          생성과 조립
 | 공격·사거리·damage | Combat/Attack Runtime | 공격 role 문서 |
 | destination·provider | Interaction and Destinations | Decision Policy, 소비 domain |
 | item·warehouse·CSV | Inventory and Items | 생산 또는 interaction 문서 |
+| 골드 잔액·획득·지출 | Player Gold | (현재 gameplay 소비자 없음) |
 | animation·Flip·도구 | NPC Presentation | 이를 호출하는 action 문서 |
 | popup·hover·gauge | UI | 데이터를 제공하는 domain 문서 |
 | role·prefab·pool | Spawning and Pooling | 생성되는 role 문서 |
@@ -62,7 +64,7 @@ NPCManager / WorkerPool          생성과 조립
 | 경로 | 책임 |
 |---|---|
 | `Assets/Scripts/Actor` | scene에 존재하는 actor root와 facility component |
-| `Assets/Scripts/Manager` | scene 조립과 registry 진입점 |
+| `Assets/Scripts/Manager` | scene 조립, registry 진입점과 scene 단위 단일 접근점 runtime 상태 |
 | `Assets/Scripts/System/Actor` | actor runtime state, selector, Unity adapter |
 | `Assets/Scripts/System/Action` | `IAction` 실행 구현 |
 | `Assets/Scripts/System/Farming` | 농경지 runtime 상태와 작물 표현 |
@@ -108,6 +110,7 @@ UI input -> IUIService <- domain IHoverInfoSource
 | 새 popup·hover | category enum, base view 구현, `UIManager` registry |
 | 새 prefab 형태 | `NPCPrefabType`, prefab catalog, pool/spawn 조립 |
 | 새 crop | `FarmProductionDefinition` asset, `CropCatalog` 등록, 결과 item CSV row, [Farming](Systems/Farming/README.md) |
+| 새 골드 획득·지출 지점 | `GoldManager.Add`/`TrySpend` 호출자, [Player Gold](Systems/Player_Gold.md) |
 
 구체 절차와 불변 규칙은 표의 대상 기능 문서를 따른다.
 

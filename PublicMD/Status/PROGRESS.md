@@ -50,6 +50,28 @@ Immediate next actions:
 
 ## Current Status
 
+### GoldManager — 전역 골드 잔액 시스템 구현 (2026-09-05)
+
+시청(정부청사) 기반 재화·모집 시스템 로드맵의 1단계. 사용자와 여러 턴에 걸쳐 확정한 순서(골드 → 상단 → 후보군) 중 골드만 이번 범위다 — 상단·후보군은 그래픽 자산이 필요해 대기 중이지만, 골드는 "적당히 얼마가 모이는지 보이면" 충분해 art 의존 없이 먼저 구현했다.
+
+설계는 사용자가 제안한 "재화 매니저 하나만 실제 수치를 수정한다"는 방향을 그대로 따르되 두 가지를 다듬었다: (1) 이름을 `ResourceManager`가 아니라 `GoldManager`로 했다 — 재화가 골드 하나뿐인데 다중 재화 시스템을 암시하는 이름을 미리 쓰지 않기 위함. (2) `DataManager.instance` 같은 static singleton을 쓰지 않고 명시적 참조 주입으로 갔다 — `ARCHITECTURE.md`가 이미 그 패턴을 구조 부채로 인정하고 있고, 실제로 `DataManager.instance`의 소비자가 코드베이스에 0건임을 확인했다. `NPCManager`/`UIManager`는 static instance 없이 serialized field로 주입받는 게 실제 다수 패턴이라 그쪽을 따랐다.
+
+신규 `Assets/Scripts/Manager/GoldManager.cs`: `CurrentGold`(읽기 전용), `Add(int)`(획득, 실패 개념 없음, 0 이하는 무시, `WarehouseInventory.TryAdd`와 동일하게 `long` 캐스팅으로 overflow를 막고 `int.MaxValue`에서 포화), `TrySpend(int)`(지출, all-or-nothing, 잔액 부족은 **정상 결과**이므로 로그하지 않는다 — `bool` 반환이 유일한 통신 채널). 파일 전체에 `Debug.*` 호출이 0건이다: 실패 경로가 전부 정상 결과이고 진단할 누락 dependency가 없기 때문. 잔액을 mutate하는 코드는 이 파일 안에만 있다(grep으로 확인).
+
+신규 `Assets/TestOnly/TestGoldWindow.cs`: 기존 `TestNPCSpawnWindow`/`TestFarmProductionWindow`와 같은 `OnGUI`+`GUI.Window` 패턴. 버튼 3개(Add 10 / TrySpend 10 / TrySpend 1000)로 획득·성공 지출·잔액 부족 경로를 전부 노출한다. 현재 잔액은 `GUILayout.Label`로 상시 표시(로컬 관례)하고, 버튼 클릭마다 1회 `Debug.Log`로 이전값→현재값을 남긴다(매 frame이 아니라 조작당 1회라 "정상 gameplay branch를 매 frame 로그하지 않는다" 규칙에 위배되지 않음) — 사용자가 원한 "로그로 확인"과 기존 관례인 Label 표시를 둘 다 만족시켰다.
+
+문서: `PublicMD/Systems/Player_Gold.md` 신규(9개 필수 절 전부 작성). `Economy.md`가 아니라 `Player_Gold.md`로 했다 — 지금 있는 건 잔액 하나뿐이라 아직 없는 거래·가격까지 암시하는 이름을 미리 쓰지 않았고, 상단 단계에서 실제 거래 개념이 들어오면 그때 파일명을 넓혀도 비용이 거의 없다(GUID 없는 markdown). `ProjectStructure.md` 4곳 갱신(기능 문서 지도, 작업별 읽기 라우팅, `Assets/Scripts/Manager` 폴더 책임을 "scene 조립과 registry 진입점"에서 "scene 조립, registry 진입점과 scene 단위 단일 접근점 runtime 상태"로 확장 — 안 넓히면 `GoldManager`가 문서상 그 폴더 책임 위반으로 남는다, 새 기능 배치표). `Systems/README.md`의 기능 지도 표에 1행 추가. `ARCHITECTURE.md`는 건드리지 않았다 — cross-feature 의존 방향 변경이 없어 그 문서의 자체 갱신 규칙(새 시스템은 `ProjectStructure.md`와 `Systems/README.md`만 갱신)에 해당하지 않는다.
+
+`PublicMD/Status/PROGRESS.md`의 오래된 "이후 과제" 절이 `IRecruitmentCostPolicy`를 "골드/지갑 seam"이라 부르지만, 그 모집 시스템 자체가 2026-08-01 리셋으로 코드베이스에서 완전히 삭제됐음을 확인했다(`Recruit*`/`ResidentCandidate*` 전체 검색 0건). 이번 구현과 무관한 죽은 참조라 무시했고, `GoldManager`는 그 인터페이스를 구현하지 않는다. 이 사실은 `Player_Gold.md`의 TBD에도 기록해뒀다.
+
+변경 파일: `Assets/Scripts/Manager/GoldManager.cs`(신규), `Assets/TestOnly/TestGoldWindow.cs`(신규), `PublicMD/Systems/Player_Gold.md`(신규), `PublicMD/ProjectStructure.md`, `PublicMD/Systems/README.md`.
+
+검증: `dotnet build Assembly-CSharp.csproj --no-restore` 경고 0/오류 0(두 신규 파일을 csproj에 임시로 `<Compile Include>` 추가 후 빌드 — csproj는 git 미추적 Unity 생성물). `_currentGold`가 `GoldManager.cs` 밖에서 참조되지 않음(단일 mutator 확인). `GoldManager.cs`에 static/instance/Debug 호출 0건. `TestOnly` → production 역참조 0건. `git diff --check` 통과. 새 문서의 상대 링크 4개(`Inventory_and_Items.md`, `../ProjectStructure.md`, `../Game_Plan.md`, `Player_Gold.md`) 전부 실제 파일로 resolve 확인. `git status`로 사용자의 다른 미커밋 변경(`Assets/Art/Generated/Tiles/farm-dirt-corner-tileset-01.png`)과 분리 확인.
+
+**Unity Editor에서 사용자 확인 필요 (NOT VERIFIED)**: `FarmerTest.unity`의 `Systems > Manager` 아래 `GoldManager` GameObject 생성 및 `Initial Gold` 설정, `TestOnly!!`에 `TestGoldWindow` 부착과 `_goldManager` 명시적 연결(정확한 절차는 `Player_Gold.md`의 "Unity 배선과 검증 도구" 참고), `.meta` 파일 생성을 위해 에디터를 한 번 열 것, Play Mode에서 시작 잔액이 `Initial Gold`와 일치하는지, Add 3회 클릭 시 Console 로그 정확히 3줄과 합계 일치, TrySpend 1000 클릭 시 실패 로그가 뜨되 **Console에 에러/경고가 없는지**(잔액 부족이 에러로 취급되지 않는 게 핵심 확인 지점), Play Mode 재진입 시 잔액이 `Initial Gold`로 복귀하는지(두 번째 실행 시나리오), Inspector에서 `Initial Gold`에 음수 입력 시 0으로 clamp되는지. `GuardTest.unity`는 의도적으로 미배선 상태로 남겨뒀다.
+
+다음 액션: 위 Play Mode 항목을 `FarmerTest.unity`에서 확인. 이후 상단(캐러밴) 단계로 진행 — art 도착 대기 중.
+
 ### NPCGirl 화물 바구니 등장/퇴장 애니메이션 구현 (2026-09-04)
 
 사용자가 `Assets/Art/Generated/worker-cargo-basket.png`를 확보하고 `NPCGirl.prefab`에 `Visual/Harvest/Image` 계층과 `NPCComponent._carryRenderer` 배선을 직접 마쳤다(이전 세션의 "블로킹" 항목이 해소된 상태로 이 세션이 시작됨 — `_carryRenderer`가 이미 `{fileID: 3983399424345232820}`를 가리키고 있었고 `NPC_Presentation.md`의 "아직 prefab에 없다"는 서술이 stale이었음을 코드로 확인). 이번 세션에서는 그 on/off 스위치를 "머리 위에서 뿅 나타나 떨어지며 착지 후 반동" 등장 모션과 "위로 튀며 축소" 퇴장 모션으로 바꿨다.
