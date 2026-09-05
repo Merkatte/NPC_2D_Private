@@ -2,55 +2,55 @@
 
 ## Purpose
 
-`GoldManager` 1단계 구현을 대상으로 책임 배치, transaction 정확성, Unity 직렬화 배선, 코드 규약과 문서 정합성을 감사했다. 상인 캐러밴과 주민 모집은 명시적인 후속 범위로 취급했으며, 범용 resource abstraction, `IGoldService`, singleton, 변경 event 부재는 finding으로 판단하지 않았다.
+`3f652bd`의 Merchant Caravan 클릭→팝업→판매→골드 변경을 대상으로 책임 배치, runtime lifecycle, transaction 안전성, Unity 직렬화 배선, 코드 규약과 문서 정합성을 감사했다. 사용자와 합의된 concrete `MerchantPopup`–`MerchantTradeSite` 관계, `WarehouseInventory.TryRemove`의 interface 제외, Animator 실시간 클릭 판정, `DataManager`의 immutable-data facade 역할은 설계 전제로 존중했다.
 
 ## Review Snapshot
 
-- Date: 2026-09-05
+- Date: 2026-09-06
+- Commit: `3f652bd Add merchant caravan trading flow`
 - Scope:
-  - `Assets/Scripts/Manager/GoldManager.cs` 및 `.meta`
-  - `Assets/TestOnly/TestGoldWindow.cs` 및 `.meta`
-  - `PublicMD/Systems/Player_Gold.md`
-  - `PublicMD/ProjectStructure.md`
-  - `PublicMD/Systems/README.md`
-  - `PublicMD/Status/PROGRESS.md`
-  - 직접 비교 표면: `WarehouseInventory`, 기존 TestOnly window, `FarmerTest.unity`, `GuardTest.unity`, Manager 폴더
+  - 변경된 production C# 16개
+  - Merchant prefab, Animator Controller와 animation clip 4개 및 `.meta`
+  - `ItemData.csv`, crop/item assets
+  - 직접 의존 표면: `UIManager`, `PopBase`, `PointerHoverRouter`, `IUIService`, `GoldManager`, `ItemDataContext`, `CropCatalog`, inventory 계약
+  - `FarmerTest.unity`, `GuardTest.unity`, `ProjectSettings/TagManager.asset`
+  - 관련 Systems 문서와 기존 `Code_Evaluation_Result.md`
 - Standards:
   - `PublicMD/ARCHITECTURE.md`
   - `PublicMD/ProjectStructure.md`
   - `PublicMD/CodeConvention.md`
-  - `PublicMD/Game_Plan.md`
-  - `PublicMD/SPEC.md`
-  - reviewing-npc-work-code audit methodology
+  - `reviewing-npc-work-code` audit methodology
 - Verification:
-  - `git status`, 변경 diff와 `git diff --check` 확인
-  - API·static·logging·TestOnly 역참조·stale recruitment reference 검색
-  - 모든 scene/prefab에서 신규 script GUID 및 component 참조 검색
-  - 신규 문서 링크와 `.meta` GUID 확인
-  - 읽기 전용 제약으로 build 및 Unity Editor/Play Mode는 재실행하지 않음
+  - 최초 dirty 상태와 커밋 후 clean 상태의 `git status` 확인
+  - `git diff --name-status HEAD^ HEAD`, `git diff --check HEAD^ HEAD`
+  - 호출자·interface 구현체·enum·scene GUID·금지 패턴 검색
+  - prefab/controller/clip 내부 fileID 및 cross-asset GUID 검증
+  - `Visual` CRC32와 animation binding 대조
+  - 문서 상대 링크 확인
 
 ## Executive Summary
 
-`GoldManager`의 production 코드는 작고 응집되어 있으며 transaction 구현도 정확하다. 잔액은 단일 private field에 유지되고, `TrySpend`는 실패 시 상태를 변경하지 않으며, `Add`는 overflow 대신 포화한다. static 접근, 불필요한 interface, UI 의존성, production-to-TestOnly 역참조는 없다.
+책임 배치와 의존 방향은 전반적으로 좋다. `MerchantCaravan`, `MerchantVisual`, `MerchantTradeSite`, 입력 router와 popup의 역할이 분리되어 있고, 거래 가격을 domain에서 다시 조회하는 구조도 적절하다. 요청에서 명시한 deliberate architecture 선택에는 finding이 없다.
 
-다만 현재 모든 scene과 prefab에 `GoldManager` 및 `TestGoldWindow`가 전혀 배선되지 않았다. 따라서 저장소 상태 그대로는 Gold 시스템 인스턴스와 수동 검증 창이 런타임에 존재하지 않는다. production 코드 자체의 correctness finding은 없지만 이 integration gap 때문에 완료 상태로 승인할 수 없다.
+그러나 현재 구현은 end-to-end 기능으로 승인할 수 없다. 비활성 Merchant prefab은 `Awake()` 전에 `_isConfigured`를 요구하므로 최초 방문을 스스로 시작할 수 없고, `MerchantPopup`에는 실제 판매 버튼을 `TrySell(int, int)`에 연결할 수 있는 binding 경로가 없다. 여기에 거래 금액 overflow, 판매 허용 품목 검증 누락, 퇴장 프레임의 Animator 평가 race가 존재한다.
 
 최종 판정은 **Changes requested**이다.
 
 ## Improvements Since Previous Review
 
-- 이전 보고서는 NPC 화물 presentation 변경을 다뤘으며 이번 Gold 변경과 직접 비교 가능한 항목은 없다.
-- 이전 보고서의 `CarryVisualPresenter` findings는 이번 focused review 범위 밖이며 해소 여부를 재판정하지 않았다.
-- 새 기능은 별도 Systems 문서, 상위 routing, 책임 경계와 TBD를 함께 추가해 문서 소유권이 명확하다.
+- 이전 Gold 단계와 비교해 실제 gameplay 골드 획득 owner가 `MerchantTradeSite`로 좁게 추가됐다.
+- `GoldManager`에는 가격·재고·UI 책임이 유입되지 않았다.
+- 이전 보고서의 Gold scene 미배선 문제는 아직 해소되지 않았으며 이번 M-01에 포함했다.
+- 새 기능 routing, Systems 문서, enum append, `.meta`와 asset reference는 체계적으로 추가됐다.
 
 ## Priority Coverage
 
 | Priority | Result |
 |---|---|
-| 1. Architecture and responsibility placement | None found. Gold의 scene 단위 단일 소유권과 명시적 참조 방향은 현재 구조에 부합한다. |
-| 2. Correctness, lifecycle, cancellation, regression | None found in production code. `Awake` 초기화, 포화 덧셈과 all-or-nothing 지출이 정적으로 정확하다. cancellation 대상은 없다. |
-| 3. Unity scene, prefab, serialized-reference safety | M-01 발견. 신규 component와 검증 창이 어떤 scene/prefab에도 배선되지 않았다. |
-| 4. Convention, maintainability, dead code, magic values | L-01~L-03 발견. edit-time validation, 문서 사실성, 수동 probe의 상태 의존성이 남아 있다. Dead production code나 익명 gameplay magic value는 발견되지 않았다. |
+| 1. Architecture and responsibility placement | **Code architecture issue 없음.** deliberate concrete pairing, inventory capability 분리, GoldManager 참조 위치가 문서화된 책임과 일치한다. 문서 drift는 L-01에서 별도 지적한다. |
+| 2. Correctness, lifecycle, cancellation, regression | H-01, H-02, M-02, M-03, M-04 발견. |
+| 3. Unity scene, prefab, serialized-reference safety | M-01, M-05 발견. |
+| 4. Convention, maintainability, dead code, magic values | L-01, L-02 발견. 익명 gameplay magic value, production dead code, enum 재정렬은 발견되지 않았다. |
 
 ## Findings By Severity
 
@@ -60,188 +60,282 @@ None found.
 
 ### High
 
-None found.
+#### H-01 — 비활성 prefab은 최초 방문 전에 `Awake()`를 실행할 수 없어 bootstrap이 교착된다
+
+- Severity: High
+- Category: Unity lifecycle / Runtime correctness
+- Location:
+  - `Assets/Prefab/InGame/MerchantCaravan.prefab:22`
+  - `Assets/Scripts/Actor/MerchantCaravan.cs:25,32-54`
+  - `Assets/Scripts/Actor/MerchantArrivalScheduler.cs:34-45`
+- Evidence:
+  - prefab root는 `m_IsActive: 0`이다.
+  - `_isConfigured`는 기본값 `false`이며 `MerchantCaravan.Awake()`에서만 `true`가 된다.
+  - 비활성 GameObject의 `Awake()`는 활성화될 때까지 실행되지 않는다.
+  - `BeginVisit()`은 `_isConfigured == false`이면 `gameObject.SetActive(true)`보다 먼저 반환한다.
+  - scheduler가 호출할 수 있는 활성화 경로는 이 `BeginVisit()`뿐이다.
+- Description:
+  - 문서대로 비활성 prefab instance를 scheduler에 연결하면 최초 interval이 끝나도 활성화되지 않는다. 이후 scheduler가 재시도해도 `_isConfigured`는 계속 false여서 모든 방문이 실패한다.
+- Recommended fix:
+  - 방문 lifecycle owner를 항상 활성 상태로 유지하고 visual/collider child만 비활성화하거나, 최초 `Awake()`가 반드시 실행되는 bootstrap 상태를 명시적으로 제공한다.
+  - 어떤 방식을 택하든 `BeginVisit()`이 자기 활성화 이후에만 설정될 수 있는 flag를 활성화 전제조건으로 요구하지 않게 한다.
+  - inactive initial state와 두 번째 방문을 모두 Play Mode에서 검증한다.
+- Impact if unfixed:
+  - Merchant가 한 번도 등장하지 않아 클릭, popup, 거래와 애니메이션 전체가 실행 불가능하다.
+
+#### H-02 — `MerchantPopup`에 실제 판매 동작을 호출할 UI binding 경로가 없다
+
+- Severity: High
+- Category: Feature completeness / UI integration
+- Location:
+  - `Assets/Scripts/UI/MerchantPopup.cs:26-65`
+  - `Assets/Scenes/FarmerTest.unity:5226`
+- Evidence:
+  - 판매 진입점은 `TrySell(int itemId, int quantity)` 하나뿐이다.
+  - 표준 `Button.onClick`은 이 두 개의 정수 인자를 직접 전달할 수 없다.
+  - repository 전체에서 `TrySell` 호출, `Button.onClick.AddListener`, offer-row binding 또는 zero-argument adapter가 없다.
+  - `RefreshOffers()`는 판매 가능 항목을 `Text` 문자열로만 출력한다.
+  - Merchant popup prefab/scene object가 없고 `UIManager._popups`도 빈 배열이다.
+- Description:
+  - scene에 popup과 Text를 수동 배선해도 사용자가 표시된 offer를 선택해 판매를 실행할 수 없다. 현재 연결 가능한 흐름은 popup 표시까지만이며 거래 호출에는 별도 코드가 필요하다.
+- Recommended fix:
+  - offer row가 `itemId`와 선택 수량을 보관하고 zero-argument click handler로 popup에 의도를 전달하게 하거나, row 생성 시 코드로 button listener를 바인딩한다.
+  - 실제 MerchantPopup asset을 만들고 최소 한 개 offer에 대해 클릭→`TryTrade`→결과 갱신을 검증한다.
+- Impact if unfixed:
+  - popup은 열리더라도 플레이어가 판매를 실행할 수 없어 click-to-trade-to-gold 파이프라인이 완성되지 않는다.
 
 ### Medium
 
-#### M-01 — Gold runtime과 검증 창이 어떤 Unity scene에도 배선되지 않았다
+#### M-01 — 현재 repository에는 Merchant와 Gold runtime 배선이 전혀 없다
 
 - Severity: Medium
 - Category: Unity integration / Serialized-reference safety
 - Location:
   - `Assets/Scenes/FarmerTest.unity`
-  - `Assets/Scenes/GuardTest.unity`
-  - `PublicMD/Systems/Player_Gold.md:63-75`
-  - `PublicMD/Status/PROGRESS.md:71`
+  - `ProjectSettings/TagManager.asset:7-17`
+  - `Assets/Prefab/InGame/MerchantCaravan.prefab:16,53-55,72`
 - Evidence:
-  - `GoldManager.cs.meta` GUID는 `583c72025a4048bbbd6ec3d016525f1f`다.
-  - `TestGoldWindow.cs.meta` GUID는 `0e4f959f6abc483babe6c42d4a2a648e`다.
-  - 모든 `.unity`와 `.prefab` 검색에서 두 GUID, `Assembly-CSharp::GoldManager`, `Assembly-CSharp::TestGoldWindow` 참조가 0건이다.
-  - `FarmerTest.unity:475-481`의 `Systems > Manager` 자식 목록에는 기존 manager들만 있고 GoldManager 자식이 없다.
-  - `FarmerTest.unity:628-650`의 `TestOnly!!`에는 `TestNPCSpawnWindow`만 부착되어 있다.
-  - owning Systems 문서는 `FarmerTest.unity`에 두 component를 배선하도록 명시한다.
+  - 신규 prefab, `MerchantArrivalScheduler`, `MerchantTradeSite`, `PointerClickRouter`, `MerchantPopup`, `GoldManager` GUID는 모든 scene에서 0건이다.
+  - `UIManager._popups`는 빈 배열이고 `InputEvent`에는 Transform만 있다.
+  - 기존 `DataManager`에는 `_itemDataContext` serialized row가 없다.
+  - TagManager의 layer 9는 비어 있지만 Merchant prefab은 `m_Layer: 9`로 저장됐다.
+  - prefab의 arrival/dock/departure/UI service 참조는 모두 null이다.
 - Description:
-  - 신규 API는 컴파일 대상이지만 scene에 인스턴스가 없어 런타임 Gold 상태가 생성되지 않는다.
-  - 현재 유일한 호출자인 `TestGoldWindow`도 부착되지 않아 문서화된 관찰·검증 흐름을 실행할 수 없다.
-  - 기존 gameplay consumer가 의도적으로 없는 것은 허용되지만, scene runtime owner와 이번 단계의 유일한 probe까지 모두 부재한 것은 integration 미완료다.
+  - 구현 요약이 이 상태를 NOT VERIFIED로 공개한 것은 정확하다. 다만 현재 저장소 자체로는 기능을 실행하거나 Play Mode에서 검증할 수 없으므로 완료 상태로 볼 수 없다.
 - Recommended fix:
-  - `FarmerTest.unity`의 `Systems > Manager` 아래에 `GoldManager` component를 가진 GameObject를 추가하고 시작 골드를 명시적으로 직렬화한다.
-  - `TestOnly!!`에 `TestGoldWindow`를 추가하고 `_goldManager`를 해당 component에 연결한다.
-  - YAML의 두 script GUID와 `_goldManager` fileID가 정확히 연결되는지 확인한다.
-  - 이후 최초 진입, 두 번째 Play Mode 진입, 획득, 성공 지출, 부족 지출, Console 무경고를 검증한다.
+  - `Clickable` layer, click router, Merchant prefab instance, scheduler, trade site, popup registry/UI, GoldManager와 DataManager item context를 문서대로 배선한다.
+  - H-01과 H-02를 먼저 해결한 뒤 missing script/reference와 Console 오류가 없는지 검증한다.
 - Impact if unfixed:
-  - 현재 저장소를 열어 실행해도 Gold 시스템과 테스트 창은 존재하지 않는다.
-  - `Awake` 초기화와 transaction 동작, 상태 reset 및 Inspector 입력을 실제 Unity lifecycle에서 검증할 수 없다.
-  - 후속 merchant/recruitment 작업이 아직 존재하지 않는 scene service를 전제로 시작할 위험이 있다.
+  - 모든 Merchant code와 asset이 compile 대상에만 존재하고 gameplay에서는 도달 불가능하다.
+
+#### M-02 — 거래 총액의 unchecked `int` 곱셈이 재고만 소모하는 성공 transaction을 만들 수 있다
+
+- Severity: Medium
+- Category: Transaction correctness / Integer overflow
+- Location:
+  - `Assets/Scripts/Actor/MerchantTradeSite.cs:73-88`
+  - `Assets/Scripts/System/Inventory/WarehouseInventory.cs:8-23`
+  - `Assets/Scripts/Manager/GoldManager.cs:35-41`
+  - `Assets/Data/CSV/ItemData.csv:5`
+- Evidence:
+  - 거래 총액은 `info.SellPrice * quantity`로 `int` 안에서 계산된다.
+  - overflow 검증은 재고를 제거한 뒤에도 없다.
+  - 창고는 `int.MaxValue` 수량까지 정상적으로 보유할 수 있다.
+  - 현재 Carrot 가격 2에서 `2 * int.MaxValue`는 unchecked 연산으로 `-2`가 된다.
+  - `GoldManager.Add(-2)`는 아무 골드도 추가하지 않지만 `TryTrade()`는 `Success`를 반환한다.
+- Description:
+  - `GoldManager.Add` 내부의 `long` 포화 처리는 호출 전에 이미 overflow된 값을 복구할 수 없다. 유효한 API 입력만으로 재고 전량이 사라지고 골드는 증가하지 않는 경로가 존재한다.
+- Recommended fix:
+  - 재고 제거 전에 `(long)SellPrice * quantity`로 총액을 계산하고 가격·범위를 검증한다.
+  - 총액 초과 시 transaction을 거부할지 `int.MaxValue`로 포화할지 계약을 정한 뒤, 내부 mutation 전에 결과를 확정한다.
+- Impact if unfixed:
+  - 큰 거래에서 재고 손실, 잘못된 골드 증가와 거짓 `Success` 결과가 발생할 수 있다.
+
+#### M-03 — `TryTrade`가 표시 가격만 재검증하고 판매 허용 품목 자체는 검증하지 않는다
+
+- Severity: Medium
+- Category: Domain validation / Responsibility boundary
+- Location:
+  - `Assets/Scripts/Actor/MerchantTradeSite.cs:40-88`
+  - `Assets/Scripts/System/Inventory/WarehouseInventory.cs:8-23`
+  - `Assets/Data/CSV/ItemData.csv:2-6`
+- Evidence:
+  - `GetAvailableOffers()`는 `CropCatalog.Definitions`만 순회한다.
+  - `TryTrade()`는 `_cropCatalog`를 전혀 사용하지 않고, item data와 창고 재고가 있으면 판매한다.
+  - `WarehouseInventory.TryAdd()`는 모든 non-negative item ID를 수락한다.
+  - Water/Beer/Bread는 item table에 존재하며 `SellPrice`가 0이다.
+  - 해당 item이 창고에 들어간 뒤 `TryTrade()`에 전달되면 재고를 제거하고 골드 0을 추가한 뒤 `Success`를 반환한다.
+- Description:
+  - popup의 사전 필터는 read model일 뿐 domain transaction의 권한 검증을 대신할 수 없다. 가격은 재조회하지만, 요청된 item이 실제 Merchant offer인지와 양수 가격인지에 대해서는 popup 입력을 신뢰한다.
+- Recommended fix:
+  - mutation 전에 item이 현재 Merchant 판매 catalog에 속하는지와 `SellPrice > 0`인지 검증한다.
+  - 허용되지 않은 item은 `InvalidRequest`로 반환하고 재고를 변경하지 않는다.
+- Impact if unfixed:
+  - 비판매 품목이나 잘못 구성된 0/음수 가격 품목이 소모되고도 골드가 지급되지 않을 수 있다.
+
+#### M-04 — 퇴장 시작 프레임의 Update 순서에 따라 popup이 닫힌 직후 다시 열릴 수 있다
+
+- Severity: Medium
+- Category: Lifecycle race / Animator-state correctness
+- Location:
+  - `Assets/Scripts/Actor/MerchantCaravan.cs:71-78`
+  - `Assets/Scripts/System/Actor/MerchantVisual.cs:51-80`
+  - `Assets/Scripts/UI/PointerClickRouter.cs:48-64`
+  - `Assets/Animation/Merchant/Merchant.controller:95-99`
+- Evidence:
+  - dwell 종료 시 `MerchantCaravan.Update()`가 `SetLanded(false)`를 호출한다.
+  - 이 호출은 Animator bool을 변경하고 popup을 즉시 숨기지만 Animator를 즉시 평가하지 않는다.
+  - click router도 독립적인 `Update()`에서 Animator의 현재 state와 transition을 조회한다.
+  - 두 script에 execution order가 지정되지 않았다.
+  - Animator transition duration은 0이며, 같은 코드의 `ResetToFlying()`은 즉시 반영을 위해 명시적으로 `Animator.Update(0f)`를 호출한다.
+- Description:
+  - Caravan Update가 먼저 실행된 프레임에 router가 뒤이어 클릭을 처리하면 Animator 평가 전의 `Landed` state와 `IsInTransition == false`를 읽을 수 있다. 이 경우 `TryHide` 이후 같은 프레임에 popup이 다시 열리고, 이후에는 다시 닫을 호출이 없다.
+  - 이는 live Animator truth 선택 자체의 문제가 아니라 SetBool과 Animator 평가 사이의 시간 창 문제다.
+- Recommended fix:
+  - 퇴장 상태 변경을 반환하기 전에 Animator가 새 상태를 반영하도록 평가하거나, click query를 Animator 평가 이후 단계에서 수행해 기존 live-state 설계를 유지한다.
+  - dwell 만료와 동일 프레임의 world click을 별도 Play Mode 시나리오로 검증한다.
+- Impact if unfixed:
+  - 드물게 상단이 이륙하거나 비활성화된 뒤에도 거래 popup이 남을 수 있다.
+
+#### M-05 — popup 자동 닫힘의 필수 UI service 참조가 누락되어도 진단되지 않는다
+
+- Severity: Medium
+- Category: Serialized dependency safety
+- Location:
+  - `Assets/Scripts/System/Actor/MerchantVisual.cs:24-43,68-80`
+  - `Assets/Prefab/InGame/MerchantCaravan.prefab:72`
+- Evidence:
+  - prefab의 `_uiServiceSource`는 null이다.
+  - `Awake()`는 이를 `IUIService`로 cast하지만 null/잘못된 구현 여부를 검사하지 않는다.
+  - `SetLanded(false)`는 `_uiService != null`일 때만 popup을 닫으며, 실패 로그나 안전한 interaction 차단이 없다.
+  - 이 참조는 문서상 퇴장 시 popup을 닫는 유일한 seam이다.
+- Description:
+  - scene wiring에서 이 필드를 빠뜨리면 click router의 별도 UI service로 popup은 정상적으로 열리지만 Merchant가 떠날 때 닫히지 않는다. 결과가 정상처럼 보여 구성 오류를 조기에 발견하기 어렵다.
+- Recommended fix:
+  - `_uiServiceSource`를 필수 dependency로 Awake에서 한 번 검증하고 owner/field를 포함한 오류를 보고한다.
+  - 자동 닫힘을 보장할 수 없는 구성에서는 클릭을 허용하지 않는 안전 정책을 적용한다.
+- Impact if unfixed:
+  - popup이 Merchant 부재 중에도 남고 `TryTrade`를 계속 호출할 수 있으며, 누락된 Inspector 참조가 조용히 숨겨진다.
 
 ### Low
 
-#### L-01 — `_initialGold`에 프로젝트 규약이 요구하는 `OnValidate` 보정이 없다
+#### L-01 — Player Gold 소유 문서가 신규 gameplay 호출자와 모순된다
 
 - Severity: Low
-- Category: Code convention / Serialized value validation
+- Category: Documentation drift / Cross-system ownership
 - Location:
-  - `Assets/Scripts/Manager/GoldManager.cs:16`
-  - `Assets/Scripts/Manager/GoldManager.cs:24-27`
-  - `PublicMD/CodeConvention.md` §7
+  - `PublicMD/Systems/Player_Gold.md:11,79-80,102`
+  - `Assets/Scripts/Actor/MerchantTradeSite.cs:87`
 - Evidence:
-  - `_initialGold`에는 `[Min(0)]`만 있고 `OnValidate()`가 없다.
-  - runtime 잔액은 `Awake()`의 `Mathf.Max(0, _initialGold)`로 안전하게 보정된다.
-  - 프로젝트 규약은 serialized 수치를 `OnValidate()`에서 보정하고 runtime 입력도 별도로 검증하도록 명시한다.
+  - 문서는 거래·가격이 구현되지 않았고 실제 gameplay 골드 획득 경로가 없으며 유일한 호출자가 `TestGoldWindow`라고 기록한다.
+  - 현재 `MerchantTradeSite`가 `GoldManager.Add`를 호출한다.
+  - 문서 자체의 갱신 조건은 “새 호출자 추가” 시 갱신하도록 명시한다.
 - Description:
-  - Inspector UI 입력은 `Min`으로 제한되지만 YAML 직접 편집, migration 또는 script 기반 값 변경으로 음수가 저장될 수 있다.
-  - runtime 잔액은 안전하므로 gameplay correctness 버그는 아니지만 serialized source와 실제 실행 값이 달라질 수 있다.
+  - Merchant 문서는 새 의존성을 설명하지만 Gold의 주 소유 문서는 이전 단계 상태에 머물러 있다.
 - Recommended fix:
-  - `OnValidate()`에서 `_initialGold = Mathf.Max(0, _initialGold)`로 serialized 값을 보정한다.
-  - `Awake()`의 runtime 보정은 방어적 검증으로 유지한다.
+  - 현재 실행 흐름과 호출자 목록에 Merchant 판매를 추가하고 “상단 미구현/호출자 없음” 항목을 제거한다.
 - Impact if unfixed:
-  - scene YAML에는 음수 시작값이 남아 있지만 실행 시에는 0이 되는 구성 drift가 발생할 수 있다.
-  - Inspector와 runtime 결과를 비교하는 수동 검증이 혼동될 수 있다.
+  - 후속 모집·경제 작업자가 실제 Gold mutation 경로를 잘못 파악할 수 있다.
 
-#### L-02 — 변경 문서에 저장소 사실과 맞지 않는 설명이 있다
+#### L-02 — 10열 mapper 변경을 “하위 호환”이라고 기록했지만 9열 row는 거부된다
 
 - Severity: Low
-- Category: Documentation drift / Audit traceability
+- Category: Documentation accuracy / Data migration
 - Location:
-  - `Assets/Scripts/Manager/GoldManager.cs:11-12`
-  - `PublicMD/Status/PROGRESS.md:57`
-  - `PublicMD/Status/PROGRESS.md:67-71`
-  - `PublicMD/ARCHITECTURE.md` §8
+  - `PublicMD/Status/PROGRESS.md:61`
+  - `Assets/Scripts/System/Mapper/ItemInfoCsvMapper.cs:7,30-37`
 - Evidence:
-  - 코드와 PROGRESS는 `DataManager.instance`가 `ARCHITECTURE.md`에 구조 부채로 기록됐다고 설명한다.
-  - 실제 `ARCHITECTURE.md`의 현재 구조 부채 목록에는 `DataManager` 또는 static singleton 항목이 없다.
-  - `Inventory_and_Items.md:96`은 오히려 `DataManager.instance`의 수명 정책이 단순하다고 기록한다.
-  - PROGRESS의 변경 파일 목록은 실제 신규 `.meta` 두 개와 `PROGRESS.md` 자체를 누락한다.
-  - PROGRESS는 Unity에서 `.meta`를 생성해야 한다고 적었지만 두 `.meta` 파일은 이미 존재하며 고유 GUID를 가진다.
+  - `ColumnCount`는 10이고 `row.Length < 10`이면 parsing을 거부한다.
+  - 따라서 기존 9열 row는 호환되지 않는다.
+  - `<` 비교는 10열보다 많은 미래 row를 허용하는 forward tolerance일 뿐, 이전 9열 schema와의 backward compatibility가 아니다.
 - Description:
-  - static singleton을 사용하지 않은 설계 자체는 적절하지만 이를 정당화하는 문서 인용이 현재 저장소 사실과 맞지 않는다.
-  - 실제 changeset 및 meta 상태도 완료 기록과 불일치한다.
+  - 현재 repository의 `ItemData.csv`는 모두 10열이라 즉시 runtime 오류는 없지만 완료 기록의 호환성 설명이 반대다.
 - Recommended fix:
-  - “ARCHITECTURE에 기록된 부채”라는 표현을 제거하고 현재 저장소의 majority wiring pattern을 근거로 남긴다. 별도 합의로 실제 architecture debt가 맞다면 그때 공통 문서를 갱신한다.
-  - PROGRESS 변경 파일 목록에 두 `.meta`와 `PROGRESS.md`를 포함한다.
-  - `.meta 생성`이 아니라 Unity import 후 GUID와 component 인식을 검증해야 한다고 고친다.
+  - 기록을 “추가 trailing column에는 관대하지만 기존 9열 row는 migration 필요”로 교정하거나, 실제로 9열을 허용하려면 기본 SellPrice 정책을 명시한다.
 - Impact if unfixed:
-  - 후속 reviewer가 존재하지 않는 architecture 결정을 전제로 판단할 수 있다.
-  - 신규 asset의 실제 변경·검증 범위가 완료 기록에서 부정확하게 남는다.
-
-#### L-03 — 성공·실패 검증 버튼의 의미가 현재 잔액에 따라 바뀐다
-
-- Severity: Low
-- Category: Test harness reliability
-- Location:
-  - `Assets/TestOnly/TestGoldWindow.cs:7-9`
-  - `Assets/TestOnly/TestGoldWindow.cs:42-55`
-  - `PublicMD/Systems/Player_Gold.md:71-72`
-  - `PublicMD/Status/PROGRESS.md:61,71`
-- Evidence:
-  - “Affordable” 지출은 고정값 10, “Unaffordable” 지출은 고정값 1000이다.
-  - `_initialGold`는 임의의 0 이상 값이며 Add 버튼으로 잔액을 계속 늘릴 수 있다.
-  - 잔액이 10 미만이면 affordable 버튼도 실패하고, 잔액이 1000 이상이면 unaffordable 버튼도 성공한다.
-  - 문서는 세 버튼이 성공 지출과 부족 지출 경로를 모두 노출한다고 설명한다.
-- Description:
-  - 버튼은 transaction API 자체를 호출하지만 이름과 문서가 약속하는 branch를 독립적으로 보장하지 않는다.
-  - 조작 순서나 Inspector 시작값에 따라 reviewer가 의도한 경로를 실행하지 않은 채 검증했다고 판단할 수 있다.
-- Recommended fix:
-  - 검증 절차에 요구되는 시작 잔액과 버튼 순서를 명시하거나, 현재 잔액을 기준으로 성공·실패 조건을 확실히 만드는 probe를 제공한다.
-  - 고정 1000 버튼을 유지한다면 “Unaffordable”이 아니라 실제 의미인 “Try Spend 1000”으로 기술하고 사전조건을 문서화한다.
-- Impact if unfixed:
-  - 정상 성공 또는 잔액 부족 branch가 누락된 Play Mode 검증이 PASS로 기록될 수 있다.
-  - 초기 골드 tuning 변경 후 probe 설명이 조용히 부정확해진다.
+  - 이전 형식의 item data를 재사용할 때 호환된다고 오판해 row 전체가 parsing에서 누락될 수 있다.
 
 ## Findings By File
 
-- `Assets/Scripts/Manager/GoldManager.cs`
-  - 잔액 소유와 transaction 책임이 잘 응집되어 있다.
-  - static/global lookup, UI 의존성, logging과 미래 abstraction이 없다.
-  - L-01의 edit-time serialized value 보정과 L-02의 부정확한 architecture 주석만 수정 대상이다.
-- `Assets/TestOnly/TestGoldWindow.cs`
-  - 기존 TestOnly `OnGUI`/`GUI.Window` 패턴을 따르며 production에서 역참조되지 않는다.
-  - fallback search는 `Awake` 한 번에만 수행된다.
-  - L-03 때문에 버튼 이름이 보장하는 branch는 현재 잔액에 종속된다.
-- `Assets/Scenes/FarmerTest.unity`
-  - 기존 `Systems > Manager` 및 `TestOnly!!` hierarchy는 확인됐다.
-  - M-01의 신규 Gold component와 serialized reference가 없다.
-- `Assets/Scenes/GuardTest.unity`
-  - 의도적으로 미배선 상태이며 현재 Gold GUID 참조도 없다.
-- `PublicMD/Systems/Player_Gold.md`
-  - 9개 필수 절과 책임·불변식·TBD·최소 확인 범위를 모두 갖춘다.
-  - 현재 scene 미배선 상태를 정확히 구분한다.
-  - L-03의 검증 사전조건은 명확하지 않다.
-- `PublicMD/ProjectStructure.md`
-  - 새 기능 routing과 신규 호출자 위치를 등록했다.
-  - Gold의 scene 단위 상태를 Manager 책임에 포함한 것은 현재 작은 범위에서 수용 가능하다.
-- `PublicMD/Systems/README.md`
-  - 신규 leaf 등록이 정확하다.
-- `PublicMD/Status/PROGRESS.md`
-  - 현재 상태 최상단에 새 기록을 추가하고 과거 기록을 수정하지 않았다.
-  - L-02와 L-03의 검증·변경 범위 설명을 교정할 필요가 있다.
-- 신규 `.meta`
-  - 두 파일 모두 GUID가 존재하고 저장소 내 중복 또는 scene 참조는 발견되지 않았다.
+- `MerchantCaravan.cs`
+  - phase·이동·dwell 책임은 응집되어 있다.
+  - H-01의 inactive bootstrap이 최초 실행을 차단한다.
+- `MerchantArrivalScheduler.cs`
+  - 겹치지 않는 gap timer와 always-active owner 분리는 적절하다.
+  - 현재는 H-01 때문에 호출이 성공할 수 없다.
+- `MerchantVisual.cs`
+  - Animator 기반 click truth와 domain 비의존성은 적절하다.
+  - M-04의 평가 시점 race와 M-05의 UI dependency 검증 누락이 있다.
+- `MerchantTradeSite.cs`
+  - Gold·warehouse·가격 transaction의 단일 owner 배치는 적절하다.
+  - M-02의 overflow와 M-03의 판매 eligibility 누락을 수정해야 한다.
+- `MerchantPopup.cs`
+  - 가격을 계산하지 않고 intent만 전달하는 방향은 적절하다.
+  - H-02 때문에 실제 UI에서 거래를 시작할 수 없다.
+- `PointerClickRouter.cs`
+  - press frame에만 physics query를 수행하며 concrete domain을 모른다.
+  - hover router와 분리한 판단은 타당하다.
+- `WarehouseInventory.cs`
+  - `TryRemove`는 all-or-nothing이며 false 경로에서 상태를 변경하지 않는다.
+  - `IInventory`에 추가하지 않은 선택은 현재 계약에 맞다.
+- `DataManager.cs` / `IDataManager.cs`
+  - item lookup facade 추가로 깨지는 다른 구현체는 없다.
+  - scene의 `_itemDataContext`는 아직 미배선이다.
+- `ItemInfoCsvMapper.cs`
+  - 현재 10열 CSV를 정확히 parsing한다.
+  - L-02의 호환성 설명만 교정이 필요하다.
+- Merchant prefab/animation assets:
+  - local fileID와 cross-asset GUID는 정합하다.
+  - H-01의 inactive root와 M-01/M-05의 미배선 참조가 남아 있다.
 
 ## Cross-Cutting Findings
 
-- Gold mutation은 `GoldManager` 내부로 한정되며 `_currentGold` 외부 직접 참조가 없다.
-- production C#에서 `TestGoldWindow` 또는 `Assets/TestOnly` 역참조는 없다.
-- `GoldManager`에는 `Debug`, static field 또는 singleton instance가 없다.
-- `DataManager.instance`의 실제 `Assets` 소비자는 0건이다.
-- `WarehouseInventory.TryAdd`와 마찬가지로 `long` 합산을 사용하지만, Gold는 의도대로 포화하고 Warehouse는 실패를 반환한다. 두 API의 서로 다른 실패 계약은 문서화되어 있다.
-- merchant, price, recruitment, UI와 save/load 책임이 GoldManager에 섞이지 않았다.
-- event/callback 부재는 현재 consumer 범위에서 architecture defect가 아니다.
-- 사용자의 별도 미추적 이미지 `Assets/Art/Generated/Tiles/farm-dirt-corner-tileset-01.png`는 감사 범위에서 제외했다.
+- `MerchantVisual`과 `MerchantTradeSite` 사이의 직접 참조는 없다.
+- production에서 `GoldManager`를 참조하는 Merchant component는 `MerchantTradeSite` 하나뿐이다.
+- `TryRemove`는 `WarehouseInventory`에만 있으며 호출자는 `MerchantTradeSite` 하나다.
+- `IDataManager` 구현체는 `DataManager` 하나다.
+- `PopupType.Merchant`는 기존 `None` 뒤에 append됐다. `TradeResult`는 신규 enum이다.
+- `Pub.cs`의 직접 `ItemDataContext` 접근은 명시된 범위 제외 사항으로 finding 처리하지 않았다.
+- `InsufficientGold` 부재, 빈 `OnLandingImpact`, SpriteRenderer 부재는 각각 현재 sell-only 범위와 문서화된 placeholder hook이므로 finding이 아니다.
 
 ## Positive Notes
 
-- `CurrentGold`는 읽기 전용이며 모든 mutation이 명명된 transaction API를 통과한다.
-- `TrySpend`는 잘못된 금액과 잔액 부족에서 상태를 변경하지 않는다.
-- `Add`는 양수 `int`와 현재 non-negative 잔액의 합을 `long`으로 계산해 overflow를 방지한다.
-- 정상 gameplay 실패를 production log로 오염시키지 않는다.
-- 신규 production type 하나와 TestOnly type 하나가 각각 파일명과 일치한다.
-- 모든 test 수치는 명명된 constant로 분리되어 있다.
-- 신규 Systems 문서의 상대 링크가 모두 실제 파일로 resolve된다.
-- `git diff --check`는 통과했다.
-- 현재 `Assembly-CSharp.csproj`에는 신규 두 C# 파일의 Compile Include가 존재한다.
-- `obj/Debug/Assembly-CSharp.dll`은 두 신규 source보다 늦은 timestamp를 가지므로 보고된 build 실행 정황과 일치한다.
+- actor state, presentation, click routing, UI와 trade domain의 책임이 명확히 분리됐다.
+- 거래 시 popup 표시 가격을 신뢰하지 않고 authoritative item data를 다시 조회한다.
+- `WarehouseInventory.TryRemove`는 입력 실패와 재고 부족 시 원자적으로 상태를 보존한다.
+- 클릭 입력은 press frame에만 `Physics2D.OverlapPoint`를 호출해 hot-path 비용이 작다.
+- visit interval, dwell, flight speed는 명명된 상수와 serialized tuning으로 관리되며 `OnValidate()` 보정이 있다.
+- enum은 재정렬 없이 append됐다.
+- 신규 script `.meta` GUID 중복은 0건이다.
+- prefab/controller/clip에서 duplicate anchor와 unresolved local/cross-asset reference는 0건이다.
+- `Visual` CRC32 `3966078249`가 모든 신규 clip binding과 일치한다.
+- landing event가 실제 `OnLandingImpact` method와 연결된다.
+- 관련 Markdown 링크는 모두 resolve된다.
+- `git diff --check HEAD^ HEAD`가 통과했고 최종 worktree는 clean이다.
+- `Assembly-CSharp.csproj`에는 신규 C# 10개가 모두 포함되어 있다.
 
 ## Verification Limits
 
-- sandbox와 사용자 지시에 따라 어떤 파일도 수정하지 않았다.
-- build는 output artifact를 변경할 수 있어 `dotnet build`를 독립적으로 재실행하지 않았다. 따라서 보고된 “0 warnings / 0 errors” 콘솔 결과 자체는 재현하지 않았다.
-- Unity Editor/Play Mode를 실행하지 않았다.
-- M-01 때문에 현 저장소 상태에서는 Gold lifecycle, 버튼 동작, Console 출력, Inspector clamp와 두 번째 Play Mode 진입을 검증할 수 없다.
-- Unity import를 실행하지 않았으므로 신규 `.meta` GUID의 실제 MonoScript import 결과는 확인하지 못했다.
-- 이전 Carry presentation findings와 Gold 외 기존 시스템은 이번 focused review에서 재검증하지 않았다.
+- 사용자 지시와 read-only sandbox에 따라 파일을 수정하지 않았다.
+- `dotnet build`는 output artifact를 변경하므로 독립 재실행하지 않았다. `obj/Debug/Assembly-CSharp.dll`이 신규 source보다 늦고 csproj에 모든 신규 script가 포함된 것은 확인했지만, 보고된 0 warnings/0 errors 콘솔 결과 자체는 재현하지 않았다.
+- Unity Editor import와 Play Mode를 실행하지 않았다.
+- hand-authored prefab/controller/clip의 Unity importer 수용 여부는 정적 YAML 정합성까지만 확인했다.
+- animation 전환 시점, 동일 프레임 Update race, popup interaction과 두 번째 방문은 Play Mode에서 재현하지 못했다.
+- 실제 art, scene point 위치와 UI layout은 제공되지 않아 시각적 검증 대상에서 제외했다.
 
 ## Recommended Next Actions
 
-1. M-01의 `FarmerTest.unity` GoldManager 및 TestGoldWindow 배선을 완료한다.
-2. Unity에서 import 후 두 MonoScript가 정상 인식되고 missing script가 없는지 확인한다.
-3. L-01의 `OnValidate` 보정을 추가한다.
-4. L-03의 성공·실패 probe 사전조건을 고정하거나 문서와 버튼 이름을 실제 동작에 맞춘다.
-5. L-02의 architecture debt, 변경 파일과 `.meta` 검증 설명을 현재 저장소 사실에 맞춘다.
-6. Play Mode에서 시작 잔액, Add, 성공·실패 TrySpend, overflow 경계, 두 번째 진입 reset과 Console 무경고를 검증한다.
+1. H-01의 inactive bootstrap을 해결하고 최초 방문과 두 번째 방문을 검증한다.
+2. H-02의 offer button binding 경로를 구현해 실제 UI에서 거래를 호출할 수 있게 한다.
+3. M-02와 M-03의 transaction preflight를 재고 mutation 전에 완료한다.
+4. M-04의 Animator 평가 시점 race를 제거한다.
+5. M-05의 필수 UI service 검증을 추가한다.
+6. M-01의 scene, layer, popup, Gold/DataManager 배선을 완료한다.
+7. Unity import 후 missing script/binding/parameter 오류를 확인하고 전체 Play Mode 시나리오를 실행한다.
+8. L-01과 L-02 문서 drift를 교정한다.
 
 ## Final Verdict
 
 **Changes requested.**
 
-GoldManager의 architecture와 production transaction 코드는 승인 가능한 수준이며 priority 1과 2에서는 issue를 발견하지 못했다. 그러나 scene runtime owner와 유일한 검증 도구가 모두 미배선 상태이므로 현재 changeset만으로는 기능이 실행되거나 검증될 수 없다. M-01을 해소하고 Unity Play Mode 검증을 마친 뒤 완료 처리하는 것이 안전하다.
+책임 배치와 deliberate architecture 선택은 승인 가능하다. 그러나 비활성 prefab bootstrap과 판매 UI 호출 경로라는 두 개의 High blocker 때문에 현재 구현은 실제 click-to-trade-to-gold 기능으로 실행될 수 없다. transaction validation과 Unity wiring까지 완료한 후 재검토가 필요하다.
