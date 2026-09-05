@@ -741,8 +741,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8032994466984222010}
   - component: {fileID: 7624489968676248884}
-  - component: {fileID: 8222987239377110728}
-  - component: {fileID: 1882286153031904773}
   - component: {fileID: 1965022778033901099}
   - component: {fileID: 9115611887044702452}
   m_Layer: 7
@@ -781,42 +779,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FarmWorkSite
   _startingDefinition: {fileID: 11400000, guid: eff732f7297c9b64fadddbd75320c624, type: 2}
-  _randomSource: {fileID: 8222987239377110728}
+  _randomSource: {fileID: 0}
   _workArea: {fileID: 9115611887044702452}
   _workPositionRandomSource: {fileID: 1965022778033901099}
   _workGridColumns: 4
   _workGridRows: 2
   _workPositionJitter: 0.2
---- !u!114 &8222987239377110728
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5865412015043443405}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 11f5310043904c2e910af5c48be5993c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SeededRandomSource
-  _seed: 1
---- !u!114 &1882286153031904773
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5865412015043443405}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7fd7bd82212c4f478b19a77e72369818, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TestFarmProductionWindow
-  _farmWorkSite: {fileID: 7624489968676248884}
-  _warehouse: {fileID: 0}
-  _depositPoint: {fileID: 0}
-  _cropCatalog: {fileID: 11400000, guid: 438d66d42c5e491ca877e19caeceaa77, type: 2}
-  _itemDataContext: {fileID: 11400000, guid: df1cde6d9ea68634494a9967845fe8ad, type: 2}
 --- !u!114 &1965022778033901099
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -829,7 +797,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11f5310043904c2e910af5c48be5993c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SeededRandomSource
-  _seed: 2
+  _seed: 1
 --- !u!61 &9115611887044702452
 BoxCollider2D:
   m_ObjectHideFlags: 0

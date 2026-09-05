@@ -34,7 +34,7 @@ public class GoldManager : MonoBehaviour
     /// </summary>
     public void Add(int amount)
     {
-        if (amount <= 0)
+        if (amount <= 0)  
             return;
 
         long sum = (long)_currentGold + amount;
