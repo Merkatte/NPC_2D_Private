@@ -5,6 +5,7 @@ using UnityEngine;
 public class DataManager : MonoBehaviour, IDataManager
 {
     [SerializeField] private CostInfo[] _costInfos;
+    [SerializeField] private ItemDataContext _itemDataContext;
 
     Dictionary<ActionType, CostInfo> _costInfoDict = new Dictionary<ActionType, CostInfo>();
 
@@ -34,6 +35,20 @@ public class DataManager : MonoBehaviour, IDataManager
         }
 
         return true;
+    }
+
+    // Delegates to ItemDataContext rather than duplicating item storage: DataManager is the
+    // query facade for immutable data, ItemDataContext stays the owner of the CSV-backed table.
+    public bool TryGetItemInfo(int itemId, out ItemInfo info)
+    {
+        if (!_itemDataContext)
+        {
+            info = default;
+            Debug.LogError("DataManager: _itemDataContext is not assigned.");
+            return false;
+        }
+
+        return _itemDataContext.TryGetItemInfo(itemId, out info);
     }
 }
 

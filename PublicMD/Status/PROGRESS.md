@@ -50,6 +50,30 @@ Immediate next actions:
 
 ## Current Status
 
+### 상단(Merchant Caravan) — 클릭·거래·골드 파이프라인 구현 (2026-09-06)
+
+골드 로드맵 2단계. 그림(새 3마리+마차+끈)은 아직 Codex가 만드는 중이라 없지만, 클릭 감지 → 팝업 → 거래 → 골드로 이어지는 코드 파이프라인 전체를 그림 없이 완성했다 — 그림이 도착하면 프리팹의 `Visual` 자식에 스프라이트만 추가하면 되도록 구조를 잡았다.
+
+여러 턴에 걸친 설계 논의로 아키텍처를 사용자와 함께 확정했다. 핵심 결정: `MerchantVisual`(표현·클릭 표면)과 `MerchantTradeSite`(거래 도메인)는 서로를 전혀 모르고, `PopupType.Merchant`로 여는 `MerchantPopup`이 유일한 연결점이다. `MerchantTradeSite`만 `GoldManager`를 알며, 상단 거래만 담당한다(모집·업그레이드가 생겨도 각자 전용 provider를 새로 만들지 이 컴포넌트를 거치지 않는다). 거래 가능 여부는 클릭 순간 Animator 상태를 실시간 조회해서 판정한다(캐시된 bool이나 Animation Event 아님) — "언제 상태가 바뀌는지"는 C#(`MerchantCaravan`)이, "지금 어떻게 보이는지"는 Animator가 소유하는 분리 덕분에 착지·이륙 애니메이션 재생 중 클릭이 자동으로 막힌다. `MerchantPopup`-`MerchantTradeSite`는 1:1 전용 배선이라 interface로 감싸지 않았다(GoldManager에 `IGoldService`를 안 만든 것과 같은 논리) — 사용자가 이 판단 기준(대체 구현·테스트 필요가 실제로 있는가)을 명확히 짚어줘서 처음 제안했던 `IMerchantTradeSite`를 철회했다.
+
+**신규 클릭 감지 인프라**: 이 프로젝트에 클릭 감지 코드가 전혀 없었다(`OnMouseDown`/`IPointerClickHandler`/`EventSystem` 0건 확인). 유일한 pointer 선례 `PointerHoverRouter`는 연속 상태(enter/exit)를 스로틀링 폴링하는 구조라 클릭(1회성 edge)엔 안 맞아서, `PointerHoverRouter`를 확장하지 않고 `PointerClickRouter`를 sibling으로 새로 만들었다. 스로틀링 없음 — `wasPressedThisFrame` 자체가 이미 프레임당 1번이라 폴링하면 오히려 클릭을 놓친다. `IClickPopupSource`(신규, `IHoverInfoSource`와 같은 결)는 `TryGetClickPopup(out PopupType)` 하나뿐이고, `false` 반환 자체가 "지금 클릭 불가"를 표현해 라우터는 왜 안 되는지 전혀 모른다. `FarmerTest.unity`의 `Manager > InputEvent`(지금까지 Transform만 있던 빈 오브젝트)가 정확히 이 용도로 비어있었다.
+
+**막힌 지점 발견·해소**: `WarehouseInventory`/`IInventory`에 재고를 빼는 방법이 전혀 없었다(`TryAdd`만 존재). `IInventory`에 넣지 않고 `WarehouseInventory`에 concrete `TryRemove(itemId, quantity, out removed)`(all-or-nothing)만 추가했다 — `WorkerInventory.Clear()`가 `ICarriedInventory` 밖에 있는 것과 같은 논리(재고 차감은 판매 transaction만의 특권이지 모든 `IInventory` 소비자가 가질 계약이 아니다). 가격 데이터는 `ItemInfo`에 `SellPrice` 필드를 추가하고 `ItemData.csv`를 9열→10열로 확장했다(`row.Length < ColumnCount` 가드라 하위 호환 안 깨짐). `FarmProductionDefinition_Carrot`/`_Potato`의 `_outputItemId`(4/5)가 CSV의 Carrot=4/Potato=5와 실제로 일치함을 직접 확인해, `ItemInfo` 조회가 실제 창고 재고와 안전하게 연결됨을 검증했다.
+
+**DataManager 용도 원복**: 사용자가 이전 세션에서 "DataManager는 여러 불변 데이터의 창구여야 하는데 지금 ActionType cost 하나로 좁아진 건 용도 변질"이라고 정리한 방향에 따라, `IDataManager`에 `TryGetItemInfo(int id, out ItemInfo info)`를 추가하고 `DataManager`가 내부적으로 `ItemDataContext`를 들고 그 조회를 위임하게 했다. 다만 `Pub.cs`는 여전히 `ItemDataContext`를 `DataManager` 없이 직접 참조한다 — 이번 결정과 다른 스타일이 코드베이스에 공존하게 됐고, 이 사실을 `Inventory_and_Items.md`의 TBD에 기록했다(`Pub.cs` 리팩터는 범위 밖).
+
+**TradeResult 범위 축소**: `Success/OutOfStock/InvalidRequest`만 만들고 `InsufficientGold`는 넣지 않았다 — 지금은 판매(창고→골드)만 있고 구매가 없어서 골드 부족이라는 결과 자체가 발생할 수 없다. 도달 불가능한 enum 값을 미리 넣지 않는다는 이 프로젝트의 반복 원칙을 따랐다. 구매가 생기면 그때 끝에 추가한다.
+
+**애니메이션은 전부 임시 placeholder**: `Assets/Animation/Merchant/Merchant.controller`(파라미터 `IsLanded`, 상태 `Flying`(default)→`Landing`→`Landed`→`TakingOff`, 전이 형태는 `NPCGirl_Carry.controller`와 동일)와 clip 4개는 전부 `Visual` 자식 Transform의 `localScale`/`localPosition.y`만 애니메이션한다(스프라이트 없음). `MerchantLanding.anim`의 0.12초 지점에 `MerchantVisual.OnLandingImpact()`를 부르는 Animation Event를 배선해뒀지만, 프로젝트에 audio/particle 시스템이 없어 메서드 본문은 비어 있다(향후 사운드/파티클 연결용 훅). `MerchantCaravan.prefab`의 `Visual` 자식에는 아직 `SpriteRenderer`가 없다 — 그림이 오면 이 자식에 붙이면 되고 Animator 배선은 그대로 유지된다. **새 3마리의 개별 idle 세부 동작(좌우 살짝 보기, 랜덤 여부)은 사용자 요청에 따라 이번 범위에서 결정하지 않았다** — 그림이 없어 판단 근거가 없다는 지적에 따라 그림 도착 후 재논의하기로 했다.
+
+변경 파일: 신규 — `Assets/Scripts/Interface/IClickPopupSource.cs`, `Assets/Scripts/UI/PointerClickRouter.cs`, `Assets/Scripts/Actor/MerchantVisitPhase.cs`, `Assets/Scripts/Actor/MerchantCaravan.cs`, `Assets/Scripts/Actor/MerchantArrivalScheduler.cs`, `Assets/Scripts/Actor/MerchantTradeSite.cs`, `Assets/Scripts/System/Actor/MerchantVisual.cs`, `Assets/Scripts/Enum/TradeResult.cs`, `Assets/Data/Struct/MerchantOffer.cs`, `Assets/Scripts/UI/MerchantPopup.cs`, `Assets/Animation/Merchant/`(controller+clip 4개), `Assets/Prefab/InGame/MerchantCaravan.prefab`. 수정 — `Assets/Scripts/Enum/PopupType.cs`(`Merchant` 추가), `Assets/Scripts/System/Inventory/WarehouseInventory.cs`(`TryRemove`), `Assets/Data/Struct/ItemInfo.cs`/`Assets/Data/CSV/ItemData.csv`/`Assets/Scripts/System/Mapper/ItemInfoCsvMapper.cs`(`SellPrice`), `Assets/Scripts/Interface/IDataManager.cs`/`Assets/Scripts/Manager/DataManager.cs`(`TryGetItemInfo`). 문서 — `PublicMD/Systems/UI.md`, `PublicMD/Systems/Inventory_and_Items.md`, 신규 `PublicMD/Systems/Merchant_Caravan.md`, `PublicMD/ProjectStructure.md`, `PublicMD/Systems/README.md`.
+
+검증: `dotnet build Assembly-CSharp.csproj --no-restore` 경고 0/오류 0 — 이번 세션 중 Unity가 이미 프로젝트를 열어 csproj를 재생성했고 새 스크립트 10개가 전부 자동으로 포함되어 있음을 확인했다(추가 수동 편집 불필요). `TryRemove`가 `IInventory`/`ICarriedInventory`에 없음을 grep으로 확인(단일 특권 경로). `IDataManager`의 유일한 구현체가 `DataManager`뿐임을 확인(다른 구현체 깨짐 없음). `PopupType`/`TradeResult` enum이 끝에 append됐는지 확인. 신규 prefab·controller·anim 4개의 fileID 참조 그래프 정합성 확인(중복 앵커 0, 로컬 미해결 참조 0 — cross-asset guid 참조만 남음). "Visual" 경로 CRC32(3966078249) 재계산 후 클립 바인딩과 대조 일치. `git diff --check`·`git status`로 무관한 변경과 분리 확인.
+
+**Unity Editor에서 사용자 확인 필요 (NOT VERIFIED)**: 씬 배선 전체(레이어 `Clickable` 생성, `PointerClickRouter`를 `Manager > InputEvent`에 부착, `MerchantCaravan` 프리팹 인스턴스화 및 도착/도크/퇴장 지점 배치, `MerchantArrivalScheduler`/`MerchantTradeSite` 배선, `MerchantPopup`을 Canvas에 배치하고 `UIManager._popups`에 등록, `DataManager._itemDataContext` 연결, `ItemData.csv` 판매가 확인). Play Mode 전체 시나리오 — 착지 애니메이션 재생 중 클릭 무효(전이 중 가드 포함), 체류 중 클릭 시 팝업 오픈, 이륙 후 클릭 무효, 판매 성공/재고부족 각각의 `TradeResult` 표시, 상단 퇴장 시 팝업 자동 닫힘, **두 번째 방문**(재사용) 시 첫 방문과 동일 동작, `TestGoldWindow`로 골드 실제 증가 교차 확인. Console에 Animator parameter/missing binding 오류 없음.
+
+다음 액션: 위 Play Mode 항목을 확인. 그림(새·마차·끈) 도착 대기 중 — 도착하면 `MerchantCaravan.prefab`의 `Visual` 자식에 스프라이트 배선. 이후 후보군(모집) 단계로 진행.
+
 ### GoldManager — 전역 골드 잔액 시스템 구현 (2026-09-05)
 
 시청(정부청사) 기반 재화·모집 시스템 로드맵의 1단계. 사용자와 여러 턴에 걸쳐 확정한 순서(골드 → 상단 → 후보군) 중 골드만 이번 범위다 — 상단·후보군은 그래픽 자산이 필요해 대기 중이지만, 골드는 "적당히 얼마가 모이는지 보이면" 충분해 art 의존 없이 먼저 구현했다.

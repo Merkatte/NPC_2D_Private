@@ -29,6 +29,12 @@ FarmWorkSite(Harvest) -> InteractionRequest.Cargo.TryAdd(outputItemId, pending y
 DepositAction -> WarehouseDepositPoint.TryInteract(Deposit, cargo)
   -> ICarriedInventory.TryTransferAllTo(WarehouseInventory)
   -> 창고가 거부한 잔량은 계속 봇짐에 남는다
+
+창고 출고(판매):
+MerchantPopup -> MerchantTradeSite.TryTrade(itemId, quantity)
+  -> IDataManager.TryGetItemInfo(itemId)로 가격을 다시 조회(Popup이 넘긴 값을 신뢰하지 않음)
+  -> WarehouseInventory.TryRemove(itemId, quantity) — all-or-nothing
+  -> GoldManager.Add(price * quantity)
 ```
 
 `IInventory.TryAdd`는 요청 수량 중 수락 가능한 만큼만 받고, 1개 이상 수락되면 true와 함께 `acceptedQuantity`를 돌려주는 부분 수락 계약이다. `WarehouseInventory`는 현재 용량 제한이 없어 실질적으로 항상 전량을 수락하고, `WorkerInventory`는 남은 용량까지만 수락한다.
@@ -37,7 +43,9 @@ DepositAction -> WarehouseDepositPoint.TryInteract(Deposit, cargo)
 
 `WorkerInventory`는 MonoBehaviour가 아닌 plain C#이며 `NPCComponent`가 `CombatRuntimeState`와 같은 방식으로 인라인 소유한다. 한 번에 한 item type만 담고, 표시 여부 판단(비었는지 여부)은 자신이 하되 실제 `SpriteRenderer` 조작은 생성자로 받은 콜백을 통해 `NPCComponent`에 위임한다. `Clear()`는 `ICarriedInventory`에 없고 소유자인 `NPCComponent`만 pool 재사용 시 호출한다 — 외부 provider가 남의 봇짐을 비울 권한은 없다.
 
-`ItemData.csv`는 농사 crop 결과 item(현재 Carrot=4, Potato=5, Food category)도 다른 item과 동일한 9열 계약으로 보유한다. `ItemDataContext.TryGetItemInfo(id, out info)`가 id 기준 조회를 제공하며, `CropCatalog.TryValidate(itemDataContext, out reason)`가 catalog에 등록된 모든 crop의 `OutputItemId`를 이 조회로 cross-check해 CSV에 없는 id를 가진 crop을 거부한다. 이 검증은 catalog를 소비하는 초기화 경계(현재 `TestFarmProductionWindow`)에서만 실행되며, `FarmWorkSite`가 item table 전체를 들고 있지는 않는다 — `TrySelectCrop`을 catalog를 거치지 않고 직접 호출하면 이 cross-check를 우회한다.
+`ItemData.csv`는 농사 crop 결과 item(현재 Carrot=4, Potato=5, Food category)도 다른 item과 동일한 10열 계약으로 보유한다(마지막 열 `sellPrice` — 상단 판매가, item마다 다르고 창고에 실제로 쌓이지 않는 item(Water/Beer/Bread)은 0으로 둔다). `ItemDataContext.TryGetItemInfo(id, out info)`가 id 기준 조회를 제공하며, `CropCatalog.TryValidate(itemDataContext, out reason)`가 catalog에 등록된 모든 crop의 `OutputItemId`를 이 조회로 cross-check해 CSV에 없는 id를 가진 crop을 거부한다. 이 검증은 catalog를 소비하는 초기화 경계(현재 `TestFarmProductionWindow`)에서만 실행되며, `FarmWorkSite`가 item table 전체를 들고 있지는 않는다 — `TrySelectCrop`을 catalog를 거치지 않고 직접 호출하면 이 cross-check를 우회한다. `FarmProductionDefinition_Carrot`/`_Potato`의 `_outputItemId`(4/5)가 CSV의 Carrot=4/Potato=5와 실제로 일치함을 직접 확인했다 — 창고 재고 조회가 item 가격 조회와 안전하게 연결된다.
+
+`MerchantTradeSite`([Merchant Caravan](Merchant_Caravan.md) 주 소유)가 `IDataManager.TryGetItemInfo`를 통해 가격을 조회한다 — `DataManager`가 여러 불변 데이터의 조회 창구 역할을 하도록 그 뒤에서 `ItemDataContext`를 감싼다. `Pub.cs`는 여전히 `ItemDataContext`를 `DataManager` 없이 직접 참조한다 — 이 두 접근 방식이 지금 코드베이스에 공존한다(아래 TBD 참고).
 
 ## 주 소유 스크립트
 
@@ -48,11 +56,11 @@ DepositAction -> WarehouseDepositPoint.TryInteract(Deposit, cargo)
 | `Assets/Scripts/Actor/WarehouseDepositPoint.cs` | 운반 cargo를 창고 `IInventory`로 옮기는 입고 provider |
 | `Assets/Scripts/Enum/ItemCategory.cs` | item table 분류 key |
 | `Assets/Scripts/Interface/ICarriedInventory.cs` | 운반 중 inventory의 empty·full 상태와 전량 이관 계약 |
-| `Assets/Scripts/Interface/IDataManager.cs` | action cost를 type-safe하게 조회하는 서비스 계약 |
+| `Assets/Scripts/Interface/IDataManager.cs` | action cost와 item info를 type-safe하게 조회하는 서비스 계약 |
 | `Assets/Scripts/Interface/IInventory.cs` | item 수량의 부분 수락 계약과 조회 계약 |
-| `Assets/Scripts/Manager/DataManager.cs` | `ActionType`별 `DefaultActionCost` registry |
+| `Assets/Scripts/Manager/DataManager.cs` | `ActionType`별 `DefaultActionCost` registry와 `ItemDataContext` 경유 item info 조회 창구 |
 | `Assets/Scripts/System/Action/DepositAction.cs` | 창고 입고 interaction 1회 실행 |
-| `Assets/Scripts/System/Inventory/WarehouseInventory.cs` | item ID별 runtime 정수 수량 저장소 |
+| `Assets/Scripts/System/Inventory/WarehouseInventory.cs` | item ID별 runtime 정수 수량 저장소, `TryRemove`(판매 전용, `IInventory` 밖) |
 | `Assets/Scripts/System/Inventory/WorkerInventory.cs` | NPC 1명의 단일 item type 운반 cargo와 표시 콜백 |
 | `Assets/Scripts/System/Lib/CSVParser.cs` | `TextAsset` CSV를 문자열 row로 파싱 |
 | `Assets/Scripts/System/Mapper/ItemInfoCsvMapper.cs` | CSV row를 category별 `ItemInfo` dictionary로 변환 |
@@ -80,6 +88,7 @@ DepositAction -> WarehouseDepositPoint.TryInteract(Deposit, cargo)
 - 봇짐은 한 번에 한 item type만 담고, 다른 item type의 입고는 수락 0으로 거부한다.
 - 봇짐을 비우는 권한은 소유자인 `NPCComponent`에만 있다. provider는 `ICarriedInventory` 계약 밖의 조작을 하지 않는다.
 - `WarehouseInventory`는 순수 저장소로 남기고 interaction protocol은 `WarehouseDepositPoint`가 담당한다.
+- 창고 재고를 차감하는 권한은 `MerchantTradeSite`(판매 transaction)에만 있다. `TryRemove`는 `IInventory`에 없다 — 그 계약은 "부분 수락 가능한 추가"만 의미하고, 제거는 별개의 특권적 capability다(`WorkerInventory.Clear()`가 `ICarriedInventory` 밖에 있는 것과 같은 이유).
 - item ID와 serialized enum 변경은 기존 CSV·asset 호환성을 함께 검토한다.
 
 ## Unity 배선
@@ -94,6 +103,7 @@ DepositAction -> WarehouseDepositPoint.TryInteract(Deposit, cargo)
 - `NPCComponent.ResetRuntimeState`가 봇짐을 비우므로 despawn 경로가 생기면 운반 중이던 생산물이 조용히 사라진다. 현재 despawn 경로가 없어 관측되지 않는다.
 - 여러 item type 동시 운반과 item별 봇짐 스프라이트는 지원하지 않는다.
 - `DataManager.instance`는 현재 static service reference이며 수명 정책이 단순하다.
+- `Pub.cs`는 `ItemDataContext`를 `DataManager` 없이 직접 참조하고, `MerchantTradeSite`는 `IDataManager` 경유로 조회한다 — 같은 데이터에 접근하는 두 가지 방식이 코드베이스에 공존한다. `Pub.cs`를 `DataManager` 경유로 리팩터하는 것은 이번 범위 밖의 별개 작업이다.
 
 ## 관련 문서
 
@@ -101,6 +111,7 @@ DepositAction -> WarehouseDepositPoint.TryInteract(Deposit, cargo)
 - [Interaction and Destinations](Interaction_and_Destinations.md)
 - [Selector and Queue](NPC_Decision_and_Actions/Selector_and_Queue.md)
 - [Action Runtime](NPC_Decision_and_Actions/Action_Runtime.md)
+- [Merchant Caravan](Merchant_Caravan.md) — `WarehouseInventory.TryRemove`와 `IDataManager.TryGetItemInfo`의 소비자
 
 ## 문서 갱신 조건
 

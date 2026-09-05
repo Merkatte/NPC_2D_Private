@@ -1,6 +1,6 @@
 # Project Structure
 
-> 문서 기준일: 2026-09-05
+> 문서 기준일: 2026-09-06
 > 이 문서는 전체 구조 지도와 기능 문서 라우팅만 소유한다. 구체 클래스 흐름과 Unity 배선은 `PublicMD/Systems`의 해당 문서가 소유한다.
 
 ## 1. 구조 한눈에 보기
@@ -30,6 +30,7 @@ NPCManager / WorkerPool          생성과 조립
 | 상호작용과 목적지 | [Interaction and Destinations](Systems/Interaction_and_Destinations.md) | provider, destination, 건물 action |
 | 아이템과 inventory | [Inventory and Items](Systems/Inventory_and_Items.md) | CSV, item data, 창고와 NPC 봇짐, 운반·입고 transaction, cost registry |
 | 플레이어 골드 | [Player Gold](Systems/Player_Gold.md) | 전역 골드 잔액, 획득·지출 transaction |
+| 상단(Merchant Caravan) | [Merchant Caravan](Systems/Merchant_Caravan.md) | 방문 phase·타이머, 클릭 가능 판정, 거래 transaction |
 | NPC 표현 | [NPC Presentation](Systems/NPC_Presentation.md) | 이동 animation, Flip, 건물·도구 표현 |
 | UI | [UI](Systems/UI.md) | popup, hover, gauge, pointer routing |
 | 생성과 pooling | [Spawning and Pooling](Systems/Spawning_and_Pooling.md) | role 생성, prefab catalog, worker pool |
@@ -52,9 +53,10 @@ NPCManager / WorkerPool          생성과 조립
 | 공격·사거리·damage | Combat/Attack Runtime | 공격 role 문서 |
 | destination·provider | Interaction and Destinations | Decision Policy, 소비 domain |
 | item·warehouse·CSV | Inventory and Items | 생산 또는 interaction 문서 |
-| 골드 잔액·획득·지출 | Player Gold | (현재 gameplay 소비자 없음) |
+| 골드 잔액·획득·지출 | Player Gold | Merchant Caravan(현재 유일한 gameplay 소비자) |
+| 상단 방문·타이머·거래 | Merchant Caravan | Player Gold, Inventory and Items, UI |
 | animation·Flip·도구 | NPC Presentation | 이를 호출하는 action 문서 |
-| popup·hover·gauge | UI | 데이터를 제공하는 domain 문서 |
+| popup·hover·gauge·click 감지 | UI | 데이터를 제공하는 domain 문서 |
 | role·prefab·pool | Spawning and Pooling | 생성되는 role 문서 |
 
 상위 게임 규칙을 설계하거나 변경하면 먼저 `Game_Plan.md`와 `SPEC.md`를 읽는다. 여러 기능의 책임이나 의존 방향을 바꾸면 `ARCHITECTURE.md`, C#을 수정하면 `CodeConvention.md`를 추가로 읽는다.
@@ -111,6 +113,8 @@ UI input -> IUIService <- domain IHoverInfoSource
 | 새 prefab 형태 | `NPCPrefabType`, prefab catalog, pool/spawn 조립 |
 | 새 crop | `FarmProductionDefinition` asset, `CropCatalog` 등록, 결과 item CSV row, [Farming](Systems/Farming/README.md) |
 | 새 골드 획득·지출 지점 | `GoldManager.Add`/`TrySpend` 호출자, [Player Gold](Systems/Player_Gold.md) |
+| 새 골드 소비 domain(모집·업그레이드 등) | 그 domain 전용의 새 작은 provider가 `GoldManager`를 직접 참조. 기존 provider(예: `MerchantTradeSite`)를 거치지 않는다 |
+| 새 world click 대상 | `IClickPopupSource` 구현, `Clickable` 레이어 collider, [UI](Systems/UI.md) |
 
 구체 절차와 불변 규칙은 표의 대상 기능 문서를 따른다.
 
