@@ -779,7 +779,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FarmWorkSite
   _startingDefinition: {fileID: 11400000, guid: eff732f7297c9b64fadddbd75320c624, type: 2}
-  _randomSource: {fileID: 0}
+  _randomSource: {fileID: 1965022778033901099}
   _workArea: {fileID: 9115611887044702452}
   _workPositionRandomSource: {fileID: 1965022778033901099}
   _workGridColumns: 4

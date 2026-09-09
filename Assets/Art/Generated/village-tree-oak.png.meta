@@ -117,7 +117,7 @@ TextureImporter:
         width: 1321
         height: 1009
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -130,77 +130,11 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
-    - serializedVersion: 2
-      name: village-tree-oak_1
-      rect:
-        serializedVersion: 2
-        x: 1424
-        y: 455
-        width: 99
-        height: 139
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 0aee5effb29272a10800000000000000
-      internalID: 1884520238031433376
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: village-tree-oak_2
-      rect:
-        serializedVersion: 2
-        x: 1426
-        y: 295
-        width: 33
-        height: 85
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 38be4caa950014e60800000000000000
-      internalID: 7944631602775387011
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: village-tree-oak_3
-      rect:
-        serializedVersion: 2
-        x: 1366
-        y: 253
-        width: 31
-        height: 21
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: f20594785527f95b0800000000000000
-      internalID: -5359439319880085457
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
     outline: []
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 31d381b7b44984d47a2158049e57bbd8
     internalID: 0
     vertices: []
     indices: 
