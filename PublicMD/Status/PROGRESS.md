@@ -50,6 +50,28 @@ Immediate next actions:
 
 ## Current Status
 
+### 상단(Merchant Caravan) 방문 연출 구현 — 도착/체류/출발 Coroutine, TransportBird 지상 연출 (2026-09-10)
+
+Merchant Caravan을 "게임플레이 NPC가 아니라 하나의 방문 연출 세트"로 완성했다. 조사 단계에서 이 기능이 실제로는 **전혀 동작하지 않는 상태**였음을 확인했다: `MerchantCaravan`/`MerchantArrivalScheduler`/`MerchantTradeSite`/`PointerClickRouter`/`MerchantPopup` 중 어느 것도 3개 씬(`FarmerTest`/`GuardTest`/`TileMapTest`) 어디에도 배치되어 있지 않았고, `MerchantPopup` 뷰 프리팹 자체가 없었다. `Merchant_Caravan.md`가 기술하던 "FarmerTest.unity에 배선했다"는 사실과 달랐다(문서 드리프트, 이번에 교정). 또한 캐러밴이 비활성 상태로 시작하면 구 `BeginVisit()`이 `_isConfigured`(Awake에서만 설정)를 `SetActive(true)`보다 먼저 검사해 첫 방문이 영원히 시작되지 않는 lifecycle 버그가 있었다.
+
+**구조 변경**: `MerchantCaravan`을 씬에 배치된 3개 빈 Transform(`_arrivalPoint`/`_dockPoint`/`_departurePoint`) 사이를 이동시키는 `Update` 상태머신에서, 단일 방문 `Coroutine`(`VisitRoutine`)으로 전면 재작성했다. `MerchantVisitPhase.cs`(public enum)는 제거했다 — 외부에 노출할 필요가 없고 Coroutine 흐름만으로 충분했다. 새 규칙: **프리팹에 저작된 local position이 곧 착륙(landed) pose**이고, 프리팹 인스턴스의 월드 위치가 최종 착륙 기준점이다. 씬별 위치 Transform은 더 필요 없다.
+
+**Animator ↔ C# 충돌 제거**: 기존 `Merchant.controller`(+ 4개 placeholder clip)는 `Visual` 자식의 `localPosition`/`localScale`을 WriteDefaults로 매 프레임 애니메이션하고 있어서, 건물 하강 Coroutine과 같은 Transform을 동시에 쓰면 매 프레임 덮어써지는 구조였다. Animator 컴포넌트와 5개 에셋(controller + 4 clip)을 전부 삭제하고, 건물/상인/새 이동은 순수 C#(`Vector3.LerpUnclamped` + `AnimationCurve`)으로만 처리한다. `TransportBird`의 Animator는 충돌하지 않는다 — 클립이 `Visual/Img` 자식만 건드리고 C#은 새 루트의 `localPosition`만 쓰기 때문.
+
+**연출 흐름**: `ResetPresentation()`(전 상태 초기화) → 건물 단독 하강 → 새 3마리+상인 동시 착륙(상인 Z축 -360° 회전) → `MerchantVisual.SetTradeAvailable(true)` → 새 3마리 각자 랜덤 지상 연출(서기/걷기/모이 먹기) → 체류 대기 → `SetTradeAvailable(false)` → 랜덤 연출 중단 → 새 3마리 지상 앵커로 집합(논리적 역순, 녹화 애니메이션의 역재생이 아님) → 새+상인 동시 이륙(상인 Z축 +360°) → 건물 단독 상승 → 비활성화. 체류 타이머는 착륙 완료(거래 가능 시점)부터 계산한다.
+
+**거래 가능 판정**: `MerchantVisual.TryGetClickPopup()`이 Animator 상태를 실시간 조회하던 방식(`Base Layer.Landed` 해시 비교)을 제거하고, `MerchantCaravan`이 착륙 완료/출발 시작 시점에 `MerchantVisual.SetTradeAvailable(bool)`을 명시 호출하는 방식으로 바꿨다. `MerchantTradeSite`에는 연출 의존성을 추가하지 않았다.
+
+**`TransportBird.cs`**: 미사용 `_spriteRenderer`/`_sprites`/private enum만 있던 죽은 스텁을 Animator 기반 표현 명령 컴포넌트로 재작성했다. 공개 API는 `ResetToFlying()`/`PlayFlying()`/`PlayStanding()`/`PlayWalking()`/`PlayFeeding()`/`StartGroundPresentation()`/`StopGroundPresentation()` 뿐이고, 현재 상태를 외부에 공개하는 property는 없다. 지상 랜덤 연출은 각 새 자신의 착륙 지점을 앵커로 한 반경 내에서 무한 루프로 돈다. `TransportBird.controller`의 `MotionState`(Int) 0/1/2/3 = Standing/Walking/Feeding/Flying을 실물로 검증해 그대로 사용했다.
+
+**프리팹**: `MerchantCaravan.prefab`에서 Animator 컴포넌트를 제거하고 `_visual`/`_building`/`_merchant`/`_birds`(TransportBird 컴포넌트 3개, 중첩 프리팹 stripped 참조로 새로 배선) 및 높이·시간·`AnimationCurve` tuning 값을 채웠다. Bird_01~03의 `m_LocalPosition` 오버라이드를 공중 위치에서 지상 착륙 위치로 교체했다(이 값은 초기 추정치이며 최종 조정은 Unity 에디터 시각 검증이 필요 — TBD). `TransportBird.prefab`에는 `_animator` 참조와 tuning 기본값을 채우고 `Img` SpriteRenderer의 `m_SortingOrder`를 0→2로 올려 Shop(0) < 새(2) < 상인(3) 렌더 순서를 확정했다.
+
+**명시적으로 구현하지 않음**: `WorkerNPC`/`IAction`/selector/action queue/`NPCType` 연동, 범용 AI 상태 머신, 외부 event bus, 미래 상인 대화 대비 추상화, 새·상인 상태를 외부에 공개하는 구조, DOTween 등 신규 tween 의존성, `MerchantPopup` 뷰 프리팹 제작과 `UIManager` 등록, 씬 배선 자체(`FarmerTest.unity`에 미커밋 변경 895줄이 있어 건드리지 않음 — 사용자가 에디터에서 직접 배치하기로 결정), `TagManager`의 무명 Layer 9 명명, `GuardTest.unity` 배선.
+
+**검증 상태**: 컴파일 대상 코드와 삭제 심볼(`MerchantVisitPhase`/`SetLanded`/`OnLandingImpact`/`_arrivalPoint` 등)에 대한 전체 텍스트 검색으로 잔존 참조 0건을 확인했다(`NOT VERIFIED`: Unity 에디터 컴파일·Play Mode 실행 자체는 이 세션에서 수행하지 않음). 도착/체류/출발 연출의 육안 검증, 재방문 시 pose 초기화, 클릭 가능 시점, 렌더 순서는 Unity 에디터에서 수행 필요 — `Merchant_Caravan.md`에 검증 체크리스트 기록.
+
+관련 계획 파일: `C:\Users\Merkatte\.claude\plans\c-users-merkatte-desktop-quicksort-npc-virtual-bonbon.md`.
+
 ### 상단(Merchant Caravan) — 클릭·거래·골드 파이프라인 구현 (2026-09-06)
 
 골드 로드맵 2단계. 그림(새 3마리+마차+끈)은 아직 Codex가 만드는 중이라 없지만, 클릭 감지 → 팝업 → 거래 → 골드로 이어지는 코드 파이프라인 전체를 그림 없이 완성했다 — 그림이 도착하면 프리팹의 `Visual` 자식에 스프라이트만 추가하면 되도록 구조를 잡았다.

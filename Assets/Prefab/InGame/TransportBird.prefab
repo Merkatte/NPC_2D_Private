@@ -79,7 +79,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 2
   m_MaskInteraction: 0
   m_Sprite: {fileID: -6379431072691442177, guid: 30a0543f4fa4e25479825da325658e61, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -189,10 +189,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 72bf6ba16d97e5a4d99dd16eab0d72b0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::TransportBird
-  _spriteRenderer: {fileID: 5451933015877966059}
-  _sprites:
-  - {fileID: -6379431072691442177, guid: 30a0543f4fa4e25479825da325658e61, type: 3}
-  - {fileID: -788534858292083568, guid: bbbcd1a6c1501e848a8d71bab2f4f978, type: 3}
-  - {fileID: -5484268949993521208, guid: 72060fc3a39481641bef1c171c1f1d19, type: 3}
+  _animator: {fileID: 7624846302847396684}
+  _roamRadius: 1.2
+  _walkSpeed: 0.8
+  _minimumPauseDuration: 0.8
+  _maximumPauseDuration: 2.5
