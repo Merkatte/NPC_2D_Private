@@ -7,9 +7,10 @@ using UnityEngine;
 /// stat, no selector, no action queue. Not pooled: there is only ever one caravan, so a single
 /// persistent scene GameObject enabled/disabled by MerchantArrivalScheduler is enough.
 ///
-/// The caravan prefab instance's world position is the landing anchor — the local positions
-/// authored on _building/_merchant/_birds in the prefab ARE their landed pose. No scene-placed
-/// arrival/dock/departure Transforms are needed.
+/// The caravan prefab instance's world position is the landing anchor. The building and bird
+/// local positions authored in the prefab are their landed pose. The merchant anchor is parented
+/// to the building at its deck position, and its Animator moves only Merchant/Visual between the
+/// deck and ground. No scene-placed arrival/dock/departure Transforms are needed.
 /// </summary>
 public sealed class MerchantCaravan : MonoBehaviour
 {
@@ -17,15 +18,19 @@ public sealed class MerchantCaravan : MonoBehaviour
     private const float MinimumStepDuration = 0.1f;
     private const float MinimumDwellDuration = 1f;
     private const float ArrivalDistanceSquared = 0.0001f; // 0.01 world units
-    private const float FullTurnDegrees = 360f;
+    private const int BaseLayerIndex = 0;
+
+    private static readonly int MerchantDeckIdleStateHash = Animator.StringToHash("Base Layer.DeckIdle");
+    private static readonly int MerchantLandingStateHash = Animator.StringToHash("Base Layer.Landing");
+    private static readonly int MerchantLandedIdleStateHash = Animator.StringToHash("Base Layer.LandedIdle");
+    private static readonly int MerchantBoardingStateHash = Animator.StringToHash("Base Layer.Boarding");
 
     [SerializeField] private MerchantVisual _visual;
     [SerializeField] private Transform _building;
-    [SerializeField] private Transform _merchant;
+    [SerializeField] private Animator _merchantAnimator;
     [SerializeField] private TransportBird[] _birds;
 
     [SerializeField, Min(MinimumLiftHeight)] private float _buildingLiftHeight = 12f;
-    [SerializeField, Min(MinimumLiftHeight)] private float _merchantLiftHeight = 8f;
     [SerializeField, Min(MinimumLiftHeight)] private float _birdLiftHeight = 7f;
 
     [SerializeField, Min(MinimumStepDuration)] private float _buildingLandDuration = 2.5f;
@@ -38,7 +43,6 @@ public sealed class MerchantCaravan : MonoBehaviour
 
     private Coroutine _visitRoutine;
     private Vector3 _buildingGround;
-    private Vector3 _merchantGround;
     private Vector3[] _birdGrounds;
     private bool _isConfigured;
     private bool _hasLoggedConfigurationFailure;
@@ -47,9 +51,11 @@ public sealed class MerchantCaravan : MonoBehaviour
 
     private void Awake()
     {
-        if (!_visual || !_building || !_merchant || _birds == null || _birds.Length == 0)
+        if (!_visual || !_building || !_merchantAnimator || !_merchantAnimator.runtimeAnimatorController ||
+            _birds == null || _birds.Length == 0)
         {
-            ReportConfigurationFailure("missing a required reference (_visual/_building/_merchant/_birds)");
+            ReportConfigurationFailure(
+                "missing a required reference (_visual/_building/_merchantAnimator with controller/_birds)");
             return;
         }
 
@@ -66,7 +72,6 @@ public sealed class MerchantCaravan : MonoBehaviour
         // subsequent visit — including a lift/land cycle that overwrites these Transforms every
         // frame — always resets from the same fixed reference rather than drifting.
         _buildingGround = _building.localPosition;
-        _merchantGround = _merchant.localPosition;
         _birdGrounds = new Vector3[_birds.Length];
         for (int i = 0; i < _birds.Length; ++i)
             _birdGrounds[i] = _birds[i].transform.localPosition;
@@ -135,8 +140,10 @@ public sealed class MerchantCaravan : MonoBehaviour
 
         _building.localPosition = _buildingGround + Vector3.up * _buildingLiftHeight;
 
-        _merchant.localPosition = _merchantGround + Vector3.up * _merchantLiftHeight;
-        _merchant.localRotation = Quaternion.identity;
+        _merchantAnimator.gameObject.SetActive(true);
+        _merchantAnimator.speed = 1f;
+        _merchantAnimator.Play(MerchantDeckIdleStateHash, BaseLayerIndex, 0f);
+        _merchantAnimator.Update(0f);
 
         for (int i = 0; i < _birds.Length; ++i)
         {
@@ -161,11 +168,14 @@ public sealed class MerchantCaravan : MonoBehaviour
 
     /// <summary>
     /// Moves the merchant and all birds together on one shared progress value, so the whole crew
-    /// lands/lifts in the same frame window. isLanding true = birds/merchant descend, merchant
-    /// spins -360°; false = they climb back up, merchant spins +360° — the exact reverse.
+    /// lands/lifts in the same frame window. isLanding true = birds land while the merchant jumps
+    /// from the deck; false = birds lift while the merchant jumps back onto the deck.
     /// </summary>
     private IEnumerator MoveCrew(bool isLanding, float duration)
     {
+        int merchantStateHash = isLanding ? MerchantLandingStateHash : MerchantBoardingStateHash;
+        _merchantAnimator.speed = 0f;
+
         if (!isLanding)
         {
             for (int i = 0; i < _birds.Length; ++i)
@@ -176,29 +186,40 @@ public sealed class MerchantCaravan : MonoBehaviour
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            ApplyCrewPose(isLanding, _easing.Evaluate(Mathf.Clamp01(elapsed / duration)));
+            float normalizedTime = Mathf.Clamp01(elapsed / duration);
+            SampleMerchantAnimation(merchantStateHash, normalizedTime);
+            ApplyBirdPose(isLanding, _easing.Evaluate(normalizedTime));
             yield return null;
         }
 
-        ApplyCrewPose(isLanding, 1f);
+        SampleMerchantAnimation(merchantStateHash, 1f);
+        ApplyBirdPose(isLanding, 1f);
+        _merchantAnimator.speed = 1f;
 
         if (isLanding)
         {
+            _merchantAnimator.Play(MerchantLandedIdleStateHash, BaseLayerIndex, 0f);
+
             for (int i = 0; i < _birds.Length; ++i)
                 _birds[i].PlayStanding();
         }
+        else
+        {
+            // Boarding returns the merchant to the deck. The merchant anchor is parented under
+            // the building, so the following building lift carries both of them together.
+            _merchantAnimator.Play(MerchantDeckIdleStateHash, BaseLayerIndex, 0f);
+        }
     }
 
-    private void ApplyCrewPose(bool isLanding, float t)
+    private void SampleMerchantAnimation(int stateHash, float normalizedTime)
+    {
+        _merchantAnimator.Play(stateHash, BaseLayerIndex, normalizedTime);
+        _merchantAnimator.Update(0f);
+    }
+
+    private void ApplyBirdPose(bool isLanding, float t)
     {
         float landedWeight = isLanding ? t : 1f - t;
-        // t=1 leaves the merchant at exactly +-360 degrees, which is a full turn back to upright —
-        // landing and departure spin in opposite directions but both always finish untwisted.
-        float spin = (isLanding ? -FullTurnDegrees : FullTurnDegrees) * t;
-
-        Vector3 merchantAir = _merchantGround + Vector3.up * _merchantLiftHeight;
-        _merchant.localPosition = Vector3.LerpUnclamped(merchantAir, _merchantGround, landedWeight);
-        _merchant.localRotation = Quaternion.Euler(0f, 0f, spin);
 
         for (int i = 0; i < _birds.Length; ++i)
         {
@@ -265,7 +286,6 @@ public sealed class MerchantCaravan : MonoBehaviour
     private void OnValidate()
     {
         _buildingLiftHeight = Mathf.Max(MinimumLiftHeight, _buildingLiftHeight);
-        _merchantLiftHeight = Mathf.Max(MinimumLiftHeight, _merchantLiftHeight);
         _birdLiftHeight = Mathf.Max(MinimumLiftHeight, _birdLiftHeight);
         _buildingLandDuration = Mathf.Max(MinimumStepDuration, _buildingLandDuration);
         _crewLandDuration = Mathf.Max(MinimumStepDuration, _crewLandDuration);

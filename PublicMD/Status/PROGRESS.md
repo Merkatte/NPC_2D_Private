@@ -50,6 +50,28 @@ Immediate next actions:
 
 ## Current Status
 
+### Merchant 거래 UI 구현 — 구매/판매 탭, 드래그 앤 드롭 슬롯, batch 판매 트랜잭션 (2026-09-10)
+
+`MerchantPopup`을 텍스트 목록 placeholder에서 본격적인 거래 UI로 전면 재작성했다. 구매/판매 탭 2개(구매는 "준비중입니다." placeholder), 판매 탭은 창고 보유 아이템을 인벤토리처럼 슬롯 그리드로 보여주고, 슬롯을 실제 uGUI 드래그 앤 드롭으로 옆의 판매칸에 옮길 수 있다. 수량이 1보다 많으면 "몇 개를 옮길까요?" 창(Slider+InputField 동기화)이 뜨고, 정한 수량만큼 판매칸에 누적된다. 판매칸에 담긴 항목은 "판매" 버튼 한 번에 all-or-nothing batch 트랜잭션으로 일괄 처리된다.
+
+이 프로젝트에 uGUI 드래그 앤 드롭·`Button`/`Slider`/`InputField` 배선·슬롯 그리드 UI 전례가 전혀 없어서 이번이 첫 사례다. `EventSystem`+`InputSystemUIInputModule`+Overlay `Canvas`+`GraphicRaycaster`는 `FarmerTest.unity`에 이미 있었다.
+
+**Codex 리뷰 2회를 거쳐 설계를 확정했다.** 1차는 프리팹 참조 방식(런타임 Instantiate되는 슬롯이 팝업을 미리 직렬화 참조할 수 없음 → `Initialize(...)` 런타임 주입으로 교정), Prefab Variant의 컴포넌트 제거 불명확(→ 완전 독립 프리팹 2개로 변경), `InputField.onEndEdit`만 믿는 위험(→ `Confirm()`이 텍스트 직접 재파싱), 재고 "재클램프"가 실제로는 스냅샷만 보는 문제(→ 확정 직전 `RefreshOffers()` 재조회), 골드 포화로 인한 창고-골드 불일치 가능성(→ 창고 차감 전 골드 상한 검증), 판매 대상 검증 없이 임의 itemId 거래 가능(→ `TryTrade`가 `CropCatalog` 기준 자체 재검증)을 지적받았다. 2차는 `SellPrice * quantity`가 곱셈 단계에서 오버플로 가능한 문제(→ long 승격 후 계산, 항목별 `SellPrice<=0` 개별 거절, `TryGetSaleQuote`/`TryTrade`가 검증 로직 `TryComputeTotal` 공유), `QuantityPromptPanel.Confirm()`이 `Close()`로 상태를 리셋한 뒤 그 값을 읽는 순서 문제(→ 리셋 전 로컬 변수로 먼저 복사), 빈 카트에서 슬롯이 0개 생성돼 "같은 모양 그리드" 연출이 깨지는 문제(→ `_minimumVisibleCartSlots` 최소 표시 개수 도입), `OutOfStock`/`InvalidRequest` 모두에 재고 자동 조정을 걸어 골드 상한 초과 같은 재고 무관 실패에서도 카트를 건드리는 문제(→ `OutOfStock`만 카트 자동 정리, `InvalidRequest`는 카트 유지)를 지적받아 전부 반영했다.
+
+**Batch API**: `WarehouseInventory.TryRemove(int,int,out int)`/`MerchantTradeSite.TryTrade(int,int)` 단일 API는 삭제하고 `TryRemoveBatch`/`TryTrade(IReadOnlyDictionary<int,int>)`로 통합했다(호출자가 batch 하나뿐이라 단일을 유지하면 죽은 코드가 됨 — breaking change, `Merchant_Caravan.md`/`Inventory_and_Items.md`도 같은 작업에서 갱신). `MerchantTradeSite`에 `TryComputeTotal`(판매 가능 검증 + long 승격 가격 합계, 순수 함수) 헬퍼를 두고 `TryTrade`/`TryGetSaleQuote`가 공유해서 견적과 실거래 규칙이 갈리지 않게 했다. `TryTrade`는 창고를 건드리기 전에 골드 상한(`(long)CurrentGold + total <= int.MaxValue`)을 검증한다. `GetAvailableOffers()`에도 `SellPrice<=0` 필터를 추가했다.
+
+**신규 UI 컴포넌트**: `ItemSlotView`(창고 칸/판매 칸 공용 표시), `ItemSlotDragHandle`(드래그 소스, 카트를 모르고 고스트만 다룸), `CartSlotRemoveHandle`(클릭 제거), `SellCartDropZone`(드롭 소스가 진짜 `ItemSlotDragHandle`을 가진 창고 슬롯인지까지 확인), `DragGhostView`(재사용 단일 고스트, `blocksRaycasts=false` 필수), `QuantityPromptPanel`(`MerchantPopup`의 자식 서브패널 — 별도 `PopupType` 등록 대신, payload 채널 부재와 modality 부재 문제를 회피). 판매 대기 카트(`Dictionary<itemId,quantity>`)는 `MerchantPopup`이 로컬 세션 상태로 소유한다 — 도메인에 미확정 상태를 두지 않기 위함이며, 팝업이 닫히면 무조건 버려진다(아직 창고·골드 어디에도 반영 안 된 상태라 롤백할 외부 상태가 없다).
+
+**아이콘**: `Assets/Art/Generated/ui-item-carrot.png`/`ui-item-potato.png`가 이미 준비돼 있고(`.meta`에서 `textureType: 8`=Sprite로 이미 올바르게 import됨) `MerchantPopup` 내부의 `[Serializable] private struct ItemIconEntry`(itemId↔Sprite)로 매핑한다 — 순수 UI 관심사라 `ItemInfo`/CSV 스키마는 건드리지 않았다.
+
+**프리팹**: `MerchantItemSlot.prefab`/`MerchantCartSlot.prefab`(독립, Variant 아님)/`MerchantPopup.prefab`을 YAML로 직접 작성했다. `Button`/`Text`/`Image`/`Slider`/`InputField`/`GridLayoutGroup`의 정확한 스크립트 GUID는 기억에 의존하지 않고 Unity 설치 경로의 `com.unity.ugui` 빌트인 패키지 소스(`Editor/Data/Resources/PackageManager/BuiltInPackages/com.unity.ugui/Runtime/UGUI/UI/Core/*.cs.meta`)에서 직접 추출해 정확성을 확보했다. 완성한 프리팹은 fileID 중복·내부 참조 해석·부모자식 일관성을 스크립트로 전수 검증했다(179개 오브젝트 블록, 불일치 0건).
+
+**테스트**: Unity Test Framework/asmdef가 없는 프로젝트 관례에 따라 `Assets/TestOnly/TestMerchantBatchTradeProbe.cs`를 `TestDecisionScenarioProbe.cs`와 같은 IMGUI PASS/FAIL 패턴으로 작성했다(빈 batch/미등록 품목/재고 부족/가격 오버플로/골드 상한 초과/정상 성공/카탈로그 밖 품목 7케이스, 각 케이스 후 재고·골드를 try/finally로 원복).
+
+**명시적으로 구현하지 않음**: 구매 기능 실제 구현, 열린 팝업 위 world 클릭 통과 차단, 창고 전체 아이템 열거 API, 드래그 애니메이션/트윈, `MerchantCaravan`의 클릭→팝업 종단 씬 배선(`FarmerTest.unity`에 완성된 프리팹을 실제로 배치하는 것은 사용자가 에디터에서 수행 — C#/프리팹 에셋 제작까지가 이번 구현 범위).
+
+**검증 상태**: `dotnet build Assembly-CSharp.csproj` 경고 0/오류 0. Play Mode 수동 검증(드래그·수량입력·슬롯 리빌드·재오픈 시 카트 리셋·강제 종료 시 고스트 정리 등)과 씬 배선은 Unity 에디터에서 사용자가 수행해야 하는 `NOT VERIFIED` 항목으로 `Merchant_Caravan.md`에 기록했다.
+
 ### 상단(Merchant Caravan) 방문 연출 구현 — 도착/체류/출발 Coroutine, TransportBird 지상 연출 (2026-09-10)
 
 Merchant Caravan을 "게임플레이 NPC가 아니라 하나의 방문 연출 세트"로 완성했다. 조사 단계에서 이 기능이 실제로는 **전혀 동작하지 않는 상태**였음을 확인했다: `MerchantCaravan`/`MerchantArrivalScheduler`/`MerchantTradeSite`/`PointerClickRouter`/`MerchantPopup` 중 어느 것도 3개 씬(`FarmerTest`/`GuardTest`/`TileMapTest`) 어디에도 배치되어 있지 않았고, `MerchantPopup` 뷰 프리팹 자체가 없었다. `Merchant_Caravan.md`가 기술하던 "FarmerTest.unity에 배선했다"는 사실과 달랐다(문서 드리프트, 이번에 교정). 또한 캐러밴이 비활성 상태로 시작하면 구 `BeginVisit()`이 `_isConfigured`(Awake에서만 설정)를 `SetActive(true)`보다 먼저 검사해 첫 방문이 영원히 시작되지 않는 lifecycle 버그가 있었다.

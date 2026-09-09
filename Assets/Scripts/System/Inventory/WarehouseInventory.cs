@@ -31,21 +31,30 @@ public class WarehouseInventory : MonoBehaviour, IInventory
     /// <summary>
     /// Not part of IInventory — that contract only covers accepting stock (partial accept
     /// allowed), and nothing else in the project has authority to remove warehouse stock.
-    /// Only MerchantTradeSite calls this, for a completed sale. All-or-nothing: a request for
-    /// more than is held is rejected outright rather than removing whatever is available.
+    /// Only MerchantTradeSite calls this, for a completed sale (a whole cart at once, since a
+    /// single-item TryRemove would have no other caller). All-or-nothing across the whole batch:
+    /// a validation pass confirms every line before an execution pass mutates anything, so a
+    /// request that fails partway through never leaves some items removed and others not.
     /// </summary>
-    public bool TryRemove(int itemId, int quantity, out int removedQuantity)
+    public bool TryRemoveBatch(IReadOnlyDictionary<int, int> quantitiesByItemId)
     {
-        removedQuantity = 0;
-
-        if (itemId < 0 || quantity <= 0)
+        if (quantitiesByItemId == null || quantitiesByItemId.Count == 0)
             return false;
 
-        if (!_quantities.TryGetValue(itemId, out int current) || current < quantity)
-            return false;
+        foreach (KeyValuePair<int, int> entry in quantitiesByItemId)
+        {
+            if (entry.Key < 0 || entry.Value <= 0)
+                return false;
 
-        _quantities[itemId] = current - quantity;
-        removedQuantity = quantity;
+            if (!_quantities.TryGetValue(entry.Key, out int current) || current < entry.Value)
+                return false;
+        }
+
+        foreach (KeyValuePair<int, int> entry in quantitiesByItemId)
+        {
+            _quantities[entry.Key] -= entry.Value;
+        }
+
         return true;
     }
 }

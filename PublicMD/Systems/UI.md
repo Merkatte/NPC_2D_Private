@@ -12,6 +12,7 @@ popup과 hover의 category 기반 표시 lifecycle, pointer 입력 adapter, 농�
 | Hover input | world pointer 아래 source를 찾아 표시 의도 전달 |
 | Click input | world pointer 클릭을 감지해 popup 오픈 의도 전달 |
 | Concrete views | popup/hover 공통 lifecycle과 농장 progress 표현 |
+| Drag input | uGUI `EventSystem` 기반으로 UI 슬롯을 끌어 다른 UI 영역에 놓는 의도 전달(첫 사례: Merchant 판매 UI) |
 
 ## 현재 실행 흐름
 
@@ -33,6 +34,16 @@ PointerClickRouter
 ```
 
 popup은 `PopupType`, hover는 `HoverType`으로 등록한다. `UIManager`는 concrete view의 domain 데이터를 직접 읽지 않는다. hover는 continuous state(enter/exit)라 poll 주기가 있고, click은 discrete edge라 poll하지 않고 매 프레임 press edge만 확인한다 — `Physics2D.OverlapPoint`는 그 press 프레임에만 실행되므로 실질적으로 이미 self-throttling이다.
+
+```text
+uGUI 드래그 앤 드롭 (Merchant 판매 UI, 첫 사례):
+EventSystem(InputSystemUIInputModule)
+  -> IBeginDragHandler/IDragHandler/IEndDragHandler 구현 컴포넌트(드래그 소스)
+     -> 재사용 고스트 뷰를 SetActive로 보여주고 커서를 따라 이동
+  -> IDropHandler 구현 컴포넌트(드롭 대상)
+     -> eventData.pointerDrag에서 소스를 식별해 도메인에 의도만 전달
+```
+`PointerClickRouter`/`PointerHoverRouter`의 `Physics2D.OverlapPoint` world 경로와는 완전히 별개의 입력 계통이다 — 드래그 앤 드롭은 uGUI `Canvas`/`GraphicRaycaster`/`EventSystem` 위에서만 동작하고, world clickable 레이어와는 무관하다. 소스는 드롭 대상을 모르고 고스트만 다루며, "받아들일지"는 전적으로 드롭 대상이 판단한다. 구체적인 소유·흐름은 [Merchant Caravan](Merchant_Caravan.md)을 참고한다 — 이번 도입은 그 기능 전용이며 범용 드래그 프레임워크로 일반화하지 않았다.
 
 ## 주 소유 스크립트
 
@@ -86,6 +97,7 @@ popup은 `PopupType`, hover는 `HoverType`으로 등록한다. `UIManager`는 co
 
 - [Farming](Farming/README.md)
 - [Interaction and Destinations](Interaction_and_Destinations.md)
+- [Merchant Caravan](Merchant_Caravan.md) — `MerchantPopup`과 드래그 앤 드롭 슬롯 UI의 주 소유 문서
 
 ## 문서 갱신 조건
 

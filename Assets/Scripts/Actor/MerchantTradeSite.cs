@@ -35,7 +35,9 @@ public sealed class MerchantTradeSite : MonoBehaviour
 
     /// <summary>
     /// Display-only read model for the popup. Recomputed on demand (called when the popup opens,
-    /// not every frame) rather than cached, since warehouse stock can change between visits.
+    /// not every frame) rather than cached, since warehouse stock can change between visits. Skips
+    /// non-positive prices for the same reason TryComputeTotal rejects them — a listed item that
+    /// can never actually be sold would just be a dead-end for the player.
     /// </summary>
     public IReadOnlyList<MerchantOffer> GetAvailableOffers()
     {
@@ -59,6 +61,9 @@ public sealed class MerchantTradeSite : MonoBehaviour
             if (!_dataManager.TryGetItemInfo(itemId, out ItemInfo info))
                 continue;
 
+            if (info.SellPrice <= 0)
+                continue;
+
             offers.Add(new MerchantOffer(itemId, info.ItemName, info.SellPrice, quantity));
         }
 
@@ -66,26 +71,113 @@ public sealed class MerchantTradeSite : MonoBehaviour
     }
 
     /// <summary>
-    /// The popup passes only intent (itemId, quantity) — never a pre-computed price. The price
-    /// used here is always looked up fresh from DataManager, so a stale or client-guessed number
-    /// from the popup can never be trusted for the actual transaction.
+    /// Pure read: computes what a batch would cost without touching warehouse or gold. Shares
+    /// TryComputeTotal with TryTrade so the displayed estimate and the actual charged total can
+    /// never drift apart. An empty cart is defined as a successful zero-total quote — the popup's
+    /// own fast path skips calling this when the cart is empty, but callers that do pass an empty
+    /// dictionary get a well-defined answer instead of a rejection.
     /// </summary>
-    public TradeResult TryTrade(int itemId, int quantity)
+    public bool TryGetSaleQuote(IReadOnlyDictionary<int, int> quantitiesByItemId, out int totalPrice)
     {
-        if (!_isConfigured || quantity <= 0)
+        if (quantitiesByItemId != null && quantitiesByItemId.Count == 0)
+        {
+            totalPrice = 0;
+            return true;
+        }
+
+        return TryComputeTotal(quantitiesByItemId, out totalPrice);
+    }
+
+    /// <summary>
+    /// The popup passes only intent (itemId -> quantity per line) — never a pre-computed price.
+    /// Price, sellability, and overflow are all re-checked here from authoritative sources, so a
+    /// stale or client-guessed cart from the popup can never be trusted for the actual transaction.
+    /// All-or-nothing across the whole cart: warehouse and gold are only touched once every line
+    /// has passed every check.
+    /// </summary>
+    public TradeResult TryTrade(IReadOnlyDictionary<int, int> quantitiesByItemId)
+    {
+        if (!_isConfigured)
             return TradeResult.InvalidRequest;
 
-        if (!_dataManager.TryGetItemInfo(itemId, out ItemInfo info))
+        if (!TryComputeTotal(quantitiesByItemId, out int total))
             return TradeResult.InvalidRequest;
 
-        if (_warehouse.GetQuantity(itemId) < quantity)
+        // Checked before touching the warehouse: GoldManager.Add saturates at int.MaxValue instead
+        // of failing, so without this guard a sale could remove every item from the warehouse while
+        // only partially crediting the gold for it.
+        if ((long)_goldManager.CurrentGold + total > int.MaxValue)
+            return TradeResult.InvalidRequest;
+
+        if (!_warehouse.TryRemoveBatch(quantitiesByItemId))
             return TradeResult.OutOfStock;
 
-        if (!_warehouse.TryRemove(itemId, quantity, out _))
-            return TradeResult.OutOfStock;
-
-        _goldManager.Add(info.SellPrice * quantity);
+        _goldManager.Add(total);
         return TradeResult.Success;
+    }
+
+    /// <summary>
+    /// Sellability and price-total computation shared by TryGetSaleQuote and TryTrade so a quote
+    /// and the trade it describes can never use different rules. Pure — never mutates warehouse or
+    /// gold. Rejects non-positive per-line prices individually (not just a non-positive grand
+    /// total) since a mix of positive and negative prices could otherwise sum to a positive total
+    /// while still being nonsense. Promotes to long before multiplying so the multiplication itself
+    /// cannot overflow, then checks the running sum against int.MaxValue before every addition.
+    /// </summary>
+    private bool TryComputeTotal(IReadOnlyDictionary<int, int> quantitiesByItemId, out int total)
+    {
+        total = 0;
+
+        if (quantitiesByItemId == null || quantitiesByItemId.Count == 0)
+            return false;
+
+        long runningTotal = 0;
+        foreach (KeyValuePair<int, int> entry in quantitiesByItemId)
+        {
+            int itemId = entry.Key;
+            int quantity = entry.Value;
+
+            if (quantity <= 0)
+                return false;
+
+            if (!IsSellableItem(itemId))
+                return false;
+
+            if (!_dataManager.TryGetItemInfo(itemId, out ItemInfo info))
+                return false;
+
+            if (info.SellPrice <= 0)
+                return false;
+
+            long lineTotal = (long)info.SellPrice * quantity;
+            if (lineTotal > int.MaxValue - runningTotal)
+                return false;
+
+            runningTotal += lineTotal;
+        }
+
+        total = (int)runningTotal;
+        return true;
+    }
+
+    /// <summary>
+    /// Whether itemId is currently a farm-output item the catalog recognizes, independent of
+    /// whether the warehouse happens to hold any of it right now. TryTrade must not simply trust
+    /// that a caller-supplied itemId was ever a real offer — GetAvailableOffers() already filters
+    /// to this same set, so this makes TryTrade enforce that filter itself instead of relying on
+    /// the UI to have only ever sent well-formed requests.
+    /// </summary>
+    private bool IsSellableItem(int itemId)
+    {
+        IReadOnlyList<FarmProductionDefinition> definitions = _cropCatalog.Definitions;
+        for (int i = 0; i < definitions.Count; ++i)
+        {
+            FarmProductionDefinition definition = definitions[i];
+            if (definition && definition.OutputItemId == itemId)
+                return true;
+        }
+
+        return false;
     }
 
     private void ReportConfigurationFailure(string reason)
