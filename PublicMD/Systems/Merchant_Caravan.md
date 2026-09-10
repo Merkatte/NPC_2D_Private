@@ -21,16 +21,16 @@ MerchantArrivalScheduler (방문 간 간격 타이머, 상단 체류 중엔 카�
 
 VisitRoutine():
   ResetPresentation()                    전 방문의 위치·회전·Animator 상태를 완전히 제거
-    -> 건물 단독 하강 (Vector3.LerpUnclamped + AnimationCurve)
-    -> 새 3마리 + 상인 동시 착륙 (상인 Z축 -360° 회전, 공유 진행도로 한 Coroutine이 4개 Transform 갱신)
+    -> 건물 + 운반 중인 새 3마리 동시 하강 (새는 건물 상단의 운반 대형 유지)
+    -> 새 3마리 + 상인 지상 착륙 (상인 Z축 -360° 회전, 공유 진행도로 한 Coroutine이 4개 Transform 갱신)
     -> MerchantVisual.SetTradeAvailable(true)         <- 여기서부터 거래 가능, 체류 타이머 시작
     -> 새 3마리 각자 랜덤 지상 연출 시작 (서기/걷기/모이 먹기, TransportBird 소유)
     -> WaitForSeconds(dwellDuration)
     -> MerchantVisual.SetTradeAvailable(false)         <- 즉시 거래 불가 + 열린 팝업 자동 닫힘
     -> 새 3마리 랜덤 연출 중단
     -> 새 3마리 각자 지상 앵커로 집합 (논리적 역순 연출, 녹화 애니메이션의 역재생 아님)
-    -> 새 3마리 + 상인 동시 이륙 (상인 Z축 +360° 회전)
-    -> 건물 단독 상승
+    -> 새 3마리 + 상인 동시 이륙 (새는 상단 운반 대형으로 복귀)
+    -> 건물 + 운반 중인 새 3마리 동시 상승
     -> SetActive(false)
 
 클릭(체류 중에만 성립):
@@ -69,7 +69,7 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 
 `MerchantVisual`은 Animator를 소유하지 않는다. "언제 거래 가능한지"는 `MerchantCaravan`(방문 Coroutine)이 명시적으로 `SetTradeAvailable(bool)`을 호출해 알리고, `MerchantVisual`은 그 bool을 그대로 저장·반환하는 얇은 클릭 표면일 뿐이다.
 
-건물·상인·새의 이동은 별도 tween 라이브러리 없이 `Coroutine` + `Vector3.LerpUnclamped`/`Vector3.MoveTowards` + `AnimationCurve`로 구현한다. 새 3마리와 상인의 동시 착륙·이륙은 `MerchantCaravan`의 한 Coroutine이 공유 진행도(t)로 여러 Transform을 같은 프레임에 갱신하는 방식이다(새 1마리당 별도 Coroutine을 만들지 않는다). 반면 체류 중 새 각자의 랜덤 배회는 `TransportBird` 개별 컴포넌트가 독립적으로 소유한다(서로 다른 타이밍으로 돌아야 하므로).
+건물·상인·새의 이동은 별도 tween 라이브러리 없이 `Coroutine` + `Vector3.LerpUnclamped`/`Vector3.MoveTowards` + `AnimationCurve`로 구현한다. 건물이 공중에서 하강·상승하는 동안 새 3마리는 건물 상단의 운반 대형을 유지하며 건물과 같은 lift offset으로 이동한다. 건물이 지면에 도착한 뒤에만 새와 상인이 지상으로 착륙하고, 출발 때는 새와 상인이 상단 운반 위치로 복귀한 뒤 건물과 함께 상승한다. 이 이동은 `MerchantCaravan`의 한 Coroutine이 공유 진행도(t)로 여러 Transform을 같은 프레임에 갱신하는 방식이다(새 1마리당 별도 Coroutine을 만들지 않는다). 반면 체류 중 새 각자의 랜덤 배회는 `TransportBird` 개별 컴포넌트가 독립적으로 소유한다(서로 다른 타이밍으로 돌아야 하므로).
 
 ## 주 소유 스크립트
 
@@ -118,7 +118,7 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 - `MerchantPopup`-`MerchantTradeSite`는 1:1 전용 배선이라 interface로 감싸지 않는다(concrete 참조) — 대체 구현이나 테스트 필요가 없다. 판매 대기 카트를 런타임에 생성한 슬롯 컴포넌트(`ItemSlotDragHandle`/`CartSlotRemoveHandle`)에 연결할 때도 직렬화가 아니라 `Initialize(...)` 런타임 주입을 쓴다 — 프리팹 자산은 자신을 생성한 팝업 인스턴스를 미리 참조할 수 없기 때문이다.
 - 상단은 `NPCType`/`NPCManager`/`WorkerPool`을 거치지 않는다. Worker NPC 역할이 아니다.
 - 상단은 pooling하지 않는다. 항상 하나뿐이라 씬에 상주하는 단일 GameObject를 `SetActive`로 껐다 켠다.
-- 위치는 씬에 배치하는 빈 Transform이 아니라 **프리팹 local position**으로 표현한다. 프리팹에 저작된 건물/상인/새의 local position이 곧 착륙(landed) pose이고, 프리팹 인스턴스의 월드 위치가 최종 착륙 기준점이다. 필요한 높이(lift height)와 duration은 `MerchantCaravan`의 private serialized 값으로 둔다.
+- 위치는 씬에 배치하는 빈 Transform이 아니라 **프리팹 local position**으로 표현한다. 프리팹에 저작된 건물/상인/새의 local position이 곧 착륙(landed) pose이고, 프리팹 인스턴스의 월드 위치가 최종 착륙 기준점이다. 새의 carry position은 각 지상 pose에 `_birdLiftHeight`를 더한 위치이며, 건물이 공중에 있는 동안에는 여기에 현재 building lift offset을 함께 더한다. 필요한 높이와 duration은 `MerchantCaravan`의 private serialized 값으로 둔다.
 - 새·상인의 현재 연출 상태(어떤 phase인지, 어떤 모션인지)를 외부에 공개하는 property는 두지 않는다. `TransportBird`의 공개 API는 명령형(`PlayFlying()` 등)뿐이고 조회형이 없다.
 - 체류 중 새의 랜덤 배회는 gameplay 결과에 영향이 없는 순수 표현이라 `IRandomSource` 주입 없이 `UnityEngine.Random`을 직접 쓴다(`CodeConvention.md` §12.1의 production gameplay 난수 규칙 예외 — 코드 주석에 이유를 남겨둔다).
 
@@ -142,7 +142,7 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 ## 알려진 제약과 TBD
 
 - 새 3마리(및 마차/끈)의 실제 최종 그림이 아직 붙지 않았을 수 있다(스프라이트 자체는 `Shop`/`Merchant`/`TransportBird`에 배선되어 있으나 lift height·duration·지상 착륙 좌표는 프레임 안에서 육안으로 재조정이 필요한 초기 추정값이다).
-- 착지 순간 "쿵" 사운드/먼지 파티클을 위한 Animation Event 배선은 제거했다(Animator 자체가 제거됨). 프로젝트에 audio/particle 시스템이 생기면 `MerchantCaravan.MoveBuilding` 완료 시점에 새로 연결한다.
+- 착지 순간 "쿵" 사운드/먼지 파티클을 위한 Animation Event 배선은 제거했다. 프로젝트에 audio/particle 시스템이 생기면 `MerchantCaravan.MoveBuildingAndCarryingBirds` 완료 시점에 새로 연결한다.
 - 구매(Buy) 기능은 없다. `TradeResult`에 `InsufficientGold`가 없는 이유이기도 하다 — 지금은 판매(창고→골드)만 있어 골드 부족이라는 결과 자체가 발생할 수 없다. 구매가 생기면 그때 enum 끝에 추가한다. `MerchantPopup`의 구매 탭은 "준비중입니다." placeholder뿐이다.
 - 열린 팝업 위에서 world 클릭이 그대로 통과하는 문제는 [UI](UI.md)의 TBD를 따른다. uGUI `EventSystem` 드래그 경로와 `PointerClickRouter`의 world 경로는 별개 입력 계통이라 이번 작업이 새로 만든 문제는 아니다.
 - 창고 재고 열거는 `CropCatalog.Definitions`를 순회하는 방식이라, farm 산출물이 아닌 item(예: Pub의 Water/Beer/Bread)은 애초에 판매 목록에 나타나지 않는다 — 창고에 쌓이지 않는 item이라 의도된 동작이다.

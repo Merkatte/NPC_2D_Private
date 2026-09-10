@@ -8,9 +8,11 @@ using UnityEngine;
 /// persistent scene GameObject enabled/disabled by MerchantArrivalScheduler is enough.
 ///
 /// The caravan prefab instance's world position is the landing anchor. The building and bird
-/// local positions authored in the prefab are their landed pose. The merchant anchor is parented
-/// to the building at its deck position, and its Animator moves only Merchant/Visual between the
-/// deck and ground. No scene-placed arrival/dock/departure Transforms are needed.
+/// local positions authored in the prefab are their landed pose. During building descent/ascent,
+/// the birds keep their carry pose above the roof and move by the same lift offset as the building.
+/// The merchant anchor is parented to the building at its deck position, and its Animator moves
+/// only Merchant/Visual between the deck and ground. No scene-placed arrival/dock/departure
+/// Transforms are needed.
 /// </summary>
 public sealed class MerchantCaravan : MonoBehaviour
 {
@@ -111,7 +113,10 @@ public sealed class MerchantCaravan : MonoBehaviour
     {
         ResetPresentation();
 
-        yield return MoveBuilding(_buildingGround + Vector3.up * _buildingLiftHeight, _buildingGround, _buildingLandDuration);
+        yield return MoveBuildingAndCarryingBirds(
+            _buildingGround + Vector3.up * _buildingLiftHeight,
+            _buildingGround,
+            _buildingLandDuration);
         yield return MoveCrew(isLanding: true, _crewLandDuration);
 
         _visual.SetTradeAvailable(true);
@@ -124,7 +129,10 @@ public sealed class MerchantCaravan : MonoBehaviour
 
         yield return GatherBirds();
         yield return MoveCrew(isLanding: false, _crewLiftDuration);
-        yield return MoveBuilding(_buildingGround, _buildingGround + Vector3.up * _buildingLiftHeight, _buildingLiftDuration);
+        yield return MoveBuildingAndCarryingBirds(
+            _buildingGround,
+            _buildingGround + Vector3.up * _buildingLiftHeight,
+            _buildingLiftDuration);
 
         _visitRoutine = null; // before SetActive(false) so IsVisiting reads correctly
         gameObject.SetActive(false);
@@ -138,7 +146,8 @@ public sealed class MerchantCaravan : MonoBehaviour
     {
         _visual.SetTradeAvailable(false);
 
-        _building.localPosition = _buildingGround + Vector3.up * _buildingLiftHeight;
+        Vector3 buildingAirPosition = _buildingGround + Vector3.up * _buildingLiftHeight;
+        _building.localPosition = buildingAirPosition;
 
         _merchantAnimator.gameObject.SetActive(true);
         _merchantAnimator.speed = 1f;
@@ -147,23 +156,31 @@ public sealed class MerchantCaravan : MonoBehaviour
 
         for (int i = 0; i < _birds.Length; ++i)
         {
-            _birds[i].transform.localPosition = _birdGrounds[i] + Vector3.up * _birdLiftHeight;
             _birds[i].ResetToFlying();
         }
+
+        ApplyBirdCarryPose(buildingAirPosition);
     }
 
-    private IEnumerator MoveBuilding(Vector3 from, Vector3 to, float duration)
+    /// <summary>
+    /// Keeps the flying birds in their roof carry formation while the building changes altitude.
+    /// Once the building reaches the ground, MoveCrew handles the separate bird-to-ground motion.
+    /// </summary>
+    private IEnumerator MoveBuildingAndCarryingBirds(Vector3 from, Vector3 to, float duration)
     {
         float elapsed = 0f;
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             float t = _easing.Evaluate(Mathf.Clamp01(elapsed / duration));
-            _building.localPosition = Vector3.LerpUnclamped(from, to, t);
+            Vector3 buildingPosition = Vector3.LerpUnclamped(from, to, t);
+            _building.localPosition = buildingPosition;
+            ApplyBirdCarryPose(buildingPosition);
             yield return null;
         }
 
         _building.localPosition = to; // snap so curve overshoot never leaves a visible offset
+        ApplyBirdCarryPose(to);
     }
 
     /// <summary>
@@ -223,9 +240,21 @@ public sealed class MerchantCaravan : MonoBehaviour
 
         for (int i = 0; i < _birds.Length; ++i)
         {
-            Vector3 air = _birdGrounds[i] + Vector3.up * _birdLiftHeight;
+            Vector3 air = GetBirdCarryPosition(i);
             _birds[i].transform.localPosition = Vector3.LerpUnclamped(air, _birdGrounds[i], landedWeight);
         }
+    }
+
+    private void ApplyBirdCarryPose(Vector3 buildingPosition)
+    {
+        Vector3 buildingOffset = buildingPosition - _buildingGround;
+        for (int i = 0; i < _birds.Length; ++i)
+            _birds[i].transform.localPosition = GetBirdCarryPosition(i) + buildingOffset;
+    }
+
+    private Vector3 GetBirdCarryPosition(int birdIndex)
+    {
+        return _birdGrounds[birdIndex] + Vector3.up * _birdLiftHeight;
     }
 
     private void StartBirdGroundPresentation()
