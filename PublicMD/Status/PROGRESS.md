@@ -50,6 +50,30 @@ Immediate next actions:
 
 ## Current Status
 
+### Town Hall 시민 모집 구현 — 쿨다운·예약 기반 2단계 스폰·낙하 연출 (2026-09-11)
+
+골드 로드맵(골드 → 상단 → 모집)의 3단계를 완성했다. 시청이 쿨다운마다 이주 희망자 1명(직업 고정, 기본 Farmer)을 모집하고, "모집하기"로 정착지원금을 지불하면 NPC가 시청 상공에서 낙하해 스폰된다. 골드를 실제로 쓰는 gameplay 경로와, `TestOnly` 창 없이 NPC가 스폰되는 gameplay 경로가 이번에 처음 생겼다.
+
+**범위를 의도적으로 최소화했다.** 초기 논의에서는 직업별 후보 명부·`IRandomSource` 기반 직업 추첨·스탯 랜덤화·스탯 연동 지원금 공식까지 검토했으나, 사용자가 "지금은 게임처럼 보이는 게 급선무"라고 판단해 단일 고정 직업(`_recruitNpcType`, 기본 Farmer)·role별 고정 스탯·고정 지원금으로 좁혔다. 영구 폐기가 아니라 후속 작업으로 보류이며, `TownHallRecruitment.SelectRecruitType()`을 유일한 확장 지점으로 남겨뒀다.
+
+**Codex 리뷰 3회를 거쳐 트랜잭션 설계를 확정했다.** 1차는 "랜덤 후보·스탯을 이번 범위에서 제외"만 지적(위 범위 축소 결정). 2차는 (a) 골드를 환불 없이 쓸 수 있도록 트랜잭션 순서를 "되돌릴 수 있는 worker 예약 → 되돌릴 수 없는 골드 지출" 순으로 뒤집을 것, (b) 예약 중(Init 전) worker의 GameObject·Collider2D가 이미 활성 상태라 낙하 중 `CombatPerception` 등 gameplay 감지에 걸릴 수 있다는 점(→ `WorkerNPC.BeginSpawnPresentation`/`CompleteSpawnPresentation` 신설), (c) 커밋 실패를 무시하면 골드·예약을 모두 잃는 문제(→ `_pendingReservation`을 커밋 성공 후에만 지움), (d) `WorkerReservation.Selector`가 새로 만드는 객체가 아니라 기존 `NPCCreationEntry.Selector` 참조라는 점, (e) 자동 프로브가 되돌릴 수 없는 성공 경로까지 검증하려 하면 안 된다는 점을 지적했다. 3차는 (a) 쿨다운 표시값을 골드 지출 성공 즉시 채워 넣어야 낙하 중 팝업을 다시 열어도 "00:00"이 아니라 전체 남은 시간이 보인다는 점, (b) `CompleteSpawnPresentation`이 무조건 켜는 게 아니라 `Begin` 시점에 저장한 이전 상태로 복구해야 한다는 점(idempotent 요구), (c) 낙하 코루틴이 정상 완료 시에도 핸들을 명시적으로 비워야 한다는 점, (d) `AnimationCurve`를 실제 직렬화 필드로 못 박고 `OnValidate`뿐 아니라 `Awake`에서도 tuning 값을 검증해야 한다는 점, (e) "낙하 중 재호출" 케이스는 성공 트랜잭션 없이 도달 불가능해 자동 프로브에서 빼야 한다는 점, (f) `internal` 생성자가 "NPCManager만 생성 가능"을 완전히 보장하지 않는다는 문구 정정을 지적했다. 전부 반영했다.
+
+**트랜잭션 순서(`TownHallRecruitment.TryDispatchCandidate`)**: 1) `phase==CandidateReady && !_pendingReservation.IsValid` 검증 2) `NPCManager.TryReserveWorker`(entry 조회·stat 생성·`CanUseStat`·풀 대여·`BeginSpawnPresentation`이 전부 여기서 끝남) 3) `GoldManager.TrySpend`(실패 시 `CancelReservation`으로 완전히 되돌림) 4) `_pendingReservation` 확정 + `_cooldownRemaining` 즉시 채움(감소는 `Update()`가 `_pendingReservation.IsValid`인 동안 멈춤) 5) 낙하 코루틴 6) 착지 시 `CommitPendingReservation()`이 `NPCManager.CommitReservation` 성공을 확인한 뒤에만 `_pendingReservation`을 지움. `TownHallRecruitment.OnDisable()`(씬 언로드 등으로 낙하 중 중단)은 반납 대신 착지 지점으로 즉시 이동시켜 그대로 커밋한다 — 골드가 이미 나갔으므로 반납은 플레이어가 대가 없이 돈을 잃는 결과가 된다.
+
+**`NPCManager` 예약 기반 2단계 스폰 API**: `TryReserveWorker`/`CommitReservation`/`CancelReservation`를 추가하고 `HashSet<WorkerNPC> _reservedWorkers`로 idempotency를 보장했다. 기존 `CreateNPC(NPCType)`는 시그니처를 그대로 유지한 채 이 둘의 조합(`Vector2.zero`로 예약 후 즉시 커밋)으로 재구현해 `TestNPCSpawnWindow` 등 기존 호출자를 손대지 않았다. `WorkerReservation`(`Assets/Data/Struct`)은 예약된 worker·예약 시 생성한 `NPCStat`·기존 `NPCCreationEntry.Selector` 참조를 함께 담는 `readonly struct`로, 생성자를 `internal`로 좁혔다(완전한 강제는 아님 — `.asmdef`가 없어 같은 어셈블리 내에서는 호출 가능, 실제 소유권은 `_reservedWorkers`가 검증).
+
+**`WorkerNPC.BeginSpawnPresentation`/`CompleteSpawnPresentation`**: 예약만 되고 아직 `Init`되지 않은 worker는 `Update()`가 no-op이지만 `WorkerPool.OnGetWorker`가 대여 즉시 `SetActive(true)`를 하므로 `Collider2D`(루트의 트리거 콜라이더, `Sensor` 자식의 `ProximitySensor2D` 콜라이더)는 이미 활성 상태다. `BeginSpawnPresentation`이 `Rigidbody2D.simulated`와 두 콜라이더를 끄면서 이전 상태를 저장하고(`SpriteRenderer`/`Animator`는 그대로 둬 낙하가 보이게 함), `CompleteSpawnPresentation`이 그 저장값으로 복구한다(무조건 켜지 않음). 둘 다 idempotent해서 `CancelReservation`과 `WorkerNPC.OnDisable()`의 방어적 호출이 중복돼도 안전하다.
+
+**컴포넌트 분할**: `TownHallRecruitment`(Actor, 타이머+후보+골드+예약/커밋+낙하 코루틴 전부 한 클래스 — 상단의 `MerchantArrivalScheduler`/`MerchantCaravan` 분리는 캐러밴이 방문 사이 비활성이라 필요했던 것이라 시청엔 해당 안 됨), `TownHallVisual`(System/Actor, 클릭 표면은 요구사항상 항상 true 반환 + 아이콘 2개 토글, `IUIService` 불참조), `TownHallPopup`(UI, `PopBase`, 열려 있는 동안 폴링 — 카운트다운이 어차피 매 프레임 갱신 필요+ 프로젝트에 상태 변경 이벤트 관례 자체가 없음). `RecruitPhase`(Recruiting/CandidateReady 2개뿐 — "낙하 중" 3번째 phase는 안 만들고 `_pendingReservation.IsValid`로 표현), `RecruitResult`(`TradeResult` 선례처럼 `Try...`가 bool 대신 enum 직접 반환).
+
+**테스트**: `Assets/TestOnly/TestTownHallRecruitProbe.cs`를 IMGUI PASS/FAIL 패턴으로 작성하되, 되돌릴 수 없는 성공 경로(실제 NPC 커밋)는 의도적으로 제외했다 — production에 despawn/stat-getter/강제 phase 설정 API를 추가하지 않기로 했기 때문. 자동 검증 대상은 초기 `Recruiting` 상태에서 `NotReady`, 미등록 직업에서 `SpawnUnavailable`(모든 `NPCType`을 순회해 미등록 role을 동적으로 탐색), `CandidateReady` 상태에서 골드 0원일 때 `NotEnoughGold`, 미구성 인스턴스에서 `NotReady` 4케이스이며, 각각 전제 조건이 그 순간 성립하지 않으면(예: 쿨다운이 아직 안 끝남) PASS를 가장하지 않고 `SKIP`으로 보고한다.
+
+**프리팹**: `Assets/Prefab/InGame/TownHall.prefab`(이미 존재하던 프리팹, 루트에 `BoxCollider2D`+`TownHallVisual`+`TownHallRecruitment` 추가하고 layer를 9로, 아이콘 자식 2개 추가 — 기존 씬 인스턴스에 오버라이드가 전혀 없음을 직접 확인해 프리팹 수정만으로 안전하게 전파됨을 검증)와 `Assets/Prefab/UI/TownHallPopup.prefab`(신규, 45개 오브젝트)을 YAML로 직접 작성했다. `Text`/`Image`/`Button`/`PopBase`의 스크립트 GUID는 기억에 의존하지 않고 Unity 설치 경로의 `com.unity.ugui` 소스(`Runtime/UGUI/UI/Core/*.cs.meta`)와 기존 `MerchantPopup.prefab`에서 직접 재확인했다. 두 프리팹 모두 fileID 중복·내부 참조·부모자식 일관성을 스크립트로 전수 검증했다(불일치 0건).
+
+**명시적으로 구현하지 않음**: 후보 명부·직업 추첨·스탯 랜덤화(§위 범위 축소), 마을 업그레이드, NPC 해고·despawn, 골드 잔액 상시 표시 UI, 낙하 착지 이펙트(파티클·오디오 시스템 없음), `FarmerTest.unity`에 씬 한정 참조(`_npcManager`/`_goldManager`, `UIManager._popups`, `PointerClickRouter`의 Layer 9 배선) 연결 — 프리팹 자체는 완성됐지만 씬 배선은 사용자가 에디터에서 수행.
+
+**검증 상태**: `dotnet build Assembly-CSharp.csproj` 경고 0/오류 0. Play Mode 수동 검증(쿨다운 카운트다운, 낙하 연출, 착지 후 NPC가 일하러 가는지, 낙하 중 Collider가 감지에 안 걸리는지, 연타 방어, `TownHall` 비활성화 시 즉시 착지·커밋)과 씬 배선은 `NOT VERIFIED`로 `Town_Hall.md`에 기록했다.
+
 ### Merchant 거래 UI 구현 — 구매/판매 탭, 드래그 앤 드롭 슬롯, batch 판매 트랜잭션 (2026-09-10)
 
 `MerchantPopup`을 텍스트 목록 placeholder에서 본격적인 거래 UI로 전면 재작성했다. 구매/판매 탭 2개(구매는 "준비중입니다." placeholder), 판매 탭은 창고 보유 아이템을 인벤토리처럼 슬롯 그리드로 보여주고, 슬롯을 실제 uGUI 드래그 앤 드롭으로 옆의 판매칸에 옮길 수 있다. 수량이 1보다 많으면 "몇 개를 옮길까요?" 창(Slider+InputField 동기화)이 뜨고, 정한 수량만큼 판매칸에 누적된다. 판매칸에 담긴 항목은 "판매" 버튼 한 번에 all-or-nothing batch 트랜잭션으로 일괄 처리된다.

@@ -61,6 +61,7 @@ EventSystem(InputSystemUIInputModule)
 | `Assets/Scripts/UI/PointerClickRouter.cs` | pointer 클릭을 `IClickPopupSource`와 UI service 호출로 변환하는 입력 adapter |
 | `Assets/Scripts/UI/PopBase.cs` | popup 식별자와 open/close 공통 lifecycle |
 | `Assets/Scripts/UI/MerchantPopup.cs` | 이 프로젝트 최초의 concrete popup — 상단 거래 UI([Merchant Caravan](Merchant_Caravan.md) 주 소유) |
+| `Assets/Scripts/UI/TownHallPopup.cs` | 시청 모집 UI([Town Hall](Town_Hall.md) 주 소유) |
 | `Assets/Scripts/UI/UIManager.cs` | popup·hover registry와 현재 표시 상태를 조정하는 facade |
 
 ## 변경 유형별 최소 확인 범위
@@ -91,13 +92,14 @@ EventSystem(InputSystemUIInputModule)
 
 - `Physics2D.OverlapPoint`는 겹친 collider의 명시적 UI 우선순위를 제공하지 않는다.
 - 열린 popup 위에서 world 클릭이 그대로 통과해 다른 clickable에 닿을 수 있다 — 지금은 clickable이 상단 하나뿐이라 관측되지 않지만, `Physics2DRaycaster`/`EventSystem` 기반 world click-through 차단은 아직 없다.
-- concrete popup은 `MerchantPopup` 하나뿐이다.
+- concrete popup은 `MerchantPopup`과 `TownHallPopup` 둘뿐이다.
 
 ## 관련 문서
 
 - [Farming](Farming/README.md)
 - [Interaction and Destinations](Interaction_and_Destinations.md)
 - [Merchant Caravan](Merchant_Caravan.md) — `MerchantPopup`과 드래그 앤 드롭 슬롯 UI의 주 소유 문서
+- [Town Hall](Town_Hall.md) — `TownHallPopup`의 주 소유 문서
 
 ## 문서 갱신 조건
 

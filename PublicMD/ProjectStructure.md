@@ -31,6 +31,7 @@ NPCManager / WorkerPool          생성과 조립
 | 아이템과 inventory | [Inventory and Items](Systems/Inventory_and_Items.md) | CSV, item data, 창고와 NPC 봇짐, 운반·입고 transaction, cost registry |
 | 플레이어 골드 | [Player Gold](Systems/Player_Gold.md) | 전역 골드 잔액, 획득·지출 transaction |
 | 상단(Merchant Caravan) | [Merchant Caravan](Systems/Merchant_Caravan.md) | 방문 phase·타이머, 클릭 가능 판정, 거래 transaction |
+| 시청(Town Hall) | [Town Hall](Systems/Town_Hall.md) | 모집 쿨다운·phase, 정착지원금 transaction, 예약 기반 NPC 스폰, 낙하 연출 |
 | NPC 표현 | [NPC Presentation](Systems/NPC_Presentation.md) | 이동 animation, Flip, 건물·도구 표현 |
 | UI | [UI](Systems/UI.md) | popup, hover, gauge, pointer routing |
 | 생성과 pooling | [Spawning and Pooling](Systems/Spawning_and_Pooling.md) | role 생성, prefab catalog, worker pool |
@@ -53,8 +54,9 @@ NPCManager / WorkerPool          생성과 조립
 | 공격·사거리·damage | Combat/Attack Runtime | 공격 role 문서 |
 | destination·provider | Interaction and Destinations | Decision Policy, 소비 domain |
 | item·warehouse·CSV | Inventory and Items | 생산 또는 interaction 문서 |
-| 골드 잔액·획득·지출 | Player Gold | Merchant Caravan(현재 유일한 gameplay 소비자) |
+| 골드 잔액·획득·지출 | Player Gold | Merchant Caravan, Town Hall(현재 gameplay 소비·획득 지점) |
 | 상단 방문·타이머·거래 | Merchant Caravan | Player Gold, Inventory and Items, UI |
+| 시청 모집·정착지원금·예약 스폰 | Town Hall | Player Gold, Spawning and Pooling, UI |
 | animation·Flip·도구 | NPC Presentation | 이를 호출하는 action 문서 |
 | popup·hover·gauge·click 감지 | UI | 데이터를 제공하는 domain 문서 |
 | role·prefab·pool | Spawning and Pooling | 생성되는 role 문서 |
@@ -113,7 +115,7 @@ UI input -> IUIService <- domain IHoverInfoSource
 | 새 prefab 형태 | `NPCPrefabType`, prefab catalog, pool/spawn 조립 |
 | 새 crop | `FarmProductionDefinition` asset, `CropCatalog` 등록, 결과 item CSV row, [Farming](Systems/Farming/README.md) |
 | 새 골드 획득·지출 지점 | `GoldManager.Add`/`TrySpend` 호출자, [Player Gold](Systems/Player_Gold.md) |
-| 새 골드 소비 domain(모집·업그레이드 등) | 그 domain 전용의 새 작은 provider가 `GoldManager`를 직접 참조. 기존 provider(예: `MerchantTradeSite`)를 거치지 않는다 |
+| 새 골드 소비 domain(업그레이드 등) | 그 domain 전용의 새 작은 provider가 `GoldManager`를 직접 참조. 기존 provider(예: `MerchantTradeSite`, `TownHallRecruitment`)를 거치지 않는다 |
 | 새 world click 대상 | `IClickPopupSource` 구현, `Clickable` 레이어 collider, [UI](Systems/UI.md) |
 
 구체 절차와 불변 규칙은 표의 대상 기능 문서를 따른다.

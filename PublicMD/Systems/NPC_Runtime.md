@@ -34,7 +34,7 @@ WorkerNPC.Init(role, runtime stat, selector)
 | `Assets/Data/ScriptableObject/Script/DefaultStatContext.cs` | 기본 NPC runtime stat을 생성하는 공유 definition |
 | `Assets/Data/ScriptableObject/Script/NPCStatDefinition.cs` | role별 stat definition의 공통 factory 계약 |
 | `Assets/Data/Struct/StatEffect.cs` | 체력·욕구 변화량을 전달하는 immutable 효과 값 |
-| `Assets/Scripts/Actor/WorkerNPC.cs` | NPC action queue lifecycle의 단일 실행 owner |
+| `Assets/Scripts/Actor/WorkerNPC.cs` | NPC action queue lifecycle의 단일 실행 owner. `BeginSpawnPresentation`/`CompleteSpawnPresentation`으로 예약 중(Init 전) gameplay 물리·감지 참여도 소유([Spawning and Pooling](Spawning_and_Pooling.md)의 예약 기반 스폰 API가 호출) |
 | `Assets/Scripts/Interface/IStatView.cs` | 판단과 실행이 읽는 공통 stat view 계약 |
 | `Assets/Scripts/System/Actor/NPCStat.cs` | 한 NPC의 mutable 체력·이동·욕구 상태 |
 
@@ -52,6 +52,7 @@ WorkerNPC.Init(role, runtime stat, selector)
 - runtime stat은 NPC 인스턴스마다 새로 생성하며 ScriptableObject에 현재값을 저장하지 않는다.
 - action instance를 반환하기 전에 `Stop()`과 selector의 반환 경로를 거친다.
 - 비활성화된 pooled NPC에는 이전 queue, stat, target, cargo, animation state가 남지 않아야 한다. `NPCComponent.ResetRuntimeState`가 `WorkerNPC.Init`과 `OnDisable` 양쪽에서 이를 처리한다.
+- `Init` 전(예약만 된) worker는 `Update()`가 no-op이지만 GameObject·Collider2D는 이미 활성 상태다. `BeginSpawnPresentation`/`CompleteSpawnPresentation`은 idempotent해야 하고, `CompleteSpawnPresentation`은 무조건 켜는 대신 `Begin` 시점에 저장해 둔 이전 상태로 복구한다.
 - `WorkerNPC`에 role별 우선순위, destination 조회, action 세부 로직을 추가하지 않는다.
 
 ## Unity 배선

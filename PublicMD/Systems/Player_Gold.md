@@ -7,8 +7,9 @@
 골드는 NPC별 소유가 아니라 플레이어 소유이며, 획득 즉시 어디서나 사용할 수 있다. 따라서
 scene 단위 단일 component 하나가 잔액 전체를 소유한다.
 
-이 문서가 소유하지 않는 것: 가격, 거래 품목, 판매·구매 흐름, 고용 비용 공식, 골드 표시 UI.
-현재 이들은 구현되어 있지 않다.
+이 문서가 소유하지 않는 것: 가격과 거래 품목·판매 흐름은 [Merchant Caravan](Merchant_Caravan.md),
+고용(정착지원금) 비용은 [Town Hall](Town_Hall.md)이 소유한다. 구매 흐름과 골드 표시 UI는 아직
+구현되어 있지 않다.
 
 ## 현재 실행 흐름
 
@@ -76,16 +77,18 @@ production 코드가 아니라 이 도구가 모든 로그를 소유한다.
 
 ## 알려진 제약과 TBD
 
-- 골드를 획득·지출하는 실제 gameplay 경로가 없다. 현재 유일한 호출자는 `TestGoldWindow`다.
-- 상인 캐러밴(생산물 판매)과 마을 회관 모집(고용 비용)은 아직 구현되지 않았다. 두 기능이
-  이 문서의 다음 확장 대상이며, 그 시점에 문서명을 경제 전반으로 넓힐지 재검토한다.
+- 상인 캐러밴(생산물 판매, [Merchant Caravan](Merchant_Caravan.md))이 `Add`를, 시청 모집
+  ([Town Hall](Town_Hall.md))이 `TrySpend`를 실제로 호출하는 gameplay 경로다. `TestGoldWindow`는
+  여전히 수동 검증용 호출자로 남아 있다. 문서명을 경제 전반으로 넓힐지는 추가 소비·획득 지점이
+  생기는 시점에 재검토한다.
 - 잔액 변경 알림 event나 callback이 없다. 표시 UI가 없으므로 현재 필요가 없고, 단일 mutator
   구조라 필요해지면 `Add`/`TrySpend` 내부에 추가하는 것만으로 충분하다.
 - 저장·불러오기가 없다. Play Mode를 나가면 잔액은 `_initialGold`로 돌아간다.
 - `PublicMD/Status/PROGRESS.md`의 오래된 "이후 과제" 절에 `IRecruitmentCostPolicy`를
   "골드/지갑 seam"이라 부르는 대목이 있으나, 그 모집 시스템 자체가 2026-08-01 리셋으로
-  코드베이스에서 완전히 삭제됐다(`Recruit*`/`ResidentCandidate*` 0건). 이번 구현과 무관한
-  죽은 참조이며 `GoldManager`는 그 인터페이스를 구현하지 않는다.
+  코드베이스에서 완전히 삭제됐다. 이후 구현된 [Town Hall](Town_Hall.md) 모집은 이 인터페이스를
+  전혀 쓰지 않고 `TownHallRecruitment`가 `GoldManager.TrySpend`를 직접 호출한다 — 여전히 죽은
+  참조이며 `GoldManager`는 어떤 모집 전용 인터페이스도 구현하지 않는다.
 - `Game_Plan.md` §7.1은 골드를 "런타임 일반 C# 객체"로 분류한다. `GoldManager`는 `WorkerInventory`처럼
   완전한 plain C#은 아니고 `WarehouseInventory`처럼 scene MonoBehaviour가 소유하는 runtime
   필드다 — scene 전역에서 단일 참조점으로 주입돼야 해서 plain C#으로는 그 배선을 표현할 수
@@ -94,6 +97,8 @@ production 코드가 아니라 이 도구가 모든 로그를 소유한다.
 ## 관련 문서
 
 - [Inventory and Items](Inventory_and_Items.md) — 골드가 아닌 item 수량 저장소
+- [Merchant Caravan](Merchant_Caravan.md) — `Add` 호출자
+- [Town Hall](Town_Hall.md) — `TrySpend` 호출자
 - [Project Structure](../ProjectStructure.md)
 - [Game Plan](../Game_Plan.md) §5.7 성장과 경제 — 골드 순환(판매·구매)과 용도(모집·투자)의 상위 기획 의도
 

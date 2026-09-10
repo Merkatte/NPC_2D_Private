@@ -10981,7 +10981,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MerchantArrivalScheduler
   _caravan: {fileID: 945754152}
   _visitInterval: 120
-  _startsVisitImmediately: 0
+  _startsVisitImmediately: 1
 --- !u!1 &1535132392
 GameObject:
   m_ObjectHideFlags: 0

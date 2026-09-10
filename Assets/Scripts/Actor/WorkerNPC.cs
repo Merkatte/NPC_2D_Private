@@ -4,6 +4,8 @@ using UnityEngine;
 public class WorkerNPC : MonoBehaviour
 {
     [SerializeField] private NPCComponent _component;
+    [SerializeField] private Rigidbody2D _rigidbody;
+    [SerializeField] private Collider2D[] _gameplayColliders;
 
     private IAction _currentAction;
     private NPCStat _stat;
@@ -11,6 +13,83 @@ public class WorkerNPC : MonoBehaviour
     private BaseNPCActionSelector _selector;
     private Queue<IAction> _actionQueue;
     private bool _isInitialized;
+
+    private bool _isSpawnPresentationActive;
+    private bool _wasRigidbodySimulated;
+    private bool[] _wereCollidersEnabled;
+
+    private void Awake()
+    {
+        _wereCollidersEnabled = new bool[_gameplayColliders != null ? _gameplayColliders.Length : 0];
+    }
+
+    /// <summary>
+    /// Called by NPCManager.TryReserveWorker right after renting from the pool, before this worker
+    /// is Init'd. WorkerPool.OnGetWorker already SetActive(true)'d the GameObject, so its
+    /// Collider2D would otherwise participate in gameplay (e.g. CombatPerception's ProximitySensor2D
+    /// on the Sensor child) while it's still just falling through the air with no stat/selector.
+    /// SpriteRenderer/Animator are left alone so the drop presentation stays visible.
+    /// </summary>
+    public void BeginSpawnPresentation()
+    {
+        if (_isSpawnPresentationActive)
+        {
+            return;
+        }
+
+        _isSpawnPresentationActive = true;
+
+        if (_rigidbody)
+        {
+            _wasRigidbodySimulated = _rigidbody.simulated;
+            _rigidbody.simulated = false;
+        }
+
+        for (int i = 0; i < _gameplayColliders.Length; ++i)
+        {
+            Collider2D collider = _gameplayColliders[i];
+            if (!collider)
+            {
+                continue;
+            }
+
+            _wereCollidersEnabled[i] = collider.enabled;
+            collider.enabled = false;
+        }
+    }
+
+    /// <summary>
+    /// Restores whatever physics/collider state BeginSpawnPresentation captured, rather than
+    /// unconditionally turning everything back on — some other path may have already had a
+    /// collider disabled. Called by NPCManager.CommitReservation right before Init and by
+    /// CancelReservation right before returning the worker to the pool. Idempotent so a defensive
+    /// call from OnDisable never double-restores.
+    /// </summary>
+    public void CompleteSpawnPresentation()
+    {
+        if (!_isSpawnPresentationActive)
+        {
+            return;
+        }
+
+        if (_rigidbody)
+        {
+            _rigidbody.simulated = _wasRigidbodySimulated;
+        }
+
+        for (int i = 0; i < _gameplayColliders.Length; ++i)
+        {
+            Collider2D collider = _gameplayColliders[i];
+            if (!collider)
+            {
+                continue;
+            }
+
+            collider.enabled = _wereCollidersEnabled[i];
+        }
+
+        _isSpawnPresentationActive = false;
+    }
 
     public void Init(NPCType npcType, NPCStat stat, BaseNPCActionSelector selector)
     {
@@ -69,6 +148,11 @@ public class WorkerNPC : MonoBehaviour
 
     void OnDisable()
     {
+        // Defensive: a reserved-but-not-yet-committed worker (not _isInitialized) can still be
+        // disabled, e.g. pool cleanup. CompleteSpawnPresentation is idempotent, so this never
+        // conflicts with NPCManager.CommitReservation/CancelReservation calling it themselves.
+        CompleteSpawnPresentation();
+
         if (!_isInitialized)
         {
             return;
