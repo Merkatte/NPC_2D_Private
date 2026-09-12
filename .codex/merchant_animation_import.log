@@ -1,0 +1,22 @@
+.codex is not a valid directory name. Please make sure there are no unallowed characters in the name.
+.codex is not a valid directory name. Please make sure there are no unallowed characters in the name.
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-Merkatte" at "2026-09-09T16:36:07.7645072Z"
+Built from '6000.3/staging' branch; Version is '6000.3.9f1 (7a9955a4f2fa) revision 8034645'; Using compiler version '194234433'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) Professional' Language: 'ko' Physical Memory: 32678 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-09-09T16:36:07Z
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.3.9f1\Editor\Unity.exe
+-batchmode
+-quit
+-projectPath
+C:\Users\Merkatte\Desktop\QuickSort\NPC_WORK_PROJECT
+-logFile
+C:\Users\Merkatte\Desktop\QuickSort\NPC_WORK_PROJECT\.codex\merchant_animation_import.log
+Successfully changed project path to: C:\Users\Merkatte\Desktop\QuickSort\NPC_WORK_PROJECT
+C:/Users/Merkatte/Desktop/QuickSort/NPC_WORK_PROJECT
+Exiting without the bug reporter. Application will terminate with return code 1
