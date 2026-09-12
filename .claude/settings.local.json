@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "PowerShell(git add *)",
+      "PowerShell(git restore *)",
+      "PowerShell(git check-ignore *)",
+      "PowerShell(git push *)",
+      "PowerShell(dotnet build *)",
+      "Bash(git -C \"C:/Users/Merkatte/Desktop/QuickSort/NPC_Work_2D\" log --oneline --follow -- \"Assets/Scripts/Recruitment/*.cs\" \"Assets/Scripts/Facility/*.cs\")",
+      "Bash(xargs grep -l \"Interact\")",
+      "Bash(xargs grep -ln \"bool\")",
+      "Artifact"
+    ]
+  }
+}
