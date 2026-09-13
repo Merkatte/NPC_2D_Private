@@ -83,7 +83,7 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 | `Assets/Data/Struct/MerchantOffer.cs` | Popup에 전달하는 판매 가능 품목 표시 값 |
 | `Assets/Scripts/Enum/TradeResult.cs` | 거래 결과(Success/OutOfStock/InvalidRequest) |
 | `Assets/Scripts/UI/MerchantPopup.cs` | 구매/판매 탭을 가진 거래 UI. 판매 대기 카트(로컬 `Dictionary<itemId,quantity>`)와 세션 상태의 유일한 소유자 |
-| `Assets/Scripts/UI/ItemSlotView.cs` | 슬롯 한 칸의 표시 전담(이름·수량·단가·아이콘). 창고 칸/판매 칸이 공유 |
+| `Assets/Scripts/UI/ItemSlotView.cs` | 슬롯 한 칸의 표시 전담(중앙 아이콘·오른쪽 아래 수량). 창고 칸/판매 칸이 공유하며 이름은 드래그 고스트용 데이터로만 보관 |
 | `Assets/Scripts/UI/ItemSlotDragHandle.cs` | 창고 슬롯의 드래그 소스 — 카트를 모르고 고스트만 다룬다 |
 | `Assets/Scripts/UI/CartSlotRemoveHandle.cs` | 판매칸 슬롯의 클릭 제거 |
 | `Assets/Scripts/UI/SellCartDropZone.cs` | 판매칸 패널의 드롭 타깃 — 드롭 소스가 진짜 창고 슬롯인지까지 확인 후 Popup에 의도 전달 |
@@ -134,10 +134,14 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 4. `MerchantTradeSite` 배치, `_warehouse`/`_cropCatalog`/`_goldManager`/`_dataManagerSource` 연결
 5. `PointerClickRouter` 배치, `_worldCamera`/`_uiServiceSource`/`_clickableMask` 연결
 6. `ProjectSettings/TagManager.asset`의 **Layer 9가 현재 무명**이다. `MerchantCaravan.prefab` 루트는 `m_Layer: 9`로 저작되어 있으므로, 이 레이어에 이름(예: `Clickable`)을 부여하고 `PointerClickRouter._clickableMask`와 짝을 맞춰야 클릭이 동작한다.
-7. Canvas(Overlay) 아래에 `MerchantPopup.prefab` 인스턴스 배치(비활성 상태로 시작). `_tradeSite` ← 씬의 `MerchantTradeSite`, `_itemIcons`에 Carrot(4)/Potato(5) 스프라이트(`ui-item-carrot.png`/`ui-item-potato.png`, 이미 Sprite로 import돼 있음) 등록. `UIManager._popups`에 등록해야 팝업이 실제로 열린다(`PopupType.Merchant`는 기존 값 그대로).
+7. Canvas(Overlay) 아래에 `MerchantPopup.prefab` 인스턴스 배치(비활성 상태로 시작). `_tradeSite` ← 씬의 `MerchantTradeSite`. Carrot(4)/Potato(5) 아이콘은 프리팹 `_itemIcons`에 기본 등록돼 있으며, 새 판매 품목은 해당 배열에 추가한다. `UIManager._popups`에 등록해야 팝업이 실제로 열린다(`PopupType.Merchant`는 기존 값 그대로).
 8. `EventSystem`/`InputSystemUIInputModule`/Canvas의 `GraphicRaycaster`는 `FarmerTest.unity`에 이미 있음 — 확인만.
 
 `GuardTest.unity`는 아직 배선하지 않았다.
+
+`MerchantPopup.prefab`의 구매·판매 전환은 서류철 탭 형태다. `FolderPage`와 선택/비선택 탭 스프라이트는 `Assets/Art/Generated/UI/ui-merchant-folder-*-9slice.png`를 사용하며 모두 Sliced Image로 배선돼 있다. 스프라이트는 상단 게시판과 어울리는 종이 질감으로 맞췄다. 두 탭은 서류 면의 왼쪽에 작은 크기로 배치했고, 게시판 배경과 서류 면의 Sliced Image 테두리 표시 두께를 낮췄다. `MerchantPopup.SetMode(bool)`는 내용 패널 활성화와 탭 스프라이트를 함께 바꾼다. 팝업을 열면 판매 탭이 기본 선택되고, 구매 탭의 내용은 기존 "준비중입니다." 안내를 유지한다. 창고·판매칸은 서류 면의 윗선을 가리지 않도록 안쪽에 배치했다.
+
+창고·판매 그리드는 88×88 정사각 셀을 사용한다. 두 슬롯 프리팹의 배경은 `ui-merchant-item-cell-9slice.png`로 통일하고 중앙에 아이템 아이콘, 오른쪽 아래에 수량만 표시한다. 이름·단가 텍스트 오브젝트는 기존 프리팹 인스턴스 참조 보존을 위해 비활성으로 남겨 두지만 표시 코드는 더 이상 이 둘을 갱신하지 않는다. 거래 금액 계산은 `MerchantTradeSite`와 팝업의 예상 판매 금액 표시가 계속 담당한다.
 
 ## 알려진 제약과 TBD
 

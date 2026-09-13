@@ -50,6 +50,16 @@ Immediate next actions:
 
 ## Current Status
 
+### Merchant 아이템 셀 표시 간소화 (2026-09-13)
+
+창고·판매 그리드를 88×88 정사각 셀로 맞췄다. 두 슬롯 프리팹에 상인 UI 화풍의 9-slice 나무 배경을 적용하고 비활성이던 아이콘을 아이템이 있을 때 중앙에 표시하도록 교정했다. 수량은 오른쪽 아래에 표시하며 셀 안의 이름·단가는 숨겼다. `MerchantPopup.prefab`에 Carrot(4)/Potato(5) 아이콘을 기본 등록했다. `ItemSlotView`는 드래그 고스트용 이름만 데이터로 유지하고 단가 표시 의존을 제거했다. C# 빌드 경고 0/오류 0, 이미지 import와 프리팹 직렬화 정적 검증 통과. Unity Editor/Play Mode의 실제 배치와 드래그 동작은 아직 `NOT VERIFIED`.
+
+### MerchantPopup 서류철 탭 UI (2026-09-13)
+
+구매·판매 버튼을 9-slice 서류철 탭으로 바꾸고, 선택된 탭과 같은 색의 `FolderPage`를 거래 내용 뒤에 배치했다. 탭을 누르면 `MerchantPopup.SetMode(bool)`가 내용 패널과 탭 모양을 함께 전환한다. 판매가 기본 선택이며 구매는 기존 "준비중입니다." 안내 상태다. C# 빌드 경고 0/오류 0, 9-slice 합성 미리보기 확인. Unity Editor/Play Mode의 실제 배치와 클릭 전환은 아직 `NOT VERIFIED`.
+
+후속 시각 수정: 구매·판매 탭을 왼쪽으로 옮기고 각각 120×36으로 줄였다. 서류 면과 탭 3종은 게시판·상인 건물의 화풍을 참고한 종이 질감으로 다시 만들었고 실제 투명도를 확인했다. 게시판 배경 Sliced Image의 테두리 표시 두께도 절반으로 조정했다. 프리팹 참조·9-slice import 설정은 정적 검증했으며 Unity Editor 실물 확인은 아직 `NOT VERIFIED`.
+
 ### Town Hall 시민 모집 구현 — 쿨다운·예약 기반 2단계 스폰·낙하 연출 (2026-09-11)
 
 골드 로드맵(골드 → 상단 → 모집)의 3단계를 완성했다. 시청이 쿨다운마다 이주 희망자 1명(직업 고정, 기본 Farmer)을 모집하고, "모집하기"로 정착지원금을 지불하면 NPC가 시청 상공에서 낙하해 스폰된다. 골드를 실제로 쓰는 gameplay 경로와, `TestOnly` 창 없이 NPC가 스폰되는 gameplay 경로가 이번에 처음 생겼다.

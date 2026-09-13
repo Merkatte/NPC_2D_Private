@@ -12,51 +12,43 @@ public sealed class ItemSlotView : MonoBehaviour
     private const int EmptyItemId = -1;
 
     [SerializeField] private Image _iconImage;
-    [SerializeField] private Text _nameText;
     [SerializeField] private Text _quantityText;
-    [SerializeField] private Text _unitPriceText; // not wired on the cart prefab; null is expected there
+
+    private string _displayName = string.Empty;
 
     public int ItemId { get; private set; } = EmptyItemId;
     public bool IsEmpty => ItemId < 0;
-    public string DisplayName => _nameText ? _nameText.text : string.Empty;
+    public string DisplayName => _displayName;
 
-    public void Bind(int itemId, string displayName, int quantity, int unitPrice, Sprite icon)
+    public void Bind(int itemId, string displayName, int quantity, Sprite icon)
     {
         ItemId = itemId;
-
-        if (_nameText)
-            _nameText.text = displayName;
+        _displayName = displayName;
 
         if (_quantityText)
             _quantityText.text = $"x{quantity}";
-
-        if (_unitPriceText)
-            _unitPriceText.text = $"{unitPrice}G";
 
         if (_iconImage)
         {
             _iconImage.sprite = icon;
             _iconImage.enabled = icon;
+            _iconImage.gameObject.SetActive(icon);
         }
     }
 
     public void Clear()
     {
         ItemId = EmptyItemId;
-
-        if (_nameText)
-            _nameText.text = string.Empty;
+        _displayName = string.Empty;
 
         if (_quantityText)
             _quantityText.text = string.Empty;
-
-        if (_unitPriceText)
-            _unitPriceText.text = string.Empty;
 
         if (_iconImage)
         {
             _iconImage.sprite = null;
             _iconImage.enabled = false;
+            _iconImage.gameObject.SetActive(false);
         }
     }
 }

@@ -33,6 +33,10 @@ public sealed class MerchantPopup : PopBase
 
     [SerializeField] private GameObject _buyPanelRoot;
     [SerializeField] private GameObject _sellPanelRoot;
+    [SerializeField] private Image _buyTabImage;
+    [SerializeField] private Image _sellTabImage;
+    [SerializeField] private Sprite _selectedTabSprite;
+    [SerializeField] private Sprite _unselectedTabSprite;
 
     [SerializeField] private ItemSlotView _warehouseSlotPrefab;
     [SerializeField] private RectTransform _warehouseSlotParent;
@@ -59,12 +63,14 @@ public sealed class MerchantPopup : PopBase
     private void Awake()
     {
         if (!_tradeSite || !_buyPanelRoot || !_sellPanelRoot ||
+            !_buyTabImage || !_sellTabImage || !_selectedTabSprite || !_unselectedTabSprite ||
             !_warehouseSlotPrefab || !_warehouseSlotParent ||
             !_cartSlotPrefab || !_cartSlotParent ||
             !_cartDropZone || !_dragGhost || !_quantityPrompt)
         {
             ReportConfigurationFailure(
                 "missing a required reference (_tradeSite/_buyPanelRoot/_sellPanelRoot/" +
+                "_buyTabImage/_sellTabImage/_selectedTabSprite/_unselectedTabSprite/" +
                 "_warehouseSlotPrefab/_warehouseSlotParent/_cartSlotPrefab/_cartSlotParent/" +
                 "_cartDropZone/_dragGhost/_quantityPrompt)");
             return;
@@ -111,18 +117,26 @@ public sealed class MerchantPopup : PopBase
 
     public void ShowBuyMode()
     {
-        if (_buyPanelRoot)
-            _buyPanelRoot.SetActive(true);
-        if (_sellPanelRoot)
-            _sellPanelRoot.SetActive(false);
+        SetMode(true);
     }
 
     public void ShowSellMode()
     {
+        SetMode(false);
+    }
+
+    private void SetMode(bool showBuy)
+    {
         if (_buyPanelRoot)
-            _buyPanelRoot.SetActive(false);
+            _buyPanelRoot.SetActive(showBuy);
         if (_sellPanelRoot)
-            _sellPanelRoot.SetActive(true);
+            _sellPanelRoot.SetActive(!showBuy);
+
+        if (_buyTabImage && _sellTabImage && _selectedTabSprite && _unselectedTabSprite)
+        {
+            _buyTabImage.sprite = showBuy ? _selectedTabSprite : _unselectedTabSprite;
+            _sellTabImage.sprite = showBuy ? _unselectedTabSprite : _selectedTabSprite;
+        }
     }
 
     /// <summary>
@@ -280,7 +294,7 @@ public sealed class MerchantPopup : PopBase
 
             ItemSlotView slot = RentWarehouseSlot(index++);
             slot.gameObject.SetActive(true);
-            slot.Bind(offer.ItemId, offer.DisplayName, remaining, offer.UnitPrice, TryGetIcon(offer.ItemId));
+            slot.Bind(offer.ItemId, offer.DisplayName, remaining, TryGetIcon(offer.ItemId));
         }
 
         for (int i = index; i < _warehouseSlots.Count; ++i)
@@ -307,7 +321,7 @@ public sealed class MerchantPopup : PopBase
 
             ItemSlotView slot = RentCartSlot(index++);
             slot.gameObject.SetActive(true);
-            slot.Bind(itemId, _offers[i].DisplayName, quantity, _offers[i].UnitPrice, TryGetIcon(itemId));
+            slot.Bind(itemId, _offers[i].DisplayName, quantity, TryGetIcon(itemId));
         }
 
         int visibleCount = Mathf.Max(_minimumVisibleCartSlots, index);
