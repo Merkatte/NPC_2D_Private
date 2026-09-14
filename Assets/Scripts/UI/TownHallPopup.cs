@@ -85,7 +85,8 @@ public sealed class TownHallPopup : PopBase
         {
             case RecruitResult.Success:
                 // Close immediately so the drop presentation isn't hidden behind the popup.
-                Close();
+                // RequestClose() (not Close()) so UIManager's stack and BackBg stay in sync.
+                RequestClose();
                 break;
 
             case RecruitResult.NotEnoughGold:

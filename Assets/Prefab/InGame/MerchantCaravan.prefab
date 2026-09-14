@@ -31,7 +31,7 @@ Transform:
   m_Children:
   - {fileID: 8173607263328492264}
   - {fileID: 4680491814954112186}
-  m_Father: {fileID: 3364180000365226735}
+  m_Father: {fileID: 5200810219638507665}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2817125223490438466
 GameObject:
@@ -64,7 +64,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4680491814954112187}
-  m_Father: {fileID: 5200810219638507665}
+  m_Father: {fileID: 3364180000365226735}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!95 &1112169002406591854
 Animator:
@@ -83,7 +83,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage:
+  m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -282,6 +282,7 @@ GameObject:
   - component: {fileID: 1901991985629333567}
   - component: {fileID: 6425168093066776316}
   - component: {fileID: 6446476184150280420}
+  - component: {fileID: 4178351725069355078}
   m_Layer: 9
   m_Name: MerchantCaravan
   m_TagString: Untagged
@@ -316,15 +317,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9214b80241064bc9a3381856b45c9783, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MerchantCaravan
   _visual: {fileID: 6425168093066776316}
   _building: {fileID: 3364180000365226735}
   _merchantAnimator: {fileID: 1112169002406591854}
   _birds:
-  - {fileID: 4376209027431056150}
-  - {fileID: 2047267705843918880}
-  - {fileID: 8013193691891485050}
+  - {fileID: 587774261091272712}
+  - {fileID: 2952672912515067136}
+  - {fileID: 6604474196171129760}
   _buildingLiftHeight: 12
   _birdLiftHeight: 7
   _buildingLandDuration: 2.5
@@ -367,7 +368,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3980450c316348b3a01936a23531990c, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MerchantVisual
   _popupType: 1
   _uiServiceSource: {fileID: 0}
@@ -417,6 +418,22 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 8.2, y: 5.9}
   m_EdgeRadius: 0
+--- !u!114 &4178351725069355078
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4458148228483019123}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4953c2360784438e88def9b0caec8f97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MerchantTradeSite
+  _warehouse: {fileID: 0}
+  _cropCatalog: {fileID: 11400000, guid: 438d66d42c5e491ca877e19caeceaa77, type: 2}
+  _goldManager: {fileID: 0}
+  _dataManagerSource: {fileID: 0}
 --- !u!1 &5581582348417991620
 GameObject:
   m_ObjectHideFlags: 0
@@ -492,14 +509,20 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 670a9737855dc6d40b7d83ca6a5997a4, type: 3}
+--- !u!114 &2952672912515067136 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3788472312946510574, guid: 670a9737855dc6d40b7d83ca6a5997a4, type: 3}
+  m_PrefabInstance: {fileID: 2047267705843918830}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72bf6ba16d97e5a4d99dd16eab0d72b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TransportBird
 --- !u!4 &3821490665496468125 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2981931209981427059, guid: 670a9737855dc6d40b7d83ca6a5997a4, type: 3}
-  m_PrefabInstance: {fileID: 2047267705843918830}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &2047267705843918880 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3788472312946510574, guid: 670a9737855dc6d40b7d83ca6a5997a4, type: 3}
   m_PrefabInstance: {fileID: 2047267705843918830}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4376209027431056102
@@ -543,14 +566,20 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 670a9737855dc6d40b7d83ca6a5997a4, type: 3}
+--- !u!114 &587774261091272712 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3788472312946510574, guid: 670a9737855dc6d40b7d83ca6a5997a4, type: 3}
+  m_PrefabInstance: {fileID: 4376209027431056102}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72bf6ba16d97e5a4d99dd16eab0d72b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TransportBird
 --- !u!4 &1574738482330681237 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2981931209981427059, guid: 670a9737855dc6d40b7d83ca6a5997a4, type: 3}
-  m_PrefabInstance: {fileID: 4376209027431056102}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &4376209027431056150 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3788472312946510574, guid: 670a9737855dc6d40b7d83ca6a5997a4, type: 3}
   m_PrefabInstance: {fileID: 4376209027431056102}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8013193691891485006
@@ -599,8 +628,14 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2981931209981427059, guid: 670a9737855dc6d40b7d83ca6a5997a4, type: 3}
   m_PrefabInstance: {fileID: 8013193691891485006}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &8013193691891485050 stripped
+--- !u!114 &6604474196171129760 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3788472312946510574, guid: 670a9737855dc6d40b7d83ca6a5997a4, type: 3}
   m_PrefabInstance: {fileID: 8013193691891485006}
   m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72bf6ba16d97e5a4d99dd16eab0d72b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TransportBird

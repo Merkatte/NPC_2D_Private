@@ -7,6 +7,9 @@ public class UIManager : MonoBehaviour, IUIService
     [SerializeField] private PopBase[] _popups;
     [SerializeField] private HoverBase[] _hovers;
 
+    [Header("Backdrop")]
+    [SerializeField] private BackBg _backBg;
+
     private readonly Dictionary<PopupType, PopBase> _popupRegistry
         = new Dictionary<PopupType, PopBase>();
     private readonly Dictionary<HoverType, HoverBase> _hoverRegistry
@@ -22,6 +25,7 @@ public class UIManager : MonoBehaviour, IUIService
     {
         BuildPopupRegistry();
         BuildHoverRegistry();
+        RefreshBackBg();
     }
 
     public bool TryShow(PopupType popupType)
@@ -32,6 +36,7 @@ public class UIManager : MonoBehaviour, IUIService
         RemoveFromPopupStack(popup);
         popup.Open();
         _popupStack.Add(popup);
+        RefreshBackBg();
         return true;
     }
 
@@ -42,6 +47,7 @@ public class UIManager : MonoBehaviour, IUIService
 
         popup.Close();
         RemoveFromPopupStack(popup);
+        RefreshBackBg();
         return true;
     }
 
@@ -53,6 +59,7 @@ public class UIManager : MonoBehaviour, IUIService
 
         popup.Close();
         RemoveFromPopupStack(popup);
+        RefreshBackBg();
         return true;
     }
 
@@ -101,6 +108,18 @@ public class UIManager : MonoBehaviour, IUIService
             _activeHover.HideCurrent();
 
         _activeHover = null;
+        RefreshBackBg();
+    }
+
+    private void RefreshBackBg()
+    {
+        if (!_backBg)
+            return;
+
+        if (HasOpenPopup)
+            _backBg.Show();
+        else
+            _backBg.Hide();
     }
 
     private void BuildPopupRegistry()
@@ -132,6 +151,7 @@ public class UIManager : MonoBehaviour, IUIService
             }
 
             _popupRegistry.Add(popup.PopupType, popup);
+            popup.Initialize(this);
 
             if (popup.IsOpen)
                 _popupStack.Add(popup);

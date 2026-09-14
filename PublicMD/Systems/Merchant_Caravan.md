@@ -141,7 +141,13 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 
 `MerchantPopup.prefab`의 구매·판매 전환은 서류철 탭 형태다. `FolderPage`와 선택/비선택 탭 스프라이트는 `Assets/Art/Generated/UI/ui-merchant-folder-*-9slice.png`를 사용하며 모두 Sliced Image로 배선돼 있다. 스프라이트는 상단 게시판과 어울리는 종이 질감으로 맞췄다. 두 탭은 서류 면의 왼쪽에 작은 크기로 배치했고, 게시판 배경과 서류 면의 Sliced Image 테두리 표시 두께를 낮췄다. `MerchantPopup.SetMode(bool)`는 내용 패널 활성화와 탭 스프라이트를 함께 바꾼다. 팝업을 열면 판매 탭이 기본 선택되고, 구매 탭의 내용은 기존 "준비중입니다." 안내를 유지한다. 창고·판매칸은 서류 면의 윗선을 가리지 않도록 안쪽에 배치했다.
 
-창고·판매 그리드는 88×88 정사각 셀을 사용한다. 두 슬롯 프리팹의 배경은 `ui-merchant-item-cell-9slice.png`로 통일하고 중앙에 아이템 아이콘, 오른쪽 아래에 수량만 표시한다. 이름·단가 텍스트 오브젝트는 기존 프리팹 인스턴스 참조 보존을 위해 비활성으로 남겨 두지만 표시 코드는 더 이상 이 둘을 갱신하지 않는다. 거래 금액 계산은 `MerchantTradeSite`와 팝업의 예상 판매 금액 표시가 계속 담당한다.
+상단 `TitleText` 뒤에는 `ui-merchant-title-plaque.png` 장식판을 별도 Image로 둔다. 창고 `WarehousePanel`과 판매 `CartPanel`의 배경에는 각각 `ui-merchant-warehouse-grid-panel.png`, `ui-merchant-sale-grid-panel.png`를 Sliced Image로 사용한다. 세 이미지는 `Assets/Art/Generated/UI`에 있으며 제목 글자·아이템 칸을 이미지에 넣지 않아 기존 텍스트와 동적 슬롯이 그 위에 표시된다.
+
+우상단 `Exit`의 X 이미지는 `ui-merchant-close-button.png`를 사용하는 uGUI Image다. `Exit`은 팝업 오른쪽 위를 기준으로 100×100 UI 크기로 배치한다. 씬 프리팹 인스턴스의 기존 fileID/type 연결을 보존하기 위해 원래 SpriteRenderer 컴포넌트는 비활성으로 유지하고, Image는 별도의 fileID로 추가한다.
+
+`MerchantPopup.prefab`은 1920×1080 화면의 Constant Pixel Size Canvas 기준으로 루트와 게시판 배경이 모두 1200×960이다. 서류 면과 구매·판매 내용 영역은 1020×760, 창고·판매 패널은 각각 480×680·480×560으로 배치했다. 구매 내용 영역은 서류 면 상단에 맞춘다. 커진 서류 면 주위에 목재 여백이 남도록 게시판을 넓혔고, 루트 크기도 맞춰 수량 입력창의 차단 영역이 게시판을 덮는다. Sliced Image의 `Pixels Per Unit Multiplier`로 나무 프레임의 화면상 두께를 조정하며 루트 Transform Scale은 1을 유지한다.
+
+창고·판매 슬롯 프리팹과 GridLayout 셀은 모두 118×118이며, 두 그리드는 45px 안쪽 여백과 16px 셀 간격을 사용해 480px 패널 안에 3열로 들어간다. 두 슬롯 프리팹의 배경은 `ui-merchant-item-cell-9slice.png`로 통일하고 중앙에 아이템 아이콘, 오른쪽 아래에 수량만 표시한다. 이름·단가 텍스트 오브젝트는 기존 프리팹 인스턴스 참조 보존을 위해 비활성으로 남겨 두지만 표시 코드는 더 이상 이 둘을 갱신하지 않는다. 거래 금액 계산은 `MerchantTradeSite`와 팝업의 예상 판매 금액 표시가 계속 담당한다.
 
 ## 알려진 제약과 TBD
 
