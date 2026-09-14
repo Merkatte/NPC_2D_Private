@@ -216,3 +216,7 @@ Farmer selector, `WorkerNPC`, `NPCStat`, decision utility는 기본적으로 변
 - 다단 가공과 요리 recipe
 - 저장/불러오기 migration
 - CSV와 ScriptableObject를 동시에 authoritative source로 운영하는 구조
+
+## 10. 참고 기록 (2026-09-15)
+
+`ItemData.csv`에 Carrot Seed(id 6)·Potato Seed(id 7)를 `ItemCategory.Seed`(신규 enum 값, `Pub.cs`의 Food 조회와 분리 목적)로 추가했다. sellPrice는 사용자 요청대로 최소값(1)이다. 이는 어떤 Phase의 승인된 전체 구현도 아니며, 이 item을 구매·운반·소비하는 코드 경로는 여전히 없다 — SG-002(seed item 실제 inventory 소비 보류)는 그대로 유효하다. `SeedSelectionPopup`은 catalog와 창고 수량을 읽어 보유한 씨앗 아이템을 슬롯으로 표시하고 선택 확인만 제공한다. 실제 심기와 농경지 연결은 아직 없다.

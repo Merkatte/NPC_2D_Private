@@ -4,3 +4,5 @@ id,category,itemName,itemDescription,healthDelta,hungerDelta,thirstDelta,fatigue
 3,Food,Bread,Freshly baked bread,0,-25,0,0,0,0
 4,Food,Carrot,Freshly harvested carrot,0,-15,0,0,0,2
 5,Food,Potato,Freshly harvested potato,0,-20,0,0,0,3
+6,Seed,Carrot Seed,Seed for planting carrots,0,0,0,0,0,1
+7,Seed,Potato Seed,Seed for planting potatoes,0,0,0,0,0,1

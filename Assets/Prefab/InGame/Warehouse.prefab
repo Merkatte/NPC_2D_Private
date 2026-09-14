@@ -201,6 +201,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 088c1ebf295d4d36b3fd2965f22008a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WarehouseInventory
+  _initialStock: []
 --- !u!114 &901710280795518168
 MonoBehaviour:
   m_ObjectHideFlags: 0

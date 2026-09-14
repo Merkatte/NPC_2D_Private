@@ -62,6 +62,7 @@ EventSystem(InputSystemUIInputModule)
 | `Assets/Scripts/UI/PopBase.cs` | popup 식별자와 open/close 공통 lifecycle |
 | `Assets/Scripts/UI/MerchantPopup.cs` | 이 프로젝트 최초의 concrete popup — 상단 거래 UI([Merchant Caravan](Merchant_Caravan.md) 주 소유) |
 | `Assets/Scripts/UI/TownHallPopup.cs` | 시청 모집 UI([Town Hall](Town_Hall.md) 주 소유) |
+| `Assets/Scripts/UI/SeedSelectionPopup.cs` | 창고의 `Seed` 재고를 상인 슬롯으로 표시하고 선택한 아이템의 심기 확인 문구를 보여주는 popup |
 | `Assets/Scripts/UI/UIManager.cs` | popup·hover registry와 현재 표시 상태를 조정하는 facade |
 
 ## 변경 유형별 최소 확인 범위
@@ -86,13 +87,13 @@ EventSystem(InputSystemUIInputModule)
 
 ## Unity 배선
 
-`UIManager`에는 popup·hover 배열을 등록한다. `PointerHoverRouter`에는 world camera, `IUIService` 구현 source, Hoverable layer mask가 필요하다. `PointerClickRouter`에는 world camera, `IUIService` 구현 source, Clickable layer mask가 필요하다(Hoverable과 별도 레이어 — 클릭과 hover는 의미가 다른 별개 관심사라 굳이 합치지 않는다). `FarmGaugeHover`에는 fill image와 camera가 필요하다.
+`UIManager`에는 popup·hover 배열을 등록한다. `FarmerTest`의 `PopupUI` 아래에는 `SeedSelectionPopup.prefab`이 비활성 상태로 배치되어 `PopupType.SeedSelection`으로 등록된다. 이 인스턴스의 `_warehouse`는 scene의 `WarehouseInventory`를 가리킨다. popup은 `ItemDataContext`의 `ItemCategory.Seed` 항목 중 창고 수량이 양수인 아이템만 상인 UI와 같은 `MerchantItemSlot` 모양으로 표시하고, 열 때마다 수량을 다시 읽는다. 슬롯 클릭은 item ID와 현재 수량을 다시 확인한 뒤 심기 확인 문구를 보여준다. 실제 seed item 소비, 농경지 선택 변경과 world click 진입은 연결되지 않았으며 심기 버튼은 비활성 상태다. `PointerHoverRouter`에는 world camera, `IUIService` 구현 source, Hoverable layer mask가 필요하다. `PointerClickRouter`에는 world camera, `IUIService` 구현 source, Clickable layer mask가 필요하다(Hoverable과 별도 레이어 — 클릭과 hover는 의미가 다른 별개 관심사라 굳이 합치지 않는다). `FarmGaugeHover`에는 fill image와 camera가 필요하다.
 
 ## 알려진 제약과 TBD
 
 - `Physics2D.OverlapPoint`는 겹친 collider의 명시적 UI 우선순위를 제공하지 않는다.
 - 열린 popup 위에서 world 클릭이 그대로 통과해 다른 clickable에 닿을 수 있다 — 지금은 clickable이 상단 하나뿐이라 관측되지 않지만, `Physics2DRaycaster`/`EventSystem` 기반 world click-through 차단은 아직 없다.
-- concrete popup은 `MerchantPopup`과 `TownHallPopup` 둘뿐이다.
+- concrete popup은 `MerchantPopup`, `TownHallPopup`, `SeedSelectionPopup` 세 종류다. 씨앗 popup은 창고 재고를 읽기만 하며 농경지 선택·재고 소비와는 연결되지 않았다.
 
 ## 관련 문서
 

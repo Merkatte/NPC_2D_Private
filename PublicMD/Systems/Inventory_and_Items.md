@@ -43,7 +43,7 @@ MerchantPopup -> MerchantTradeSite.TryTrade(quantitiesByItemId: Dictionary<int,i
 
 `WorkerInventory`는 MonoBehaviour가 아닌 plain C#이며 `NPCComponent`가 `CombatRuntimeState`와 같은 방식으로 인라인 소유한다. 한 번에 한 item type만 담고, 표시 여부 판단(비었는지 여부)은 자신이 하되 실제 `SpriteRenderer` 조작은 생성자로 받은 콜백을 통해 `NPCComponent`에 위임한다. `Clear()`는 `ICarriedInventory`에 없고 소유자인 `NPCComponent`만 pool 재사용 시 호출한다 — 외부 provider가 남의 봇짐을 비울 권한은 없다.
 
-`ItemData.csv`는 농사 crop 결과 item(현재 Carrot=4, Potato=5, Food category)도 다른 item과 동일한 10열 계약으로 보유한다(마지막 열 `sellPrice` — 상단 판매가, item마다 다르고 창고에 실제로 쌓이지 않는 item(Water/Beer/Bread)은 0으로 둔다). `ItemDataContext.TryGetItemInfo(id, out info)`가 id 기준 조회를 제공하며, `CropCatalog.TryValidate(itemDataContext, out reason)`가 catalog에 등록된 모든 crop의 `OutputItemId`를 이 조회로 cross-check해 CSV에 없는 id를 가진 crop을 거부한다. 이 검증은 catalog를 소비하는 초기화 경계(현재 `TestFarmProductionWindow`)에서만 실행되며, `FarmWorkSite`가 item table 전체를 들고 있지는 않는다 — `TrySelectCrop`을 catalog를 거치지 않고 직접 호출하면 이 cross-check를 우회한다. `FarmProductionDefinition_Carrot`/`_Potato`의 `_outputItemId`(4/5)가 CSV의 Carrot=4/Potato=5와 실제로 일치함을 직접 확인했다 — 창고 재고 조회가 item 가격 조회와 안전하게 연결된다.
+`ItemData.csv`는 농사 crop 결과 item(현재 Carrot=4, Potato=5, Food category)도 다른 item과 동일한 10열 계약으로 보유한다(마지막 열 `sellPrice` — 상단 판매가, item마다 다르고 창고에 실제로 쌓이지 않는 item(Water/Beer/Bread)은 0으로 둔다). CSV에는 씨앗 item(Carrot Seed=6, Potato Seed=7)도 `ItemCategory.Seed`(Food/Drink와 분리된 별도 category — `Pub.cs`의 `ActionType.Eat -> ItemCategory.Food` 조회가 씨앗을 식품으로 취급하지 않도록 분리)로 등록돼 있으나, 이 item을 구매·운반·소비하는 코드 경로는 아직 없다([Seed System Implementation Plan](../Plans/Seed_System_Implementation_Plan.md) SG-002가 seed item 실제 inventory 소비를 후속 단계로 보류했다). `SeedSelectionPopup`은 이 category를 조회하고 `WarehouseInventory.GetQuantity`가 양수인 item만 표시한다. `ItemDataContext.TryGetItemInfo(id, out info)`가 id 기준 조회를 제공하며, `CropCatalog.TryValidate(itemDataContext, out reason)`가 catalog에 등록된 모든 crop의 `OutputItemId`를 이 조회로 cross-check해 CSV에 없는 id를 가진 crop을 거부한다. 이 검증은 catalog를 소비하는 초기화 경계(현재 `TestFarmProductionWindow`)에서만 실행되며, `FarmWorkSite`가 item table 전체를 들고 있지는 않는다 — `TrySelectCrop`을 catalog를 거치지 않고 직접 호출하면 이 cross-check를 우회한다. `FarmProductionDefinition_Carrot`/`_Potato`의 `_outputItemId`(4/5)가 CSV의 Carrot=4/Potato=5와 실제로 일치함을 직접 확인했다 — 창고 재고 조회가 item 가격 조회와 안전하게 연결된다.
 
 `MerchantTradeSite`([Merchant Caravan](Merchant_Caravan.md) 주 소유)가 `IDataManager.TryGetItemInfo`를 통해 가격을 조회한다 — `DataManager`가 여러 불변 데이터의 조회 창구 역할을 하도록 그 뒤에서 `ItemDataContext`를 감싼다. `Pub.cs`는 여전히 `ItemDataContext`를 `DataManager` 없이 직접 참조한다 — 이 두 접근 방식이 지금 코드베이스에 공존한다(아래 TBD 참고).
 
@@ -92,6 +92,8 @@ MerchantPopup -> MerchantTradeSite.TryTrade(quantitiesByItemId: Dictionary<int,i
 - item ID와 serialized enum 변경은 기존 CSV·asset 호환성을 함께 검토한다.
 
 ## Unity 배선
+
+`WarehouseInventory._initialStock`은 창고 인스턴스의 시작 재고를 Inspector에서 item ID와 수량으로 지정한다. `Awake`에서 각 항목을 한 번만 `TryAdd`하며, 기본 `Warehouse` prefab의 목록은 비어 있다. `FarmerTest.unity`의 창고 인스턴스에는 Carrot Seed(ID 6)와 Potato Seed(ID 7)를 각각 5개씩 설정했다. `GuardTest.unity`의 창고에는 이 시작 재고를 적용하지 않는다. 씨앗 선택 팝업은 이 재고를 조회해 시작 시 보유 씨앗을 표시하며, 씨앗 소모와 심기 기능은 아직 연결되지 않았다.
 
 `DataManager._costInfos`에는 같은 `ActionType`의 cost가 중복되지 않아야 한다. `WarehouseDepositPoint._inventorySource`는 `IInventory`를 구현한 `MonoBehaviour`(현재 같은 오브젝트의 `WarehouseInventory`)여야 하며, 이 provider도 `InteractableManager._interactables`와 `DestinationDB`의 `BuildingType.Warehouse` row에 함께 등록해야 Farmer가 입고 목적지를 찾는다. `NPCComponent._cargoCapacity`(기본 10)와 `_carryPresenter`(화물 등장/퇴장 연출을 소유하는 `CarryVisualPresenter`, [NPC Presentation](NPC_Presentation.md) 참고)는 NPC prefab에서 설정한다.
 
