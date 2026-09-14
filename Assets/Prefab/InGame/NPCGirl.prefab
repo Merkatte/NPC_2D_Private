@@ -53,6 +53,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkerNPC
   _component: {fileID: 4129787401806017030}
+  _rigidbody: {fileID: 3891770992144499600}
+  _gameplayColliders:
+  - {fileID: 2299173510987397476}
+  - {fileID: 3005857378497751891}
 --- !u!114 &4129787401806017030
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -71,6 +75,7 @@ MonoBehaviour:
   _combatPerception: {fileID: 1174116944258746633}
   _toolRenderer: {fileID: 605568054530221740}
   _carryPresenter: {fileID: 8845230217907331945}
+  _spawnLandingClip: {fileID: 7400000, guid: 8c8ff6250a7e4739b0d461f0927e72cf, type: 2}
   _cargoCapacity: 10
   _requiresAnimator: 1
 --- !u!114 &1174116944258746633

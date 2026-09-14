@@ -39,6 +39,11 @@ public class WorkerNPC : MonoBehaviour
 
         _isSpawnPresentationActive = true;
 
+        if (_component)
+        {
+            _component.SetToolVisible(false);
+        }
+
         if (_rigidbody)
         {
             _wasRigidbodySimulated = _rigidbody.simulated;
@@ -89,6 +94,12 @@ public class WorkerNPC : MonoBehaviour
         }
 
         _isSpawnPresentationActive = false;
+    }
+
+    public float PlaySpawnLandingPresentation(float fallDuration, out float visualDropHeight)
+    {
+        visualDropHeight = 0f;
+        return _component ? _component.PlaySpawnLanding(fallDuration, out visualDropHeight) : 0f;
     }
 
     public void Init(NPCType npcType, NPCStat stat, BaseNPCActionSelector selector)

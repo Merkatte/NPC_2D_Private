@@ -29,7 +29,8 @@ Test/UI command
      반환된 WorkerReservation은 worker/npcType/stat과 entry에 이미 직렬화된 selector를 담는다.
      이 시점의 worker는 Init 전이라 WorkerNPC.Update()가 no-op이지만, GameObject·Collider2D는
      이미 활성 상태다 — BeginSpawnPresentation이 Rigidbody2D simulation과 gameplay Collider2D를
-     꺼서 그 사이 gameplay 감지(CombatPerception 등)에 걸리지 않게 한다.
+     꺼서 그 사이 gameplay 감지(CombatPerception 등)에 걸리지 않게 한다. NPCGirl prefab은
+     root Rigidbody2D와 root/Sensor Collider2D를 이 필드에 배선한다.
   2) 호출자가 연출(낙하 등)을 마친 뒤 다음 중 하나를 반드시 호출한다:
        NPCManager.CommitReservation(reservation)
          -> worker.CompleteSpawnPresentation() -> worker.Init(role, stat, selector) -> _workers 등록
@@ -37,6 +38,8 @@ Test/UI command
          -> worker.CompleteSpawnPresentation() -> WorkerPool.ReleaseWorker(worker)
      _reservedWorkers에서 제거된 예약만 동작하므로 중복 commit·중복 cancel은 안전하게 무시된다.
      _workers(생성된 NPC 목록) 등록은 CommitReservation에서만 일어난다.
+
+시청 소환은 `WorkerNPC.PlaySpawnLandingPresentation(fallDuration, out visualDropHeight)`으로 NPCGirl의 `SpawnLanding` clip을 낙하 시작부터 재생한다. clip이 6유닛을 직접 내려오므로, 코루틴은 설정 낙하 높이에서 clip 높이를 뺀 나머지만 root 이동으로 적용한다(기본 높이 6에서는 root가 착지점에 고정된다). 설정 높이가 6보다 작아도 clip 고유의 6유닛 하강은 유지된다. 엎어지는 착지와 일어나는 구간까지 예약 상태를 유지한 뒤 commit한다. clip이 없는 prefab은 기존 월드 낙하만 수행하고 바로 commit한다.
 ```
 
 `NPCPrefabCatalog`는 prefab 형태별 prefab·capacity 정의를 제공하지만, 현재 `NPCManager`의 role 생성 경로와 `WorkerPool`은 아직 catalog 기반 다중 pool로 통합되지 않았다.

@@ -7,6 +7,9 @@ public class NPCComponent : MonoBehaviour
     private static readonly int IsInsideBuildingParameterHash = Animator.StringToHash("IsInsideBuilding");
     private static readonly int IsWorkingParameterHash = Animator.StringToHash("IsWorking");
     private static readonly int IdleStateHash = Animator.StringToHash("Idle");
+    private static readonly int SpawnLandingStateHash = Animator.StringToHash("SpawnLanding");
+    private const float SpawnLandingAuthoredFallDuration = 0.7f;
+    private const float SpawnLandingAuthoredVisualHeight = 6f;
     private static readonly Vector3 FacingRight = new Vector3(-1, 1, 1);
     private static readonly Vector3 FacingLeft = new Vector3(1, 1, 1);
 
@@ -16,6 +19,7 @@ public class NPCComponent : MonoBehaviour
     [SerializeField] [FormerlySerializedAs("_guardPerception")] private CombatPerception _combatPerception;
     [SerializeField] private SpriteRenderer _toolRenderer;
     [SerializeField] private CarryVisualPresenter _carryPresenter;
+    [SerializeField] private AnimationClip _spawnLandingClip;
     [SerializeField, Min(1)] private int _cargoCapacity = 10;
 
     // Farmer/Guard require a fully-parameterized Animator (Speed/IsInsideBuilding/IsWorking) and
@@ -132,6 +136,22 @@ public class NPCComponent : MonoBehaviour
         }
     }
 
+    public float PlaySpawnLanding(float fallDuration, out float visualDropHeight)
+    {
+        visualDropHeight = 0f;
+        if (!_animator || !_animator.isActiveAndEnabled || !_spawnLandingClip)
+        {
+            return 0f;
+        }
+
+        // The impact key is authored at 0.7 seconds; keep it aligned with the world drop.
+        _animator.speed = SpawnLandingAuthoredFallDuration / Mathf.Max(fallDuration, 0.01f);
+        _animator.Play(SpawnLandingStateHash, 0, 0f);
+        _animator.Update(0f);
+        visualDropHeight = SpawnLandingAuthoredVisualHeight;
+        return _spawnLandingClip.length / _animator.speed;
+    }
+
     public void EnableObject(bool isEnable)
     {
         _gameObject.SetActive(isEnable);
@@ -202,6 +222,8 @@ public class NPCComponent : MonoBehaviour
         {
             return;
         }
+
+        _animator.speed = 1f;
 
         if (_hasSpeedParameter)
         {

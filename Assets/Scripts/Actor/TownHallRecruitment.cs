@@ -144,6 +144,15 @@ public sealed class TownHallRecruitment : MonoBehaviour
 
     private IEnumerator DropRoutine(Vector3 from, Vector3 to)
     {
+        float presentationDuration = _pendingReservation.Worker.PlaySpawnLandingPresentation(
+            _dropDuration, out float visualDropHeight);
+        if (presentationDuration > 0f)
+        {
+            // The clip moves Visual down by its own height; move the root only by the remainder.
+            from = to + Vector3.up * Mathf.Max(0f, _dropHeight - visualDropHeight);
+            _pendingReservation.Worker.transform.position = from;
+        }
+
         float elapsed = 0f;
         while (elapsed < _dropDuration)
         {
@@ -155,6 +164,13 @@ public sealed class TownHallRecruitment : MonoBehaviour
         }
 
         _pendingReservation.Worker.transform.position = to;
+        // The worker stays reserved while the impact and get-up tail finishes.
+        float remainingPresentationDuration = presentationDuration - _dropDuration;
+        if (remainingPresentationDuration > 0f)
+        {
+            yield return new WaitForSeconds(remainingPresentationDuration);
+        }
+
         _dropRoutine = null;
         CommitPendingReservation();
     }

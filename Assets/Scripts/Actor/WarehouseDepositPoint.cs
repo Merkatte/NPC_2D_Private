@@ -48,7 +48,7 @@ public class WarehouseDepositPoint : BaseInteractionProvider
             LogMissingCargoOnce();
             return false;
         }
-
+        
         return request.Cargo.TryTransferAllTo(_inventory, out _);
     }
 

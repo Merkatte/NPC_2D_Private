@@ -20,6 +20,9 @@ public class WarehouseInventory : MonoBehaviour, IInventory
 
         _quantities[itemId] = (int)sum;
         acceptedQuantity = quantity;
+        Debug.Log("Successfully added all items");
+        Debug.Log("itemId = " + itemId);
+        Debug.Log("item count = " + sum);
         return true;
     }
 

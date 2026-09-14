@@ -63,10 +63,11 @@ NPCComponent.Awake / ResetRuntimeState -> CarryVisualPresenter.ResetImmediate()
 
 ## 에셋과 검증 도구
 
-- `Assets/Animation/NPCGirl_Move.controller`: `Speed`, `IsInsideBuilding`, `IsWorking` parameter와 상태 전이를 소유한다. 메인 Animator(`NPCGirl` 루트)가 사용하며 `Visual`/`Visual/ToolAnchor/Tool`만 바인딩한다.
+- `Assets/Animation/NPCGirl_Move.controller`: `Speed`, `IsInsideBuilding`, `IsWorking` parameter와 상태 전이를 소유한다. 메인 Animator(`NPCGirl` 루트)가 사용하며 `Visual`/`Visual/ToolAnchor/Tool`만 바인딩한다. `SpawnLanding`은 착지 시 직접 재생되는 1회성 상태이고 끝나면 Idle로 돌아간다.
 - `Assets/Animation/DefaultAnim/*`: idle, move, building, tool animation clip.
 - `Assets/Animation/Carry/NPCGirl_Carry.controller`: `HasCargo` parameter와 `Hidden -> Show -> Visible -> Hide -> Hidden` 상태 전이를 소유한다. `CarryAnchor`의 전용 Animator가 사용하며 `CarryMotion`만 바인딩한다.
 - `Assets/Animation/Carry/NPCGirl_CarryHidden.anim` / `CarryShow.anim` / `CarryVisible.anim` / `CarryHide.anim`: 화물 등장(작게 뿅 나타나 떨어지며 착지 후 반동)·퇴장(위로 튀며 축소) 1회성 clip. 알파 페이드 대신 position/squash-stretch만 사용.
+- `Assets/Animation/DefaultAnim/NPCGirl_SpawnLanding.anim`: `Visual`이 6유닛 위에서 내려오는 구간(0~0.7초), 엎어지듯 눌리는 착지(0.7~0.88초), 튀어 일어나 바로 서는 구간(0.88~1.34초)의 비반복 clip. 기본 시청 낙하 높이 6유닛은 clip만으로 표현한다.
 - `Assets/Prefab/InGame/NPCGirl.prefab`: 메인 Animator, visual, tool renderer, sensor, 화물 Animator+`CarryVisualPresenter`가 배선된 공유 NPC prefab.
 - `Assets/TestOnly/Editor/NPCGirlAnimatorControllerConfigurator.cs`: 메인 controller의 parameter와 전이를 멱등 구성·검증한다.
 - `Assets/TestOnly/Editor/NPCGirlToolLayerConfigurator.cs`: tool layer와 clip 배선을 구성·검증한다.
@@ -81,6 +82,7 @@ NPCComponent.Awake / ResetRuntimeState -> CarryVisualPresenter.ResetImmediate()
 - `_toolRenderer`와 `_carryPresenter`는 서로 다른 스위치가 소유하며 같은 상태를 두 곳에서 쓰지 않는다.
 - 표시용 renderer·presenter 참조는 모두 null 허용이며, 배선되지 않은 role에서도 gameplay는 그대로 동작해야 한다.
 - 메인 Animator와 화물 Animator는 같은 Transform 속성을 동시에 제어하지 않는다. `CarryAnchor`/`CarryMotion` 경로는 기존 Idle/Move/ToolWork 클립에 추가하지 않는다.
+- `SpawnLanding` clip은 `Visual`의 위치·회전·scale만 제어한다. `NPCComponent.PlaySpawnLanding(fallDuration)`은 NPCGirl prefab에 clip이 배선된 경우에만 낙하 시작과 동시에 Animator 상태를 시작하고, 0.7초로 제작된 clip의 재생 속도를 실제 낙하 시간에 맞춘 뒤 전체 재생 시간을 반환한다. prefab 재사용 시 `ResetAnimationState()`가 Animator 속도 1과 Idle을 복구한다.
 
 ## 알려진 제약과 TBD
 

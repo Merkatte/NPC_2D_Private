@@ -37,9 +37,10 @@ TownHallPopup.Update() -> _recruitment.Phase 읽어 패널 토글
        -> 실패면 NPCManager.CancelReservation(reservation) 후 NotEnoughGold (골드 무변경)
   4. _pendingReservation=reservation, phase=Recruiting, _cooldownRemaining=_cooldownDuration(즉시 채움),
      TownHallVisual.SetPhase(Recruiting)
-  5. 낙하 코루틴 시작(dropStart -> landingPosition). Update()가 _pendingReservation.IsValid인 동안
-     쿨다운을 절대 안 줄이므로, 실제 카운트다운은 착지 이후부터 시작되는 것과 동일한 효과를 낸다.
-  6. 착지 -> CommitPendingReservation() -> NPCManager.CommitReservation(reservation)
+  5. 낙하 코루틴 시작과 동시에 NPCGirl의 `SpawnLanding` clip을 재생한다. clip이 `Visual`을 6유닛 내리므로 root는 `_dropHeight`에서 그 높이를 뺀 나머지만 이동한다(기본 높이 6이면 root는 착지점에 고정). clip 하강 구간을 `_dropDuration`에 맞춘다. Update()가 _pendingReservation.IsValid인 동안
+     쿨다운을 절대 안 줄이므로, 실제 카운트다운은 착지 후 일어나는 연출까지 끝난 뒤 시작된다.
+  6. 바닥에 엎어지듯 닿고 바로 일어나는 clip의 남은 구간 동안 예약 상태를 유지한다.
+  7. 일어난 후 CommitPendingReservation() -> NPCManager.CommitReservation(reservation)
        -> worker.CompleteSpawnPresentation() -> worker.Init(...) -> _workers 등록
        -> 성공해야만 _pendingReservation=default(실패 시 그대로 남겨 상태를 잃지 않음)
   성공 시 팝업은 스스로 닫는다(낙하 연출을 가리지 않기 위해)
@@ -85,6 +86,8 @@ TownHallPopup.Update() -> _recruitment.Phase 읽어 패널 토글
 ## Unity 배선과 검증 도구
 
 **2026-09-11 기준**, `Assets/Prefab/InGame/TownHall.prefab`(루트에 `BoxCollider2D`+`TownHallVisual`+`TownHallRecruitment`, layer 9, 아이콘 자식 2개)과 `Assets/Prefab/UI/TownHallPopup.prefab`은 완성됐지만 `FarmerTest.unity`에 씬 한정 참조(`_npcManager`/`_goldManager`, `UIManager._popups` 등)가 배선되지 않았다. 프리팹 자체는 씬과 무관하게 독립적으로 완성되므로 배선만 남았다.
+
+`TownHallPopup.prefab`은 큰 목재 보드와 양피지 본문에 기존 상인 UI의 모집 상태 카드·녹색 버튼·제목판을 재사용한다. 왼쪽 시청 그림은 기존 아이템 셀 프레임에 배치하고, 오른쪽 모집 중/후보 준비 패널은 같은 위치와 크기를 공유한다. 상태·남은 시간·후보 직업은 패널 중앙 축에 정렬하고, 정착지원금은 동전 아이콘과 한 줄로 배치한다. 결과 메시지는 상태 카드 아래에 표시한다. 우측 상단 X 버튼은 `PopBase.RequestClose()`에 연결된다. 기존 모집 버튼 및 `TownHallPopup` 직렬화 참조의 fileID는 유지한다.
 
 씬 배선 체크리스트:
 
