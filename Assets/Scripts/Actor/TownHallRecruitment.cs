@@ -202,7 +202,7 @@ public sealed class TownHallRecruitment : MonoBehaviour
 
     private void StartInitialCooldown()
     {
-        _phase = RecruitPhase.Recruiting;
+        _phase = RecruitPhase.CandidateReady;
         _cooldownRemaining = _cooldownDuration;
         _visual.SetPhase(_phase);
     }
