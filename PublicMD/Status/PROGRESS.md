@@ -50,6 +50,22 @@ Immediate next actions:
 
 ## Current Status
 
+### NPC Harness v1 — 원자적 Unity Editor Tool과 Job 오케스트레이션 (2026-09-17)
+
+`Assets/Editor/NpcHarness`에 작은 결정적 Tool과 이를 순서대로 실행하는 JSON Job Runner를 추가했다. 최초 Tool 집합은 `WriteCSharpScript`, `EnsureScene`, `EnsureGameObject`, `SetTransform`, `EnsureComponent`, `EnsureMaterial`, `ConfigureCamera`, `ConfigureLineRenderer`, `SaveScene`이다. 기본 변경 범위는 `Assets/TestOnly`, 초기 컴포넌트 허용목록은 `Camera`/`LineRenderer`/`HarnessTest`, Shader 허용목록은 `Sprites/Default`로 제한했다. 없는 대상은 만들고 동일 상태는 no-op으로 처리하며, 다른 기존 값은 Editor의 명시적 토글이나 CLI `--allow-overwrite` 없이는 변경하지 않는다.
+
+`WriteCSharpScript`는 항상 Job의 첫 Step으로 제한했다. 파일을 작성하면 `Library/NpcHarness`에 Job hash와 다음 Step을 체크포인트로 남긴다. 열린 Editor에서는 컴파일·도메인 리로드 후 자동 재개하고, Batch에서는 종료 코드 10을 반환해 외부 오케스트레이터가 같은 Job으로 Unity를 재실행한다. UI Toolkit 기반 `Tools > NPC Harness` 창에는 원자적 Tool JSON의 Template/Validate/Execute 탭과 HarnessBeacon Recipe의 Preview/Run/Validate/Play Verify 동작을 제공한다.
+
+기존 `Assets/TestOnly/Editor/HarnessSceneBuilder.cs` 단일 구현은 제거하고 동일 결과를 HarnessBeacon Recipe로 옮겼다. Recipe는 `Assets/TestOnly/HarnessTest.cs`, `HarnessTest.unity`, 직교 Main Camera, `HarnessTest`+`LineRenderer`가 붙은 상향 화살표 `HarnessBeacon`, `HarnessBeaconLine.mat`을 생성·검증한다. Play Mode 검증은 30초 안에 `HarnessSuccess`가 정확히 한 번 기록되는지 확인하며, Editor 실행에서는 Unity를 종료하지 않고 Batch 실행에서만 결과 파일과 프로세스 종료 코드를 사용한다.
+
+외부 `Tools/NpcHarness`는 더 이상 C# 파일을 직접 쓰지 않는다. 읽기 전용 Codex 분류 결과가 `CreateHarnessBeacon`이면 고정 Harness Job JSON을 만들고 새 `HarnessBatchRunner`와 `HarnessPlayModeVerifier`를 호출한다. 기존 `run-harness.cmd` 사용법은 유지했고 `--allow-overwrite`만 명시적 사용자 옵션으로 추가했다. Job 계약은 `Tools/NpcHarness/Schemas/harness-job.schema.json`, 사용법과 가드레일은 `Tools/NpcHarness/README.md`에 기록했다. 빌드 산출물 `bin/`과 실행 기록 `.harness-runs/`을 Git에서 제외했다.
+
+**추가 교정**: 격리 Unity 콜드 스타트에서 발견된 `ProjectSettings/TagManager.asset`의 유효하지 않은 빈 Layer 표기 `-`를 인덱스를 유지하는 빈 문자열 `- ""`로 고쳤다. 이는 Harness 실행 전 Unity YAML 파서를 막던 기존 설정 오류다.
+
+**검증 상태**: `dotnet build Tools/NpcHarness/NpcHarness.csproj` 경고 0/오류 0. Unity 6000.3.9f1이 생성한 Editor 프로젝트 참조를 재사용한 전체 `Assets/Editor/NpcHarness/**/*.cs` 컴파일 경고 0/오류 0. Job JSON Schema 파싱, `.meta` GUID 중복, 이전 `HarnessSceneBuilder` 참조 부재, trailing whitespace를 확인했다. 원본 프로젝트가 열린 상태라 외부 Batch를 직접 실행하지 않았고, 격리 복사본은 Unity Package Manager가 패키지를 로드하기 전에 `path argument ... undefined`로 종료되어 실제 씬 생성과 Play Mode 로그는 `NOT VERIFIED`다.
+
+**다음 작업**: 열린 Unity에서 `Tools > NPC Harness > Recipes > Run HarnessBeacon`을 실행해 컴파일 후 자동 재개를 확인하고, 이어 `Validate Scene`과 `Run Play Verification`을 실행한다. 또는 Unity를 닫고 `run-harness.cmd "TestOnly에 HarnessBeacon을 만들고 실행해줘" --approve`로 외부 전체 흐름을 검증한다. 독립 읽기 전용 Codex 리뷰 에이전트는 비동기로 실행했다(PID 43672). 아직 도착하지 않은 리뷰 결과를 통과로 간주하지 않는다.
+
 ### Merchant 아이템 셀 표시 간소화 (2026-09-13)
 
 창고·판매 그리드를 88×88 정사각 셀로 맞췄다. 두 슬롯 프리팹에 상인 UI 화풍의 9-slice 나무 배경을 적용하고 비활성이던 아이콘을 아이템이 있을 때 중앙에 표시하도록 교정했다. 수량은 오른쪽 아래에 표시하며 셀 안의 이름·단가는 숨겼다. `MerchantPopup.prefab`에 Carrot(4)/Potato(5) 아이콘을 기본 등록했다. `ItemSlotView`는 드래그 고스트용 이름만 데이터로 유지하고 단가 표시 의존을 제거했다. C# 빌드 경고 0/오류 0, 이미지 import와 프리팹 직렬화 정적 검증 통과. Unity Editor/Play Mode의 실제 배치와 드래그 동작은 아직 `NOT VERIFIED`.

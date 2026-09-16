@@ -2,55 +2,65 @@
 
 ## Purpose
 
-`3f652bd`의 Merchant Caravan 클릭→팝업→판매→골드 변경을 대상으로 책임 배치, runtime lifecycle, transaction 안전성, Unity 직렬화 배선, 코드 규약과 문서 정합성을 감사했다. 사용자와 합의된 concrete `MerchantPopup`–`MerchantTradeSite` 관계, `WarehouseInventory.TryRemove`의 interface 제외, Animator 실시간 클릭 판정, `DataManager`의 immutable-data facade 역할은 설계 전제로 존중했다.
+NPC Harness v1 변경을 대상으로 책임 배치, Job·컴파일 재개 lifecycle, overwrite guard, Unity scene/asset 안전성, Play Mode 판정, JSON 계약과 유지보수성을 감사했다. 리뷰만 수행했으며 파일은 수정하지 않았다.
 
 ## Review Snapshot
 
-- Date: 2026-09-06
-- Commit: `3f652bd Add merchant caravan trading flow`
+- Date: 2026-09-17
 - Scope:
-  - 변경된 production C# 16개
-  - Merchant prefab, Animator Controller와 animation clip 4개 및 `.meta`
-  - `ItemData.csv`, crop/item assets
-  - 직접 의존 표면: `UIManager`, `PopBase`, `PointerHoverRouter`, `IUIService`, `GoldManager`, `ItemDataContext`, `CropCatalog`, inventory 계약
-  - `FarmerTest.unity`, `GuardTest.unity`, `ProjectSettings/TagManager.asset`
-  - 관련 Systems 문서와 기존 `Code_Evaluation_Result.md`
-- Standards:
-  - `PublicMD/ARCHITECTURE.md`
+  - `Assets/Editor/NpcHarness/**`
+  - `Tools/NpcHarness/**`
+  - `run-harness.cmd`
+  - `.gitignore`
+  - `ProjectSettings/TagManager.asset`
+  - `PublicMD/ProjectStructure.md`
+  - `PublicMD/Status/PROGRESS.md`
+  - 직접 영향 표면: `Assets/TestOnly`, `PointerClickRouter`, Layer 9을 사용하는 Merchant/TownHall prefab
+- Sources:
   - `PublicMD/ProjectStructure.md`
   - `PublicMD/CodeConvention.md`
+  - `PublicMD/ARCHITECTURE.md`
+  - `PublicMD/Systems/UI.md`
+  - `PublicMD/Systems/Merchant_Caravan.md`
+  - `PublicMD/Systems/Town_Hall.md`
+  - 기존 `PublicMD/Status/Code_Evaluation_Result.md`
   - `reviewing-npc-work-code` audit methodology
 - Verification:
-  - 최초 dirty 상태와 커밋 후 clean 상태의 `git status` 확인
-  - `git diff --name-status HEAD^ HEAD`, `git diff --check HEAD^ HEAD`
-  - 호출자·interface 구현체·enum·scene GUID·금지 패턴 검색
-  - prefab/controller/clip 내부 fileID 및 cross-asset GUID 검증
-  - `Visual` CRC32와 animation binding 대조
-  - 문서 상대 링크 확인
+  - `git status`, `git diff`, `git diff --check`
+  - 변경 C# 30개와 직접 의존 표면 정적 검토
+  - JSON 2개 parsing
+  - 전체 `Assets`의 `.meta` GUID 640개 중복 검사
+  - 신규 Editor 경로의 `.meta` 누락 검사
+  - generated `Assembly-CSharp-Editor.csproj`에서 Harness C# 27개 포함 확인
+  - stale `HarnessSceneBuilder` 참조와 TODO/FIXME 검색
+  - `.gitignore`의 `bin/`, `obj/`, `.harness-runs/` 적용 확인
 
 ## Executive Summary
 
-책임 배치와 의존 방향은 전반적으로 좋다. `MerchantCaravan`, `MerchantVisual`, `MerchantTradeSite`, 입력 router와 popup의 역할이 분리되어 있고, 거래 가격을 domain에서 다시 조회하는 구조도 적절하다. 요청에서 명시한 deliberate architecture 선택에는 finding이 없다.
+외부 자연어 분류, 결정적 Job, Unity Editor mutation을 분리한 큰 책임 방향은 적절하다. 경로와 component/shader allowlist, 컴파일 전용 첫 Step, checkpoint hash, timeout 시 process-tree 종료도 좋은 안전장치다.
 
-그러나 현재 구현은 end-to-end 기능으로 승인할 수 없다. 비활성 Merchant prefab은 `Awake()` 전에 `_isConfigured`를 요구하므로 최초 방문을 스스로 시작할 수 없고, `MerchantPopup`에는 실제 판매 버튼을 `TrySell(int, int)`에 연결할 수 있는 binding 경로가 없다. 여기에 거래 금액 overflow, 판매 허용 품목 검증 누락, 퇴장 프레임의 Animator 평가 race가 존재한다.
+그러나 현재 상태는 승인할 수 없다. 대화형 실행과 검증이 기존 Editor scene setup을 `Single` 모드로 교체하면서 dirty scene을 놓칠 수 있고, `EnsureMaterialTool`은 기존 경로를 Material로 읽지 못한 경우 overwrite 승인 없이 `CreateAsset`을 호출한다. 두 경로 모두 “명시적 승인 없는 기존 값 변경 금지”라는 핵심 가드레일을 우회하며 사용자 작업을 잃게 할 수 있다.
+
+추가로 HarnessBeacon recipe가 외부와 Editor에 중복 정의되어 있고, 공개된 Job schema와 실제 runner 검증이 일치하지 않으며, Play Mode verifier는 첫 성공 직후 종료하므로 “정확히 한 번”을 완전히 검증하지 못한다.
 
 최종 판정은 **Changes requested**이다.
 
 ## Improvements Since Previous Review
 
-- 이전 Gold 단계와 비교해 실제 gameplay 골드 획득 owner가 `MerchantTradeSite`로 좁게 추가됐다.
-- `GoldManager`에는 가격·재고·UI 책임이 유입되지 않았다.
-- 이전 보고서의 Gold scene 미배선 문제는 아직 해소되지 않았으며 이번 M-01에 포함했다.
-- 새 기능 routing, Systems 문서, enum append, `.meta`와 asset reference는 체계적으로 추가됐다.
+- 기존 단일 `HarnessSceneBuilder` 참조는 제거됐고 Tool, Job runner, batch entry, verification으로 책임이 분해됐다.
+- 외부 Codex 결과는 고정 action 분류에만 사용되고 실제 Unity 변경 내용은 결정적 코드로 생성된다.
+- malformed TagManager 빈 scalar는 인덱스를 유지하는 명시적 빈 문자열로 정규화됐다.
+- 신규 Editor asset의 `.meta`가 모두 존재하며 GUID 중복은 발견되지 않았다.
+- 이전 평가의 Merchant/TownHall 기능 자체는 이번 집중 리뷰에서 재감사하지 않았다. Layer 9 무명 상태는 여전히 해당 Systems 문서에 미완 배선으로 기록돼 있다.
 
 ## Priority Coverage
 
 | Priority | Result |
 |---|---|
-| 1. Architecture and responsibility placement | **Code architecture issue 없음.** deliberate concrete pairing, inventory capability 분리, GoldManager 참조 위치가 문서화된 책임과 일치한다. 문서 drift는 L-01에서 별도 지적한다. |
-| 2. Correctness, lifecycle, cancellation, regression | H-01, H-02, M-02, M-03, M-04 발견. |
-| 3. Unity scene, prefab, serialized-reference safety | M-01, M-05 발견. |
-| 4. Convention, maintainability, dead code, magic values | L-01, L-02 발견. 익명 gameplay magic value, production dead code, enum 재정렬은 발견되지 않았다. |
+| 1. Architecture and responsibility placement | M-01 발견. 그 외 외부 classifier → deterministic Job → Editor mutation 방향은 적절하다. NPC/worker runtime 책임 침범은 없다. |
+| 2. Correctness, lifecycle, cancellation, regression | H-01, M-03, L-01 발견. timeout 시 child process tree 종료는 적절하다. |
+| 3. Unity scene, prefab, serialized-reference safety | H-01, H-02 발견. 신규 `.meta` 누락·GUID 중복은 없다. |
+| 4. Convention, maintainability, dead code, magic values | M-01, M-02, L-02 발견. 확정적인 dead code, enum 재정렬, production hot-path 회귀는 발견되지 않았다. |
 
 ## Findings By Severity
 
@@ -60,282 +70,249 @@ None found.
 
 ### High
 
-#### H-01 — 비활성 prefab은 최초 방문 전에 `Awake()`를 실행할 수 없어 bootstrap이 교착된다
+#### H-01 — scene guard가 target dirty scene과 비활성 additive dirty scene을 놓쳐 사용자 변경을 닫을 수 있다
 
 - Severity: High
-- Category: Unity lifecycle / Runtime correctness
+- Category: Unity scene safety / Data loss
 - Location:
-  - `Assets/Prefab/InGame/MerchantCaravan.prefab:22`
-  - `Assets/Scripts/Actor/MerchantCaravan.cs:25,32-54`
-  - `Assets/Scripts/Actor/MerchantArrivalScheduler.cs:34-45`
+  - `Assets/Editor/NpcHarness/Core/HarnessToolContext.cs:35-47`
+  - `Assets/Editor/NpcHarness/Core/HarnessToolContext.cs:51-66`
+  - `Assets/Editor/NpcHarness/Core/HarnessToolContext.cs:145-154`
+  - `Assets/Editor/NpcHarness/Verification/HarnessBeaconValidator.cs:11-13`
 - Evidence:
-  - prefab root는 `m_IsActive: 0`이다.
-  - `_isConfigured`는 기본값 `false`이며 `MerchantCaravan.Awake()`에서만 `true`가 된다.
-  - 비활성 GameObject의 `Awake()`는 활성화될 때까지 실행되지 않는다.
-  - `BeginVisit()`은 `_isConfigured == false`이면 `gameObject.SetActive(true)`보다 먼저 반환한다.
-  - scheduler가 호출할 수 있는 활성화 경로는 이 `BeginVisit()`뿐이다.
+  - `RefuseToReplaceDirtyScene()`은 active scene 하나만 검사한다.
+  - active scene이 dirty여도 `activeScene.path == requestedScenePath`이면 통과한다.
+  - 이후 새 context는 이미 열린 target을 재사용하지 않고 `OpenSceneMode.Single`로 다시 연다.
+  - active scene이 clean이면 다른 additive scene이 dirty여도 검사되지 않는다.
+  - `OpenSceneMode.Single`은 현재 열린 모든 scene을 닫는다. Unity는 별도로 모든 modified scene의 저장·취소 여부를 확인하는 API를 제공한다. [Unity OpenSceneMode](https://docs.unity3d.com/kr/current/ScriptReference/SceneManagement.OpenSceneMode.html), [Unity SaveCurrentModifiedScenesIfUserWantsTo](https://docs.unity3d.com/ja/2022.3/ScriptReference/SceneManagement.EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo.html)
+  - 이 경로는 Execute뿐 아니라 `Validate Scene`에서도 사용된다.
 - Description:
-  - 문서대로 비활성 prefab instance를 scheduler에 연결하면 최초 interval이 끝나도 활성화되지 않는다. 이후 scheduler가 재시도해도 `_isConfigured`는 계속 false여서 모든 방문이 실패한다.
+  - `HarnessTest.unity` 자체가 dirty인 상태나 multi-scene setup에서 비활성 scene만 dirty인 상태가 보호되지 않는다. 읽기처럼 보이는 validation도 기존 scene setup을 교체할 수 있어 기본 허용 범위인 `Assets/TestOnly` 밖의 미저장 작업에 영향을 준다.
 - Recommended fix:
-  - 방문 lifecycle owner를 항상 활성 상태로 유지하고 visual/collider child만 비활성화하거나, 최초 `Awake()`가 반드시 실행되는 bootstrap 상태를 명시적으로 제공한다.
-  - 어떤 방식을 택하든 `BeginVisit()`이 자기 활성화 이후에만 설정될 수 있는 flag를 활성화 전제조건으로 요구하지 않게 한다.
-  - inactive initial state와 두 번째 방문을 모두 Play Mode에서 검증한다.
+  - 대화형 실행 전에 모든 loaded scene을 검사하고 저장·폐기·취소 선택을 받거나 dirty scene이 하나라도 있으면 중단한다.
+  - requested scene이 이미 열려 있으면 재사용하고, dirty target을 디스크에서 다시 열지 않는다.
+  - 가능하면 기존 scene manager setup을 snapshot한 뒤 실행·검증 후 복원한다.
+  - batch mode에서는 dirty scene이 존재하지 않는다는 전제를 명시적으로 검증한다.
 - Impact if unfixed:
-  - Merchant가 한 번도 등장하지 않아 클릭, popup, 거래와 애니메이션 전체가 실행 불가능하다.
+  - 사용자 scene의 미저장 변경이 유실될 수 있고, Validate/Execute가 명시된 안전 범위를 넘어 Editor 작업 상태를 파괴할 수 있다.
 
-#### H-02 — `MerchantPopup`에 실제 판매 동작을 호출할 UI binding 경로가 없다
+#### H-02 — 기존 `.mat` 경로를 Material로 읽지 못하면 overwrite 승인 없이 교체한다
 
 - Severity: High
-- Category: Feature completeness / UI integration
+- Category: Asset overwrite guard / Serialized-reference safety
 - Location:
-  - `Assets/Scripts/UI/MerchantPopup.cs:26-65`
-  - `Assets/Scenes/FarmerTest.unity:5226`
+  - `Assets/Editor/NpcHarness/Tools/EnsureMaterialTool.cs:29-45`
+  - `PublicMD/Status/PROGRESS.md:55`
+  - `Tools/NpcHarness/README.md:37-39`
 - Evidence:
-  - 판매 진입점은 `TrySell(int itemId, int quantity)` 하나뿐이다.
-  - 표준 `Button.onClick`은 이 두 개의 정수 인자를 직접 전달할 수 없다.
-  - repository 전체에서 `TrySell` 호출, `Button.onClick.AddListener`, offer-row binding 또는 zero-argument adapter가 없다.
-  - `RefreshOffers()`는 판매 가능 항목을 `Text` 문자열로만 출력한다.
-  - Merchant popup prefab/scene object가 없고 `UIManager._popups`도 빈 배열이다.
+  - `LoadAssetAtPath<Material>()`이 null이면 경로가 비어 있는지 별도로 확인하지 않고 곧바로 새 Material을 만든다.
+  - 이 생성 branch는 `AllowOverwrite`를 검사하지 않는다.
+  - 기존 파일이 잘못된 type이거나 import에 실패해 Material로 load되지 않는 경우에도 같은 branch로 들어간다.
+  - Unity 6의 `AssetDatabase.CreateAsset`은 지정 경로에 asset이 있으면 새 asset으로 overwrite한다고 명시한다. [Unity AssetDatabase.CreateAsset](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/AssetDatabase.CreateAsset.html)
 - Description:
-  - scene에 popup과 Text를 수동 배선해도 사용자가 표시된 offer를 선택해 판매를 실행할 수 없다. 현재 연결 가능한 흐름은 popup 표시까지만이며 거래 호출에는 별도 코드가 필요하다.
+  - 현재 코드는 “Material로 load되지 않음”과 “경로가 존재하지 않음”을 같은 상태로 취급한다. 따라서 기존 managed path의 다른 값은 명시적 승인 없이는 변경하지 않는다는 문서화된 가드레일이 보장되지 않는다.
 - Recommended fix:
-  - offer row가 `itemId`와 선택 수량을 보관하고 zero-argument click handler로 popup에 의도를 전달하게 하거나, row 생성 시 코드로 button listener를 바인딩한다.
-  - 실제 MerchantPopup asset을 만들고 최소 한 개 offer에 대해 클릭→`TryTrade`→결과 갱신을 검증한다.
+  - `AssetDatabase.LoadMainAssetAtPath`, GUID 또는 실제 파일 존재 여부로 경로 점유를 먼저 확인한다.
+  - 경로가 점유됐지만 Material로 읽을 수 없으면 기본적으로 실패하고, 명시적 overwrite 승인 시에만 교체한다.
+  - 교체 시 기존 asset type/path를 포함한 진단을 남기고 interactive Undo 또는 복구 가능한 백업 정책을 정의한다.
 - Impact if unfixed:
-  - popup은 열리더라도 플레이어가 판매를 실행할 수 없어 click-to-trade-to-gold 파이프라인이 완성되지 않는다.
+  - `Assets/TestOnly` 안의 기존 asset 내용이 승인 없이 파괴되고, 같은 `.meta` GUID를 참조하는 scene/component가 전혀 다른 Material을 받게 될 수 있다.
 
 ### Medium
 
-#### M-01 — 현재 repository에는 Merchant와 Gold runtime 배선이 전혀 없다
+#### M-01 — HarnessBeacon recipe가 외부 orchestrator와 Editor에 이중 소유된다
 
 - Severity: Medium
-- Category: Unity integration / Serialized-reference safety
+- Category: Architecture / Responsibility duplication
 - Location:
-  - `Assets/Scenes/FarmerTest.unity`
-  - `ProjectSettings/TagManager.asset:7-17`
-  - `Assets/Prefab/InGame/MerchantCaravan.prefab:16,53-55,72`
+  - `Assets/Editor/NpcHarness/Recipes/HarnessBeaconRecipe.cs:5-162`
+  - `Tools/NpcHarness/HarnessOrchestrator.cs:9-12`
+  - `Tools/NpcHarness/HarnessOrchestrator.cs:215-282`
+  - `Assets/Editor/NpcHarness/Verification/HarnessBeaconValidator.cs:13-34`
 - Evidence:
-  - 신규 prefab, `MerchantArrivalScheduler`, `MerchantTradeSite`, `PointerClickRouter`, `MerchantPopup`, `GoldManager` GUID는 모든 scene에서 0건이다.
-  - `UIManager._popups`는 빈 배열이고 `InputEvent`에는 Transform만 있다.
-  - 기존 `DataManager`에는 `_itemDataContext` serialized row가 없다.
-  - TagManager의 layer 9는 비어 있지만 Merchant prefab은 `m_Layer: 9`로 저장됐다.
-  - prefab의 arrival/dock/departure/UI service 참조는 모두 null이다.
+  - script source, scene/material path, hierarchy, camera 값, LineRenderer 값과 Step 순서가 두 코드에 별도로 작성돼 있다.
+  - Editor UI는 `HarnessBeaconRecipe.Create()`를 사용하지만 CLI는 `WriteHarnessBeaconJob()`의 독립 복사본을 사용한다.
+  - validator와 Play Mode verifier는 Editor-side recipe 상수를 기준으로 판정한다.
 - Description:
-  - 구현 요약이 이 상태를 NOT VERIFIED로 공개한 것은 정확하다. 다만 현재 저장소 자체로는 기능을 실행하거나 Play Mode에서 검증할 수 없으므로 완료 상태로 볼 수 없다.
+  - 현재 값은 일치하지만 한쪽 recipe만 변경하면 Editor UI와 CLI가 다른 scene을 만들거나, CLI가 성공적으로 만든 결과를 Editor validator가 거부할 수 있다. 개발 자동화의 결정적 계약에 두 개의 변경 지점이 생겼다.
 - Recommended fix:
-  - `Clickable` layer, click router, Merchant prefab instance, scheduler, trade site, popup registry/UI, GoldManager와 DataManager item context를 문서대로 배선한다.
-  - H-01과 H-02를 먼저 해결한 뒤 missing script/reference와 Console 오류가 없는지 검증한다.
+  - versioned canonical recipe JSON/template을 두 front end가 함께 읽거나, 공통 pure recipe generator를 공유한다.
+  - CLI가 Job JSON을 출력해야 한다는 경계는 유지하되 Job 내용의 소유자는 하나로 만든다.
+  - canonical recipe와 schema를 함께 검증하는 drift test를 추가한다.
 - Impact if unfixed:
-  - 모든 Merchant code와 asset이 compile 대상에만 존재하고 gameplay에서는 도달 불가능하다.
+  - 향후 Tool·recipe 확장에서 CLI와 Editor 실행 결과가 조용히 분기하고, verifier 실패가 실제 기능 오류인지 정의 drift인지 구분하기 어려워진다.
 
-#### M-02 — 거래 총액의 unchecked `int` 곱셈이 재고만 소모하는 성공 transaction을 만들 수 있다
+#### M-02 — 공개된 Job schema와 runner가 실제로 수락하는 JSON 계약이 다르다
 
 - Severity: Medium
-- Category: Transaction correctness / Integer overflow
+- Category: Contract enforcement / Input validation
 - Location:
-  - `Assets/Scripts/Actor/MerchantTradeSite.cs:73-88`
-  - `Assets/Scripts/System/Inventory/WarehouseInventory.cs:8-23`
-  - `Assets/Scripts/Manager/GoldManager.cs:35-41`
-  - `Assets/Data/CSV/ItemData.csv:5`
+  - `Tools/NpcHarness/Schemas/harness-job.schema.json:5-170`
+  - `Assets/Editor/NpcHarness/Core/HarnessJobStorage.cs:20-30`
+  - `Assets/Editor/NpcHarness/Core/HarnessJobRunner.cs:133-196`
+  - `Assets/Editor/NpcHarness/Tools/ConfigureLineRendererTool.cs:9-36`
+  - `Assets/Editor/NpcHarness/UI/HarnessEditorWindow.cs:202-220`
 - Evidence:
-  - 거래 총액은 `info.SellPrice * quantity`로 `int` 안에서 계산된다.
-  - overflow 검증은 재고를 제거한 뒤에도 없다.
-  - 창고는 `int.MaxValue` 수량까지 정상적으로 보유할 수 있다.
-  - 현재 Carrot 가격 2에서 `2 * int.MaxValue`는 unchecked 연산으로 `-2`가 된다.
-  - `GoldManager.Add(-2)`는 아무 골드도 추가하지 않지만 `TryTrade()`는 `Success`를 반환한다.
+  - runner는 schema를 참조하지 않고 `JsonUtility.FromJson`으로 직접 역직렬화한다.
+  - schema는 required field와 `additionalProperties: false`를 정의하지만 `JsonUtility`는 누락값을 기본값으로 채우고 알 수 없는 field를 거부하지 않는다.
+  - schema는 `capVertices`와 `cornerVertices`를 0 이상으로 제한하지만 runtime validator는 points와 width만 검사한다.
+  - `active`, vector/color 구성요소 등 schema-required 값의 존재 여부도 runtime에서 강제되지 않는다.
 - Description:
-  - `GoldManager.Add` 내부의 `long` 포화 처리는 호출 전에 이미 overflow된 값을 복구할 수 없다. 유효한 API 입력만으로 재고 전량이 사라지고 골드는 증가하지 않는 경로가 존재한다.
+  - schema를 통과한 Job과 runner가 수락하는 Job이 동일 집합이라는 보장이 없다. 현재 고정 orchestrator 출력은 유효하지만 batch entry나 Editor 수동 Tool 입력은 문서화된 계약 밖의 JSON도 실행할 수 있다.
 - Recommended fix:
-  - 재고 제거 전에 `(long)SellPrice * quantity`로 총액을 계산하고 가격·범위를 검증한다.
-  - 총액 초과 시 transaction을 거부할지 `int.MaxValue`로 포화할지 계약을 정한 뒤, 내부 mutation 전에 결과를 확정한다.
+  - 역직렬화 전에 schema를 실제로 검증하거나, strict DTO parser와 명시적 required-field 검증을 사용한다.
+  - schema와 runtime validator의 제약을 단일 소스에서 생성하거나 parity test로 고정한다.
+  - 모든 수치에 finite/range 검증을 적용한다.
 - Impact if unfixed:
-  - 큰 거래에서 재고 손실, 잘못된 골드 증가와 거짓 `Success` 결과가 발생할 수 있다.
+  - 잘못된 Job이 예상치 못한 기본값으로 실행되거나 schema 소비자와 Unity runner가 서로 다른 결과를 내며, partial mutation 뒤에야 실패할 수 있다.
 
-#### M-03 — `TryTrade`가 표시 가격만 재검증하고 판매 허용 품목 자체는 검증하지 않는다
+#### M-03 — Play Mode verifier가 첫 성공 직후 종료해 “정확히 한 번”을 완전히 검증하지 못한다
 
 - Severity: Medium
-- Category: Domain validation / Responsibility boundary
+- Category: Verification correctness / Lifecycle
 - Location:
-  - `Assets/Scripts/Actor/MerchantTradeSite.cs:40-88`
-  - `Assets/Scripts/System/Inventory/WarehouseInventory.cs:8-23`
-  - `Assets/Data/CSV/ItemData.csv:2-6`
+  - `Assets/Editor/NpcHarness/Verification/HarnessPlayModeVerifier.cs:65-73`
+  - `Assets/Editor/NpcHarness/Verification/HarnessPlayModeVerifier.cs:75-93`
+  - `Assets/Editor/NpcHarness/Verification/HarnessPlayModeVerifier.cs:103-118`
+  - `PublicMD/Status/PROGRESS.md:59`
 - Evidence:
-  - `GetAvailableOffers()`는 `CropCatalog.Definitions`만 순회한다.
-  - `TryTrade()`는 `_cropCatalog`를 전혀 사용하지 않고, item data와 창고 재고가 있으면 판매한다.
-  - `WarehouseInventory.TryAdd()`는 모든 non-negative item ID를 수락한다.
-  - Water/Beer/Bread는 item table에 존재하며 `SellPrice`가 0이다.
-  - 해당 item이 창고에 들어간 뒤 `TryTrade()`에 전달되면 재고를 제거하고 골드 0을 추가한 뒤 `Success`를 반환한다.
+  - `SuccessCount > 0`이 되는 첫 Editor update에서 즉시 Play Mode 종료를 요청한다.
+  - `successCount != 1` 판정은 이미 종료된 뒤 실행된다.
+  - 첫 로그 이후 다음 frame이나 지연 callback에서 발생할 두 번째 로그는 관찰하기 전에 검증이 끝난다.
+  - log handler는 `LogType`이나 실제 Play Mode 진입 상태를 확인하지 않아 같은 문자열의 warning/error 또는 전환 중 editor log도 count할 수 있다.
 - Description:
-  - popup의 사전 필터는 read model일 뿐 domain transaction의 권한 검증을 대신할 수 없다. 가격은 재조회하지만, 요청된 item이 실제 Merchant offer인지와 양수 가격인지에 대해서는 popup 입력을 신뢰한다.
+  - 현재 생성되는 `HarnessTest.Start()`는 한 번만 로그하므로 정상 recipe에는 맞지만 verifier 자체는 문서가 주장하는 “30초 안에 정확히 한 번”을 일반적으로 증명하지 못한다.
 - Recommended fix:
-  - mutation 전에 item이 현재 Merchant 판매 catalog에 속하는지와 `SellPrice > 0`인지 검증한다.
-  - 허용되지 않은 item은 `InvalidRequest`로 반환하고 재고를 변경하지 않는다.
+  - 첫 성공 후 명시적인 observation window를 유지하고 그동안 두 번째 로그가 나오면 즉시 실패한다.
+  - 최소한 `LogType.Log`와 실제 Play Mode 상태를 확인한다.
+  - 가능하면 전역 문자열 대신 검증 대상 component의 명시적 signal이나 고유 run token을 사용한다.
 - Impact if unfixed:
-  - 비판매 품목이나 잘못 구성된 0/음수 가격 품목이 소모되고도 골드가 지급되지 않을 수 있다.
-
-#### M-04 — 퇴장 시작 프레임의 Update 순서에 따라 popup이 닫힌 직후 다시 열릴 수 있다
-
-- Severity: Medium
-- Category: Lifecycle race / Animator-state correctness
-- Location:
-  - `Assets/Scripts/Actor/MerchantCaravan.cs:71-78`
-  - `Assets/Scripts/System/Actor/MerchantVisual.cs:51-80`
-  - `Assets/Scripts/UI/PointerClickRouter.cs:48-64`
-  - `Assets/Animation/Merchant/Merchant.controller:95-99`
-- Evidence:
-  - dwell 종료 시 `MerchantCaravan.Update()`가 `SetLanded(false)`를 호출한다.
-  - 이 호출은 Animator bool을 변경하고 popup을 즉시 숨기지만 Animator를 즉시 평가하지 않는다.
-  - click router도 독립적인 `Update()`에서 Animator의 현재 state와 transition을 조회한다.
-  - 두 script에 execution order가 지정되지 않았다.
-  - Animator transition duration은 0이며, 같은 코드의 `ResetToFlying()`은 즉시 반영을 위해 명시적으로 `Animator.Update(0f)`를 호출한다.
-- Description:
-  - Caravan Update가 먼저 실행된 프레임에 router가 뒤이어 클릭을 처리하면 Animator 평가 전의 `Landed` state와 `IsInTransition == false`를 읽을 수 있다. 이 경우 `TryHide` 이후 같은 프레임에 popup이 다시 열리고, 이후에는 다시 닫을 호출이 없다.
-  - 이는 live Animator truth 선택 자체의 문제가 아니라 SetBool과 Animator 평가 사이의 시간 창 문제다.
-- Recommended fix:
-  - 퇴장 상태 변경을 반환하기 전에 Animator가 새 상태를 반영하도록 평가하거나, click query를 Animator 평가 이후 단계에서 수행해 기존 live-state 설계를 유지한다.
-  - dwell 만료와 동일 프레임의 world click을 별도 Play Mode 시나리오로 검증한다.
-- Impact if unfixed:
-  - 드물게 상단이 이륙하거나 비활성화된 뒤에도 거래 popup이 남을 수 있다.
-
-#### M-05 — popup 자동 닫힘의 필수 UI service 참조가 누락되어도 진단되지 않는다
-
-- Severity: Medium
-- Category: Serialized dependency safety
-- Location:
-  - `Assets/Scripts/System/Actor/MerchantVisual.cs:24-43,68-80`
-  - `Assets/Prefab/InGame/MerchantCaravan.prefab:72`
-- Evidence:
-  - prefab의 `_uiServiceSource`는 null이다.
-  - `Awake()`는 이를 `IUIService`로 cast하지만 null/잘못된 구현 여부를 검사하지 않는다.
-  - `SetLanded(false)`는 `_uiService != null`일 때만 popup을 닫으며, 실패 로그나 안전한 interaction 차단이 없다.
-  - 이 참조는 문서상 퇴장 시 popup을 닫는 유일한 seam이다.
-- Description:
-  - scene wiring에서 이 필드를 빠뜨리면 click router의 별도 UI service로 popup은 정상적으로 열리지만 Merchant가 떠날 때 닫히지 않는다. 결과가 정상처럼 보여 구성 오류를 조기에 발견하기 어렵다.
-- Recommended fix:
-  - `_uiServiceSource`를 필수 dependency로 Awake에서 한 번 검증하고 owner/field를 포함한 오류를 보고한다.
-  - 자동 닫힘을 보장할 수 없는 구성에서는 클릭을 허용하지 않는 안전 정책을 적용한다.
-- Impact if unfixed:
-  - popup이 Merchant 부재 중에도 남고 `TryTrade`를 계속 호출할 수 있으며, 누락된 Inspector 참조가 조용히 숨겨진다.
+  - 반복 로그 또는 잘못된 출처의 로그가 있어도 Play Mode 검증이 거짓 성공할 수 있다.
 
 ### Low
 
-#### L-01 — Player Gold 소유 문서가 신규 gameplay 호출자와 모순된다
+#### L-01 — result 파일 쓰기 실패가 batch 종료 경로 자체를 중단시킬 수 있다
 
 - Severity: Low
-- Category: Documentation drift / Cross-system ownership
+- Category: Failure handling / Process lifecycle
 - Location:
-  - `PublicMD/Systems/Player_Gold.md:11,79-80,102`
-  - `Assets/Scripts/Actor/MerchantTradeSite.cs:87`
+  - `Assets/Editor/NpcHarness/Batch/HarnessResultWriter.cs:7-21`
+  - `Assets/Editor/NpcHarness/Batch/HarnessBatchRunner.cs:23-43`
+  - `Assets/Editor/NpcHarness/Verification/HarnessPlayModeVerifier.cs:119-133`
+  - `Assets/Editor/NpcHarness/Verification/HarnessPlayModeVerifier.cs:170-187`
 - Evidence:
-  - 문서는 거래·가격이 구현되지 않았고 실제 gameplay 골드 획득 경로가 없으며 유일한 호출자가 `TestGoldWindow`라고 기록한다.
-  - 현재 `MerchantTradeSite`가 `GoldManager.Add`를 호출한다.
-  - 문서 자체의 갱신 조건은 “새 호출자 추가” 시 갱신하도록 명시한다.
+  - result writer는 임시 파일 없이 대상에 직접 쓴다.
+  - batch runner의 catch는 동일 writer와 동일 path를 다시 호출한 뒤에야 `EditorApplication.Exit(1)`에 도달한다.
+  - play verifier callback도 writer 예외를 보호하는 `finally` 없이 그 다음 줄에서 종료한다.
+  - Unity 명령에는 `-quit`가 없어 명시적 Exit에 도달하지 못하면 외부 timeout까지 남을 수 있다.
 - Description:
-  - Merchant 문서는 새 의존성을 설명하지만 Gold의 주 소유 문서는 이전 단계 상태에 머물러 있다.
+  - disk-full, permission, invalid path 같은 result-reporting 오류가 원래 실패를 가리고 batch process 종료를 지연시킨다.
 - Recommended fix:
-  - 현재 실행 흐름과 호출자 목록에 Merchant 판매를 추가하고 “상단 미구현/호출자 없음” 항목을 제거한다.
+  - process 종료를 `finally`에서 보장하고 result 기록 실패는 별도 Console 오류로 남긴다.
+  - result는 같은 directory의 임시 파일에 쓴 뒤 atomic replace/move한다.
 - Impact if unfixed:
-  - 후속 모집·경제 작업자가 실제 Gold mutation 경로를 잘못 파악할 수 있다.
+  - 실패 시 2~5분 timeout까지 Unity가 프로젝트 lock을 유지하고, 원래 오류 대신 “result 없음/timeout”만 남을 수 있다.
 
-#### L-02 — 10열 mapper 변경을 “하위 호환”이라고 기록했지만 9열 row는 거부된다
+#### L-02 — v0/v1 표기와 구조 문서 기준일이 일치하지 않는다
 
 - Severity: Low
-- Category: Documentation accuracy / Data migration
+- Category: Documentation drift
 - Location:
-  - `PublicMD/Status/PROGRESS.md:61`
-  - `Assets/Scripts/System/Mapper/ItemInfoCsvMapper.cs:7,30-37`
+  - `Tools/NpcHarness/README.md:1`
+  - `PublicMD/Status/PROGRESS.md:53`
+  - `Tools/NpcHarness/HarnessOrchestrator.cs:58,167`
+  - `PublicMD/ProjectStructure.md:3,83-84`
 - Evidence:
-  - `ColumnCount`는 10이고 `row.Length < 10`이면 parsing을 거부한다.
-  - 따라서 기존 9열 row는 호환되지 않는다.
-  - `<` 비교는 10열보다 많은 미래 row를 허용하는 forward tolerance일 뿐, 이전 9열 schema와의 backward compatibility가 아니다.
+  - README와 PROGRESS는 “NPC Harness v1”이라고 기록한다.
+  - CLI 오류와 classifier prompt는 여전히 “v0 harness”라고 출력한다.
+  - `ProjectStructure.md`는 2026-09-17 책임 항목이 추가됐지만 기준일은 2026-09-06이다.
 - Description:
-  - 현재 repository의 `ItemData.csv`는 모두 10열이라 즉시 runtime 오류는 없지만 완료 기록의 호환성 설명이 반대다.
+  - 실행 로그와 문서가 서로 다른 계약 버전을 가리킨다.
 - Recommended fix:
-  - 기록을 “추가 trailing column에는 관대하지만 기존 9열 row는 migration 필요”로 교정하거나, 실제로 9열을 허용하려면 기본 SellPrice 정책을 명시한다.
+  - version 상수를 한 곳에서 관리하고 CLI, prompt, schema title, README를 맞춘다.
+  - 구조 문서 기준일을 실제 갱신일에 맞춘다.
 - Impact if unfixed:
-  - 이전 형식의 item data를 재사용할 때 호환된다고 오판해 row 전체가 parsing에서 누락될 수 있다.
+  - 실패 로그와 Job/schema 호환성을 해석할 때 사용자가 어느 계약이 현재인지 혼동할 수 있다.
 
 ## Findings By File
 
-- `MerchantCaravan.cs`
-  - phase·이동·dwell 책임은 응집되어 있다.
-  - H-01의 inactive bootstrap이 최초 실행을 차단한다.
-- `MerchantArrivalScheduler.cs`
-  - 겹치지 않는 gap timer와 always-active owner 분리는 적절하다.
-  - 현재는 H-01 때문에 호출이 성공할 수 없다.
-- `MerchantVisual.cs`
-  - Animator 기반 click truth와 domain 비의존성은 적절하다.
-  - M-04의 평가 시점 race와 M-05의 UI dependency 검증 누락이 있다.
-- `MerchantTradeSite.cs`
-  - Gold·warehouse·가격 transaction의 단일 owner 배치는 적절하다.
-  - M-02의 overflow와 M-03의 판매 eligibility 누락을 수정해야 한다.
-- `MerchantPopup.cs`
-  - 가격을 계산하지 않고 intent만 전달하는 방향은 적절하다.
-  - H-02 때문에 실제 UI에서 거래를 시작할 수 없다.
-- `PointerClickRouter.cs`
-  - press frame에만 physics query를 수행하며 concrete domain을 모른다.
-  - hover router와 분리한 판단은 타당하다.
-- `WarehouseInventory.cs`
-  - `TryRemove`는 all-or-nothing이며 false 경로에서 상태를 변경하지 않는다.
-  - `IInventory`에 추가하지 않은 선택은 현재 계약에 맞다.
-- `DataManager.cs` / `IDataManager.cs`
-  - item lookup facade 추가로 깨지는 다른 구현체는 없다.
-  - scene의 `_itemDataContext`는 아직 미배선이다.
-- `ItemInfoCsvMapper.cs`
-  - 현재 10열 CSV를 정확히 parsing한다.
-  - L-02의 호환성 설명만 교정이 필요하다.
-- Merchant prefab/animation assets:
-  - local fileID와 cross-asset GUID는 정합하다.
-  - H-01의 inactive root와 M-01/M-05의 미배선 참조가 남아 있다.
+- `HarnessToolContext.cs`
+  - 경로 제한과 hierarchy 중복 검출은 적절하다.
+  - H-01의 loaded-scene 전체 보호와 target scene 재사용이 필요하다.
+- `EnsureMaterialTool.cs`
+  - shader allowlist와 값 비교는 적절하다.
+  - H-02의 occupied-path/type-mismatch 분기를 먼저 처리해야 한다.
+- `HarnessJobRunner.cs` / `HarnessJobStorage.cs`
+  - compile Step을 첫 위치로 제한하고 checkpoint job/path/hash/index를 검증한다.
+  - M-02의 strict JSON 계약은 보장하지 않는다.
+- `HarnessBeaconRecipe.cs` / `HarnessOrchestrator.cs`
+  - 현재 recipe 값은 서로 일치한다.
+  - M-01의 이중 소유가 후속 변경 drift를 만든다.
+- `HarnessPlayModeVerifier.cs`
+  - SessionState로 domain reload를 견디고 callback을 대칭 해제한다.
+  - M-03의 observation window와 L-01의 exit 보장이 필요하다.
+- `HarnessBatchRunner.cs` / `HarnessResultWriter.cs`
+  - 성공·실패 exit code 구분은 명확하다.
+  - result write 자체의 실패가 종료를 막는 L-01이 있다.
+- `HarnessEditorWindow.cs`
+  - Tool/Recipe UI 책임이 gameplay UI와 분리됐다.
+  - Editor update마다 SessionState JSON을 다시 parsing하는 비용은 존재하지만 Editor-only 범위라 finding으로 승격하지 않았다.
+- `ProjectSettings/TagManager.asset`
+  - `- ""` 변경은 빈 layer index를 명시적으로 보존하는 문법 교정이다.
+  - Layer 9 자체는 여전히 무명이며 Merchant/TownHall 문서가 기록한 기존 미완 click wiring은 해결하지 않는다.
 
 ## Cross-Cutting Findings
 
-- `MerchantVisual`과 `MerchantTradeSite` 사이의 직접 참조는 없다.
-- production에서 `GoldManager`를 참조하는 Merchant component는 `MerchantTradeSite` 하나뿐이다.
-- `TryRemove`는 `WarehouseInventory`에만 있으며 호출자는 `MerchantTradeSite` 하나다.
-- `IDataManager` 구현체는 `DataManager` 하나다.
-- `PopupType.Merchant`는 기존 `None` 뒤에 append됐다. `TradeResult`는 신규 enum이다.
-- `Pub.cs`의 직접 `ItemDataContext` 접근은 명시된 범위 제외 사항으로 finding 처리하지 않았다.
-- `InsufficientGold` 부재, 빈 `OnLandingImpact`, SpriteRenderer 부재는 각각 현재 sell-only 범위와 문서화된 placeholder hook이므로 finding이 아니다.
+- Harness는 NPC selector/action/provider/runtime에 의존하지 않으며 production worker 책임을 침범하지 않는다.
+- 기본 mutation root는 `Assets/TestOnly`로 제한되지만 H-01 때문에 Editor의 열린 scene 상태까지는 같은 경계로 제한되지 않는다.
+- `WriteCSharpScript`의 source는 일반 문자열이므로 Batch entrypoint 자체는 임의 TestOnly C#을 작성할 수 있다. 현재 외부 자연어 경로는 고정 source만 생성하므로 별도 finding으로 보지 않았지만, entrypoint를 다른 자동화가 소비할 경우 신뢰 경계를 문서화해야 한다.
+- Layer 9은 MerchantCaravan과 TownHall prefab에서 사용되지만 아직 이름과 `_clickableMask` scene 배선이 없다. 이는 이번 Harness 변경이 새로 만든 회귀가 아니라 Systems 문서에 기록된 기존 통합 작업이다.
+- compile checkpoint 이후 artifact 자체의 hash는 다시 확인하지 않는다. 현재 고정 source와 즉시 재실행 경로에서는 낮은 위험이지만, 향후 사용자 편집을 허용하면 checkpoint output integrity도 검증해야 한다.
 
 ## Positive Notes
 
-- actor state, presentation, click routing, UI와 trade domain의 책임이 명확히 분리됐다.
-- 거래 시 popup 표시 가격을 신뢰하지 않고 authoritative item data를 다시 조회한다.
-- `WarehouseInventory.TryRemove`는 입력 실패와 재고 부족 시 원자적으로 상태를 보존한다.
-- 클릭 입력은 press frame에만 `Physics2D.OverlapPoint`를 호출해 hot-path 비용이 작다.
-- visit interval, dwell, flight speed는 명명된 상수와 serialized tuning으로 관리되며 `OnValidate()` 보정이 있다.
-- enum은 재정렬 없이 append됐다.
-- 신규 script `.meta` GUID 중복은 0건이다.
-- prefab/controller/clip에서 duplicate anchor와 unresolved local/cross-asset reference는 0건이다.
-- `Visual` CRC32 `3966078249`가 모든 신규 clip binding과 일치한다.
-- landing event가 실제 `OnLandingImpact` method와 연결된다.
-- 관련 Markdown 링크는 모두 resolve된다.
-- `git diff --check HEAD^ HEAD`가 통과했고 최종 worktree는 clean이다.
-- `Assembly-CSharp.csproj`에는 신규 C# 10개가 모두 포함되어 있다.
+- 자연어 분류기는 read-only Codex 과정으로 격리되고 결과 action도 `CreateHarnessBeacon`/`Unsupported`로 제한된다.
+- external orchestrator가 LLM 생성 C#을 직접 쓰지 않고 고정 Job만 만든다.
+- asset path는 `Assets/TestOnly` 밖으로 탈출하는 `..`와 다른 root를 거부한다.
+- component와 shader allowlist가 실행 시에도 적용된다.
+- `WriteCSharpScript`를 첫 Step으로 제한해 compile/domain reload 전에 scene 변경이 일어나지 않게 했다.
+- checkpoint는 job ID, absolute job path, job JSON hash와 next index를 검증한다.
+- timeout 시 child process tree를 종료하고 stdout/stderr를 별도 기록한다.
+- callback subscription은 중복 제거 후 등록하며 완료 시 해제한다.
+- scene hierarchy lookup은 이름 중복을 조용히 선택하지 않고 실패한다.
+- 기존 값과 requested 값이 같으면 대부분 명확한 `NoChange`를 반환한다.
+- `git diff --check`가 통과했다.
+- Harness schema 2개는 JSON으로 정상 parsing된다.
+- 전체 asset `.meta` GUID 640개 중 중복은 0건이다.
+- 신규 `Assets/Editor/NpcHarness` 경로에 `.meta` 누락은 없다.
+- `.gitignore`는 `Tools/NpcHarness/bin`, `obj`, `.harness-runs`를 정상 제외한다.
+- 이전 `HarnessSceneBuilder` 잔존 참조는 없다.
+- generated `Assembly-CSharp-Editor.csproj`에 신규 Editor C# 27개가 모두 포함된다.
 
 ## Verification Limits
 
-- 사용자 지시와 read-only sandbox에 따라 파일을 수정하지 않았다.
-- `dotnet build`는 output artifact를 변경하므로 독립 재실행하지 않았다. `obj/Debug/Assembly-CSharp.dll`이 신규 source보다 늦고 csproj에 모든 신규 script가 포함된 것은 확인했지만, 보고된 0 warnings/0 errors 콘솔 결과 자체는 재현하지 않았다.
-- Unity Editor import와 Play Mode를 실행하지 않았다.
-- hand-authored prefab/controller/clip의 Unity importer 수용 여부는 정적 YAML 정합성까지만 확인했다.
-- animation 전환 시점, 동일 프레임 Update race, popup interaction과 두 번째 방문은 Play Mode에서 재현하지 못했다.
-- 실제 art, scene point 위치와 UI layout은 제공되지 않아 시각적 검증 대상에서 제외했다.
+- read-only sandbox이므로 파일을 수정하지 않았다.
+- `dotnet build`는 `bin/obj`를 변경하므로 독립 재실행하지 않았다. 구현 기록의 0 warnings/0 errors 결과와 기존 build artifact는 확인했지만 콘솔 결과 자체를 재현하지 않았다.
+- Unity Editor import, interactive compilation resume, Batch entrypoint와 Play Mode를 실행하지 않았다.
+- 원본 프로젝트가 열려 있었고 격리 복사본은 Package Manager 단계에서 실패했다는 구현 기록을 확인했다. 실제 scene 생성, 두 번째 idempotent 실행과 `HarnessSuccess` 판정은 `NOT VERIFIED`다.
+- H-01과 H-02의 Unity API 계약은 Unity 6 공식 문서와 대조했지만 실제 데이터 손실 시나리오는 실행하지 않았다.
+- `TagManager.asset`의 Unity importer 수용 여부는 정적 YAML과 reported isolated-start 관찰까지만 확인했다.
+- 기존 Merchant/TownHall gameplay 기능과 과거 평가 finding은 이번 집중 범위에서 재검증하지 않았다.
 
 ## Recommended Next Actions
 
-1. H-01의 inactive bootstrap을 해결하고 최초 방문과 두 번째 방문을 검증한다.
-2. H-02의 offer button binding 경로를 구현해 실제 UI에서 거래를 호출할 수 있게 한다.
-3. M-02와 M-03의 transaction preflight를 재고 mutation 전에 완료한다.
-4. M-04의 Animator 평가 시점 race를 제거한다.
-5. M-05의 필수 UI service 검증을 추가한다.
-6. M-01의 scene, layer, popup, Gold/DataManager 배선을 완료한다.
-7. Unity import 후 missing script/binding/parameter 오류를 확인하고 전체 Play Mode 시나리오를 실행한다.
-8. L-01과 L-02 문서 drift를 교정한다.
+1. H-01을 먼저 해결해 dirty target scene, clean active + dirty additive scene, 취소 선택을 모두 검증한다.
+2. H-02의 occupied-path 검사를 추가하고 잘못된 type·import 실패 asset이 승인 없이 교체되지 않는지 검증한다.
+3. HarnessBeacon recipe를 단일 canonical source로 통합한다.
+4. schema와 runner validation의 parity를 맞추고 missing/unknown/range 오류 Job에 대한 EditMode 검증을 추가한다.
+5. Play Mode verifier에 명시적 observation window와 log source/type 제한을 추가한다.
+6. result write 실패와 process exit를 분리해 모든 batch 경로가 즉시 종료되게 한다.
+7. v0/v1 표기와 구조 문서 기준일을 통일한다.
+8. Unity에서 최초 실행, compile resume, 두 번째 no-op 실행, overwrite 거부, overwrite 승인, compilation 실패, Play Mode timeout을 end-to-end로 검증한다.
+9. Harness와 별개로 Layer 9을 `Clickable`로 명명하고 Merchant/TownHall의 `_clickableMask` scene 배선을 완료한다.
 
 ## Final Verdict
 
 **Changes requested.**
 
-책임 배치와 deliberate architecture 선택은 승인 가능하다. 그러나 비활성 prefab bootstrap과 판매 UI 호출 경로라는 두 개의 High blocker 때문에 현재 구현은 실제 click-to-trade-to-gold 기능으로 실행될 수 없다. transaction validation과 Unity wiring까지 완료한 후 재검토가 필요하다.
+전체 책임 방향과 결정적 orchestration 설계는 타당하며 NPC/worker architecture에 대한 침범도 없다. 그러나 scene setup 교체와 Material 생성에서 두 개의 High 안전성 결함이 명시적 overwrite 가드를 우회한다. 이 결함을 해결하고 실제 Unity compilation-resume 및 Play Mode 전체 흐름을 검증하기 전에는 도구를 안전한 v1 구현으로 승인할 수 없다.

@@ -80,6 +80,8 @@ NPCManager / WorkerPool          생성과 조립
 | `Assets/Data/Struct` | 경계 사이를 전달하는 작은 request/result/value |
 | `Assets/Data/ScriptableObject/Script` | 공유 definition, cost와 tuning 타입 |
 | `Assets/TestOnly` | production이 의존하지 않는 수동 검증 도구 |
+| `Assets/Editor/NpcHarness` | 원자적 Unity Editor Tool, Job 실행기, UI Toolkit 창, Batch 진입점 |
+| `Tools/NpcHarness` | Codex 의도 분류, 고정 WorkOrder 검증과 Unity 명령행 실행을 소유하는 외부 개발 자동화 도구 |
 
 `Assets/_Recovery`는 Unity 복구 산출물이며 runtime 구조의 일부가 아니다. 현재 `.asmdef`가 없으므로 production과 TestOnly C#은 기본 `Assembly-CSharp`에 함께 컴파일된다.
 

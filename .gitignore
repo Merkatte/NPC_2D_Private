@@ -2,6 +2,7 @@
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
+[Bb]in/
 [Bb]uild/
 [Bb]uilds/
 [Ll]ogs/
@@ -32,6 +33,7 @@ Desktop.ini
 
 # Local Codex run logs
 .codex/agent-runs/
+.harness-runs/
 
 # Unity crash/autosave recovery snapshots
 Assets/_Recovery/
