@@ -50,6 +50,12 @@ Immediate next actions:
 
 ## Current Status
 
+### SquareCharacter 선언형 Scene Gate 전환 (2026-09-17)
+
+`HarnessTest.SquareCharacter.Structure`의 profile identity, scene path, 20개 check ID·기대값·메시지를 `Tools/NpcHarness/Profiles/square-character-structure.json`으로 이동했다. Unity 공통 evaluator는 `object-layout`, `exact-children`, `line-renderer-shape`, `line-renderer-material` 네 종류만 해석한다. loader는 raw JSON 단계에서 필수 필드·값 종류·중복·미등록 필드를 엄격히 확인한 뒤 manifest 경로·schema version·profile identity·중복 check ID·hierarchy path·타입별 입력을 검증한다. 기존 profile 이름과 version, runner 명령, GateResult 계약은 유지했다.
+
+검증: 열린 원본 Editor의 interactive bridge에서 실제 `HarnessTest.unity`를 읽어 20/20 `Pass`, 이전 하드코딩 GateResult와 check별 ID/status/message/expected/actual 완전 일치, changed files 0건을 확인했다. 격리 Unity 6000.3.9f1 EditMode 전체 47/47을 통과했으며 정상 fixture와 기존 고장 fixture 7개, 정상 raw manifest, 누락 scalar, 미등록 필드, malformed JSON, 중복 ID, 중복 expected child, 미지원 type, path traversal 회귀를 포함한다. 첫 격리 실행의 sandbox Unity Package Manager IPC failure는 후보 수정 없이 승인된 동일 명령을 재실행해 통과했다.
+
 ### 하네스 실전 오케스트레이션 — SquareCharacter (2026-09-17)
 
 자연어 요청 `HarnessTest 씬에 머리·몸통·양팔·양다리를 간단한 square로 만든다`를 루트 Codex가 bounded run `square-character-20260917-085918`로 해석했다. 씬 후보와 독립 구조 gate를 서로 겹치지 않는 쓰기 범위로 분리해 병렬 작업했고, 후보 작업자는 `Assets/TestOnly/HarnessTest.unity`만 수정했다. gate 쪽은 `HarnessTest.SquareCharacter.Structure` profile을 추가했으며 루트·정확한 6개 직속 자식·활성/컴포넌트 수·고정 transform·LineRenderer 5점·local space·loop·폭·corner/cap·sorting order·managed material을 20개 check로 판정한다.

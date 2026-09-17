@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NPC Harness Declarative Scene Gate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "profile", "profileVersion", "scenePath", "tolerance", "checks"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "profile": { "type": "string", "minLength": 1 },
+    "profileVersion": { "type": "integer", "minimum": 1 },
+    "scenePath": { "type": "string", "pattern": "^Assets/.+\\.unity$" },
+    "tolerance": { "type": "number", "exclusiveMinimum": 0 },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/check" }
+    }
+  },
+  "$defs": {
+    "vector3": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "z": { "type": "number" }
+      }
+    },
+    "quaternion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z", "w"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "z": { "type": "number" },
+        "w": { "type": "number" }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "path", "passMessage", "failMessage", "expected"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": {
+          "enum": ["object-layout", "exact-children", "line-renderer-shape", "line-renderer-material"]
+        },
+        "path": { "type": "string", "pattern": "^/" },
+        "passMessage": { "type": "string", "minLength": 1 },
+        "failMessage": { "type": "string", "minLength": 1 },
+        "expected": { "type": "string", "minLength": 1 },
+        "active": { "type": "boolean" },
+        "componentCount": { "type": "integer", "minimum": 0 },
+        "localPosition": { "$ref": "#/$defs/vector3" },
+        "localRotation": { "$ref": "#/$defs/quaternion" },
+        "localScale": { "$ref": "#/$defs/vector3" },
+        "children": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "enabled": { "type": "boolean" },
+        "useWorldSpace": { "type": "boolean" },
+        "loop": { "type": "boolean" },
+        "sortingOrder": { "type": "integer" },
+        "startWidth": { "type": "number", "exclusiveMinimum": 0 },
+        "endWidth": { "type": "number", "exclusiveMinimum": 0 },
+        "cornerVertices": { "type": "integer", "minimum": 0 },
+        "capVertices": { "type": "integer", "minimum": 0 },
+        "points": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/vector3" } },
+        "materialPath": { "type": "string", "pattern": "^Assets/" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "object-layout" } } },
+          "then": { "required": ["active", "componentCount", "localPosition", "localRotation", "localScale"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "exact-children" } } },
+          "then": { "required": ["children"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "line-renderer-shape" } } },
+          "then": {
+            "required": [
+              "enabled", "useWorldSpace", "loop", "sortingOrder", "startWidth", "endWidth",
+              "cornerVertices", "capVertices", "points"
+            ]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "line-renderer-material" } } },
+          "then": { "required": ["materialPath"] }
+        }
+      ]
+    }
+  }
+}

@@ -35,6 +35,7 @@
 | H-07 | 독립 Reviewer | read-only review contract와 blocking finding 처리 | completed |
 | H-08 | 선택적 멀티에이전트 | 비중첩 assignment, 결과 취합과 충돌 방지 | completed |
 | H-09 | 하네스 회귀 평가 | 정상·오염 fixture와 거짓 통과 방지 suite | completed |
+| H-10 | 선언형 scene gate | 공통 check registry와 JSON manifest 기반 구조 검증 | completed |
 
 ## 4. H-02 — GateResult 기반
 
@@ -138,6 +139,12 @@ GateResult의 실패 check만 근거로 수정 범위를 만들며, retry 상한
 - 검증 코드와 후보를 같은 Run에서 함께 변경하면 자기 채점이 된다. 하네스 변경은 별도 self-test 단계에서 검증한다.
 - Unity-generated `.csproj`는 checkout 간 계약이 아니다. runner project는 `.gitignore` 예외와 함께 추적한다.
 - Reviewer와 구현자가 같은 결론을 공유하면 독립성이 약해진다. Reviewer에는 원본 증거만 제공한다.
+
+## 9.1 H-10 — 선언형 scene gate
+
+사용자 요청마다 구조 Gate C#을 새로 만들지 않도록 `HarnessTest.SquareCharacter.Structure`의 20개 assertion을 `Tools/NpcHarness/Profiles/square-character-structure.json`으로 이동했다. Unity 공통 evaluator는 현재 `object-layout`, `exact-children`, `line-renderer-shape`, `line-renderer-material`만 허용한다. loader는 raw JSON의 필수 필드와 값 종류를 확인하고 중복·미등록 필드와 알 수 없는 check type을 evaluation 전 infrastructure error로 거부한다.
+
+profile 전용 C#은 manifest 경로와 runner entry point만 등록한다. check ID, expected 값, 메시지, hierarchy path와 LineRenderer 구조는 manifest가 소유한다. 새 요구가 기존 primitive로 표현되면 JSON profile만 추가하고, 표현할 수 없을 때만 별도 Run에서 공통 primitive를 확장한다.
 
 ## 10. 명시적 보류
 

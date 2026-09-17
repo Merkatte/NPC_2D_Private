@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -7,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 internal static class SquareCharacterValidator
 {
-    private const string RootName = "SquareCharacter";
+    internal const string ManifestPath = "Tools/NpcHarness/Profiles/square-character-structure.json";
 
     public static HarnessGateResult EvaluateStructure(string runId)
     {
@@ -20,28 +19,37 @@ internal static class SquareCharacterValidator
 
         try
         {
-            scene = SceneManager.GetSceneByPath(HarnessBeaconRecipe.ScenePath);
+            DeclarativeSceneGateManifest manifest = DeclarativeSceneGateManifestLoader.Load(ManifestPath);
+            if (manifest.profile != SquareCharacterGateRunner.Profile ||
+                manifest.profileVersion != SquareCharacterGateRunner.ProfileVersion)
+            {
+                throw new System.InvalidOperationException(
+                    $"Manifest identity {manifest.profile} v{manifest.profileVersion} does not match " +
+                    $"registered profile {SquareCharacterGateRunner.Profile} v{SquareCharacterGateRunner.ProfileVersion}.");
+            }
+
+            scene = SceneManager.GetSceneByPath(manifest.scenePath);
             if (!scene.IsValid() || !scene.isLoaded)
             {
-                SceneAsset sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(HarnessBeaconRecipe.ScenePath);
+                SceneAsset sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(manifest.scenePath);
                 if (!sceneAsset)
                 {
-                    throw new InvalidOperationException($"Scene does not exist: {HarnessBeaconRecipe.ScenePath}");
+                    throw new System.InvalidOperationException($"Scene does not exist: {manifest.scenePath}");
                 }
 
-                scene = EditorSceneManager.OpenScene(HarnessBeaconRecipe.ScenePath, OpenSceneMode.Additive);
+                scene = EditorSceneManager.OpenScene(manifest.scenePath, OpenSceneMode.Additive);
                 openedForValidation = true;
             }
 
             if (scene.isDirty)
             {
-                throw new InvalidOperationException(
-                    $"Target harness scene has unsaved changes: {HarnessBeaconRecipe.ScenePath}");
+                throw new System.InvalidOperationException(
+                    $"Target harness scene has unsaved changes: {manifest.scenePath}");
             }
 
-            return SquareCharacterStructureGate.Evaluate(runId, CollectObservation(scene));
+            return DeclarativeSceneStructureGate.Evaluate(runId, manifest, CollectObservation(scene, manifest));
         }
-        catch (Exception exception)
+        catch (System.Exception exception)
         {
             builder.SetInfrastructureError(exception.Message);
             return builder.Build();
@@ -55,143 +63,81 @@ internal static class SquareCharacterValidator
         }
     }
 
-    private static SquareCharacterStructureObservation CollectObservation(Scene scene)
+    private static DeclarativeSceneObservation CollectObservation(
+        Scene scene,
+        DeclarativeSceneGateManifest manifest)
     {
-        Material managedMaterial = AssetDatabase.LoadAssetAtPath<Material>(HarnessBeaconRecipe.MaterialPath);
-        List<GameObject> roots = new List<GameObject>();
+        List<DeclarativeSceneObjectObservation> objects = new List<DeclarativeSceneObjectObservation>();
         foreach (GameObject root in scene.GetRootGameObjects())
         {
-            if (root.name == RootName)
+            CollectObject(root.transform, string.Empty, objects);
+        }
+
+        HashSet<string> existingAssetPaths = new HashSet<string>(System.StringComparer.Ordinal);
+        foreach (DeclarativeSceneGateCheck check in manifest.checks)
+        {
+            if (!string.IsNullOrWhiteSpace(check.materialPath) &&
+                AssetDatabase.LoadAssetAtPath<Material>(check.materialPath))
             {
-                roots.Add(root);
+                existingAssetPaths.Add(check.materialPath);
             }
         }
 
-        if (roots.Count != 1)
-        {
-            string error = roots.Count == 0
-                ? "GameObject is missing: /SquareCharacter"
-                : "Hierarchy path is ambiguous because duplicate objects exist: /SquareCharacter";
-            return new SquareCharacterStructureObservation(
-                false,
-                error,
-                default,
-                default,
-                default,
-                false,
-                0,
-                Array.Empty<string>(),
-                managedMaterial,
-                Array.Empty<SquareCharacterPartObservation>());
-        }
-
-        Transform rootTransform = roots[0].transform;
-        string[] childNames = new string[rootTransform.childCount];
-        for (int index = 0; index < rootTransform.childCount; index++)
-        {
-            childNames[index] = rootTransform.GetChild(index).name;
-        }
-
-        SquareCharacterPartObservation[] parts = new SquareCharacterPartObservation[
-            SquareCharacterStructureGate.PartSpecifications.Length];
-        for (int index = 0; index < SquareCharacterStructureGate.PartSpecifications.Length; index++)
-        {
-            SquareCharacterPartSpecification specification =
-                SquareCharacterStructureGate.PartSpecifications[index];
-            parts[index] = CollectPart(rootTransform, specification.Name);
-        }
-
-        return new SquareCharacterStructureObservation(
-            true,
-            string.Empty,
-            ToObservation(rootTransform.localPosition),
-            ToObservation(rootTransform.localRotation),
-            ToObservation(rootTransform.localScale),
-            roots[0].activeSelf,
-            roots[0].GetComponents<Component>().Length,
-            childNames,
-            managedMaterial,
-            parts);
+        return new DeclarativeSceneObservation(objects, existingAssetPaths);
     }
 
-    private static SquareCharacterPartObservation CollectPart(Transform root, string partName)
+    private static void CollectObject(
+        Transform transform,
+        string parentPath,
+        ICollection<DeclarativeSceneObjectObservation> objects)
     {
-        List<Transform> matches = new List<Transform>();
-        for (int index = 0; index < root.childCount; index++)
+        string path = parentPath + "/" + transform.name;
+        string[] childNames = new string[transform.childCount];
+        for (int index = 0; index < transform.childCount; index++)
         {
-            Transform child = root.GetChild(index);
-            if (child.name == partName)
-            {
-                matches.Add(child);
-            }
+            childNames[index] = transform.GetChild(index).name;
         }
 
-        if (matches.Count != 1)
-        {
-            string path = $"/SquareCharacter/{partName}";
-            string error = matches.Count == 0
-                ? $"GameObject is missing: {path}"
-                : $"Hierarchy path is ambiguous because duplicate objects exist: {path}";
-            return new SquareCharacterPartObservation(
-                partName,
-                false,
-                error,
-                default,
-                default,
-                default,
-                false,
-                0,
-                0,
-                false,
-                false,
-                false,
-                0,
-                0f,
-                0f,
-                0,
-                0,
-                string.Empty,
-                Array.Empty<SquareCharacterVectorObservation>());
-        }
-
-        Transform transform = matches[0];
         LineRenderer[] lineRenderers = transform.GetComponents<LineRenderer>();
         LineRenderer lineRenderer = lineRenderers.Length == 1 ? lineRenderers[0] : null;
-        SquareCharacterVectorObservation[] points = lineRenderer
+        DeclarativeVector3[] points = lineRenderer
             ? CollectPoints(lineRenderer)
-            : Array.Empty<SquareCharacterVectorObservation>();
+            : System.Array.Empty<DeclarativeVector3>();
         string materialPath = lineRenderer && lineRenderer.sharedMaterial
             ? AssetDatabase.GetAssetPath(lineRenderer.sharedMaterial)
             : string.Empty;
-
-        return new SquareCharacterPartObservation(
-            partName,
-            true,
-            string.Empty,
+        objects.Add(new DeclarativeSceneObjectObservation(
+            path,
+            transform.gameObject.activeSelf,
+            transform.gameObject.GetComponents<Component>().Length,
             ToObservation(transform.localPosition),
             ToObservation(transform.localRotation),
             ToObservation(transform.localScale),
-            transform.gameObject.activeSelf,
-            transform.gameObject.GetComponents<Component>().Length,
-            lineRenderers.Length,
-            lineRenderer && lineRenderer.useWorldSpace,
-            lineRenderer && lineRenderer.loop,
-            lineRenderer && lineRenderer.enabled,
-            lineRenderer ? lineRenderer.sortingOrder : 0,
-            lineRenderer ? lineRenderer.startWidth : 0f,
-            lineRenderer ? lineRenderer.endWidth : 0f,
-            lineRenderer ? lineRenderer.numCornerVertices : 0,
-            lineRenderer ? lineRenderer.numCapVertices : 0,
-            materialPath,
-            points);
+            childNames,
+            new DeclarativeLineRendererObservation(
+                lineRenderers.Length,
+                lineRenderer && lineRenderer.enabled,
+                lineRenderer && lineRenderer.useWorldSpace,
+                lineRenderer && lineRenderer.loop,
+                lineRenderer ? lineRenderer.sortingOrder : 0,
+                lineRenderer ? lineRenderer.startWidth : 0f,
+                lineRenderer ? lineRenderer.endWidth : 0f,
+                lineRenderer ? lineRenderer.numCornerVertices : 0,
+                lineRenderer ? lineRenderer.numCapVertices : 0,
+                materialPath,
+                points)));
+
+        for (int index = 0; index < transform.childCount; index++)
+        {
+            CollectObject(transform.GetChild(index), path, objects);
+        }
     }
 
-    private static SquareCharacterVectorObservation[] CollectPoints(LineRenderer lineRenderer)
+    private static DeclarativeVector3[] CollectPoints(LineRenderer lineRenderer)
     {
         Vector3[] positions = new Vector3[lineRenderer.positionCount];
         lineRenderer.GetPositions(positions);
-        SquareCharacterVectorObservation[] points =
-            new SquareCharacterVectorObservation[positions.Length];
+        DeclarativeVector3[] points = new DeclarativeVector3[positions.Length];
         for (int index = 0; index < positions.Length; index++)
         {
             points[index] = ToObservation(positions[index]);
@@ -200,13 +146,13 @@ internal static class SquareCharacterValidator
         return points;
     }
 
-    private static SquareCharacterVectorObservation ToObservation(Vector3 value)
+    private static DeclarativeVector3 ToObservation(Vector3 value)
     {
-        return new SquareCharacterVectorObservation(value.x, value.y, value.z);
+        return new DeclarativeVector3(value.x, value.y, value.z);
     }
 
-    private static SquareCharacterQuaternionObservation ToObservation(Quaternion value)
+    private static DeclarativeQuaternion ToObservation(Quaternion value)
     {
-        return new SquareCharacterQuaternionObservation(value.x, value.y, value.z, value.w);
+        return new DeclarativeQuaternion(value.x, value.y, value.z, value.w);
     }
 }

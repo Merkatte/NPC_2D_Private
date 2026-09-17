@@ -304,6 +304,7 @@ logs/
 - `Tools/NpcHarness`는 자연어를 받지 않고 `verify`, `run-adapter`, `self-test`만 실행한다.
 - `.codex/skills/orchestrate-unity-work`가 직접·단일 worker·선택적 복수 worker, bounded remediation과 Reviewer 호출을 조정한다.
 - `.codex/skills/reviewing-unity-candidate`가 결정적 Pass 뒤 독립 read-only review를 수행한다.
+- `HarnessTest.SquareCharacter.Structure`의 profile identity, scene path와 20개 기대값을 JSON manifest로 분리했다. Unity의 공통 선언형 scene evaluator가 제한된 check type registry를 해석하므로 같은 구조 검사는 새 profile 전용 C# 판정기를 요구하지 않는다. loader는 평가 전에 raw JSON의 필수 필드, 값 종류, 중복·미등록 필드를 엄격히 거부한다.
 
 ### 제거·대체 완료
 

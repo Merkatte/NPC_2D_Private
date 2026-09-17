@@ -38,6 +38,8 @@
 
 구조 검증은 `HarnessBeacon.Structure`, Play Mode 검증은 `HarnessBeacon.PlayMode` gate profile과 `Schemas/gate-result.schema.json`을 사용합니다. `HarnessGateResult`는 Job 실행 성공과 결과물 검증 성공을 분리하고 check별 기대값·실제값을 기록합니다. Play Mode gate는 구조 check를 선행하고, 1초 관찰 구간 동안 `HarnessSuccess` 정확히 1회와 Error·Assert·Exception 0회를 요구합니다.
 
+`HarnessTest.SquareCharacter.Structure`는 첫 선언형 scene profile입니다. profile identity, scene path와 20개 구조 assertion은 `Profiles/square-character-structure.json`에 있고, 계약은 `Schemas/declarative-scene-gate.schema.json`이 소유합니다. loader는 raw JSON의 필수 필드·값 종류·중복·미등록 필드를 먼저 거부하고, Unity 쪽 공통 evaluator는 `object-layout`, `exact-children`, `line-renderer-shape`, `line-renderer-material` check만 해석합니다. 같은 종류의 구조 검증은 전용 C# Gate를 새로 만들지 않고 manifest를 추가해 구성합니다.
+
 ## 가드레일
 
 - 기본 변경 허용 범위는 `Assets/TestOnly`입니다.
@@ -64,12 +66,14 @@ Unity Editor를 닫은 뒤 저장소 루트에서 실행합니다. 현재 runner
 ./run-harness.sh self-test
 ./run-harness.sh verify --profile beacon-structure
 ./run-harness.sh verify --profile beacon-playmode
+./run-harness.sh verify --profile square-character-structure
 ```
 
 ```powershell
 run-harness.cmd self-test
 run-harness.cmd verify --profile beacon-structure
 run-harness.cmd verify --profile beacon-playmode
+run-harness.cmd verify --profile square-character-structure
 ```
 
 제한된 Unity Job adapter를 실행합니다.
