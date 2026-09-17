@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Project Sprites"
+  short_description: "Create sprites from approved project art references"
+  default_prompt: "Use $create-project-sprites to create this bounded sprite assignment from approved references."

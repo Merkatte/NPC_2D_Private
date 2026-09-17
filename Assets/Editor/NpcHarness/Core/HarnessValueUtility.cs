@@ -14,6 +14,11 @@ internal static class HarnessValueUtility
         return new Color(value.r, value.g, value.b, value.a);
     }
 
+    public static Color ToGradientStorageColor(Color value)
+    {
+        return (Color)(Color32)value;
+    }
+
     public static bool Approximately(Vector3 left, Vector3 right)
     {
         return (left - right).sqrMagnitude <= Tolerance * Tolerance;

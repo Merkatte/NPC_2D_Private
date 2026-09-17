@@ -14,6 +14,7 @@
 .vs/
 .vscode/
 *.csproj
+!Tools/NpcHarness/NpcHarness.csproj
 *.sln
 *.user
 *.userprefs

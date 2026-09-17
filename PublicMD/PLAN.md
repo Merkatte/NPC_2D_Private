@@ -48,6 +48,12 @@
 
 각 Seed Phase는 별도 승인과 검증을 거친다. 앞 단계의 완료 조건을 통과하기 전 다음 단계의 production 구현을 시작하지 않는다.
 
+### 활성 개발 인프라 Slice — Codex 작업 하네스
+
+gameplay Phase와 별도로, Codex 작업 결과를 독립적으로 검증하는 개발 하네스를 단계적으로 전환한다. 목표 책임과 신뢰 경계는 [`HARNESS_ARCHITECTURE.md`](HARNESS_ARCHITECTURE.md), 실제 구현 순서와 단계 상태는 [`Plans/NPC_Harness_Implementation_Plan.md`](Plans/NPC_Harness_Implementation_Plan.md)를 기준으로 한다.
+
+이 작업은 현재 gameplay Phase의 완료를 대신하지 않는다. 결정적 GateResult와 HarnessBeacon self-test를 먼저 완성한 뒤 cross-platform runner, 단일 작업 Skill, Reviewer와 선택적 멀티에이전트 순서로 진행한다.
+
 ## 2. 전체 로드맵
 
 ```text

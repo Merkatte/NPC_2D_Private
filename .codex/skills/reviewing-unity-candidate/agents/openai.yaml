@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Unity Candidate"
+  short_description: "Independently review a gated Unity candidate"
+  default_prompt: "Use $reviewing-unity-candidate to independently review this Unity candidate against its scope, acceptance criteria, diff, and gate evidence."

@@ -58,6 +58,20 @@ public static class HarnessBatchRunner
         throw new InvalidOperationException($"Required command-line argument is missing: {argumentName}");
     }
 
+    internal static string GetOptionalArgument(string argumentName, string defaultValue)
+    {
+        string[] arguments = Environment.GetCommandLineArgs();
+        for (int index = 0; index < arguments.Length - 1; index++)
+        {
+            if (arguments[index] == argumentName && !string.IsNullOrWhiteSpace(arguments[index + 1]))
+            {
+                return arguments[index + 1];
+            }
+        }
+
+        return defaultValue;
+    }
+
     private static bool HasArgument(string argumentName)
     {
         foreach (string argument in Environment.GetCommandLineArgs())

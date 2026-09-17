@@ -50,11 +50,59 @@ Immediate next actions:
 
 ## Current Status
 
+### 하네스 실전 오케스트레이션 — SquareCharacter (2026-09-17)
+
+자연어 요청 `HarnessTest 씬에 머리·몸통·양팔·양다리를 간단한 square로 만든다`를 루트 Codex가 bounded run `square-character-20260917-085918`로 해석했다. 씬 후보와 독립 구조 gate를 서로 겹치지 않는 쓰기 범위로 분리해 병렬 작업했고, 후보 작업자는 `Assets/TestOnly/HarnessTest.unity`만 수정했다. gate 쪽은 `HarnessTest.SquareCharacter.Structure` profile을 추가했으며 루트·정확한 6개 직속 자식·활성/컴포넌트 수·고정 transform·LineRenderer 5점·local space·loop·폭·corner/cap·sorting order·managed material을 20개 check로 판정한다.
+
+열려 있는 원본 Unity Editor가 project lock을 소유하면서 자동 refresh를 수행하지 않아 interactive request는 결과 없이 대기했다. 사용자 씬을 강제로 닫지 않고 현재 `Assets`, `Packages`, `ProjectSettings`를 저장소 밖 임시 Unity 프로젝트로 복제했으며, 후보 씬 SHA-256이 원본과 복제본에서 동일한 `4103b3f0318116e934d4c7f0fd853d23ffd171c7415f84de6e40360f52da015d`임을 확인했다. Unity 6000.3.9f1 배치 실행은 exit 0과 `Pass` GateResult를 냈고 20/20 check가 통과했다. gate failure fixture EditMode 테스트도 8/8 통과했다. 마지막 독립 read-only Reviewer는 실제 전체 scene diff, GateResult, raw Unity log와 digest를 대조해 blocking finding 없이 `Approve`했다. remediation budget 1회 중 사용 0회로 run을 `Accepted` 처리했다.
+
+증거는 Git 제외 실행 장부 `.harness-runs/square-character-20260917-085918`에 보존했다. 이 검증은 직렬화 구조를 확정하며, 현재 열려 있는 원본 Editor의 in-memory 상태와 최종 렌더링 외형을 시각적으로 확인한 것은 아니다.
+
+### Codex 작업 하네스 H-04~H-09 — runner·Skill·Reviewer·회귀 suite (2026-09-17)
+
+외부 prototype의 자연어 2분류, Codex 재호출과 고정 WorkOrder를 제거하고 `Tools/NpcHarness`를 명시적 `verify`, `run-adapter`, `self-test`만 제공하는 cross-platform runner로 교체했다. tracked `NpcHarness.csproj`, root `.cmd`/`.sh`, Unity 경로 override와 macOS/Windows Hub 탐색, `0` 성공·`1` candidate 실패·`2` infrastructure failure·`64` usage error 계약을 추가했다. GateResult 누락·손상, 빈 checks, top-level/check 불일치, 요청 run/profile/version 불일치, read-only profile의 changedFiles와 process exit 불일치를 모두 거짓 통과 대신 infrastructure failure로 거부한다.
+
+신규 `.codex/skills/orchestrate-unity-work`가 루트 Codex의 scope, 직접/단일/선택적 복수 worker 결정, 실제 diff 취합, 결정적 gate 수락, bounded remediation과 Reviewer 흐름을 소유한다. worker는 `WorkerAssignment`/`WorkerReport`로 제한되며 보고는 candidate일 뿐이다. non-overlap writable path만 병렬화하고 Unity scene·prefab·meta와 Editor 실행은 직렬화한다. gate 실패 수정은 사전 retry budget과 failure signature로 제한하며 후보 수정 시 이전 GateResult와 ReviewResult를 만료한다.
+
+신규 `.codex/skills/reviewing-unity-candidate`는 결정적 Pass 뒤 호출되는 독립 read-only Reviewer다. 원 요청, 확정 scope/acceptance, 관련 문서, actual diff, 동일 후보 GateResult와 로그만 받고 구현자 결론은 받지 않는다. `Approve`, `ChangesRequested`, `InsufficientEvidence`와 evidence-backed finding을 반환하며 결정적 gate를 덮어쓰지 않는다. 독립 forward-test에서 passing gate를 보존하면서 pooled projectile 파괴와 false-positive test를 각각 blocking `Major`로 검출했다. forward-test feedback으로 acceptance coverage를 `Satisfied`/`Violated`/`NotCovered`로 분리하고 freshness evidence와 reviewed documents를 명시했다.
+
+검증: runner build 경고·오류 0, self-test 19/19, 전체 Editor 하네스 C# 직접 compile 성공, 순수 Gate fixture 23/23, 두 Skill `quick_validate` 통과, Reviewer forward-test 통과, shell 문법·저장소 외 cwd wrapper·`git diff --check` 통과. 현재 Unity Editor가 열려 있어 외부 Batch end-to-end는 lock을 exit 2로 거부하는 smoke만 확인했고, 실제 GateResult 파일 생성·exit 일치와 Windows 실기 실행은 `NOT VERIFIED`다.
+
+### Codex 작업 하네스 H-03 — HarnessBeacon Play Mode gate 통합 (2026-09-17)
+
+기존 Play Mode verifier를 `HarnessBeacon.PlayMode` profile의 `HarnessGateResult`로 전환했다. 구조 gate의 check를 그대로 선행 증거로 포함하고, runtime에서는 `runtime.timeout`, `runtime.completed-by-gate`, `runtime.success-log-count`, `runtime.error-log-count`를 각각 판정한다. 첫 성공 로그 직후 종료하던 기존 동작은 두 번째 성공 로그를 놓칠 수 있어 1초 관찰 구간 뒤 종료하도록 교정했다. Play Mode의 `Error`, `Assert`, `Exception`은 모두 실패로 집계하며 첫 오류 메시지를 actual evidence에 남긴다. 깨진 SessionState와 이미 실행 중인 Play Mode처럼 검증 환경을 성립시킬 수 없는 경우는 candidate `Fail`과 구분해 `InfrastructureError`로 반환한다.
+
+초기 실제 실행에서는 활성 gameplay scene의 저장되지 않은 변경 때문에 구조 검증이 scene 교체를 거부했다. 사용자 작업을 저장하거나 폐기하도록 강제하지 않도록, 구조 validator는 `HarnessTest.unity`를 읽기 전용 additive로 열고 자신이 연 경우에만 닫도록 수정했다. Play Mode gate는 `EditorSceneManager.playModeStartScene`을 HarnessTest scene으로 임시 지정하고 종료 후 이전 값을 복원한다. 따라서 관련 없는 dirty scene은 그대로 보존하며, 검증 대상 HarnessTest scene 자체가 dirty인 경우에만 재현 불가능한 상태로 보고 실패한다.
+
+HarnessBeacon Recipe 재실행에서는 `configure-arrow`가 이미 같은 LineRenderer를 다른 값으로 오판했다. Unity의 LineRenderer gradient 색상은 `Color32` 정밀도로 저장되어 요청값 `(1, 0.72, 0.08, 1)`이 `(255, 184, 20, 255)`로 양자화되지만, 기존 코드는 양자화 전 float와 `0.0001` tolerance로 비교한 것이 원인이었다. `ToGradientStorageColor`를 추가해 비교와 쓰기를 Unity의 실제 저장 정밀도에 맞췄고 대응 EditMode 회귀 테스트를 추가했다. 명시적 overwrite 없이 같은 Recipe를 재실행하면 no-op이어야 한다.
+
+Unity 수집부와 순수 구조 판정부를 분리하고 정상, beacon·HarnessTest·LineRenderer·material·Main Camera 누락/불일치, 성공 로그 0회·2회, 오류 로그, timeout, 예기치 않은 종료와 infrastructure propagation fixture를 추가했다. 전체 Gate fixture 23개가 통과했고, Unity 6000.3.9f1 참조를 사용한 전체 `Assets/Editor/NpcHarness/**/*.cs` 컴파일도 오류 없이 통과했다. 실제 HarnessBeacon scene은 구조 검증 후 PlayMode에 진입해 화살표를 표시하고, `HarnessSuccess` 1회와 오류 로그 0건을 관찰한 뒤 자동 종료했으며 `Harness Play Mode gate passed.`를 확인했다.
+
+고장 fixture는 tracked Unity asset을 손상시키지 않는 observation으로 각 대응 check ID의 `Fail`을 검증했다.
+
+### Codex 작업 하네스 H-02 — 결정적 GateResult 기반 (2026-09-17)
+
+Job 실행 결과와 독립된 검증 계약 `HarnessGateResult`와 판정 builder를 추가했다. 결과는 `Pass`/`Fail`/`InfrastructureError`를 구분하고, profile/version, check별 expected/actual/message, artifact, changed file, 시작·종료 시간을 보존한다. 중복 check ID는 결과의 의미를 흐리지 않도록 즉시 거부한다. 대응 JSON 계약은 `Tools/NpcHarness/Schemas/gate-result.schema.json`에 추가했다.
+
+기존 `HarnessBeaconValidator`는 단일 성공 문자열 대신 `HarnessBeacon.Structure` profile의 check별 GateResult를 만들며, 새 `HarnessBeaconGateRunner.VerifyStructureFromCommandLine`이 Batch 결과와 exit code를 연결한다. 기존 Job result writer는 두 결과 형식을 각각 직렬화하도록 확장했다. Play Mode verifier의 GateResult 통합은 H-03에서 이어서 수행했다.
+
+검증: 순수 C# contract와 NUnit 테스트 assembly 컴파일 성공. 정상 PASS, check FAIL과 expected/actual 보존, infrastructure failure 분리, 0개 check의 거짓 PASS 방지, 중복 ID 거부, artifact·changed file 보존의 6개 테스트를 독립 runner와 Unity EditMode Test Runner에서 모두 실행해 전부 통과했다. `gate-result.schema.json` JSON 파싱 성공. Unity 6000.3.9f1 참조로 전체 `Assets/Editor/NpcHarness/**/*.cs`를 독립 컴파일해 오류 0건.
+
+H-02는 완료했다. H-03에서 Play Mode의 성공 로그와 오류 로그 판정을 같은 GateResult에 합치고 정상·고장 fixture 검증을 진행한다.
+
+### Codex 작업 하네스 목표 아키텍처 정의 (2026-09-17)
+
+기존 `NPC Harness v1`을 범용 하네스나 오케스트레이터로 간주하지 않고, 고정 HarnessBeacon Recipe를 실행하는 초기 prototype으로 재분류했다. 목표 구조에서는 프로젝트 Skill로 호출된 루트 Codex가 유일한 오케스트레이터이며, 하네스는 자연어 해석이나 에이전트 지휘를 소유하지 않고 후보 결과물의 정책·컴파일·Unity 구조·Play Mode·증거를 독립적으로 `PASS`/`FAIL` 판정한다.
+
+신규 `PublicMD/HARNESS_ARCHITECTURE.md`에 오케스트레이터, 선택적 작업 에이전트, Unity 작업 어댑터, 결정적 gate와 읽기 전용 Reviewer의 책임을 분리했다. RunManifest/WorkerReport/GateResult/ReviewResult 계약, 상태 전이, 병렬 쓰기 제한, gate 신뢰 경계, 실패·재시도, 실행 증거와 cross-platform 조건을 목표 아키텍처로 기록했다. `ProjectStructure.md`, `PublicMD/README.md`, `Tools/NpcHarness/README.md`의 routing과 현재 prototype 설명도 교정했다.
+
+현재 코드는 변경하지 않았다. 다음 단계는 별도 구현 계획에서 결정적 `GateResult`와 HarnessBeacon 정상·의도적 실패 fixture를 먼저 정의하고, Codex 재호출·2분류 WorkOrder·Windows 전용 launcher를 cross-platform gate runner로 교체하는 범위를 승인받는 것이다.
+
 ### NPC Harness v1 — 원자적 Unity Editor Tool과 Job 오케스트레이션 (2026-09-17)
 
 `Assets/Editor/NpcHarness`에 작은 결정적 Tool과 이를 순서대로 실행하는 JSON Job Runner를 추가했다. 최초 Tool 집합은 `WriteCSharpScript`, `EnsureScene`, `EnsureGameObject`, `SetTransform`, `EnsureComponent`, `EnsureMaterial`, `ConfigureCamera`, `ConfigureLineRenderer`, `SaveScene`이다. 기본 변경 범위는 `Assets/TestOnly`, 초기 컴포넌트 허용목록은 `Camera`/`LineRenderer`/`HarnessTest`, Shader 허용목록은 `Sprites/Default`로 제한했다. 없는 대상은 만들고 동일 상태는 no-op으로 처리하며, 다른 기존 값은 Editor의 명시적 토글이나 CLI `--allow-overwrite` 없이는 변경하지 않는다.
 
-`WriteCSharpScript`는 항상 Job의 첫 Step으로 제한했다. 파일을 작성하면 `Library/NpcHarness`에 Job hash와 다음 Step을 체크포인트로 남긴다. 열린 Editor에서는 컴파일·도메인 리로드 후 자동 재개하고, Batch에서는 종료 코드 10을 반환해 외부 오케스트레이터가 같은 Job으로 Unity를 재실행한다. UI Toolkit 기반 `Tools > NPC Harness` 창에는 원자적 Tool JSON의 Template/Validate/Execute 탭과 HarnessBeacon Recipe의 Preview/Run/Validate/Play Verify 동작을 제공한다.
+`WriteCSharpScript`는 항상 Job의 첫 Step으로 제한했다. 파일을 작성하면 `Library/NpcHarness`에 Job hash와 다음 Step을 체크포인트로 남긴다. 열린 Editor에서는 컴파일·도메인 리로드 후 자동 재개하고, Batch에서는 종료 코드 10을 반환해 외부 prototype runner가 같은 Job으로 Unity를 재실행한다. UI Toolkit 기반 `Tools > NPC Harness` 창에는 원자적 Tool JSON의 Template/Validate/Execute 탭과 HarnessBeacon Recipe의 Preview/Run/Validate/Play Verify 동작을 제공한다.
 
 기존 `Assets/TestOnly/Editor/HarnessSceneBuilder.cs` 단일 구현은 제거하고 동일 결과를 HarnessBeacon Recipe로 옮겼다. Recipe는 `Assets/TestOnly/HarnessTest.cs`, `HarnessTest.unity`, 직교 Main Camera, `HarnessTest`+`LineRenderer`가 붙은 상향 화살표 `HarnessBeacon`, `HarnessBeaconLine.mat`을 생성·검증한다. Play Mode 검증은 30초 안에 `HarnessSuccess`가 정확히 한 번 기록되는지 확인하며, Editor 실행에서는 Unity를 종료하지 않고 Batch 실행에서만 결과 파일과 프로세스 종료 코드를 사용한다.
 

@@ -25,6 +25,7 @@ AGENTS.md
 | `SPEC.md` | 확정 요구사항과 미결정 질문 |
 | `PLAN.md` | 구현 roadmap, 우선순위와 완료 조건 |
 | `ARCHITECTURE.md` | 여러 기능에 공통인 설계 원칙과 의존 방향 |
+| `HARNESS_ARCHITECTURE.md` | Codex 오케스트레이션과 독립된 결정적 Unity 작업 검증 경계 |
 | `ProjectStructure.md` | 전체 구조 지도와 작업별 기능 문서 routing |
 | `CodeConvention.md` | 모든 C# 코드에 공통인 작성·검증 규칙 |
 

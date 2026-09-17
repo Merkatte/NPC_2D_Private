@@ -58,6 +58,7 @@ internal sealed class ConfigureLineRendererTool : IHarnessTool
         }
 
         Color color = HarnessValueUtility.ToColor(step.color);
+        Color gradientStorageColor = HarnessValueUtility.ToGradientStorageColor(color);
         bool isDifferent = lineRenderer.useWorldSpace != step.useWorldSpace ||
                            lineRenderer.loop != step.loop ||
                            lineRenderer.alignment != LineAlignment.View ||
@@ -68,8 +69,8 @@ internal sealed class ConfigureLineRendererTool : IHarnessTool
                            !HarnessValueUtility.Approximately(lineRenderer.endWidth, step.width) ||
                            lineRenderer.numCapVertices != step.capVertices ||
                            lineRenderer.numCornerVertices != step.cornerVertices ||
-                           !HarnessValueUtility.Approximately(lineRenderer.startColor, color) ||
-                           !HarnessValueUtility.Approximately(lineRenderer.endColor, color) ||
+                           !HarnessValueUtility.Approximately(lineRenderer.startColor, gradientStorageColor) ||
+                           !HarnessValueUtility.Approximately(lineRenderer.endColor, gradientStorageColor) ||
                            lineRenderer.sortingOrder != step.sortingOrder ||
                            lineRenderer.sharedMaterial != material;
         HarnessToolResult permission = HarnessValueUtility.RequireOverwrite(
@@ -97,8 +98,8 @@ internal sealed class ConfigureLineRendererTool : IHarnessTool
         lineRenderer.endWidth = step.width;
         lineRenderer.numCapVertices = step.capVertices;
         lineRenderer.numCornerVertices = step.cornerVertices;
-        lineRenderer.startColor = color;
-        lineRenderer.endColor = color;
+        lineRenderer.startColor = gradientStorageColor;
+        lineRenderer.endColor = gradientStorageColor;
         lineRenderer.sortingOrder = step.sortingOrder;
         lineRenderer.sharedMaterial = material;
         EditorSceneManager.MarkSceneDirty(target.scene);

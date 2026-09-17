@@ -1,0 +1,4 @@
+interface:
+  display_name: "Orchestrate Unity Work"
+  short_description: "Coordinate, gate, and review Unity candidates"
+  default_prompt: "Use $orchestrate-unity-work to choose the smallest executor, gate the Unity candidate, and independently review it when policy or structural risk requires."

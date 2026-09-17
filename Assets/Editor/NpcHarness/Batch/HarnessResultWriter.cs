@@ -6,9 +6,19 @@ internal static class HarnessResultWriter
 {
     public static void Write(string resultPath, HarnessJobResult result)
     {
+        WriteJson(resultPath, JsonUtility.ToJson(result, true), result.state, result.message);
+    }
+
+    public static void Write(string resultPath, HarnessGateResult result)
+    {
+        WriteJson(resultPath, JsonUtility.ToJson(result, true), result.status, result.message);
+    }
+
+    private static void WriteJson(string resultPath, string json, string state, string message)
+    {
         if (string.IsNullOrWhiteSpace(resultPath))
         {
-            Debug.LogError($"Harness result path is missing: {result.state} / {result.message}");
+            Debug.LogError($"Harness result path is missing: {state} / {message}");
             return;
         }
 
@@ -18,6 +28,6 @@ internal static class HarnessResultWriter
             Directory.CreateDirectory(directory);
         }
 
-        File.WriteAllText(resultPath, JsonUtility.ToJson(result, true), new UTF8Encoding(false));
+        File.WriteAllText(resultPath, json, new UTF8Encoding(false));
     }
 }

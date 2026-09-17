@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NPC Harness Gate Result v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "runId",
+    "profile",
+    "profileVersion",
+    "success",
+    "status",
+    "message",
+    "checks",
+    "artifacts",
+    "changedFiles",
+    "startedAtUtc",
+    "finishedAtUtc"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runId": { "type": "string", "minLength": 1 },
+    "profile": { "type": "string", "minLength": 1 },
+    "profileVersion": { "type": "integer", "minimum": 1 },
+    "success": { "type": "boolean" },
+    "status": { "enum": ["Pass", "Fail", "InfrastructureError"] },
+    "message": { "type": "string", "minLength": 1 },
+    "checks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/check" }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "changedFiles": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "startedAtUtc": { "type": "string", "minLength": 1 },
+    "finishedAtUtc": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "check": {
+      "type": "object",
+      "required": ["id", "success", "status", "message", "expected", "actual"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "success": { "type": "boolean" },
+        "status": { "enum": ["Pass", "Fail"] },
+        "message": { "type": "string" },
+        "expected": { "type": "string" },
+        "actual": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["kind", "path"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

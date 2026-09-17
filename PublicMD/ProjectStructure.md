@@ -1,6 +1,6 @@
 # Project Structure
 
-> 문서 기준일: 2026-09-06
+> 문서 기준일: 2026-09-17
 > 이 문서는 전체 구조 지도와 기능 문서 라우팅만 소유한다. 구체 클래스 흐름과 Unity 배선은 `PublicMD/Systems`의 해당 문서가 소유한다.
 
 ## 1. 구조 한눈에 보기
@@ -35,6 +35,7 @@ NPCManager / WorkerPool          생성과 조립
 | NPC 표현 | [NPC Presentation](Systems/NPC_Presentation.md) | 이동 animation, Flip, 건물·도구 표현 |
 | UI | [UI](Systems/UI.md) | popup, hover, gauge, pointer routing |
 | 생성과 pooling | [Spawning and Pooling](Systems/Spawning_and_Pooling.md) | role 생성, prefab catalog, worker pool |
+| Codex 작업 하네스 | [Harness Architecture](HARNESS_ARCHITECTURE.md) | Skill 기반 오케스트레이션, 결정적 gate, 실행 증거, Reviewer 경계 |
 
 판단·action, 농사, 전투는 독립 세부 기능이 4개 이상이므로 폴더 `README.md`가 필요한 leaf 문서를 다시 선택한다. 상위 README에는 전체 파일 목록이 없다.
 
@@ -60,6 +61,7 @@ NPCManager / WorkerPool          생성과 조립
 | animation·Flip·도구 | NPC Presentation | 이를 호출하는 action 문서 |
 | popup·hover·gauge·click 감지 | UI | 데이터를 제공하는 domain 문서 |
 | role·prefab·pool | Spawning and Pooling | 생성되는 role 문서 |
+| Codex Skill·작업 위임·Unity 자동 검증 | Harness Architecture | 변경 대상 gameplay 기능 문서, 필요 시 ARCHITECTURE |
 
 상위 게임 규칙을 설계하거나 변경하면 먼저 `Game_Plan.md`와 `SPEC.md`를 읽는다. 여러 기능의 책임이나 의존 방향을 바꾸면 `ARCHITECTURE.md`, C#을 수정하면 `CodeConvention.md`를 추가로 읽는다.
 
@@ -80,8 +82,8 @@ NPCManager / WorkerPool          생성과 조립
 | `Assets/Data/Struct` | 경계 사이를 전달하는 작은 request/result/value |
 | `Assets/Data/ScriptableObject/Script` | 공유 definition, cost와 tuning 타입 |
 | `Assets/TestOnly` | production이 의존하지 않는 수동 검증 도구 |
-| `Assets/Editor/NpcHarness` | 원자적 Unity Editor Tool, Job 실행기, UI Toolkit 창, Batch 진입점 |
-| `Tools/NpcHarness` | Codex 의도 분류, 고정 WorkOrder 검증과 Unity 명령행 실행을 소유하는 외부 개발 자동화 도구 |
+| `Assets/Editor/NpcHarness` | 제한된 원자적 Unity 편집 Tool, Job 실행기, 검증기, UI Toolkit 창과 Batch 진입점 |
+| `Tools/NpcHarness` | 자연어 해석 없이 명시적인 `verify`, `run-adapter`, `self-test`를 제공하는 cross-platform 결정적 runner |
 
 `Assets/_Recovery`는 Unity 복구 산출물이며 runtime 구조의 일부가 아니다. 현재 `.asmdef`가 없으므로 production과 TestOnly C#은 기본 `Assembly-CSharp`에 함께 컴파일된다.
 

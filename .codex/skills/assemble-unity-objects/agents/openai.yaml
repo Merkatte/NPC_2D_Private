@@ -1,0 +1,4 @@
+interface:
+  display_name: "Assemble Unity Objects"
+  short_description: "Build Unity objects through approved harness tools"
+  default_prompt: "Use $assemble-unity-objects to turn this bounded object assignment into a tool-only Unity candidate."

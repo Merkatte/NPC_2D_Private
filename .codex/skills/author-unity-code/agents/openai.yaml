@@ -1,0 +1,4 @@
+interface:
+  display_name: "Author Unity Code"
+  short_description: "Implement scoped Unity C# changes by project rules"
+  default_prompt: "Use $author-unity-code to implement this bounded Unity C# assignment and return a candidate report."

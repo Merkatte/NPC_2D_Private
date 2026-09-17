@@ -32,29 +32,6 @@ internal sealed class ProcessRunner
         return await RunAsync(startInfo, standardInput, standardOutputPath, standardErrorPath, timeout);
     }
 
-    public async Task<ProcessResult> RunAsync(
-        string executablePath,
-        string rawArguments,
-        string? standardInput,
-        string standardOutputPath,
-        string standardErrorPath,
-        TimeSpan timeout)
-    {
-        ProcessStartInfo startInfo = new ProcessStartInfo
-        {
-            FileName = executablePath,
-            Arguments = rawArguments,
-            UseShellExecute = false,
-            RedirectStandardInput = standardInput != null,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true,
-            WorkingDirectory = Environment.CurrentDirectory,
-        };
-
-        return await RunAsync(startInfo, standardInput, standardOutputPath, standardErrorPath, timeout);
-    }
-
     private static async Task<ProcessResult> RunAsync(
         ProcessStartInfo startInfo,
         string? standardInput,

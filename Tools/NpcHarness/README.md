@@ -1,14 +1,20 @@
-# NPC Harness v1
+# NPC Harness
 
-NPC Harness는 확률적인 자연어 분류와 결정적인 Unity 변경을 분리하는 작은 개발 자동화 예제입니다.
+> 현재 상태: 결정적 cross-platform gate runner와 제한된 Unity 작업 adapter입니다.
+>
+> 루트 Codex가 오케스트레이터이며, 이 프로그램은 자연어를 해석하거나 에이전트를 지휘하지 않습니다. 전체 책임 경계는 [Codex 작업 하네스 아키텍처](../../PublicMD/HARNESS_ARCHITECTURE.md)를 기준으로 합니다.
+
+`Tools/NpcHarness`는 명시적인 명령만 실행하고 Unity가 만든 결과 계약과 process exit code를 검증합니다. 이전의 Codex 재호출, 자연어 2분류와 고정 WorkOrder 생성 경로는 제거했습니다.
 
 ## 구조
 
 ```text
-자연어 요청
-  -> Tools/NpcHarness: Codex 읽기 전용 의도 분류
-  -> Harness Job JSON: 허용된 Tool과 고정 파라미터
-  -> Assets/Editor/NpcHarness: 검증, 실행, 체크포인트, 결과 판정
+사용자 요청
+  -> 루트 Codex + project Skill: scope, worker, candidate 조정
+  -> Tools/NpcHarness: 명시적인 gate 또는 adapter 실행
+  -> Assets/Editor/NpcHarness: Unity 구조·PlayMode 검증 또는 제한된 Tool 실행
+  -> GateResult: check별 expected/actual과 Pass/Fail/InfrastructureError
+  -> 필요한 경우 독립 read-only Reviewer
 ```
 
 `Assets/Editor/NpcHarness`의 Tool은 각각 한 가지 작업만 수행합니다.
@@ -30,6 +36,8 @@ NPC Harness는 확률적인 자연어 분류와 결정적인 Unity 변경을 분
 - 상향 화살표 모양의 `HarnessBeacon`
 - Play Mode에서 정확히 한 번 출력되는 `HarnessSuccess`
 
+구조 검증은 `HarnessBeacon.Structure`, Play Mode 검증은 `HarnessBeacon.PlayMode` gate profile과 `Schemas/gate-result.schema.json`을 사용합니다. `HarnessGateResult`는 Job 실행 성공과 결과물 검증 성공을 분리하고 check별 기대값·실제값을 기록합니다. Play Mode gate는 구조 check를 선행하고, 1초 관찰 구간 동안 `HarnessSuccess` 정확히 1회와 Error·Assert·Exception 0회를 요구합니다.
+
 ## 가드레일
 
 - 기본 변경 허용 범위는 `Assets/TestOnly`입니다.
@@ -48,32 +56,36 @@ Unity 메뉴에서 `Tools > NPC Harness`를 엽니다.
 
 Unity Editor가 열려 있을 때는 이 창을 사용합니다.
 
-## 외부 오케스트레이터에서 실행
+## 외부 runner에서 실행
 
-Unity Editor를 닫은 뒤 저장소 루트에서 실행합니다.
+Unity Editor를 닫은 뒤 저장소 루트에서 실행합니다. 현재 runner target은 `net10.0`이므로 .NET 10 SDK가 필요하며 외부 NuGet package는 사용하지 않습니다.
 
-```powershell
-run-harness.cmd "TestOnly에 HarnessBeacon을 만들고 실행해줘"
+```sh
+./run-harness.sh self-test
+./run-harness.sh verify --profile beacon-structure
+./run-harness.sh verify --profile beacon-playmode
 ```
 
-변경 없이 WorkOrder만 확인합니다.
-
 ```powershell
-run-harness.cmd "TestOnly에 HarnessBeacon을 만들고 실행해줘" --dry-run
+run-harness.cmd self-test
+run-harness.cmd verify --profile beacon-structure
+run-harness.cmd verify --profile beacon-playmode
 ```
 
-대화형 승인을 생략합니다.
+제한된 Unity Job adapter를 실행합니다.
 
-```powershell
-run-harness.cmd "TestOnly에 HarnessBeacon을 만들고 실행해줘" --approve
+```sh
+./run-harness.sh run-adapter --job path/to/harness-job.json
 ```
 
 기존 관리 대상의 다른 값을 덮어쓰는 것은 사용자가 다음 옵션을 직접 추가해야 합니다.
 
-```powershell
-run-harness.cmd "TestOnly에 HarnessBeacon을 만들고 실행해줘" --approve --allow-overwrite
+```sh
+./run-harness.sh run-adapter --job path/to/harness-job.json --allow-overwrite
 ```
 
-실행 기록은 Git에서 제외된 `.harness-runs/`에 저장됩니다. Unity 위치가 기본 Hub 경로와 다르면 `NPC_HARNESS_UNITY_PATH`에 `Unity.exe` 전체 경로를 지정합니다.
+공통 옵션은 `--unity`, `--run-id`, `--output`, `--timeout`입니다. Unity 위치는 명시적 `--unity`, `NPC_HARNESS_UNITY_PATH`, 플랫폼별 Unity Hub 기본 경로 순으로 결정합니다.
 
-현재 자연어 분류기가 지원하는 작업은 `CreateHarnessBeacon` 하나뿐입니다. 다른 요청은 Unity를 실행하기 전에 `Unsupported`로 종료됩니다.
+종료 코드는 `0` 성공, `1` candidate/adapter 실패, `2` infrastructure failure, `64` 잘못된 사용법입니다. 결과 파일 누락·손상, 빈 check, top-level/check 불일치, 요청한 run/profile/version 불일치, read-only gate의 변경 보고와 exit/result 불일치는 모두 infrastructure failure로 거부합니다.
+
+실행 기록은 Git에서 제외된 `.harness-runs/<runId>/`에 저장됩니다. 같은 프로젝트를 Unity Editor가 열고 있으면 batch runner는 lock을 infrastructure failure로 보고 실행하지 않습니다. 이때는 Editor 창을 사용하거나 Editor를 닫고 외부 runner를 실행합니다.
