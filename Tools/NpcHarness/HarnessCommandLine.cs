@@ -17,6 +17,13 @@ internal sealed record RunAdapterCommand(
     TimeSpan Timeout,
     bool AllowOverwrite) : HarnessCommand;
 
+internal sealed record VerifyScopeCommand(
+    string PolicyPath,
+    string AssignmentPath,
+    string AssignmentSha256,
+    string? RunId,
+    string? OutputPath) : HarnessCommand;
+
 internal sealed record SelfTestCommand : HarnessCommand;
 
 internal static class HarnessCommandLine
@@ -42,6 +49,8 @@ internal static class HarnessCommandLine
                 return TryParseVerify(args, out command, out error);
             case "run-adapter":
                 return TryParseAdapter(args, out command, out error);
+            case "verify-scope":
+                return TryParseScope(args, out command, out error);
             case "self-test":
                 if (args.Count != 1)
                 {
@@ -67,7 +76,8 @@ internal static class HarnessCommandLine
         writer.WriteLine("NPC Harness deterministic runner");
         writer.WriteLine();
         writer.WriteLine("Commands:");
-        writer.WriteLine("  verify --profile <beacon-structure|beacon-playmode> [options]");
+        writer.WriteLine("  verify --profile <beacon-structure|beacon-playmode|square-character-structure> [options]");
+        writer.WriteLine("  verify-scope --policy <path> --assignment <path> --assignment-sha256 <hash> [options]");
         writer.WriteLine("  run-adapter --job <path> [options]");
         writer.WriteLine("  self-test");
         writer.WriteLine();
@@ -80,6 +90,11 @@ internal static class HarnessCommandLine
         writer.WriteLine("run-adapter options:");
         writer.WriteLine("  --allow-overwrite    Permit adapter overwrites allowed by Unity policy");
         writer.WriteLine();
+        writer.WriteLine("verify-scope options:");
+        writer.WriteLine("  --policy <path>      Tracked SkillPolicy JSON under Tools/NpcHarness/SkillPolicies");
+        writer.WriteLine("  --assignment <path>  WorkerAssignment JSON under the selected run directory");
+        writer.WriteLine("  --assignment-sha256  Root-recorded pre-delegation WorkerAssignment SHA-256");
+        writer.WriteLine();
         writer.WriteLine("Unity can also be set with NPC_HARNESS_UNITY_PATH.");
     }
 
@@ -88,7 +103,14 @@ internal static class HarnessCommandLine
         out HarnessCommand? command,
         out string error)
     {
-        if (!TryReadOptions(args, 1, allowJob: false, allowOverwrite: false, out ParsedOptions options, out error))
+        if (!TryReadOptions(
+                args,
+                1,
+                allowJob: false,
+                allowOverwrite: false,
+                allowScope: false,
+                out ParsedOptions options,
+                out error))
         {
             command = null;
             return false;
@@ -115,7 +137,14 @@ internal static class HarnessCommandLine
         out HarnessCommand? command,
         out string error)
     {
-        if (!TryReadOptions(args, 1, allowJob: true, allowOverwrite: true, out ParsedOptions options, out error))
+        if (!TryReadOptions(
+                args,
+                1,
+                allowJob: true,
+                allowOverwrite: true,
+                allowScope: false,
+                out ParsedOptions options,
+                out error))
         {
             command = null;
             return false;
@@ -145,11 +174,64 @@ internal static class HarnessCommandLine
         return true;
     }
 
+    private static bool TryParseScope(
+        IReadOnlyList<string> args,
+        out HarnessCommand? command,
+        out string error)
+    {
+        if (!TryReadOptions(
+                args,
+                1,
+                allowJob: false,
+                allowOverwrite: false,
+                allowScope: true,
+                out ParsedOptions options,
+                out error))
+        {
+            command = null;
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(options.PolicyPath) ||
+            string.IsNullOrWhiteSpace(options.AssignmentPath) ||
+            string.IsNullOrWhiteSpace(options.AssignmentSha256))
+        {
+            command = null;
+            error = "verify-scope requires --policy, --assignment, and --assignment-sha256.";
+            return false;
+        }
+
+        if (options.AssignmentSha256.Length != 64 ||
+            options.AssignmentSha256.Any(character => !Uri.IsHexDigit(character)))
+        {
+            command = null;
+            error = "--assignment-sha256 must be a 64-character SHA-256 value.";
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.Profile) ||
+            !string.IsNullOrWhiteSpace(options.UnityPath))
+        {
+            command = null;
+            error = "--profile and --unity are not valid for verify-scope.";
+            return false;
+        }
+
+        command = new VerifyScopeCommand(
+            options.PolicyPath,
+            options.AssignmentPath,
+            options.AssignmentSha256.ToLowerInvariant(),
+            options.RunId,
+            options.OutputPath);
+        return true;
+    }
+
     private static bool TryReadOptions(
         IReadOnlyList<string> args,
         int startIndex,
         bool allowJob,
         bool allowOverwrite,
+        bool allowScope,
         out ParsedOptions options,
         out string error)
     {
@@ -193,6 +275,15 @@ internal static class HarnessCommandLine
                 case "--job" when allowJob:
                     options.JobPath = value;
                     break;
+                case "--policy" when allowScope:
+                    options.PolicyPath = value;
+                    break;
+                case "--assignment" when allowScope:
+                    options.AssignmentPath = value;
+                    break;
+                case "--assignment-sha256" when allowScope:
+                    options.AssignmentSha256 = value;
+                    break;
                 case "--unity":
                     options.UnityPath = value;
                     break;
@@ -224,6 +315,9 @@ internal static class HarnessCommandLine
     {
         public string? Profile { get; set; }
         public string? JobPath { get; set; }
+        public string? PolicyPath { get; set; }
+        public string? AssignmentPath { get; set; }
+        public string? AssignmentSha256 { get; set; }
         public string? UnityPath { get; set; }
         public string? RunId { get; set; }
         public string? OutputPath { get; set; }

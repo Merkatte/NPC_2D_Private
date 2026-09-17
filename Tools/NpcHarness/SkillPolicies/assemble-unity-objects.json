@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "policyId": "assemble-unity-objects",
+  "policyVersion": 1,
+  "executionKind": "harness-job",
+  "gateProfile": "SkillPolicy.AssembleUnityObjects.Scope",
+  "gateProfileVersion": 1,
+  "candidateRules": {
+    "Assets/TestOnly/**": [".unity", ".mat", ".meta"]
+  },
+  "forbiddenCandidatePaths": [
+    "Assets/Editor/**",
+    "Assets/Scripts/**",
+    "Assets/Data/**",
+    "Packages/**",
+    "ProjectSettings/**",
+    "Tools/**",
+    "PublicMD/**",
+    ".codex/**"
+  ],
+  "forbiddenAssetExtensions": [
+    ".cs",
+    ".png",
+    ".psd",
+    ".aseprite"
+  ],
+  "allowedTools": [
+    "EnsureScene",
+    "EnsureGameObject",
+    "SetTransform",
+    "EnsureComponent",
+    "EnsureMaterial",
+    "ConfigureCamera",
+    "ConfigureLineRenderer",
+    "SaveScene"
+  ],
+  "acceptanceManifestRoots": [
+    "Tools/NpcHarness/Profiles"
+  ]
+}

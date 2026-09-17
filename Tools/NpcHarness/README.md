@@ -38,6 +38,8 @@
 
 구조 검증은 `HarnessBeacon.Structure`, Play Mode 검증은 `HarnessBeacon.PlayMode` gate profile과 `Schemas/gate-result.schema.json`을 사용합니다. `HarnessGateResult`는 Job 실행 성공과 결과물 검증 성공을 분리하고 check별 기대값·실제값을 기록합니다. Play Mode gate는 구조 check를 선행하고, 1초 관찰 구간 동안 `HarnessSuccess` 정확히 1회와 Error·Assert·Exception 0회를 요구합니다.
 
+`verify-scope`는 `SkillPolicies/*.json`의 고정 역할 경계와 run별 `WorkerAssignment`를 함께 읽어 assignment가 정책의 경로별 확장자와 Tool 범위를 좁히는지, 역할별 실행 계약과 실제 Git 변경이 일치하는지를 `GateResult`로 기록합니다. `harness-job`은 Job·component·mutation path·adapter receipt, `direct-code`는 선언된 C#·소유 문서·신규 companion `.meta`, `raster-art`는 단일 exact PNG 출력, chunk CRC·critical chunk·scanline filter를 포함한 IDAT decode 구조, 크기·alpha·frame grid와 reference `.meta` 기반 strict import spec을 검사합니다. 루트 오케스트레이터가 작업 위임 전에 assignment SHA-256을 기록하고 검증 때 `--assignment-sha256`으로 전달하므로, 작업 뒤 assignment나 baseline dirty 예외를 바꿔 금지 변경을 숨길 수 없습니다. 현재 정책은 `assemble-unity-objects`, `author-unity-code`, `create-project-sprites` v1입니다. Scope Gate는 작업별 기능·scene·시각 acceptance를 대신하지 않으며 둘 다 통과해야 합니다.
+
 `HarnessTest.SquareCharacter.Structure`는 첫 선언형 scene profile입니다. profile identity, scene path와 20개 구조 assertion은 `Profiles/square-character-structure.json`에 있고, 계약은 `Schemas/declarative-scene-gate.schema.json`이 소유합니다. loader는 raw JSON의 필수 필드·값 종류·중복·미등록 필드를 먼저 거부하고, Unity 쪽 공통 evaluator는 `object-layout`, `exact-children`, `line-renderer-shape`, `line-renderer-material` check만 해석합니다. 같은 종류의 구조 검증은 전용 C# Gate를 새로 만들지 않고 manifest를 추가해 구성합니다.
 
 ## 가드레일
@@ -67,6 +69,11 @@ Unity Editor를 닫은 뒤 저장소 루트에서 실행합니다. 현재 runner
 ./run-harness.sh verify --profile beacon-structure
 ./run-harness.sh verify --profile beacon-playmode
 ./run-harness.sh verify --profile square-character-structure
+./run-harness.sh verify-scope \
+  --policy Tools/NpcHarness/SkillPolicies/<role-skill>.json \
+  --assignment .harness-runs/<run-id>/assignments/<assignment>.json \
+  --assignment-sha256 <root-recorded-sha256> \
+  --run-id <run-id>
 ```
 
 ```powershell
@@ -74,6 +81,7 @@ run-harness.cmd self-test
 run-harness.cmd verify --profile beacon-structure
 run-harness.cmd verify --profile beacon-playmode
 run-harness.cmd verify --profile square-character-structure
+run-harness.cmd verify-scope --policy Tools/NpcHarness/SkillPolicies/<role-skill>.json --assignment .harness-runs/<run-id>/assignments/<assignment>.json --assignment-sha256 <root-recorded-sha256> --run-id <run-id>
 ```
 
 제한된 Unity Job adapter를 실행합니다.

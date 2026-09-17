@@ -11,12 +11,25 @@ Act as a candidate-producing graphics worker, not as the root orchestrator or fi
 
 Require a bounded assignment containing:
 
-- `assignmentId`, objective, intended in-game use, and asset family;
+- `assignmentId`, `runId`, `roleSkill`, `policyVersion`, objective, intended in-game use, and asset family;
 - approved reference assets or authority to select the nearest existing family references;
-- output or staging path and exact writable paths;
+- `requiredContext`, output path, exact `writablePaths`, and explicit `forbiddenPaths`;
+- `allowedTools`, `forbiddenOperations`, root-recorded `baselineCommit`, and `baselineDirtyFiles`;
+- worker-result and log `artifactPaths` under the assigned run;
 - required dimensions, transparency, framing, animation frames, slicing, and naming when applicable;
 - expected Unity import settings or a reference `.meta` from which to derive them;
-- observable acceptance conditions and report requirements.
+- observable `acceptanceConditions`, `preliminaryChecks`, and `reportRequirements`.
+
+The root must serialize this assignment as WorkerAssignment v1 under
+`.harness-runs/<runId>/assignments/`, select
+`Tools/NpcHarness/SkillPolicies/create-project-sprites.json` v1, and set
+`execution.kind` to `raster-art`. The execution contract records the asset family,
+intended use, exact PNG output, approved references, paired import-reference `.meta`,
+import-spec artifact path, dimensions, alpha requirement, and frame grid. Read
+`Tools/NpcHarness/Schemas/worker-assignment.schema.json` for the assignment contract and
+`Tools/NpcHarness/Schemas/sprite-import-spec.schema.json` for the persisted import specification.
+The root records the assignment SHA-256 before delegation and supplies it separately.
+Do not edit the assignment or recompute a replacement digest.
 
 If required assignment fields such as the exact staging filename or writable path are absent, return `status: Blocked` with `reasonCode: AssignmentIncomplete`. If several existing families conflict and the assignment does not identify the intended one, use `reasonCode: ArtDirectionAmbiguous`. Do not merge unrelated styles or declare a new global art direction.
 
@@ -50,6 +63,12 @@ Check properties that can be measured deterministically:
 
 Visual style similarity remains probabilistic. Report it as review-required rather than calling it a deterministic pass.
 
+After file verification, return the candidate, import specification, and evidence to the root. Do not run the trust-boundary Scope Gate yourself. The root must run:
+
+`./run-harness.sh verify-scope --policy Tools/NpcHarness/SkillPolicies/create-project-sprites.json --assignment <assignment-path> --assignment-sha256 <pre-delegation-hash> --run-id <runId>`
+
+The root then runs the separate task-specific acceptance and visual review. Never modify either gate to fit the candidate.
+
 ## Return a WorkerReport
 
 Return one structured report with:
@@ -60,6 +79,13 @@ Return one structured report with:
   "roleSkill": "create-project-sprites",
   "status": "Candidate | Blocked | Failed",
   "reasonCode": "None | AssignmentIncomplete | ArtDirectionAmbiguous | GenerationFailure | VerificationFailure",
+  "assignmentSha256": "root-supplied pre-delegation digest",
+  "scopeGateResultPath": "pending root verification",
+  "acceptanceGate": {
+    "manifestPath": "",
+    "profile": "",
+    "profileVersion": 1
+  },
   "changedFiles": [],
   "checksRun": [],
   "evidence": [],

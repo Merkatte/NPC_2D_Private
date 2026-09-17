@@ -12,12 +12,22 @@ Act as a candidate-producing code worker, not as the root orchestrator. Implemen
 Require a bounded assignment containing:
 
 - a stable `assignmentId` and one concrete `objective`;
-- observable `acceptanceSlice` conditions;
+- observable `acceptanceConditions`;
 - exact `writablePaths` and `forbiddenPaths`;
 - separate `artifactPaths` for authorized build logs or run evidence outside the candidate;
-- the baseline commit plus an explicit pre-existing dirty-path list, including an explicit empty list when none overlap;
-- required project documents and candidate inputs;
+- `baselineCommit` plus `baselineDirtyFiles`, using an explicit empty object when none overlap;
+- `requiredContext` project documents and candidate inputs;
 - preliminary checks and report requirements.
+
+The root must serialize this assignment as WorkerAssignment v1 under
+`.harness-runs/<runId>/assignments/`, select
+`Tools/NpcHarness/SkillPolicies/author-unity-code.json` v1, and set
+`execution.kind` to `direct-code`. `execution.sourcePaths` lists every C# candidate,
+`execution.owningDocumentPaths` lists any assigned Systems documents, and
+`execution.compileRequired` must be true. Read
+`Tools/NpcHarness/Schemas/worker-assignment.schema.json` for the exact contract.
+The root records the assignment SHA-256 before delegation and supplies it separately.
+Do not edit the assignment or recompute a replacement digest.
 
 If the assignment omits a safe writable boundary or exact source paths, requires an unapproved product decision, or conflicts with existing user changes, return `status: Blocked` with `reasonCode: AssignmentIncomplete`. Do not broaden the assignment yourself.
 
@@ -58,6 +68,12 @@ Normal compiler output under `Library`, `Temp`, or an assignment-authorized temp
 
 Compilation does not prove scene wiring or runtime behavior. Record `NOT_VERIFIED` for checks that require Unity Editor, Play Mode, external authority, or another worker.
 
+After preliminary verification, return the candidate and evidence to the root. Do not run the trust-boundary Scope Gate yourself. The root must run:
+
+`./run-harness.sh verify-scope --policy Tools/NpcHarness/SkillPolicies/author-unity-code.json --assignment <assignment-path> --assignment-sha256 <pre-delegation-hash> --run-id <runId>`
+
+The root then runs the assignment's separate task-specific acceptance gate. Never modify either gate to fit the candidate.
+
 ## Return a WorkerReport
 
 Return one structured report with:
@@ -68,6 +84,13 @@ Return one structured report with:
   "roleSkill": "author-unity-code",
   "status": "Candidate | Blocked | Failed",
   "reasonCode": "None | AssignmentIncomplete | ScopeConflict | UnapprovedDecision | VerificationFailure",
+  "assignmentSha256": "root-supplied pre-delegation digest",
+  "scopeGateResultPath": "pending root verification",
+  "acceptanceGate": {
+    "manifestPath": "",
+    "profile": "",
+    "profileVersion": 1
+  },
   "changedFiles": [],
   "checksRun": [],
   "evidence": [],

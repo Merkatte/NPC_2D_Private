@@ -19,10 +19,72 @@ internal sealed class HarnessRunner
         return command switch
         {
             VerifyCommand verify => VerifyAsync(verify),
+            VerifyScopeCommand scope => Task.FromResult(VerifyScope(scope)),
             RunAdapterCommand adapter => RunAdapterAsync(adapter),
             SelfTestCommand => Task.FromResult(HarnessSelfTest.Run(_repositoryRoot)),
             _ => throw new InvalidOperationException($"Unsupported command type: {command.GetType().Name}"),
         };
+    }
+
+    private int VerifyScope(VerifyScopeCommand command)
+    {
+        DateTime startedAtUtc = DateTime.UtcNow;
+        string policyRelativePath = NormalizeTrackedPolicyPath(command.PolicyPath);
+        string policyPath = ScopePathPolicy.ResolveInsideRepository(_repositoryRoot, policyRelativePath);
+        SkillPolicyDefinition policy = SkillPolicyContracts.ReadPolicy(policyPath);
+
+        string assignmentRelativePath = command.AssignmentPath.Replace('\\', '/');
+        string assignmentPath = ScopePathPolicy.ResolveInsideRepository(_repositoryRoot, assignmentRelativePath);
+        string actualAssignmentSha256 = SkillScopeGate.ComputeSha256(assignmentPath);
+        WorkerAssignmentDefinition assignment = SkillPolicyContracts.ReadAssignment(assignmentPath);
+        string runId = RunPaths.ValidateOrCreateRunId(command.RunId ?? assignment.RunId);
+        if (!string.Equals(runId, assignment.RunId, StringComparison.Ordinal))
+        {
+            throw new ArgumentException(
+                $"Requested run ID {runId} does not match assignment runId {assignment.RunId}.");
+        }
+
+        string runDirectory = RunPaths.GetRunDirectory(_repositoryRoot, runId);
+        RequirePathInside(
+            assignmentPath,
+            Path.Combine(runDirectory, "assignments"),
+            "WorkerAssignment path");
+        string resultPath = RunPaths.ResolveOutput(
+            _repositoryRoot,
+            command.OutputPath,
+            Path.Combine(runDirectory, "gate-results", policy.PolicyId + "-scope.json"));
+        RequirePathInside(resultPath, Path.Combine(runDirectory, "gate-results"), "Scope GateResult path");
+
+        ScopeGateEvaluation evaluation = SkillScopeGate.Evaluate(
+            _repositoryRoot,
+            policyRelativePath,
+            policy,
+            assignment,
+            command.AssignmentSha256,
+            actualAssignmentSha256);
+        SkillScopeGateResultWriter.Write(
+            resultPath,
+            runId,
+            policy,
+            evaluation,
+            startedAtUtc,
+            DateTime.UtcNow,
+            policyRelativePath,
+            assignmentRelativePath);
+
+        GateResultSummary result = HarnessResultContracts.ReadGateResult(resultPath);
+        if (!string.Equals(result.RunId, runId, StringComparison.Ordinal) ||
+            !string.Equals(result.Profile, policy.GateProfile, StringComparison.Ordinal) ||
+            result.ProfileVersion != policy.GateProfileVersion)
+        {
+            throw new InvalidDataException("Generated scope GateResult identity is inconsistent.");
+        }
+
+        Console.WriteLine($"{result.Outcome}: {result.Message}");
+        Console.WriteLine($"Result: {Path.GetRelativePath(_repositoryRoot, resultPath)}");
+        return result.Outcome == GateOutcome.Pass
+            ? Program.SuccessExitCode
+            : Program.CandidateFailureExitCode;
     }
 
     private async Task<int> VerifyAsync(VerifyCommand command)
@@ -368,6 +430,34 @@ internal sealed class HarnessRunner
         if (IsUnityProjectOpen())
         {
             throw new InvalidOperationException("Close the Unity Editor for this project before running the batch harness.");
+        }
+    }
+
+    private string NormalizeTrackedPolicyPath(string requestedPath)
+    {
+        string normalized = requestedPath.Replace('\\', '/');
+        ScopePathPolicy.ValidateRepositoryPath(normalized);
+        if (!normalized.StartsWith("Tools/NpcHarness/SkillPolicies/", StringComparison.Ordinal) ||
+            !string.Equals(Path.GetExtension(normalized), ".json", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                "SkillPolicy must be a JSON file under Tools/NpcHarness/SkillPolicies.");
+        }
+        return normalized;
+    }
+
+    private static void RequirePathInside(string path, string allowedDirectory, string description)
+    {
+        string fullPath = Path.GetFullPath(path);
+        string prefix = Path.GetFullPath(allowedDirectory)
+                            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) +
+                        Path.DirectorySeparatorChar;
+        StringComparison comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        if (!fullPath.StartsWith(prefix, comparison))
+        {
+            throw new ArgumentException($"{description} must be inside {allowedDirectory}.");
         }
     }
 }

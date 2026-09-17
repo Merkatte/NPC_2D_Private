@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "policyId": "author-unity-code",
+  "policyVersion": 1,
+  "executionKind": "direct-code",
+  "gateProfile": "SkillPolicy.AuthorUnityCode.Scope",
+  "gateProfileVersion": 1,
+  "candidateRules": {
+    "Assets/Scripts/**": [".cs", ".meta"],
+    "Assets/Data/Class/**": [".cs", ".meta"],
+    "Assets/Data/Struct/**": [".cs", ".meta"],
+    "Assets/Data/ScriptableObject/Script/**": [".cs", ".meta"],
+    "PublicMD/Systems/**": [".md"]
+  },
+  "forbiddenCandidatePaths": [
+    "Assets/Editor/NpcHarness/**",
+    "Assets/TestOnly/**",
+    "Assets/Art/**",
+    "Assets/Scenes/**",
+    "Assets/Prefab/**",
+    "Packages/**",
+    "ProjectSettings/**",
+    "Tools/**",
+    ".codex/**"
+  ],
+  "forbiddenAssetExtensions": [
+    ".unity",
+    ".prefab",
+    ".asset",
+    ".png",
+    ".psd",
+    ".aseprite",
+    ".mat",
+    ".controller"
+  ],
+  "allowedTools": [
+    "ApplyPatch",
+    "Ripgrep",
+    "GitDiff",
+    "UnityCompile",
+    "FocusedTests"
+  ],
+  "acceptanceManifestRoots": [
+    "Tools/NpcHarness/Profiles"
+  ]
+}

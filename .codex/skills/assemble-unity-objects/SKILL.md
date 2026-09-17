@@ -11,13 +11,20 @@ Act as a tool-only Unity object assembly worker. Translate an already-scoped obj
 
 Require a bounded assignment containing:
 
-- `assignmentId`, objective, hierarchy, components, transforms, and serialized values;
-- exact scene and other writable asset paths;
-- separate run `artifactPaths` for the Job, adapter result, and logs;
-- allowed tools and component types;
-- existing code and art inputs that may be referenced;
-- explicit overwrite authority, defaulting to denied;
-- observable acceptance conditions, preliminary checks, and report requirements.
+- `assignmentId`, `runId`, `roleSkill`, `policyVersion`, and `objective`;
+- `execution.kind: harness-job` with explicit Job/receipt paths, component types, overwrite authority, and `taskSpecification` hierarchy, components, transforms, and serialized values;
+- `requiredContext`, exact `writablePaths`, and explicit `forbiddenPaths`;
+- `allowedTools` and `forbiddenOperations`;
+- existing code and art inputs in `requiredContext`;
+- separate run `artifactPaths` for the worker report and log;
+- root-recorded `baselineCommit` and `baselineDirtyFiles`;
+- `acceptanceGate`, observable `acceptanceConditions`, `preliminaryChecks`, and `reportRequirements`.
+
+The assignment must be serialized as WorkerAssignment v1 under
+`.harness-runs/<runId>/assignments/` and must select
+`Tools/NpcHarness/SkillPolicies/assemble-unity-objects.json` v1. Read
+`Tools/NpcHarness/Schemas/worker-assignment.schema.json` when authoring that contract. The assignment may narrow the tracked policy but never broaden it.
+The root orchestrator owns this file, records its SHA-256 before delegation, and supplies that digest separately. Do not edit the assignment or recompute a replacement digest.
 
 If required assignment fields or exact serialized values are absent, return `status: Blocked` with `reasonCode: AssignmentIncomplete`. If a required component, asset type, property, or path is not supported by the current adapter, use `reasonCode: ToolCapabilityGap`. Never bypass a missing Tool with direct YAML, ad hoc Editor scripting, or an unassigned C# helper.
 
@@ -37,6 +44,8 @@ Verify that required scripts, sprites, materials, and other dependencies already
 6. Run `./run-harness.sh run-adapter --job <path>` when the Unity project is closed. Use `--allow-overwrite` only when the assignment records explicit user approval for every value managed by the Tool, including documented implicit values.
 7. If the project is locked by an open Editor and no automated interactive adapter path is available, return `status: Blocked` with `reasonCode: UnityProjectLocked`; do not take over the user's Editor or close it implicitly.
 8. Preserve the result JSON and logs as Tool receipts. Job success or `NoChange` creates a candidate but does not prove acceptance.
+9. After the adapter receipt exists, return the candidate and receipts to the root. The root must run `./run-harness.sh verify-scope --policy Tools/NpcHarness/SkillPolicies/assemble-unity-objects.json --assignment <assignment-path> --assignment-sha256 <pre-delegation-hash> --run-id <runId>`. Do not run this trust-boundary gate as the worker and do not rewrite the assignment or policy to fit the diff.
+10. The assignment's `acceptanceGate` identifies the independent task-specific manifest and profile. Do not run or interpret that accepting gate as this worker; the root executes it only after the scope GateResult passes and the candidate is reconciled.
 
 ## Boundaries
 
@@ -57,8 +66,15 @@ Return one structured report with:
   "roleSkill": "assemble-unity-objects",
   "status": "Candidate | Blocked | Failed",
   "reasonCode": "None | AssignmentIncomplete | ToolCapabilityGap | UnityProjectLocked | AdapterFailure",
-  "jobPath": "",
-  "adapterResultPath": "",
+  "jobPath": "execution.jobPath",
+  "adapterResultPath": "execution.adapterResultPath",
+  "assignmentSha256": "root-supplied pre-delegation digest",
+  "scopeGateResultPath": "pending root verification",
+  "acceptanceGate": {
+    "manifestPath": "",
+    "profile": "",
+    "profileVersion": 1
+  },
   "changedFiles": [],
   "checksRun": [],
   "evidence": [],

@@ -50,6 +50,12 @@ Immediate next actions:
 
 ## Current Status
 
+### 세 역할 공통 Scope Gate (2026-09-17)
+
+`SkillPolicy`와 `WorkerAssignment` v1 schema, 세 역할 정책과 공통 `verify-scope` 명령을 추가했다. `candidateRules`는 경로별 허용 확장자를 결합하고 assignment는 그 경계와 Tool 권한을 넓힐 수 없다. `execution.kind`는 `harness-job`, `direct-code`, `raster-art`를 구분한다. 조립은 Job·component·mutation·receipt, 코드는 선언 source/document와 신규 companion `.meta`, 스프라이트는 Generated PNG 구조·frame grid와 reference `.meta` 기반 import spec을 검사한다. 루트는 위임 전 assignment SHA-256을 기록하며 worker 반환 후 Scope Gate와 별도 task-specific acceptance를 실행한다.
+
+기존 조립 정상 assignment는 일반화 뒤에도 12/12 `Pass`다. 코드 정책 정상 assignment는 11/11 `Pass`, 신규 `.cs`의 `.meta` 누락은 `scope.code-assets`, scene 변경은 `scope.code-assets`와 `scope.changed-files`에서 `Fail`했다. 스프라이트 정책 정상 assignment는 11/11 `Pass`, 잘못된 PNG 크기는 `scope.raster-output`, 직접 `.meta` 생성은 `scope.changed-files`에서 `Fail`했다. 독립 리뷰 보정 뒤에는 추가 writable PNG, IDAT/IEND 없는 header-only PNG, schema에 없는 pivot property, 잘못된 scanline filter, indexed PNG의 필수 `PLTE` 누락, 알 수 없는 critical chunk도 `scope.raster-output`에서 `Fail`하며, 정상 PNG는 chunk CRC와 IDAT decode까지 통과해야 한다. 기존 금지 파일·policy mutation·rename·baseline exemption injection 회귀도 유지한다. Scope Gate와 task acceptance의 composite profile, adapter receipt와 Job hash의 강한 결합, Windows 실행은 후속 단계다.
+
 ### SquareCharacter 선언형 Scene Gate 전환 (2026-09-17)
 
 `HarnessTest.SquareCharacter.Structure`의 profile identity, scene path, 20개 check ID·기대값·메시지를 `Tools/NpcHarness/Profiles/square-character-structure.json`으로 이동했다. Unity 공통 evaluator는 `object-layout`, `exact-children`, `line-renderer-shape`, `line-renderer-material` 네 종류만 해석한다. loader는 raw JSON 단계에서 필수 필드·값 종류·중복·미등록 필드를 엄격히 확인한 뒤 manifest 경로·schema version·profile identity·중복 check ID·hierarchy path·타입별 입력을 검증한다. 기존 profile 이름과 version, runner 명령, GateResult 계약은 유지했다.

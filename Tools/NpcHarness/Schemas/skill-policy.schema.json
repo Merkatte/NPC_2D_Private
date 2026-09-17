@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NPC Harness SkillPolicy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "policyId", "policyVersion", "executionKind", "gateProfile",
+    "gateProfileVersion", "candidateRules", "forbiddenCandidatePaths",
+    "forbiddenAssetExtensions", "allowedTools", "acceptanceManifestRoots"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "policyId": { "$ref": "#/$defs/identifier" },
+    "policyVersion": { "type": "integer", "minimum": 1 },
+    "executionKind": {
+      "enum": ["harness-job", "direct-code", "raster-art"]
+    },
+    "gateProfile": { "$ref": "#/$defs/nonWhitespaceString" },
+    "gateProfileVersion": { "type": "integer", "minimum": 1 },
+    "candidateRules": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "$ref": "#/$defs/repositoryPattern" },
+      "additionalProperties": { "$ref": "#/$defs/nonEmptyUniqueExtensions" }
+    },
+    "forbiddenCandidatePaths": { "$ref": "#/$defs/uniqueRepositoryPatterns" },
+    "forbiddenAssetExtensions": { "$ref": "#/$defs/uniqueExtensions" },
+    "allowedTools": { "$ref": "#/$defs/nonEmptyUniqueStrings" },
+    "acceptanceManifestRoots": { "$ref": "#/$defs/nonEmptyUniqueRepositoryPaths" }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "nonWhitespaceString": {
+      "type": "string",
+      "pattern": "\\S"
+    },
+    "repositoryPath": {
+      "type": "string",
+      "pattern": "^(?=.*\\S)(?!/)(?!.*[\\\\:*?])(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))(?!.*//)[^/]+(?:/[^/]+)*$"
+    },
+    "repositoryPattern": {
+      "type": "string",
+      "pattern": "^(?=.*\\S)(?!/)(?!.*[\\\\:?])(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))(?!.*//)[^/*?]+(?:/[^/*?]+)*(?:/\\*\\*)?$"
+    },
+    "extension": {
+      "type": "string",
+      "pattern": "^\\.[^/\\\\]+$"
+    },
+    "nonEmptyUniqueStrings": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/nonWhitespaceString" }
+    },
+    "uniqueRepositoryPatterns": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/repositoryPattern" }
+    },
+    "nonEmptyUniqueRepositoryPaths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/repositoryPath" }
+    },
+    "uniqueExtensions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/extension" }
+    },
+    "nonEmptyUniqueExtensions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/extension" }
+    }
+  }
+}

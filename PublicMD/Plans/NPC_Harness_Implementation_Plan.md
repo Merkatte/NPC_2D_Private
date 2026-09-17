@@ -36,6 +36,7 @@
 | H-08 | 선택적 멀티에이전트 | 비중첩 assignment, 결과 취합과 충돌 방지 | completed |
 | H-09 | 하네스 회귀 평가 | 정상·오염 fixture와 거짓 통과 방지 suite | completed |
 | H-10 | 선언형 scene gate | 공통 check registry와 JSON manifest 기반 구조 검증 | completed |
+| H-11 | 역할 Scope Gate | SkillPolicy·WorkerAssignment와 실제 diff 기반 `assemble-unity-objects` 경계 검증 | completed |
 
 ## 4. H-02 — GateResult 기반
 
@@ -145,6 +146,12 @@ GateResult의 실패 check만 근거로 수정 범위를 만들며, retry 상한
 사용자 요청마다 구조 Gate C#을 새로 만들지 않도록 `HarnessTest.SquareCharacter.Structure`의 20개 assertion을 `Tools/NpcHarness/Profiles/square-character-structure.json`으로 이동했다. Unity 공통 evaluator는 현재 `object-layout`, `exact-children`, `line-renderer-shape`, `line-renderer-material`만 허용한다. loader는 raw JSON의 필수 필드와 값 종류를 확인하고 중복·미등록 필드와 알 수 없는 check type을 evaluation 전 infrastructure error로 거부한다.
 
 profile 전용 C#은 manifest 경로와 runner entry point만 등록한다. check ID, expected 값, 메시지, hierarchy path와 LineRenderer 구조는 manifest가 소유한다. 새 요구가 기존 primitive로 표현되면 JSON profile만 추가하고, 표현할 수 없을 때만 별도 Run에서 공통 primitive를 확장한다.
+
+## 9.2 H-11 — 역할 Scope Gate
+
+역할 Skill의 반복 경계를 `SkillPolicy` v1, run별 축소 범위를 `WorkerAssignment` v1로 직렬화했다. Policy의 `candidateRules`는 경로와 확장자를 한 쌍으로 제한하고, WorkerAssignment의 `execution.kind`는 `harness-job`, `direct-code`, `raster-art` 중 하나를 선택한다. 공통 필드는 objective, context, writable·forbidden path, Tool, artifact, baseline과 검증 요구를 표현하고 역할별 execution은 Job, C# source/document, PNG/reference/import 요구를 표현한다. 루트가 위임 전에 기록한 assignment SHA-256에 baseline dirty snapshot을 결합한다.
+
+`assemble-unity-objects` 정책은 현재 adapter의 `Assets/TestOnly` scene/material과 등록 Tool만 허용한다. `author-unity-code`는 production C# 경로와 해당 Systems 문서, 신규 source companion `.meta`만 허용한다. `create-project-sprites`는 `Assets/Art/Generated`의 단일 exact PNG만 허용하고 importer `.meta` 직접 수정을 금지하며 PNG chunk 순서·CRC·필수 palette·critical chunk·scanline filter를 포함한 IDAT decode와 reference 기반 strict import spec을 검사한다. Scope Gate는 작업별 기능·Scene·시각 acceptance를 대신하지 않는다. worker는 candidate와 evidence를 반환하고, 루트 오케스트레이터가 pre-delegation assignment hash로 Scope Gate를 실행한 뒤 assignment에 지정된 acceptance profile을 별도로 실행한다.
 
 ## 10. 명시적 보류
 

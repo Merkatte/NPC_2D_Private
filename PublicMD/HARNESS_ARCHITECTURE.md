@@ -187,7 +187,7 @@ Received
 
 ### 7.2 WorkerAssignment / WorkerReport
 
-Assignment는 하나의 목표, 읽을 문서, 수정 가능 경로, 금지 사항과 반환할 증거를 가진다. Report는 `changedFiles`, `checksRun`, `evidence`, `unresolved`를 반환한다. Report의 성공 값은 GateResult를 대체하지 않는다.
+Assignment는 하나의 목표, 읽을 문서, 구체 작업 명세, 수정 가능·금지 경로, Tool·component 범위, 참조 입력, overwrite 권한, artifact 경로와 반환할 증거를 가진다. 루트는 위임 전에 WorkerAssignment SHA-256을 기록하며 worker는 assignment를 수정하지 않는다. Report는 `changedFiles`, `checksRun`, `evidence`, `unresolved`를 반환한다. Report의 성공 값은 GateResult를 대체하지 않는다.
 
 ### 7.3 GateResult
 
@@ -305,6 +305,7 @@ logs/
 - `.codex/skills/orchestrate-unity-work`가 직접·단일 worker·선택적 복수 worker, bounded remediation과 Reviewer 호출을 조정한다.
 - `.codex/skills/reviewing-unity-candidate`가 결정적 Pass 뒤 독립 read-only review를 수행한다.
 - `HarnessTest.SquareCharacter.Structure`의 profile identity, scene path와 20개 기대값을 JSON manifest로 분리했다. Unity의 공통 선언형 scene evaluator가 제한된 check type registry를 해석하므로 같은 구조 검사는 새 profile 전용 C# 판정기를 요구하지 않는다. loader는 평가 전에 raw JSON의 필수 필드, 값 종류, 중복·미등록 필드를 엄격히 거부한다.
+- `SkillPolicy`와 `WorkerAssignment` v1 계약 및 공통 `verify-scope` runner를 추가했다. `candidateRules`가 역할별 경로·확장자를 결합하고, `execution.kind`가 object assembly, direct C#, raster art 증거를 구분한다. 세 역할 정책은 각각 TestOnly Job/receipt, 선언된 C#·Systems 문서·신규 companion `.meta`, 단일 exact Generated PNG·CRC/critical chunk/scanline까지 decode 가능한 PNG stream·reference importer 설정을 검사한다. 루트가 기록한 pre-delegation assignment SHA-256에 baseline dirty snapshot을 결합하며 worker가 반환한 뒤 루트가 Scope Gate를 실행하므로 assignment나 baseline 예외의 사후 수정은 전체 Gate를 실패시킨다.
 
 ### 제거·대체 완료
 
@@ -322,6 +323,7 @@ logs/
 - Windows wrapper와 Unity 탐색은 동일 계약으로 구현했지만 Windows 실기 실행은 검증하지 않았다.
 - 현재 production 기능별 gate profile은 아직 없으며 HarnessBeacon은 self-test profile이다.
 - RunManifest와 review 기록의 완전한 machine-readable 저장은 후속 실제 작업 적용에서 검증한다.
+- Scope Gate와 task-specific acceptance gate는 현재 각각 GateResult를 생성한다. 두 결과를 하나의 composite profile로 합성하는 단계는 첫 실제 object assembly vertical run 뒤에 진행한다.
 
 ## 15. 목표 배치
 

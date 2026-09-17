@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "policyId": "create-project-sprites",
+  "policyVersion": 1,
+  "executionKind": "raster-art",
+  "gateProfile": "SkillPolicy.CreateProjectSprites.Scope",
+  "gateProfileVersion": 1,
+  "candidateRules": {
+    "Assets/Art/Generated/**": [".png"]
+  },
+  "forbiddenCandidatePaths": [
+    "Assets/Plugins/**",
+    "Assets/Editor/**",
+    "Assets/Scripts/**",
+    "Assets/Data/**",
+    "Assets/Scenes/**",
+    "Assets/Prefab/**",
+    "Packages/**",
+    "ProjectSettings/**",
+    "Tools/**",
+    "PublicMD/**",
+    ".codex/**"
+  ],
+  "forbiddenAssetExtensions": [
+    ".meta",
+    ".cs",
+    ".unity",
+    ".prefab",
+    ".asset",
+    ".mat",
+    ".controller"
+  ],
+  "allowedTools": [
+    "ImageGen",
+    "ViewImage",
+    "RasterInspection",
+    "Hashing"
+  ],
+  "acceptanceManifestRoots": [
+    "Tools/NpcHarness/Profiles"
+  ]
+}

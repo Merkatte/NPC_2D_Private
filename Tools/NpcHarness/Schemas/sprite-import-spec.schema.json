@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NPC Harness Sprite ImportSpec v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "textureType", "spriteMode", "pixelsPerUnit", "pivot",
+    "filterMode", "compression", "alphaIsTransparency", "wrapMode", "mipmaps",
+    "sRGB", "meshType"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "textureType": { "const": "Sprite" },
+    "spriteMode": { "enum": ["Single", "Multiple"] },
+    "pixelsPerUnit": { "type": "number", "exclusiveMinimum": 0 },
+    "pivot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0, "maximum": 1 },
+        "y": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "filterMode": { "enum": ["Point", "Bilinear", "Trilinear"] },
+    "compression": { "enum": ["Uncompressed", "Compressed", "CompressedHQ", "CompressedLQ"] },
+    "alphaIsTransparency": { "type": "boolean" },
+    "wrapMode": { "enum": ["Repeat", "Clamp", "Mirror", "MirrorOnce"] },
+    "mipmaps": { "type": "boolean" },
+    "sRGB": { "type": "boolean" },
+    "meshType": { "enum": ["FullRect", "Tight"] }
+  }
+}
