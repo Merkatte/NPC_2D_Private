@@ -1,4 +1,8 @@
-# Current Unity Tool Contract
+# Legacy Harness Job Tool Contract
+
+This is the `harness-job` v1 adapter only, not the limit of Unity Editor work.
+For FarmerTest, GuardTest, production prefabs and sprite import use
+[editor-workflow.md](editor-workflow.md). Keep these legacy allowlists unchanged.
 
 This reference records the implemented adapter boundary. Re-read the linked source and schema when they change.
 

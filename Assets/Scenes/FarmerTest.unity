@@ -642,6 +642,19 @@ MonoBehaviour:
   _depositPoint: {fileID: 2106675836}
   _cropCatalog: {fileID: 11400000, guid: 438d66d42c5e491ca877e19caeceaa77, type: 2}
   _itemDataContext: {fileID: 11400000, guid: df1cde6d9ea68634494a9967845fe8ad, type: 2}
+--- !u!114 &415537990
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 415537983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11f5310043904c2e910af5c48be5993c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SeededRandomSource
+  _seed: 1
 --- !u!1 &488004114
 GameObject:
   m_ObjectHideFlags: 0
@@ -12341,6 +12354,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Soil
       objectReference: {fileID: 0}
+    - target: {fileID: 7624489968676248884, guid: e2b3aac942fcfa746a10b0341adc6b00, type: 3}
+      propertyPath: _workPositionRandomSource
+      value:
+      objectReference: {fileID: 415537990}
     - target: {fileID: 8032994466984222010, guid: e2b3aac942fcfa746a10b0341adc6b00, type: 3}
       propertyPath: m_LocalPosition.x
       value: -12.46
@@ -12389,6 +12406,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5865412015043443405, guid: e2b3aac942fcfa746a10b0341adc6b00, type: 3}
       insertIndex: -1
       addedObject: {fileID: 415537989}
+    - targetCorrespondingSourceObject: {fileID: 5865412015043443405, guid: e2b3aac942fcfa746a10b0341adc6b00, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 415537990}
   m_SourcePrefab: {fileID: 100100000, guid: e2b3aac942fcfa746a10b0341adc6b00, type: 3}
 --- !u!1 &1967539805
 GameObject:
@@ -12936,12 +12956,12 @@ PrefabInstance:
       value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 5230678570468614814, guid: a588e6571bf667546aa2c05deeded67e, type: 3}
-      propertyPath: _initialStock.Array.data[0]._quantity
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 5230678570468614814, guid: a588e6571bf667546aa2c05deeded67e, type: 3}
       propertyPath: _initialStock.Array.data[1]._itemId
       value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 5230678570468614814, guid: a588e6571bf667546aa2c05deeded67e, type: 3}
+      propertyPath: _initialStock.Array.data[0]._quantity
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5230678570468614814, guid: a588e6571bf667546aa2c05deeded67e, type: 3}
       propertyPath: _initialStock.Array.data[1]._quantity

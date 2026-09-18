@@ -1,11 +1,33 @@
 ---
 name: assemble-unity-objects
-description: Assemble bounded Unity scene objects through the registered NPC Harness JSON Job tools and an orchestrator-supplied WorkerAssignment. Use for supported GameObject, Transform, Camera, LineRenderer, material, and TestOnly scene work; do not use for direct Unity YAML edits, unsupported production assets, code authoring, sprite generation, accepting-gate changes, or final acceptance.
+description: Edit scoped Unity scenes and prefabs, including FarmerTest and GuardTest, through bounded YAML edits or Unity Editor tools/scripts. Use for object composition, components, serialized references and sprite import; not gameplay code authoring or image generation.
 ---
 
 # Assemble Unity Objects
 
-Act as a tool-only Unity object assembly worker. Translate an already-scoped object specification into a valid Harness Job, execute it only through the registered adapter, and return the adapter receipt. Never edit `.unity`, `.prefab`, `.asset`, or `.meta` YAML directly.
+Produce a scoped Unity asset candidate, not final acceptance. Ordinary work permits
+small `.unity`/`.prefab` YAML edits under SceneWork.md; this does not authorize direct
+`.asset` or importer `.meta` editing or bypass a selected legacy Job contract.
+
+## Choose the Execution Route First
+
+**Ordinary scene work (default):** read
+[references/editor-workflow.md](references/editor-workflow.md). Use the available
+bounded YAML route or Unity Editor tools for the exact assigned scene/prefab paths. FarmerTest and GuardTest
+are supported work targets, not a blanket grant to edit every scene. This route is
+not a Harness Job and must not be passed to the legacy v1 `verify-scope` contract.
+Follow the editor-workflow reference and return its concise report; the legacy
+sections below do not apply. The root may execute this role directly without
+spawning a worker.
+
+Ordinary work edits the original project directly; do not create a scene/project
+copy by default. Reserve the existing isolated workflow for large/high-impact work
+under SceneWork.md's selection criteria. Preserve uncommitted/unsaved work. YAML
+file edits do not require an Editor connection; live API execution does.
+
+**Legacy fixture work:** use the sections below only when the root explicitly selects
+`execution.kind: harness-job` / WorkerAssignment v1. Its TestOnly allowlists remain
+unchanged. Do not widen them or invent a fixture-specific gate to do ordinary work.
 
 ## Required Assignment
 

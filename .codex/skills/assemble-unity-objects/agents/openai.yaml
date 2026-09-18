@@ -1,4 +1,4 @@
 interface:
   display_name: "Assemble Unity Objects"
-  short_description: "Build Unity objects through approved harness tools"
-  default_prompt: "Use $assemble-unity-objects to turn this bounded object assignment into a tool-only Unity candidate."
+  short_description: "Edit scoped Unity assets through YAML or Editor tools"
+  default_prompt: "Use $assemble-unity-objects to edit the assigned scene or prefab through bounded YAML edits or Unity Editor tools and report checks and unverified items."

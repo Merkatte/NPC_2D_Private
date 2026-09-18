@@ -12,6 +12,12 @@ Use native collaboration subagents: create one subagent per assignment with `spa
 
 ## WorkerAssignment
 
+For the ordinary-work route in `Tools/NpcHarness/SceneWork.md`, these are the fields
+of a concise assignment, not a requirement to serialize WorkerAssignment v1. The
+legacy v1 schema applies only to explicitly selected legacy role-policy runs.
+`acceptanceSlice` can be the shared common checks plus the requested changed values;
+it does not require a new functional gate. Root verifies actual evidence and scope.
+
 Give each worker a bounded assignment containing:
 
 - `assignmentId`: stable identifier for reporting and ownership;
@@ -80,6 +86,11 @@ A `Blocked` or `Failed` report prevents the combined candidate from reaching fin
 Inspect changes left by the unsuccessful worker. If the original scope and remediation budget permit a correction, assign one sequential owner and follow the bounded remediation rules. Otherwise stop with the partial diff, evidence, and unresolved assignment clearly reported.
 
 ## Root Aggregation and Acceptance
+
+For ordinary work, the root uses the common checks and evidence record from
+`Tools/NpcHarness/SceneWork.md` after reconciliation. Steps 5-6 below describe the
+selected gate workflow only; never invent a GateResult or require a new functional
+profile solely to serialize an ordinary worker report.
 
 The root owns aggregation:
 

@@ -21,6 +21,12 @@ Do not request or accept the implementer's conclusion as review evidence. If a r
 
 Read [references/review-result-contract.md](references/review-result-contract.md) before reviewing or emitting a result.
 
+When supplied a pinned review request and snapshot, use the compact v2 record in
+`Tools/NpcHarness/ReviewEvidence.md` and read
+[references/document-review.md](references/document-review.md). This is the same
+independent review, not an additional review pass. Never create, weaken, or repin its
+request/snapshot. Return only one compact record; the root persists it.
+
 ## Boundaries
 
 - Remain read-only. Do not edit code, assets, scenes, project settings, documentation, the gate, or the candidate.

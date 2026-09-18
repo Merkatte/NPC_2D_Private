@@ -26,6 +26,9 @@ internal sealed record VerifyScopeCommand(
 
 internal sealed record SelfTestCommand : HarnessCommand;
 
+internal sealed record ReviewEvidenceCommand(
+    bool CreateSnapshot, string RequestPath, string RequestSha256, string? SnapshotSha256) : HarnessCommand;
+
 internal static class HarnessCommandLine
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(5);
@@ -45,6 +48,9 @@ internal static class HarnessCommandLine
 
         switch (args[0])
         {
+            case "review-snapshot":
+            case "accept-review":
+                return TryParseReviewEvidence(args, out command, out error);
             case "verify":
                 return TryParseVerify(args, out command, out error);
             case "run-adapter":
@@ -76,10 +82,12 @@ internal static class HarnessCommandLine
         writer.WriteLine("NPC Harness deterministic runner");
         writer.WriteLine();
         writer.WriteLine("Commands:");
-        writer.WriteLine("  verify --profile <beacon-structure|beacon-playmode|square-character-structure> [options]");
+        writer.WriteLine("  verify --profile <beacon-structure|beacon-playmode|square-character-structure|farmer-scene-structure> [options]");
         writer.WriteLine("  verify-scope --policy <path> --assignment <path> --assignment-sha256 <hash> [options]");
         writer.WriteLine("  run-adapter --job <path> [options]");
         writer.WriteLine("  self-test");
+        writer.WriteLine("  review-snapshot --request <path> --request-sha256 <hash>");
+        writer.WriteLine("  accept-review --request <path> --request-sha256 <hash> --snapshot-sha256 <hash>");
         writer.WriteLine();
         writer.WriteLine("Shared options:");
         writer.WriteLine("  --unity <path>       Unity executable override");
@@ -96,6 +104,41 @@ internal static class HarnessCommandLine
         writer.WriteLine("  --assignment-sha256  Root-recorded pre-delegation WorkerAssignment SHA-256");
         writer.WriteLine();
         writer.WriteLine("Unity can also be set with NPC_HARNESS_UNITY_PATH.");
+    }
+
+    private static bool TryParseReviewEvidence(
+        IReadOnlyList<string> args, out HarnessCommand? command, out string error)
+    {
+        command = null;
+        error = string.Empty;
+        bool snapshot = args[0] == "review-snapshot";
+        Dictionary<string, string> options = new(StringComparer.Ordinal);
+        for (int index = 1; index < args.Count; index += 2)
+        {
+            string option = args[index];
+            if ((option != "--request" && option != "--request-sha256" &&
+                 (snapshot || option != "--snapshot-sha256")) || index + 1 >= args.Count ||
+                string.IsNullOrWhiteSpace(args[index + 1]) || !options.TryAdd(option, args[index + 1]))
+            {
+                error = "Unknown, duplicate, or incomplete review evidence option: " + option;
+                return false;
+            }
+        }
+        if (!options.TryGetValue("--request", out string? request) ||
+            !options.TryGetValue("--request-sha256", out string? requestHash) ||
+            (!snapshot && !options.ContainsKey("--snapshot-sha256")))
+        {
+            error = "Review evidence commands require --request, --request-sha256, and accept-review requires --snapshot-sha256.";
+            return false;
+        }
+        string? snapshotHash = options.GetValueOrDefault("--snapshot-sha256");
+        if (new[] { requestHash, snapshotHash }.Where(h => h != null).Any(h => h!.Length != 64 || !h.All(Uri.IsHexDigit)))
+        {
+            error = "Review evidence digests must be 64 hexadecimal characters.";
+            return false;
+        }
+        command = new ReviewEvidenceCommand(snapshot, request, requestHash, snapshotHash);
+        return true;
     }
 
     private static bool TryParseVerify(

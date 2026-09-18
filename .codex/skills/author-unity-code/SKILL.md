@@ -9,6 +9,18 @@ Act as a candidate-producing code worker, not as the root orchestrator. Implemen
 
 ## Required Assignment
 
+For ordinary project work, follow `Tools/NpcHarness/SceneWork.md`: require a bounded
+objective, exact source/document/meta ownership, context, baseline, evidence paths and
+mandatory checks. A concise root assignment is sufficient; no new per-feature gate
+or WorkerAssignment v1 is required. All authoring and preliminary-verification rules
+below still apply, including actual compilation evidence and truthful NOT_VERIFIED.
+Return changed files, checks/evidence, deviations and unresolved items to the root.
+
+The serialized v1 requirements and `verify-scope`/task-specific gate commands below
+apply only when the root explicitly selects legacy WorkerAssignment v1. Do not emit
+v1 scope evidence for the ordinary-work route. Scene/prefab work still belongs to
+the assembly role; keep code ownership narrow.
+
 Require a bounded assignment containing:
 
 - a stable `assignmentId` and one concrete `objective`;
@@ -28,6 +40,12 @@ The root must serialize this assignment as WorkerAssignment v1 under
 `Tools/NpcHarness/Schemas/worker-assignment.schema.json` for the exact contract.
 The root records the assignment SHA-256 before delegation and supplies it separately.
 Do not edit the assignment or recompute a replacement digest.
+
+Any supplied review request and snapshot are root-owned evidence, not writable inputs.
+Do not weaken project conventions or move responsibility across layers to make this
+candidate pass. Report unrequested structural changes for root/user direction. Keep
+deviations concise (responsibility, dependency, relevant document); they are author
+reports, not a substitute for the independent reviewer or its primary evidence.
 
 If the assignment omits a safe writable boundary or exact source paths, requires an unapproved product decision, or conflicts with existing user changes, return `status: Blocked` with `reasonCode: AssignmentIncomplete`. Do not broaden the assignment yourself.
 
@@ -52,7 +70,9 @@ Do not read or modify `CLAUDE.md` or `.claude`. Treat actual code and serialized
 - Preserve serialized enum values, field migration, and existing `.meta` GUIDs.
 - For a new C# asset, prefer Unity import to create its `.meta`. When the assignment requires creating the companion `.meta` without an importer, generate a unique GUID, verify that it does not occur elsewhere in the repository, and never replace the GUID of an existing asset.
 - Do not edit scenes, prefabs, materials, textures, animation assets, ProjectSettings, accepting gate code, or gate fixtures unless the assignment explicitly makes one of those files the code worker's sole owned path.
-- Do not use direct Unity YAML edits as a substitute for missing object-wiring tools.
+- Keep scene/prefab wiring in a separately scoped root/assembly slice. That ordinary
+  slice may use bounded YAML edits under SceneWork.md without an Editor connection;
+  this does not expand this code worker's ownership or legacy v1 permissions.
 - When a required non-code change is outside the assignment, report it as unresolved instead of performing it.
 
 ## Preliminary Verification

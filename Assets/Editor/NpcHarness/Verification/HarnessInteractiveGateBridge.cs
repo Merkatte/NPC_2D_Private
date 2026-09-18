@@ -15,6 +15,7 @@ internal enum HarnessInteractiveGateKind
 {
     BeaconStructure,
     SquareCharacterStructure,
+    FarmerSceneStructure,
 }
 
 internal static class HarnessInteractiveGateRequestPolicy
@@ -107,6 +108,13 @@ internal static class HarnessInteractiveGateRequestPolicy
         {
             kind = HarnessInteractiveGateKind.SquareCharacterStructure;
             profileVersion = SquareCharacterGateRunner.ProfileVersion;
+            return true;
+        }
+
+        if (profile == FarmerSceneGateRunner.Profile)
+        {
+            kind = HarnessInteractiveGateKind.FarmerSceneStructure;
+            profileVersion = FarmerSceneGateRunner.ProfileVersion;
             return true;
         }
 
@@ -260,6 +268,8 @@ internal static class HarnessInteractiveGateBridge
                 return HarnessBeaconValidator.EvaluateStructure(runId);
             case HarnessInteractiveGateKind.SquareCharacterStructure:
                 return SquareCharacterValidator.EvaluateStructure(runId);
+            case HarnessInteractiveGateKind.FarmerSceneStructure:
+                return FarmerSceneValidator.EvaluateStructure(runId);
             default:
                 throw new InvalidOperationException($"Unsupported interactive gate kind: {kind}");
         }

@@ -81,6 +81,7 @@ Farming과 Harvest가 phase로 배타적이므로 selector는 `FarmWorkPhase`를
 ## Unity 배선과 검증 도구
 
 - `FarmWorkSite`에는 yield용 `SeededRandomSource`, 작업 영역 `BoxCollider2D`와 위치용 `SeededRandomSource`를 연결한다. 수확물 목적지 inventory는 더 이상 농장에 배선하지 않는다(`_outputInventorySource` 제거).
+- `FarmerTest.unity`는 2026-09-18 구조 Gate에서 발견된 공유 난수원 배선을 교정했다. Soil scene instance에 위치용 `SeededRandomSource`를 추가하고 `_workPositionRandomSource`만 override하여 yield와 분리했다. 두 seed 값은 기존 값 1을 유지한다. 원본 `Soil.prefab`은 여전히 같은 난수원 참조를 공유하므로 다른 scene이나 신규 인스턴스에 이 수정이 자동 적용되지는 않는다.
 - 위치 dependency가 누락되거나 영역이 유효하지 않아도 생산 provider 초기화는 실패시키지 않고 기존 농장 중심을 사용한다.
 - `FarmerTest`의 `TestFarmProductionWindow`는 FarmWorkSite·Warehouse·CropCatalog·ItemDataContext가 배선되어 있으며, 자체 probe cargo로 Harvest를, `WarehouseDepositPoint`로 Deposit을 각각 실행한다.
 - Seed Phase 1 Carrot/Potato 선택·진행·입고 Play Mode 시나리오는 2026-09-01 사용자 확인으로 통과했다. Harvest/cargo 경로의 Play Mode 검증은 2026-09-04 기준 `NOT VERIFIED`다.

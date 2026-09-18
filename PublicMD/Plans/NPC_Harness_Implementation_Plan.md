@@ -37,6 +37,9 @@
 | H-09 | 하네스 회귀 평가 | 정상·오염 fixture와 거짓 통과 방지 suite | completed |
 | H-10 | 선언형 scene gate | 공통 check registry와 JSON manifest 기반 구조 검증 | completed |
 | H-11 | 역할 Scope Gate | SkillPolicy·WorkerAssignment와 실제 diff 기반 `assemble-unity-objects` 경계 검증 | completed |
+| H-12 | 실제 Farmer 씬 구조 Gate | 읽기 전용 저장본 검사, 배선 고장 fixture, CLI/Editor 연결 | implementation and independent self-tests complete; final run/review evidence in PROGRESS |
+| H-13 | 가벼운 리뷰 증거 연결 | pinned request/snapshot, compact 문서 기반 리뷰, 누락·stale 차단 | implementation and 121 runner self-tests verified; final candidate evidence in PROGRESS |
+| H-14 | 실제 씬 작업 경로 | 셸 기반 Unity API 작업 복사본, 지정 asset 반영, 공통 최소 확인 | implementation and isolated Unity scene/prefab smoke verified; final regression/review in PROGRESS |
 
 ## 4. H-02 — GateResult 기반
 
@@ -153,14 +156,47 @@ profile 전용 C#은 manifest 경로와 runner entry point만 등록한다. chec
 
 `assemble-unity-objects` 정책은 현재 adapter의 `Assets/TestOnly` scene/material과 등록 Tool만 허용한다. `author-unity-code`는 production C# 경로와 해당 Systems 문서, 신규 source companion `.meta`만 허용한다. `create-project-sprites`는 `Assets/Art/Generated`의 단일 exact PNG만 허용하고 importer `.meta` 직접 수정을 금지하며 PNG chunk 순서·CRC·필수 palette·critical chunk·scanline filter를 포함한 IDAT decode와 reference 기반 strict import spec을 검사한다. Scope Gate는 작업별 기능·Scene·시각 acceptance를 대신하지 않는다. worker는 candidate와 evidence를 반환하고, 루트 오케스트레이터가 pre-delegation assignment hash로 Scope Gate를 실행한 뒤 assignment에 지정된 acceptance profile을 별도로 실행한다.
 
+## 9.3 H-12 — 첫 실제 씬 적용 범위 (2026-09-18)
+
+`FarmerScene.Structure` v1의 범위는 `FarmerTest.unity`의 저장된 배선이다. NPC role/selector/pool, Farm/Warehouse destination와 provider registry, 입고 inventory identity, 농장 난수·영역, crop/item 참조를 검사한다. 비어 있는 시작 작물과 optional parent를 허용한다. preview scene으로 관찰하고 user scene·production asset을 저장하지 않으며, 검사 전후 의존 파일 해시와 열린 씬 구성을 비교한다. dirty target/dependency, Play Mode·compile/import 중 요청은 infrastructure failure다.
+
+수락은 별도 작업자가 작성한 `Harness.FarmerStructure.SelfTest` v1과 실제 저장본의 `FarmerScene.Structure` 결과, 기존 fixture 회귀, 독립 read-only review로 확인한다. 원본 `HarnessTest.unity`의 기존 사용자 변경은 보존한다. 후속 단계는 transaction Play Mode, 실제 Farmer 행동, 제한된 참조 편집 도구, 동일 후보에 연결된 composite acceptance이며 H-12 통과를 해당 단계 완료로 간주하지 않는다.
+
+첫 실제 실행에서 `farm.independent-random`이 기존 Soil prefab의 난수원 공유를 발견했다. 검사와 독립 기대값을 유지하고, Unity Editor API로 FarmerTest scene instance의 위치용 RNG를 분리했다. 이 단일 배선 교정은 최초 사용자 요청의 실제 씬 적용 범위에 포함하며 source prefab·다른 씬은 변경하지 않았다. 기존 seed 1을 유지했다. 첫 독립 suite는 이 원인으로 5/63 실패했고 교정 후 63/63을 통과했다. 전체 실행 증거와 마지막 리뷰는 `.harness-runs/farmer-structure-20260918`에 보존한다.
+
+## 9.4 H-13 — 가벼운 문서 기반 리뷰 증거 (2026-09-19)
+
+검토 에이전트 수를 늘리지 않고 기존 candidate reviewer에 관련 문서 기준의 짧은
+coverage와 구조 변화 요약을 추가한다. C#은 컨벤션/소유 경계, 기능 간 책임 변화는
+architecture를 검토하며 전체 저장소 감사는 기본값이 아니다. 규칙 전체 코드화와
+포매터/분석기 신규 도입은 제외한다.
+
+`review-snapshot`은 기능 검사 전 입력과 문서를 고정하고, `accept-review`는
+필수 gate·리뷰·coverage·hash·시간 순서와 모순 판정을 확인한다. 신뢰하는 루트가
+선정 범위와 신원을 관리하는 최소 증거 gate이며 전체 자동 task acceptance가 아니다.
+독립 테스트 작성자가 정상·고장 93개를 추가했고 기존 28개와 121/121 통과했다.
+실행 기록 누락·파일 변경/추가/삭제·다른 run·자기 리뷰·판정 모순·경로/JSON 오류와
+이전 Pass 무효화를 포함한다. 최종 근거는 PROGRESS가 연결한 run artifact에 보존한다.
+
 ## 10. 명시적 보류
 
-- production asset을 원자 Tool로 직접 편집하는 기능
+- legacy Harness Job의 production 원자 Tool 확장 (실제 편집은 SceneWork 경로 사용)
 - 원격·무인 Codex 실행 서비스
 - 모든 gameplay 기능을 포괄하는 단일 gate profile
 - 작업 에이전트별 강제 worktree
 
 실제 단일 작업 흐름에서 필요성이 확인되기 전에는 구현하지 않는다.
+
+### H-14 — 실제 씬 작업 환경
+
+사용자 요청에 따라 FarmerTest·GuardTest 등을 일반 Unity Editor API로 편집할 수
+있게 한다. TestOnly Job allowlist를 무제한으로 넓히거나 기능마다 Tool/검사기를
+추가하지 않는다. SceneWork 기본 경로와 기존 v1/명시적 확장 검증을 구분한다.
+셸 helper는 격리 복사본 준비→Unity method 실행→지정 asset 반영만 담당한다.
+원본/후보 hash 충돌, 범위 밖 변경, 실패/누락 결과에서는 반영을 거부한다.
+열린 원본 Editor의 미저장 내용을 셸로 알 수 없으므로 원본이 열린 동안 반영하지 않는다.
+실제 씬 복사본에서 오브젝트·컴포넌트·참조·프리팹 저장/재조회 smoke를 수행하고,
+원본 씬 byte 보존과 기존 runner/Skill 회귀를 확인한다. 게임 행동 검증은 이번 범위가 아니다.
 
 ## 11. 문서 갱신
 

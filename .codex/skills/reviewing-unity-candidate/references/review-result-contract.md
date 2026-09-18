@@ -1,5 +1,12 @@
 # ReviewResult Contract
 
+## Version selection
+
+A pinned review request plus candidate snapshot selects compact v2, whose exact fields
+and consistency rules are in `Tools/NpcHarness/ReviewEvidence.md`. Do not emit both
+formats or append a narrative report. Use the v1 format below only for legacy callers
+without that envelope; v1 does not satisfy `accept-review`.
+
 Return a single JSON object. Keep field names and enum values exact so the orchestrator can consume the result without interpreting prose.
 
 ```json

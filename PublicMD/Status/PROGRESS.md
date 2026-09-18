@@ -5,6 +5,48 @@
 
 ## Current Reset Snapshot
 
+### 2026-09-19 — 작은 씬·프리팹 YAML 직접 편집 허용
+
+- 사용자 요청에 따라 일반 작업의 작은 `.unity`/`.prefab` 속성·참조 변경은 Editor/MCP
+  연결 없이 허용한다. assembly Skill과 공통 경로를 맞추고 코드 역할의 별도 배선 경계를 유지했다.
+- GUID/fileID, 기존 미커밋·미저장 작업, 변경 범위를 보존한다. 복잡한 prefab override나
+  대규모 재구성은 API/필요 시 격리 경로를 우선한다. legacy Job allowlist는 변경하지 않았다.
+- YAML의 diff·저장 값·변경 참조 확인과 짧은 기록은 필수다. Unity에서 실행하지 않은
+  검사는 `NOT_VERIFIED`; 요청상 필수인 Unity 검사와 C# 컴파일·규약·책임 경계는 완화하지 않는다.
+- 이번 변경은 지침/메타데이터뿐이며 실제 씬·코드·실행기 변경 또는 Unity 검증은 포함하지 않는다.
+- 검증: 변경된 3개 Skill의 `quick_validate.py` 및 `git diff --check` 통과.
+  FarmerTest·GuardTest·기존 dirty HarnessTest와 SceneWorkspace 실행기/테스트의 이전 SHA256 유지 확인.
+
+### 2026-09-19 — 일반 작업은 원본 직접 편집으로 기본값 변경
+
+- 사용자 선택에 따라 원본 직접 작업을 기본으로 하고, 대규모·고영향 작업만 기존
+  SceneWorkspace 복사본 경로를 선택하도록 orchestrator/assembly Skill과 공통 안내를 맞췄다.
+- 기존 미커밋·미저장 내용 보존, 지정 범위와 최소 검증은 유지한다. 자동 commit/revert,
+  새 패키지 설치, 원본 Editor 자동 종료는 허용하지 않는다.
+- 이번 변경은 지침만 변경한다. 실행 스크립트와 씬은 수정하지 않았으며 열린 Editor의
+  직접 편집 연결을 새로 구현하거나 검증한 것은 아니다. 실행 진입점이 없으면 알리고,
+  일반 작업을 임의로 복사본 방식으로 바꾸지 않는다. 아래 H-14 증거는 당시 격리 경로의 기록이다.
+
+### 2026-09-19 — H-14 실제 씬 작업 환경
+
+- `Tools/NpcHarness/SceneWorkspace.ps1`: Prepare→Run→Apply. MCP 없이 Unity Editor API
+  helper를 격리 복사본에서 실행하고 정확히 지정한 scene/prefab/material/asset만 반영한다.
+- manifest/receipt hash, 원본 전체 입력 변경, 후보 범위 밖 변경, 기존 GUID 변경,
+  누락/중복 GUID와 meta, 열린 원본 Editor를 확인한다. 원본 반영 전 backup을 남긴다.
+  악성 helper sandbox나 multi-file 원자 transaction은 아니며, 늦은 I/O 실패는 수동 복구가 필요하다.
+- 세 역할 Skill과 orchestrator가 일반 작업의 공통 최소 확인을 사용한다. 매 요청마다
+  새 기능 gate를 만들지 않는다. 기존 WorkerAssignment v1/TestOnly Job 계약은 그대로다.
+- Unity 6000.3.9f1 격리 실행에서 FarmerTest·GuardTest 복사본의 오브젝트/컴포넌트/
+  직렬화 값/참조 연결, 저장·재조회와 새 프리팹 생성·편집을 확인했다. 원본 씬은 수정하지 않았다.
+- 증거: `.harness-runs/scene-work-20260919/method-result.json`, `unity.log`, `receipt.json`.
+  실행 receipt SHA256: `e477333d4cc9b5d18e204bc00e450837216199be3cf6a43600cf4fb39b0e86f6`.
+- 검증은 편집 작업 경로의 smoke이며 농부/경비 gameplay나 Play Mode 통과가 아니다.
+  기존 검증 복사본의 Library cache를 새 작업 복사본에 재사용했다. MCP 패키지는 설치하지 않았다.
+- 원본 Editor가 열려 있어 이번 작업에서 원본 promotion은 실행하지 않았다.
+  실제 반영은 소유자가 원본을 저장·닫은 뒤 가능하다. 새 parent folder/asset 삭제/PNG
+  importer promotion은 현재 셸 경로의 범위가 아니며 임의로 우회하지 않는다.
+  최종 회귀·독립 리뷰 결과는 같은 run의 `gate-results`와 `review.json`에 기록한다.
+
 2026-08-01: The project has been reset to a new lightweight NPC/action skeleton. The old `WorkerAI`, `WorkerActionPlan`, `WorkerActionContext`, Behavior Graph, animation, combat, recruitment, and UI implementation described by older IMP records is not present in the current `Assets/Scripts` tree.
 
 Current direction: keep `WorkerNPC` as a narrow actor root and tick bridge. Do not turn it into the one large script that every NPC-related caller must depend on. Stats belong in `NPCStat`, Unity object references belong in `NPCComponent` or narrower component holders, behavior choice belongs in selectors, and behavior execution belongs in actions or an action runner.
@@ -49,6 +91,39 @@ Immediate next actions:
 5. Keep `WorkerNPC` narrow; do not make it the dependency bucket for every NPC concern.
 
 ## Current Status
+
+### 가벼운 리뷰 증거 H-13 (2026-09-19)
+
+기존 독립 리뷰를 유지하면서 관련 문서 범주별 짧은 근거와 책임·의존성·남은 위험
+요약을 compact v2로 남기는 절차를 추가했다. `review-snapshot`과 `accept-review`는
+고정 request/snapshot, 필수 기능 GateResult와 현재 입력 파일, 리뷰 coverage를
+연결한다. 코드 컨벤션 전체 자동화나 새 gameplay 검사는 추가하지 않았다.
+
+.NET 10 build 경고·오류 0, 독립 작성 고장/정상 93개와 기존 28개를 합쳐 runner
+self-test 121/121을 확인했다. 최초 예비 suite에서 InvalidDataException의 반환 처리
+누락을 발견해 판정 기준 변경 없이 수정했다. Assets와 기존 Farmer/TestOnly 변경은
+이 작업에서 수정하지 않는다. 원래 열린 Unity Editor도 실행·변경하지 않는다.
+
+최종 검증·독립 리뷰와 snapshot 근거는 `.harness-runs/review-evidence-20260919/`에
+보존한다. 이번은 새 증거 흐름 자체를 만드는 bootstrap 작업이므로 기존 Skill의
+독립 self-test/review로 구현을 검증하고, 새 흐름은 최종 후보의 검증 단계에서 적용한다.
+신규 일반 작업은 구현 전에 request를 고정해야 한다. 승인 판정은 최신 run 결과를
+따르며 이 기록 자체는 최종 승인 증거가 아니다.
+
+한계: 선택한 inputRoots 밖 변경은 Scope Gate가 담당한다. root-retained hash와
+실제 독립 reviewer identity를 신뢰하며 악의적인 동일 권한 사용자에 대한 보안
+격리나 AI 의미 판단의 정확성은 증명하지 않는다. Windows reparse point 실제
+fixture, macOS 실행, 이후 실제 gameplay 변경에 대한 적용은 이번 증거 범위 밖이다.
+
+### 실제 Farmer 씬 구조 Gate H-12 (2026-09-18)
+
+`FarmerScene.Structure` v1을 추가했다. `SavedSceneInspection`이 저장된 `Assets/Scenes/FarmerTest.unity`를 preview로 열고 미저장 target/dependency·Play Mode·compile/import 중 실행을 거부한다. 열린 씬 구성과 의존 파일 전후 SHA-256을 비교하고 파일별 evidence를 보존한다. `SceneWiringChecks`와 `FarmerSceneValidator`는 Missing Script, 단일 활성 manager/provider, 필수 serialized reference, Farmer role·destination/provider 등록 누락/중복, Warehouse inventory identity, farm 난수원/영역, crop catalog와 CSV를 검사한다. 시작 작물과 pool parent 같은 선택 참조는 강제하지 않는다. CLI `verify --profile farmer-scene-structure`, interactive bridge와 `Tools > NPC Harness > Verify Farmer Scene Structure` 메뉴를 제공한다.
+
+첫 실행에서 기존 `Soil.prefab`의 `_randomSource`와 `_workPositionRandomSource`가 같은 컴포넌트를 공유하는 실제 결함을 검출했다. 독립 테스트 63개 중 5개가 이 결함으로 실패했다. 검증 기준을 유지하고 Unity API로 FarmerTest scene instance에 위치용 RNG를 추가하여 참조만 분리했다. 기존 seed 1, source prefab과 다른 씬은 유지했다. 교정 후 격리 Windows Unity 6000.3.9f1에서 독립 self-test 63/63, .NET 10 runner build 경고·오류 0 및 self-test 28/28을 확인했다. 최종 현재 후보와 리뷰 증거는 `.harness-runs/farmer-structure-20260918`의 gate/review 결과와 freshness 기록을 기준으로 한다. 최초 remediation budget 2회 중 scene 교정 1회를 사용했다.
+
+환경: 기본 .NET SDK가 9여서 공식 .NET 10.0.100 SDK를 ignored 실행 폴더에 준비했다. Unity cold start의 UPM `path ... undefined`는 누락된 `ALLUSERSPROFILE` 때문이었으며 테스트 프로세스에만 `C:\ProgramData`를 보충했다. 원본 Editor 대신 동일 Assets/Packages/ProjectSettings의 격리 복제본에서 실행했다. 기존 `HarnessTest.unity` 사용자 변경은 SHA-256 기준으로 보존한다.
+
+범위 한계: H-12는 현재 FarmerTest의 저장본 구조 검사다. 실제 Farmer 이동/작업, 농사·입고 transaction, 시각 결과, 다른 씬, 범용 scene 수정 adapter와 composite acceptance는 아직 구현하지 않았다. source Soil prefab의 공유 난수원도 다른 씬에 적용될 수 있으므로 후속 범위로 남는다.
 
 ### 세 역할 공통 Scope Gate (2026-09-17)
 

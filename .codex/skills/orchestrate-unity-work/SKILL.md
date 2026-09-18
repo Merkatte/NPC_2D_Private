@@ -12,12 +12,41 @@ Act as the root Codex orchestrator. Preserve the user's intent and authority fro
 - Only the root Codex is the orchestrator and final decision-maker.
 - A worker's `done` or `success` report submits a candidate. It is not acceptance evidence.
 - Direct execution or one worker is the default. Use multiple workers only for at least two genuinely independent workstreams with non-overlapping writable ownership.
-- Accept a candidate only from an actual, independent deterministic `GateResult` for the scoped work.
+- In a selected gate workflow, require an actual independent deterministic `GateResult`; ordinary work requires the common evidence contract below.
 - Do not let the candidate author weaken, replace, or bypass the gate used to accept that candidate.
 - Set a remediation budget before verification, never raise it implicitly, and stop when it is exhausted or the same failure cause repeats.
-- A reviewer opinion cannot substitute for a deterministic gate.
+- A reviewer opinion cannot substitute for a selected mandatory deterministic gate or missing common checks.
 - A reviewer is a separate read-only agent that did not implement the candidate and was not one of its workers.
 - Preserve unrelated pre-existing changes and do not silently expand allowed paths or permissions.
+
+## Ordinary Production Work — Default Route
+
+For ordinary scoped code/art/scene work, use `Tools/NpcHarness/SceneWork.md` as the
+common completion contract. This route permits small, scoped scene/prefab YAML edits,
+connected Unity Editor tools and explicitly authorized Editor API helpers.
+YAML file editing does not require an Editor connection. Prioritize code compilation,
+conventions, responsibility and dependency boundaries; do not weaken these checks.
+Use each role's ordinary-work branch; do not force these candidates into legacy
+WorkerAssignment v1 or the TestOnly adapter.
+
+Default to direct work in the original project. Reserve SceneWorkspace copies for
+genuinely large/high-impact changes under SceneWork.md, stating the reason before
+copying. A missing open-Editor execution connection is not permission to substitute
+a copy for ordinary work. Preserve existing dirty/unsaved changes; do not auto-commit,
+stash or revert. The same mandatory common checks apply to direct and isolated work.
+
+The user-approved lightweight route does not require a new task-specific acceptance
+profile or proof of every gameplay outcome. Collect current scope/diff, compile/import,
+edited-reference and concise convention/pattern evidence. Required checks remain
+mandatory; reuse existing relevant checks and report unverified behavior accurately.
+Follow specialized NPC planning/approval and agreed runtime checks where applicable.
+
+The strict GateResult pipeline below applies when the root selects an existing
+profile, legacy Job/WorkerAssignment v1, the pinned review-evidence workflow, or an
+explicit extended-verification request. For ordinary work without that selection,
+the common checks/record replace the mandatory profile/v1 envelope, not scope safety
+or truthfulness. Set this choice before work; never drop a failed selected check.
+Missing bespoke functional coverage alone is not a reason to build more harness.
 
 Read [references/gate-acceptance.md](references/gate-acceptance.md) before choosing or evaluating a gate.
 
@@ -27,6 +56,10 @@ Read [references/gate-acceptance.md](references/gate-acceptance.md) before choos
 2. Follow `PublicMD/ProjectStructure.md` to the owning Systems leaf and read only its minimum change scope. Apply the repository's conditional document rules.
 3. State the requested outcome, observable acceptance conditions, allowed paths, exclusions, and the deterministic gate profile that can prove those conditions.
 4. Set `reviewPolicy` before implementation using [references/reviewer-orchestration.md](references/reviewer-orchestration.md): required by the user or another applicable Skill, required when structural risk is present, or not required for a low-risk candidate fully covered by deterministic checks. Record the reason.
+   For code candidates requiring review, use the lightweight evidence workflow in
+   `Tools/NpcHarness/ReviewEvidence.md`: pin the review request before implementation.
+   Choose a few applicable review categories, not every convention sentence. Preserve
+   specialized NPC planning/approval; this envelope does not replace that workflow.
 5. Set a non-negative candidate remediation budget before the first gate run. Normally use one or two attempts, choose less for risky mutations, and state the value. Zero disables remediation. Do not increase it without the user's authorization.
 6. Ask the user only when a missing choice would materially alter the result or authority. Otherwise choose the narrowest reasonable scope.
 7. If no existing deterministic gate can prove the requested outcome, identify that as a gate gap. Do not invent a passing result or call the work complete.
@@ -48,7 +81,8 @@ When the candidate contains one of the established production roles, explicitly 
 
 - `$author-unity-code` for a bounded C# implementation slice;
 - `$create-project-sprites` for a bounded raster art slice;
-- `$assemble-unity-objects` for a supported Tool-only Unity object slice.
+- `$assemble-unity-objects` for a scoped Unity object slice (bounded YAML or Editor
+  API for ordinary work; registered Tools only for a selected legacy Job).
 
 Do not spawn all roles by default. Select only roles required by the scoped outcome. Code and sprite candidates may run in parallel when their writable paths are disjoint and their interface is already fixed; object assembly that consumes either result runs afterward. A role Skill supplies stable worker rules, while the `WorkerAssignment` supplies this run's exact paths, inputs, permissions, and acceptance slice.
 
@@ -68,6 +102,13 @@ After direct work or all required worker reports:
 ## 4. Run the Deterministic Gate
 
 After the root has reconciled the actual diff into one conflict-free candidate, invoke one root-owned deterministic acceptance gate appropriate to the full scoped conditions. If several validators are necessary, compose them under the selected profile and one GateResult rather than accepting worker-local results. Use `run-harness.sh` or `run-harness.cmd` for a supported batch profile when the Unity project is closed; use the real Editor entrypoint while it is open. Do not imply that the current HarnessBeacon profiles validate unrelated production work.
+
+For a pinned review request, run `review-snapshot` before these gates and retain its
+hash outside worker-controlled evidence. Use roots covering the candidate, dependencies,
+validators and relevant documents. Run gates sequentially without candidate writes.
+The evidence envelope may list several existing gates; it does not create missing
+functional coverage. A changed candidate needs a fresh snapshot/run and complete
+required gates; preserve the previous request's requirements and retry ledger.
 
 Evaluate the emitted result using [references/gate-acceptance.md](references/gate-acceptance.md). `Fail` means the candidate is rejected. `InfrastructureError` means verification is blocked, not that the candidate passed or failed. Any candidate mutation after a result invalidates that result and requires a fresh gate run.
 
@@ -107,6 +148,15 @@ Declare completion only when all of the following are true:
 - when `reviewPolicy` requires review, the current candidate has a contract-valid `Approve` from an eligible reviewer;
 - no required evidence is missing;
 - no specialized workflow has an outstanding required phase.
+
+For the lightweight review workflow, also require current `accept-review` Pass/exit 0.
+Do not accept an old result file when the current command failed. This checks evidence
+identity/completeness, not the truth of AI reasoning. Confirm the actual reviewer's
+identity against collaboration records; JSON identity fields are not authentication.
+
+Keep the handoff short: changed responsibilities, changed dependencies, verified scope,
+and remaining risks. Reuse the single review's evidence; do not commission extra reviews
+or a second essay just to fill the handoff. Report existing unrelated debt separately.
 
 Report the changed files, gate profile/version, result status, check summary, artifact/result paths, review policy and latest verdict, initial retry budget, attempts used, and the disposition of each failed run or review. If the gate or required review is missing, failed, or blocked, report that state and the evidence without saying the task is complete.
 

@@ -13,7 +13,7 @@ A result must identify at least:
 - each check's stable ID, status, expected value, actual value, and message;
 - artifacts, changed files, and start/finish timestamps.
 
-Current HarnessBeacon profiles demonstrate the contract, but they do not validate unrelated Unity work. `HarnessBeacon.Structure` checks scene structure and `HarnessBeacon.PlayMode` checks runtime behavior. The cross-platform runner exposes only profiles explicitly registered in `Tools/NpcHarness`; a new task type needs its own independently tested profile before its candidate can be accepted.
+Current HarnessBeacon profiles demonstrate the contract, but they do not validate unrelated Unity work. `HarnessBeacon.Structure` checks scene structure and `HarnessBeacon.PlayMode` checks runtime behavior. The cross-platform runner exposes only profiles explicitly registered in `Tools/NpcHarness`. Ordinary work uses the mandatory common evidence in `Tools/NpcHarness/SceneWork.md`; it does not require a bespoke profile. Add a profile only when an explicitly selected extended requirement cannot be checked with existing tools. Never omit or weaken a required check after it fails.
 
 ## Acceptance Decision
 

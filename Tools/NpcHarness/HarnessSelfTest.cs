@@ -39,6 +39,8 @@ internal static class HarnessSelfTest
             ("serialize scope GateResult", TestScopeGateResult),
         };
 
+        tests.AddRange(ReviewEvidenceSelfTest.Tests());
+
         int failures = 0;
         foreach ((string name, Action test) in tests)
         {
@@ -115,6 +117,11 @@ internal static class HarnessSelfTest
         Assert(square.Name == "HarnessTest.SquareCharacter.Structure", "square character profile mismatch");
         Assert(square.Version == 1, "square character profile version mismatch");
         Assert(square.SupportsInteractiveEditor, "square character profile should support the open Editor bridge");
+        GateProfile farmer = GateProfile.Resolve("farmer-scene-structure");
+        Assert(farmer.Name == "FarmerScene.Structure" && farmer.Version == 1, "farmer scene profile mismatch");
+        Assert(farmer.SupportsInteractiveEditor && farmer.RequiresNoChangedFiles,
+            "farmer scene must use read-only checks and support the open Editor bridge");
+        Assert(GateProfile.Resolve("FarmerScene.Structure") == farmer, "farmer scene alias mismatch");
         AssertThrows<ArgumentException>(() => GateProfile.Resolve("unknown"));
     }
 

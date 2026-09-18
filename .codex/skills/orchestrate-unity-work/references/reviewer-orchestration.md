@@ -12,6 +12,27 @@ Set the policy during scoping and record its reason:
 
 Do not downgrade the policy after implementation merely to avoid review. Upgrade it to `RequiredByRisk` if material structural risk is discovered while producing or inspecting the candidate. A deterministic pass can establish correctness for its checks but does not erase a previously identified structural risk.
 
+## Lightweight evidence mode
+
+For new code-candidate reviews use `Tools/NpcHarness/ReviewEvidence.md`. Pin request
+SHA-256 before work; snapshot inputs before gates; use one compact v2 review and the
+`accept-review` evidence gate after it. Historical/unrelated v1 reviews remain valid
+only in their original workflow and are not silently upgraded to the new envelope.
+Choose conventions and ownership categories for C#; include cross-feature architecture
+when applicable. A category not mechanically covered needs the same independent reviewer,
+not another agent. Review only the diff and necessary adjacent dependencies/documents.
+
+Unrequested responsibility moves, new layers or shared-contract changes require user
+direction before implementation. Updating current-state documentation does not authorize
+changing normative rules. Snapshot documents preserve which version was reviewed; when
+this task legitimately changes a normative rule, retain the approved pre-change rule and
+approval in scoping evidence rather than passing against a silently weakened replacement.
+
+Record actual author IDs in the request and compare reviewer identity to collaboration
+records. Trust only root-retained request/snapshot hashes. The evidence gate cannot
+authenticate actors or enforce OS isolation. A hash mismatch is not repaired by replacing
+the pinned hash; re-establish an authorized candidate and rerun affected steps.
+
 ## Reviewer Identity and Invocation
 
 Create a separate collaboration subagent and direct it to use `$reviewing-unity-candidate`. The reviewer must be read-only and must not be the root author or any agent listed in a `WorkerAssignment` for this candidate. Record its agent identity with the review result.
@@ -34,6 +55,9 @@ Do not include implementation summaries, WorkerReports, claims of completion, th
 ## Result Intake
 
 Accept exactly one `ReviewResult` that follows the reviewer Skill contract. At minimum confirm:
+
+For compact v2, use the field mapping and deterministic intake in
+`Tools/NpcHarness/ReviewEvidence.md` instead of the legacy v1 field names below.
 
 - `candidateRunId` equals the current GateResult run ID;
 - the recorded gate profile/version/status match and `preserved` is true;

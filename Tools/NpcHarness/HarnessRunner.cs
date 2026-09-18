@@ -18,12 +18,23 @@ internal sealed class HarnessRunner
     {
         return command switch
         {
+            ReviewEvidenceCommand review => Task.FromResult(RunReviewEvidence(review)),
             VerifyCommand verify => VerifyAsync(verify),
             VerifyScopeCommand scope => Task.FromResult(VerifyScope(scope)),
             RunAdapterCommand adapter => RunAdapterAsync(adapter),
             SelfTestCommand => Task.FromResult(HarnessSelfTest.Run(_repositoryRoot)),
             _ => throw new InvalidOperationException($"Unsupported command type: {command.GetType().Name}"),
         };
+    }
+
+    private int RunReviewEvidence(ReviewEvidenceCommand command)
+    {
+        if (!command.CreateSnapshot)
+            return ReviewEvidenceGate.Accept(_repositoryRoot, command.RequestPath,
+                command.RequestSha256, command.SnapshotSha256!);
+        string hash = ReviewEvidenceGate.Snapshot(_repositoryRoot, command.RequestPath, command.RequestSha256);
+        Console.WriteLine("Snapshot SHA-256 (retain outside worker-controlled evidence): " + hash);
+        return Program.SuccessExitCode;
     }
 
     private int VerifyScope(VerifyScopeCommand command)
@@ -495,9 +506,16 @@ internal sealed record GateProfile(
                 "square-character-structure",
                 RequiresNoChangedFiles: true,
                 SupportsInteractiveEditor: true),
+            "farmer-scene-structure" or "farmerscene.structure" => new GateProfile(
+                "FarmerScene.Structure",
+                1,
+                "FarmerSceneGateRunner.VerifyStructureFromCommandLine",
+                "farmer-scene-structure",
+                RequiresNoChangedFiles: true,
+                SupportsInteractiveEditor: true),
             _ => throw new ArgumentException(
                 $"Unknown gate profile: {value}. Expected beacon-structure, beacon-playmode, " +
-                "or square-character-structure."),
+                "square-character-structure, or farmer-scene-structure."),
         };
     }
 }

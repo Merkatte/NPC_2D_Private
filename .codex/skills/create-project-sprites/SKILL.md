@@ -9,6 +9,18 @@ Act as a candidate-producing graphics worker, not as the root orchestrator or fi
 
 ## Required Assignment
 
+For ordinary project work, follow `Tools/NpcHarness/SceneWork.md`: require a bounded
+objective, exact output path, approved visual references, dimensions/transparency,
+import expectations, baseline and evidence paths. A concise root assignment is
+sufficient; no new per-image functional gate or WorkerAssignment v1 is required.
+All visual-contract, production and observable-property checks below remain mandatory.
+Return the candidate, importSpec, comparison evidence and unverified items; use the
+assembly role's Editor route for Unity import and scene placement.
+
+The serialized v1 requirements and `verify-scope`/task-specific gate commands below
+apply only when the root explicitly selects legacy WorkerAssignment v1. Do not emit
+v1 scope evidence for the ordinary-work route.
+
 Require a bounded assignment containing:
 
 - `assignmentId`, `runId`, `roleSkill`, `policyVersion`, objective, intended in-game use, and asset family;

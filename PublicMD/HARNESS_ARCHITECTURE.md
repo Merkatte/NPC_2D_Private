@@ -12,6 +12,29 @@
 
 이 프로젝트의 루트 Codex는 오케스트레이터다. 하네스는 오케스트레이터나 작업 에이전트를 대신하지 않으며, 자연어 요구를 해석하거나 서브에이전트를 지휘하지 않는다.
 
+### 2026-09-19 실제 작업 기본 경로
+
+일반 작업은 [SceneWork](../Tools/NpcHarness/SceneWork.md)의 공통 최소 확인과 짧은
+기록을 사용한다. 매 기능마다 전용 판정기나 acceptance profile을 새로 만들지 않는다.
+아래의 엄격한 GateResult/WorkerAssignment v1 흐름은 기존 profile, legacy Job,
+pinned review 또는 명시적 확장 검증을 선택한 실행에 적용한다. 이미 선택한 필수
+검사 실패를 이 기본 경로로 바꾸어 우회할 수 없다.
+
+FarmerTest·GuardTest 같은 실제 씬은 작은 속성·참조 변경에 한해 YAML 직접 편집을
+허용하며, 복잡한 조립·prefab override 변경은 Unity Editor API를 우선한다.
+일반 작업은 원본 프로젝트 직접 편집이 기본이다. 대규모 씬·공유 프리팹 일괄 변경이나
+직렬화 migration처럼 영향과 복구 부담이 큰 작업만 이유를 알리고 격리 복사본을 사용한다.
+격리 모드의 SceneWorkspace는 지정 파일과 원본 충돌을 확인한 뒤 반영한다.
+MCP는 선택 사항이며 설치하지 않았다. YAML 파일 편집에는 Editor 연결이 필요 없다.
+열린 Editor의 API 실행에는 실제 진입점이 필요하며, 연결이 없다는 이유로 일반 작업을
+자동으로 복사하지 않는다. 기존 GUID/fileID와 미커밋·미저장 작업을 보존한다.
+YAML 변경 후 diff·저장 값·변경 참조를 확인하고 Unity import/load/runtime 미실행은
+`NOT_VERIFIED`로 남긴다. 요청에서 해당 검증을 필수로 정했다면 완료를 막는다.
+코드 컴파일·컨벤션·책임 경계·의존 방향 검사는 완화하지 않는다.
+기존 `Assets/TestOnly` allowlist는 legacy Harness Job에만 해당한다.
+구현 helper는 선택한 프로젝트의 승인된 Editor 전용 경로에 두고 runtime 코드로 넣지 않는다.
+원본 Editor를 자동 종료하거나 미저장 상태를 버리지 않는다.
+
 ```text
 사용자 요청
   -> 프로젝트 Skill
@@ -162,7 +185,7 @@ Received
 |---|---|---|
 | `author-unity-code` | 프로젝트 문서 routing과 코드 규약을 따른 C# 후보 작성 | 그래픽 제작, 직접 scene/prefab YAML 수정, accepting gate 변경 |
 | `create-project-sprites` | 승인된 동일 계열 기준 에셋에 맞춘 raster 후보와 import specification 작성 | 코드·scene 배선·직접 `.meta` YAML 수정, 최종 화풍 승인 |
-| `assemble-unity-objects` | 등록된 Harness Job Tool만 사용한 Unity object 후보 조립 | 직접 Unity YAML 수정, 미지원 Tool 우회, 코드·그래픽 제작 |
+| `assemble-unity-objects` | 지정 범위의 작은 scene·prefab YAML 수정 또는 Unity API/Editor 도구 기반 조립·import | 직접 importer `.meta` 수정, 범위 밖 변경, gameplay 코드·그래픽 제작, legacy Job allowlist 우회 |
 
 역할 Skill은 반복되는 행동 규약을 소유하고, Assignment는 이번 작업의 목표·입력·쓰기 경로·허용 Tool·금지 동작·수용 조건을 소유한다. Skill은 보안 경계가 아니므로 Scope Gate, Tool policy, 실행 영수증과 actual diff가 준수 여부를 별도로 검사해야 한다.
 
@@ -301,11 +324,13 @@ logs/
 - `HarnessJob`은 전체 사용자 작업 계획이 아니라 선택적 Unity 작업 어댑터 계약으로 제한한다.
 - `HarnessGateResult`를 Job 실행 결과와 분리하고 check별 증거를 포함했다.
 - 구조와 Play Mode는 Batch와 interactive에서 같은 GateResult 판정을 사용한다.
-- `Tools/NpcHarness`는 자연어를 받지 않고 `verify`, `run-adapter`, `self-test`만 실행한다.
+- `Tools/NpcHarness`는 자연어를 받지 않고 `verify`, `verify-scope`, `run-adapter`, `self-test`만 실행한다.
 - `.codex/skills/orchestrate-unity-work`가 직접·단일 worker·선택적 복수 worker, bounded remediation과 Reviewer 호출을 조정한다.
 - `.codex/skills/reviewing-unity-candidate`가 결정적 Pass 뒤 독립 read-only review를 수행한다.
 - `HarnessTest.SquareCharacter.Structure`의 profile identity, scene path와 20개 기대값을 JSON manifest로 분리했다. Unity의 공통 선언형 scene evaluator가 제한된 check type registry를 해석하므로 같은 구조 검사는 새 profile 전용 C# 판정기를 요구하지 않는다. loader는 평가 전에 raw JSON의 필수 필드, 값 종류, 중복·미등록 필드를 엄격히 거부한다.
 - `SkillPolicy`와 `WorkerAssignment` v1 계약 및 공통 `verify-scope` runner를 추가했다. `candidateRules`가 역할별 경로·확장자를 결합하고, `execution.kind`가 object assembly, direct C#, raster art 증거를 구분한다. 세 역할 정책은 각각 TestOnly Job/receipt, 선언된 C#·Systems 문서·신규 companion `.meta`, 단일 exact Generated PNG·CRC/critical chunk/scanline까지 decode 가능한 PNG stream·reference importer 설정을 검사한다. 루트가 기록한 pre-delegation assignment SHA-256에 baseline dirty snapshot을 결합하며 worker가 반환한 뒤 루트가 Scope Gate를 실행하므로 assignment나 baseline 예외의 사후 수정은 전체 Gate를 실패시킨다.
+
+- `FarmerScene.Structure` v1은 첫 실제 gameplay 씬 구조 profile이다. `Assets/Scenes/FarmerTest.unity`의 저장본을 preview로 검사하고 role·provider·destination 배선, 필수 참조와 crop/item 정합성을 판정한다. `SavedSceneInspection`이 미저장 target/dependency와 Play Mode·compile/import 상태를 거부하고 preview를 정리하며, 열린 씬 상태 및 의존 파일의 전후 SHA-256을 비교한다. `SceneWiringChecks`는 재사용 가능한 Editor 관찰을, `FarmerSceneValidator`는 현재 FarmerTest의 domain 배선 규칙을 소유한다. 검사기는 gameplay registry 초기화나 scene 저장을 호출하지 않는다. CLI, 열린 Editor bridge와 메뉴가 같은 판정을 사용한다.
 
 ### 제거·대체 완료
 
@@ -317,11 +342,30 @@ logs/
 
 외부 runner는 오케스트레이터가 아니다. 오케스트레이터는 루트 Codex이며, runner는 GateResult와 process evidence를 검증하는 결정적 실행기다.
 
+### 가벼운 리뷰 증거 연결 (2026-09-19)
+
+`Tools/NpcHarness/ReviewEvidence.md`가 pinned request v1과 compact review v2를
+소유한다. 기존 독립 Reviewer 한 명이 변경 부분과 관련 문서만 검토하고, 범주별
+짧은 근거·introduced/pre-existing 구분·책임/의존성/남은 위험 요약을 반환한다.
+legacy ReviewResult v1을 새 증거 계약에 암묵적으로 재사용하지 않는다.
+
+`review-snapshot`은 필수 검사 전 선택된 inputRoots와 문서의 파일 해시를 고정한다.
+`accept-review`는 retained request/snapshot hash, 현재 파일 집합, GateResult
+run/profile/version/check/timestamp/artifact, compact review의 gate hash·coverage·
+verdict 정합성을 검사하고 `Harness.ReviewEvidence` v1을 출력한다. request/snapshot
+pin과 실제 reviewer 신원은 루트가 관리하며 JSON 문자열로 인증하지 않는다.
+현재 강제되는 것은 기록의 존재·형식·동일성이지 AI 판단의 진실성이 아니다.
+전체 규약 분석기, 작업 범위의 자동 추론, sandbox/CI 접근 통제는 추가하지 않았다.
+
+의도하지 않은 책임 이동·계층 추가·공통 계약 변경은 사용자 판단으로 올린다.
+문서 현황 갱신과 규칙 변경 승인을 분리한다. 새 evidence gate는 등록된 필수 결과를
+묶는 최소 intake이며 Scope Gate나 전체 production task acceptance를 대체하지 않는다.
+
 ### 남은 환경 검증과 확장
 
-- 열린 Unity Editor 때문에 외부 Batch가 실제 GateResult 파일을 생성하는 end-to-end 실행은 아직 검증하지 않았다.
-- Windows wrapper와 Unity 탐색은 동일 계약으로 구현했지만 Windows 실기 실행은 검증하지 않았다.
-- 현재 production 기능별 gate profile은 아직 없으며 HarnessBeacon은 self-test profile이다.
+- 2026-09-18 Windows 격리 Unity 6000.3.9f1에서 Farmer 구조 Gate의 독립 self-test와 GateResult 생성을 검증했다. 최초 UPM 오류는 실행 환경의 `ALLUSERSPROFILE` 누락이 원인이었으며 테스트 프로세스에서만 정상 경로를 보충했다. 열린 Editor의 Farmer interactive bridge는 등록됐지만 이번 실행은 batch 증거다.
+- 외부 runner는 .NET 10 SDK를 요구한다. 이번 PC의 기본 SDK는 9이므로 실행 증거 폴더에 공식 .NET 10.0.100 SDK를 별도로 두어 build/self-test를 검증했다. 시스템 PATH는 변경하지 않았다.
+- 전용 production profile은 현재 `FarmerScene.Structure`의 저장본 배선 범위다. 농사 transaction·실제 Worker 행동·시각 결과나 다른 씬의 기능을 이 profile이 증명하지는 않는다. 일반 실제 씬 작업은 SceneWork 공통 확인으로 진행하며 검증하지 않은 기능은 명시한다. HarnessBeacon은 self-test profile이다.
 - RunManifest와 review 기록의 완전한 machine-readable 저장은 후속 실제 작업 적용에서 검증한다.
 - Scope Gate와 task-specific acceptance gate는 현재 각각 GateResult를 생성한다. 두 결과를 하나의 composite profile로 합성하는 단계는 첫 실제 object assembly vertical run 뒤에 진행한다.
 
@@ -387,7 +431,7 @@ NPC/worker production 기능에는 기존 `implement-npc-feature`의 planning·a
 
 ## 18. 알려진 제약과 TBD
 
-- 기존 Unity Tool을 production 경로까지 확장할지, TestOnly 전용으로 유지할지는 구현 계획에서 결정한다.
+- 기존 Harness Job은 TestOnly 전용으로 유지한다. 실제 씬 편집은 SceneWork의 Unity API 실행 경로를 사용한다.
 - production 기능별 gate profile과 기본 retry budget은 작업 scope에서 정한다.
 - Unity license·Package Manager·cold start 실패를 재현 가능하게 격리하는 방식은 미정이다.
 - 작업자별 쓰기 격리에 worktree를 강제할지, 기본 순차 실행으로 충분한지는 실제 수직 흐름 후 결정한다.
