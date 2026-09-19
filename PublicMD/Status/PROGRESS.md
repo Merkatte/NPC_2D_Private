@@ -5,6 +5,39 @@
 
 ## Current Reset Snapshot
 
+### 2026-09-20 — LocalizeSystem 1차 구현 후보
+
+- 승인 계획: `PublicMD/Plans/LocalizeSystem_Implementation_Plan.md`. CSV의 명시적 ID로 LocalizeKey를
+  생성하고, LocalizeData SO의 언어별 캐시 → persistent LocalizeManager → Text/TMP LocalizeText를 구현했다.
+  기존 키 삭제/이름/ID 변경은 거부하며, 문구 변경/행 재정렬은 생성 Enum을 바꾸지 않는다.
+- `Editor/Localization`에 import 후 생성, 수동 재생성, 빌드 전 정합성 검사와 자동 검사 메뉴,
+  LocalizeTest 씬만 지정하는 Windows 검증 빌드 메뉴를 추가했다. 아이템 CSVParser는 변경하지 않았다.
+- 사용자 후속 지시에 따라 SO·LocalizeTest 씬을 YAML로 조립했다. 같은 키의 Text/TMP, 키 변경,
+  TMP 활성 전환, runtime Text 생성, Manager 중복/임시 scene 전환을 관찰하는 TestOnly 도구를 배치했다.
+  기존 시작 씬과 Build Settings는 유지했다. 기능 주 소유 문서는 `Systems/Localization.md`다.
+- 외부 Nanum Gothic 다운로드를 중단하고 Unity 기본 Text 폰트 및 설치된 uGUI 패키지의
+  Liberation Sans 동적 TMP Font Asset/필수 Resources/Shader와 원본 라이선스를 포함했다.
+  **TMP 기본 폰트는 CSV 샘플의 한국어 19개 고유 문자를 포함하지 않는다.** 문구 조회와 글리프 표시는
+  별개이며 기본 폰트 사용 조건에서 한국어의 완전한 시각 표시를 완료로 주장하지 않는다.
+- 검증 PASS: 현재 production/TestOnly C# 및 새 Editor C# 명령행 컴파일 각각 오류 0/경고 0,
+  순수 파서·생성·Enum 정합성 38개 테스트 + 실제 CSV/생성 소스 비교, YAML 참조/배선 84개 검사.
+  순수 테스트 host 빌드에는 MSB3276 assembly binding 경고 1개가 있었으며 실행은 성공했다.
+  기존 Assets/Packages/ProjectSettings 1,316개 파일의 SHA256 보존을 확인했다.
+- 범위 내 문서 `git diff --check` 통과. 전체 worktree 검사는 기존 FarmerTest.unity의 trailing whitespace를
+  보고했으며 이 작업과 무관한 사용자 변경으로 보존했다. 코드에서 매 프레임 조회/scene search/Editor 의존은 없다.
+- **NOT_VERIFIED**: Unity import/load·Missing Script, 실제 Editor SO 캐시 검사, import 반복/Inspector 선택,
+  Play Mode UI/씬 전체 교체/Domain Reload off 반복 실행, Player 빌드·실행·화면 표시.
+  열린 원본 Editor에 실행 진입점이 없고 MCP 연결 인스턴스도 0이어서 수행하지 않았다.
+  자동 검사 소스와 메뉴가 존재하는 것을 실제 실행 PASS로 계산하지 않는다.
+- 검증 증거와 파일 목록: `.harness-runs/localization-20260920/verification-summary.json`,
+  `compile-runtime.log`, `compile-editor.log`, `pure-tests.log`, `asset-checks.json`, `changed-files.txt`.
+- 독립 Codex 읽기 전용 리뷰 런처 **Started**, PID `26024`; 요청 기록은
+  `.codex/agent-runs/20260920-010848-728-prompt.md`, 시작 receipt는 위 증거 폴더의 `review-launch.txt`다.
+  최초 실행 정책/샌드박스 쓰기 차단 후 승인된 실행으로 시작했다. 리뷰 완료를 기다리거나 결과를 읽지 않았다.
+  최종 보고서 `Status/Code_Evaluation_Result.md`는 리뷰 런처가 소유하며 **리뷰 결과 미수신** 상태다.
+- 후속: Unity에서 import 후 Edit Mode Checks, LocalizeTest Play/반복 Play, 검증 Player 빌드를 수행하고
+  결과를 갱신한다. 한국어 표시용 폰트 도입 여부는 기본 폰트를 사용하라는 현재 사용자 지시 이후의 별도 선택이다.
+
 ### 2026-09-19 — 작은 씬·프리팹 YAML 직접 편집 허용
 
 - 사용자 요청에 따라 일반 작업의 작은 `.unity`/`.prefab` 속성·참조 변경은 Editor/MCP

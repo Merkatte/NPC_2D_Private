@@ -48,6 +48,14 @@
 
 각 Seed Phase는 별도 승인과 검증을 거친다. 앞 단계의 완료 조건을 통과하기 전 다음 단계의 production 구현을 시작하지 않는다.
 
+### 활성 데이터·표시 Slice — LocalizeSystem 1차
+
+CSV 문구 편집, 안정적인 LocalizeKey 생성, 한국어 조회와 Text/TMP 표시의 승인 범위는
+[`Plans/LocalizeSystem_Implementation_Plan.md`](Plans/LocalizeSystem_Implementation_Plan.md)를 따른다.
+전용 LocalizeTest 씬만 적용하며 기존 UI 전환과 NPC 판단/대화 연출은 제외한다.
+사용자 후속 요청으로 YAML 조립과 Unity 기본 폰트를 사용한다. 기본 TMP 폰트의 한국어 글리프 제약과
+명령행/Unity 실행 검증 상태를 구분하며, 실제 진행 상태는 `Status/PROGRESS.md`에 기록한다.
+
 ### 활성 개발 인프라 Slice — Codex 작업 하네스
 
 gameplay Phase와 별도로, Codex 작업 결과를 독립적으로 검증하는 개발 하네스를 단계적으로 전환한다. 목표 책임과 신뢰 경계는 [`HARNESS_ARCHITECTURE.md`](HARNESS_ARCHITECTURE.md), 실제 구현 순서와 단계 상태는 [`Plans/NPC_Harness_Implementation_Plan.md`](Plans/NPC_Harness_Implementation_Plan.md)를 기준으로 한다.

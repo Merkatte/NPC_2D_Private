@@ -89,6 +89,12 @@ EventSystem(InputSystemUIInputModule)
 
 `UIManager`에는 popup·hover 배열을 등록한다. `FarmerTest`의 `PopupUI` 아래에는 `SeedSelectionPopup.prefab`이 비활성 상태로 배치되어 `PopupType.SeedSelection`으로 등록된다. 이 인스턴스의 `_warehouse`는 scene의 `WarehouseInventory`를 가리킨다. popup은 `ItemDataContext`의 `ItemCategory.Seed` 항목 중 창고 수량이 양수인 아이템만 상인 UI와 같은 `MerchantItemSlot` 모양으로 표시하고, 열 때마다 수량을 다시 읽는다. 슬롯 클릭은 item ID와 현재 수량을 다시 확인한 뒤 심기 확인 문구를 보여준다. 실제 seed item 소비, 농경지 선택 변경과 world click 진입은 연결되지 않았으며 심기 버튼은 비활성 상태다. `PointerHoverRouter`에는 world camera, `IUIService` 구현 source, Hoverable layer mask가 필요하다. `PointerClickRouter`에는 world camera, `IUIService` 구현 source, Clickable layer mask가 필요하다(Hoverable과 별도 레이어 — 클릭과 hover는 의미가 다른 별개 관심사라 굳이 합치지 않는다). `FarmGaugeHover`에는 fill image와 camera가 필요하다.
 
+## 문구 표시 연계
+
+`LocalizeText`의 CSV key 기반 Text/TMP 표시와 persistent `LocalizeManager` 접근은
+[Localization](Localization.md)이 주 소유한다. UIManager의 popup/hover registry에는 등록하지 않는다.
+첫 적용은 독립 LocalizeTest 씬이며 기존 UI 문구는 이번 작업에서 이관하지 않았다.
+
 ## 알려진 제약과 TBD
 
 - `Physics2D.OverlapPoint`는 겹친 collider의 명시적 UI 우선순위를 제공하지 않는다.

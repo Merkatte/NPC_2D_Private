@@ -104,6 +104,15 @@ domain은 표시 가능한 read model을 제공하고 UI facade는 category별 v
 
 세부 구조: [UI](Systems/UI.md)
 
+### 3.7 지역화 정의와 표시
+
+`CSV -> Editor LocalizeKey 생성 -> LocalizeData SO의 비직렬화 언어별 lookup -> LocalizeText` 흐름을 사용한다.
+lookup은 공유 정의의 파생 캐시이며 actor/scene mutable 상태가 아니다.
+`LocalizeManager`는 씬 전환을 넘는 단일 문구 조회 진입점이다. `LocalizeText` presentation adapter의
+직접 singleton 접근만 허용하며 action/selector/provider의 숨은 의존성으로 확장하지 않는다.
+Manager는 별도 루트에서 DontDestroyOnLoad를 적용하고, SO는 Inspector로 연결한다.
+상세 계약과 배선은 [Localization](Systems/Localization.md)이 소유한다.
+
 ## 4. 의존 방향
 
 허용되는 기본 방향:

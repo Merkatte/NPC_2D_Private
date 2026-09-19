@@ -34,6 +34,7 @@ NPCManager / WorkerPool          생성과 조립
 | 시청(Town Hall) | [Town Hall](Systems/Town_Hall.md) | 모집 쿨다운·phase, 정착지원금 transaction, 예약 기반 NPC 스폰, 낙하 연출 |
 | NPC 표현 | [NPC Presentation](Systems/NPC_Presentation.md) | 이동 animation, Flip, 건물·도구 표현 |
 | UI | [UI](Systems/UI.md) | popup, hover, gauge, pointer routing |
+| 문구와 지역화 | [Localization](Systems/Localization.md) | Localize CSV, 안정적인 Enum 생성, SO 조회, Text/TMP 표시 |
 | 생성과 pooling | [Spawning and Pooling](Systems/Spawning_and_Pooling.md) | role 생성, prefab catalog, worker pool |
 | Codex 작업 하네스 | [Harness Architecture](HARNESS_ARCHITECTURE.md) | Skill 기반 오케스트레이션, 결정적 gate, 실행 증거, Reviewer 경계 |
 
@@ -60,6 +61,7 @@ NPCManager / WorkerPool          생성과 조립
 | 시청 모집·정착지원금·예약 스폰 | Town Hall | Player Gold, Spawning and Pooling, UI |
 | animation·Flip·도구 | NPC Presentation | 이를 호출하는 action 문서 |
 | popup·hover·gauge·click 감지 | UI | 데이터를 제공하는 domain 문서 |
+| 문구·언어·LocalizeKey·Text/TMP 표시 | Localization | UI, singleton 접근 변경 시 ARCHITECTURE |
 | role·prefab·pool | Spawning and Pooling | 생성되는 role 문서 |
 | Codex Skill·작업 위임·Unity 자동 검증 | Harness Architecture | 변경 대상 gameplay 기능 문서, 필요 시 ARCHITECTURE |
 

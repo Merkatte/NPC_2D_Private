@@ -26,6 +26,7 @@
 | `Town_Hall.md` | 단일 기능 문서 |
 | `NPC_Presentation.md` | 단일 기능 문서 |
 | `UI.md` | 단일 기능 문서 |
+| `Localization.md` | CSV/Enum, 언어별 데이터 조회, Text/TMP 문구 표시 |
 | `Spawning_and_Pooling.md` | 단일 기능 문서 |
 
 ## Leaf 문서 형식
