@@ -5,6 +5,37 @@
 
 ## Current Reset Snapshot
 
+### 2026-09-20 — 독립 흰색 말풍선 9-slice 이미지
+
+- `Assets/Art/Generated/UI/ui-speech-panel-white-9slice.png`와 `.meta`를 추가했다.
+  꼬리/캐릭터 연결부 없는 흰색 패널, 검정 테두리와 둥근 모서리, 128×128 RGBA다.
+- 첫 imagegen 후보는 중앙까지 투명해져 미채택했다. 그 이미지는 수정하지 않고 보존했으며,
+  단순 UI 도형의 정확한 9-slice 경계를 위해 별도 둥근 사각형 벡터 원본에서 새 PNG를 생성했다.
+- 기존 UI importer 형식을 따라 Single/FullRect, PPU100, Bilinear, 비압축, 사방 Border32를 저장했다.
+  사용 시 `Image.Type = Sliced`, `Fill Center = true`가 필요하다. 씬/prefab과 말풍선 코드는 추가하지 않았다.
+- 검증 PASS: 완전 불투명 흰색 중앙, 검은 테두리, 투명 외곽, 좌우/상하 대칭, 직선 edge 구간,
+  420×120 및 220×240 9-slice 변환 후 네 corner의 pixel 일치, `.meta` 설정 재조회, `git diff --check`.
+  Unity 연결 인스턴스 0으로 import/실제 Canvas 렌더는 NOT_VERIFIED다.
+- 증거: `.harness-runs/speech-panel-20260920/report.json`, `import-spec.json`,
+  `ui-speech-panel-white-9slice.svg`, `nine-slice-preview.png`. 이전 NPC 이미지 생성/폴더 이동 변경을 보존했다.
+
+### 2026-09-20 — 길드 직원 NPC 이미지와 NPC 폴더 정리
+
+- create-project-sprites/imagegen 스킬로 기존 NPCGirl·상인의 화풍을 참조한
+  `Assets/Art/Generated/NPC/guild-receptionist-silver.png`를 생성했다. 은발 단발, 반쯤 감긴 눈,
+  작은 ㅅ자 입, 단정한 유니폼과 앞으로 모은 손의 전신 idle 이미지다.
+- 사용자 후속 요청으로 사람형 NPC 이미지 4장(기존 NPCGirl 두 버전·상인·신규 길드 직원)을
+  `Assets/Art/Generated/NPC/`에 정리했다. 기존 PNG 세 개와 .meta 세 개의 SHA256를 보존했다.
+  슬라임·상단 새·도구·건물 이미지는 기존 경로에 있다.
+- 새 PNG의 1254×1254 RGBA, 투명 외곽과 잘리지 않은 전신을 확인했다. 기본 imagegen으로 생성 후
+  투명도 보정 1회를 수행했다. 매우 낮은 alpha 1~7 흔적은 제안한 단일 sprite slice 밖에 남아 있다.
+  Merchant와 같은 PPU 650/Bilinear/Multiple(단일 slice) 설정은 `import-spec.json`에 제안만 기록했다.
+- 기존 GUID 기반 씬·프리팹 참조와 importer 내용은 변경하지 않았다. 하네스 PNG smoke 검사와 art routing의
+  직접 경로를 새 폴더로 맞췄다. 새 sprite의 Unity importer 적용/씬 배선/화면 크기 검증은 NOT_VERIFIED다.
+- 검증: 경로 수정 후 하네스 C# 빌드 오류 0/경고 0, self-test 121/121, `git diff --check` 통과.
+- 증거: `.harness-runs/guild-clerk-20260920/report.json`, `import-spec.json`, `move-before.json`,
+  `move-result.json`, `prompt.txt`. 시각 비교는 생성 결과에 대한 확인이며 독립적인 최종 미술 승인은 아니다.
+
 ### 2026-09-20 — LocalizeSystem 1차 구현 후보
 
 - 승인 계획: `PublicMD/Plans/LocalizeSystem_Implementation_Plan.md`. CSV의 명시적 ID로 LocalizeKey를

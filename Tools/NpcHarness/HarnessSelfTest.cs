@@ -520,7 +520,7 @@ internal static class HarnessSelfTest
     {
         string validPath = Path.Combine(
             repositoryRoot,
-            "Assets/Art/Generated/merchant-npc-female.png");
+            "Assets/Art/Generated/NPC/merchant-npc-female.png");
         PngInfo valid = SkillScopeGate.ReadPngInfo(validPath);
         Assert(valid.Width > 0 && valid.Height > 0, "project PNG should decode");
 

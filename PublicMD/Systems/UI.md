@@ -92,6 +92,14 @@ EventSystem(InputSystemUIInputModule)
 
 ## 문구 표시 연계
 
+꼬리 없는 독립 말풍선 패널은 `Assets/Art/Generated/UI/ui-speech-panel-white-9slice.png`다.
+128×128 RGBA, 불투명 흰색 내부·검은색 3px 테두리·둥근 모서리·투명 외곽을 사용한다.
+Single/FullRect, PPU 100, Bilinear, 비압축, mipmap off, 사방 Border 32px를 `.meta`에 저장했다.
+UI `Image.Type = Sliced`, `Fill Center = true`로 사용한다. 일반 Simple 이미지 확대는 9-slicing이 아니다.
+원본 pixel 기준 최소 가로/세로 64 이상에서 고정 corner 영역을 온전히 유지한다.
+캐릭터 연결부·꼬리·텍스트·씬/prefab 배선은 포함하지 않는다. 가로/세로 9-slice 수치 검사는 통과했으며
+Unity import/Canvas 실표시는 미검증이다. 원본 SVG·늘림 미리보기·설정 증거는 `.harness-runs/speech-panel-20260920/`에 있다.
+
 `LocalizeText`의 CSV key 기반 Text/TMP 표시와 persistent `LocalizeManager` 접근은
 [Localization](Localization.md)이 주 소유한다. UIManager의 popup/hover registry에는 등록하지 않는다.
 첫 적용은 독립 LocalizeTest 씬이며 기존 UI 문구는 이번 작업에서 이관하지 않았다.
