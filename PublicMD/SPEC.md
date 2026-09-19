@@ -443,6 +443,10 @@ Q-030~Q-033, Q-035와 Q-036은 구현 전에 결정됐다. [12절 Decision Log](
 
 ## 12. Decision Log
 
+### 2026-09-19 FarmerTest 임시 통합 규칙
+
+승인된 [FarmerTest Guard Integration Plan](Plans/FarmerTest_Guard_Integration_Plan.md)에 따라 Farmer/Guard는 각자 초기 모집 가능, 60/90초 독립 쿨다운과 100골드 지원금을 사용한다. Guard는 초소의 사각형 영역을 순찰하지만 전투·욕구 해결 시 영역 밖으로 이동할 수 있다. 별도 초소는 기본 최대 체력 100이며 파괴 시 GameOver 로그를 한 번 출력한다. 이 규칙은 시청 파괴 시 최종 패배 기획을 대체하지 않는다. 정식 패배 화면·진행 정지·재시작·범용 길찾기는 제외한다.
+
 Open Question이 시스템 규칙으로 확정되면 이 절로 옮기고 표에서는 제거한다. 수치는 여전히 asset 값으로 조정 가능하며 이 절이 수치 자체를 고정하지 않는다.
 
 | ID | 확정된 규칙 | 결정일 | 근거/영향 |

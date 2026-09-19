@@ -55,6 +55,7 @@ DestinationDecider.Decide(stat, role, position, work cost)
 - 모든 후보는 같은 utility 단위에서 비교한다.
 - hard safety filter와 soft risk penalty의 의미를 섞지 않는다.
 - 미래 상태는 예측값이며 실제 stat을 미리 변경하지 않는다.
+- Guard duty 후보는 GuardPost의 등록 위치와 `ActionType.Guard` provider 가용성을 모두 요구한다. 사망하거나 구성되지 않은 초소는 후보가 되지 않으며, 후보 평가 중 순찰 난수는 소비하지 않는다.
 
 ## 검증 도구와 제약
 

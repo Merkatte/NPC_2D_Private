@@ -375,7 +375,9 @@ public class DestinationDecider
     /// </summary>
     private void AddGuardDutyCandidate(List<Candidate> candidates, NeedSnapshot state, Vector3 pos, float moveSpeed, StatEffect dutyCost)
     {
-        if (!_destinationDB.TryGetDestinationPos(BuildingType.GuardPost, out Vector3 postPos))
+        if (!_destinationDB.TryGetDestinationPos(BuildingType.GuardPost, out Vector3 postPos) ||
+            !_destinationDB.TryGetInteractionProvider(BuildingType.GuardPost, ActionType.Guard, out var provider) ||
+            !provider.CanInteract(ActionType.Guard))
             return;
 
         float seconds = _tuning.GuardDutyEvaluationSeconds;

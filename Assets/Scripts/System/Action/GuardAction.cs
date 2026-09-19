@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class GuardAction : DefaultAction
 {
-    private Vector3 _center;
-    private int _patrolIndex;
-    private IGuardStatView _guardStat;
+    private Vector3 _destination;
+    private IInteractionProvider _provider;
+    private Component _providerOwner;
 
     public GuardAction() : base(ActionType.Guard)
     {
@@ -24,14 +24,14 @@ public class GuardAction : DefaultAction
             return;
         }
 
-        _guardStat = actionContext.Stat as IGuardStatView;
-        if (_guardStat == null)
+        _provider = actionContext.InteractionProvider;
+        _providerOwner = _provider as Component;
+        if (!(actionContext.Stat is GuardStat) || !actionContext.Destination.HasValue || !_providerOwner)
         {
-            Fail("GuardAction requires a stat implementing IGuardStatView");
+            Fail("GuardAction requires GuardStat, destination and a live provider");
             return;
         }
-
-        _center = actionContext.Destination ?? actionContext.Component.Position;
+        _destination = actionContext.Destination.Value;
     }
 
     public override void Tick()
@@ -45,7 +45,7 @@ public class GuardAction : DefaultAction
         var stat = actionContext.Stat;
         var cost = actionContext.CostInfo as GuardActionCost;
 
-        if (!component || stat == null || cost == null || _guardStat == null)
+        if (!component || stat == null || cost == null)
         {
             Fail("GuardAction lost its required references mid-tick");
             return;
@@ -66,7 +66,12 @@ public class GuardAction : DefaultAction
             return;
         }
 
-        TickPatrol(component, cost, _guardStat);
+        if (!_providerOwner || !_provider.CanInteract(ActionType.Guard))
+        {
+            RequestReplan();
+            return;
+        }
+        TickPatrol(component, stat, cost);
     }
 
     private static void ApplyNeedDecay(NPCStat stat, GuardActionCost cost)
@@ -76,35 +81,30 @@ public class GuardAction : DefaultAction
         stat.ChangeFatigue(cost.FatiguePerSecond * Time.deltaTime);
     }
 
-    private void TickPatrol(NPCComponent component, GuardActionCost cost, IGuardStatView guardStat)
+    private void TickPatrol(NPCComponent component, NPCStat stat, GuardActionCost cost)
     {
-        Vector3 target = GetPatrolPoint(cost, guardStat);
-        Vector3 toTarget = target - component.Position;
+        Vector3 toTarget = _destination - component.Position;
         toTarget.z = 0f;
-
         if (toTarget.sqrMagnitude <= cost.PatrolArrivalDistance * cost.PatrolArrivalDistance)
         {
-            _patrolIndex = (_patrolIndex + 1) % Mathf.Max(1, cost.PatrolPointCount);
+            // Repeating the selected duty requests another point from the same facility only.
+            if (!_provider.TryGetActionPosition(ActionType.Guard, _destination, out _destination))
+                RequestReplan();
             return;
         }
 
+        float step = Mathf.Max(0f, stat.GetMoveSpeed * Time.deltaTime);
+        if (step <= 0f)
+            return;
         component.Flip(toTarget.x <= 0f);
-        component.Move(toTarget.normalized);
-    }
-
-    private Vector3 GetPatrolPoint(GuardActionCost cost, IGuardStatView guardStat)
-    {
-        int count = Mathf.Max(1, cost.PatrolPointCount);
-        float angle = _patrolIndex * (Mathf.PI * 2f / count);
-        Vector3 offset = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * guardStat.GuardRadius;
-        return _center + offset;
+        component.Move(toTarget.normalized * Mathf.Min(1f, toTarget.magnitude / step));
     }
 
     public override void Clear()
     {
-        _center = Vector3.zero;
-        _patrolIndex = 0;
-        _guardStat = null;
+        _destination = Vector3.zero;
+        _provider = null;
+        _providerOwner = null;
         base.Clear();
     }
 }

@@ -25,4 +25,3 @@ MonoBehaviour:
   _attackPower: 10
   _attackSpeed: 2
   _attackRange: 1
-  _guardRadius: 5

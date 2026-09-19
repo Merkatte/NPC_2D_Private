@@ -1,203 +1,99 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// Town hall recruitment UI. Concrete reference to TownHallRecruitment (no interface) — a 1:1
-/// feature-specific pairing like MerchantPopup-MerchantTradeSite, not a polymorphic UI/domain
-/// boundary. Polls TownHallRecruitment while open (Update only runs while the GameObject is
-/// active, so a closed popup costs nothing) rather than subscribing to an event — this project has
-/// no state-change event convention anywhere (not even GoldManager), and the cooldown display needs
-/// a per-frame refresh regardless.
-/// </summary>
 public sealed class TownHallPopup : PopBase
 {
     [SerializeField] private TownHallRecruitment _recruitment;
-
-    [SerializeField] private GameObject _recruitingPanelRoot;
-    [SerializeField] private GameObject _candidateReadyPanelRoot;
-
-    [SerializeField] private Text _cooldownText;
-    [SerializeField] private Text _candidateJobText;
-    [SerializeField] private Text _settlementCostText;
-    [SerializeField] private Button _recruitButton;
+    [SerializeField] private GameObject _townStatusPanel;
+    [SerializeField] private GameObject _recruitmentPanel;
+    [SerializeField] private Button _townStatusTab;
+    [SerializeField] private Button _recruitmentTab;
+    [SerializeField] private TownHallRecruitCard[] _cards;
     [SerializeField] private Text _resultText;
-
     private bool _isConfigured;
-    private bool _hasLoggedConfigurationFailure;
-
-    private RecruitPhase? _lastDisplayedPhase;
-    private int _lastDisplayedSeconds = -1;
 
     private void Awake()
     {
-        if (!_recruitment || !_recruitingPanelRoot || !_candidateReadyPanelRoot)
-        {
-            ReportConfigurationFailure(
-                "missing a required reference (_recruitment/_recruitingPanelRoot/_candidateReadyPanelRoot)");
-            return;
-        }
-
-        _isConfigured = true;
+        _isConfigured = _recruitment && _townStatusPanel && _recruitmentPanel &&
+            _townStatusTab && _recruitmentTab && _resultText && _cards != null && _cards.Length == 2;
+        if (_isConfigured)
+            foreach (TownHallRecruitCard card in _cards)
+                _isConfigured &= card;
+        if (!_isConfigured)
+            Debug.LogError($"TownHallPopup '{name}': missing recruitment, tabs, panels or cards.", this);
     }
 
-    /// <summary>
-    /// Not OnBeforeOpen(): PopBase.Open() calls OnBeforeOpen() before SetActive(true), so on the
-    /// very first open Awake() has not run yet (MerchantPopup precedent).
-    /// </summary>
+    private void OnEnable()
+    {
+        if (!_isConfigured)
+            return;
+        _townStatusTab.onClick.AddListener(ShowTownStatus);
+        _recruitmentTab.onClick.AddListener(ShowRecruitment);
+        foreach (TownHallRecruitCard card in _cards)
+            card.RecruitRequested += HandleRecruitClick;
+    }
+
+    private void OnDisable()
+    {
+        if (!_isConfigured)
+            return;
+        _townStatusTab.onClick.RemoveListener(ShowTownStatus);
+        _recruitmentTab.onClick.RemoveListener(ShowRecruitment);
+        foreach (TownHallRecruitCard card in _cards)
+            if (card)
+                card.RecruitRequested -= HandleRecruitClick;
+    }
+
     protected override void OnOpened()
     {
         if (!_isConfigured)
-        {
             return;
-        }
-
-        _lastDisplayedPhase = null;
-        _lastDisplayedSeconds = -1;
-
-        if (_resultText)
-        {
-            _resultText.text = string.Empty;
-        }
-
+        _resultText.text = string.Empty;
+        ShowRecruitment();
         Refresh();
     }
 
     private void Update()
     {
-        if (!_isConfigured)
-        {
-            return;
-        }
-
-        Refresh();
+        if (_isConfigured && _recruitmentPanel.activeSelf)
+            Refresh();
     }
 
-    public void HandleRecruitClick()
+    private void ShowTownStatus() => SelectTab(false);
+    private void ShowRecruitment() => SelectTab(true);
+
+    private void SelectTab(bool recruitment)
     {
-        if (!_isConfigured)
-        {
-            return;
-        }
-
-        RecruitResult result = _recruitment.TryDispatchCandidate();
-
-        switch (result)
-        {
-            case RecruitResult.Success:
-                // Close immediately so the drop presentation isn't hidden behind the popup.
-                // RequestClose() (not Close()) so UIManager's stack and BackBg stay in sync.
-                RequestClose();
-                break;
-
-            case RecruitResult.NotEnoughGold:
-                ShowResult("정착지원금이 부족합니다.");
-                break;
-
-            case RecruitResult.SpawnUnavailable:
-                ShowResult("지금은 이 직업을 모집할 수 없습니다.");
-                break;
-
-            case RecruitResult.NotReady:
-                // Stale button click (double-click, or a candidate that stopped being ready between
-                // frames) — nothing meaningful to report, the next Refresh() re-syncs the panel.
-                break;
-        }
+        _townStatusPanel.SetActive(!recruitment);
+        _recruitmentPanel.SetActive(recruitment);
+        _townStatusTab.interactable = recruitment;
+        _recruitmentTab.interactable = !recruitment;
     }
 
     private void Refresh()
     {
-        RecruitPhase phase = _recruitment.Phase;
-
-        if (phase != _lastDisplayedPhase)
+        foreach (TownHallRecruitCard card in _cards)
         {
-            _lastDisplayedPhase = phase;
-            ApplyPhaseVisibility(phase);
-
-            if (phase == RecruitPhase.CandidateReady)
-            {
-                RefreshCandidateDisplay();
-            }
-        }
-
-        if (phase == RecruitPhase.Recruiting)
-        {
-            RefreshCooldownText();
+            bool available = _recruitment.TryGetRecruitment(card.NpcType, out RecruitmentStatus status);
+            card.Refresh(status, available);
         }
     }
 
-    private void ApplyPhaseVisibility(RecruitPhase phase)
+    private void HandleRecruitClick(NPCType npcType)
     {
-        _recruitingPanelRoot.SetActive(phase == RecruitPhase.Recruiting);
-        _candidateReadyPanelRoot.SetActive(phase == RecruitPhase.CandidateReady);
-    }
-
-    private void RefreshCandidateDisplay()
-    {
-        if (_candidateJobText)
+        RecruitResult result = _recruitment.TryDispatchCandidate(npcType);
+        switch (result)
         {
-            _candidateJobText.text = $"직업: {GetDisplayName(_recruitment.CandidateNpcType)}";
+            case RecruitResult.Success:
+                _resultText.text = string.Empty;
+                break;
+            case RecruitResult.NotEnoughGold:
+                _resultText.text = "정착지원금이 부족합니다.";
+                break;
+            case RecruitResult.SpawnUnavailable:
+                _resultText.text = "지금은 이 직업을 모집할 수 없습니다.";
+                break;
         }
-
-        if (_settlementCostText)
-        {
-            _settlementCostText.text = $"정착지원금: {_recruitment.SettlementCost} G";
-        }
-    }
-
-    private void RefreshCooldownText()
-    {
-        int seconds = Mathf.CeilToInt(Mathf.Max(0f, _recruitment.CooldownRemaining));
-        if (seconds == _lastDisplayedSeconds)
-        {
-            return;
-        }
-
-        _lastDisplayedSeconds = seconds;
-
-        if (_cooldownText)
-        {
-            _cooldownText.text = $"남은 시간: {FormatSeconds(seconds)}";
-        }
-    }
-
-    private static string FormatSeconds(int totalSeconds)
-    {
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
-        return $"{minutes:00}:{seconds:00}";
-    }
-
-    private static string GetDisplayName(NPCType npcType)
-    {
-        switch (npcType)
-        {
-            case NPCType.Farmer:
-                return "농부";
-            case NPCType.Guard:
-                return "경비병";
-            case NPCType.Cook:
-                return "요리사";
-            default:
-                return npcType.ToString();
-        }
-    }
-
-    private void ShowResult(string message)
-    {
-        if (_resultText)
-        {
-            _resultText.text = message;
-        }
-    }
-
-    private void ReportConfigurationFailure(string reason)
-    {
-        if (_hasLoggedConfigurationFailure)
-        {
-            return;
-        }
-
-        Debug.LogError($"TownHallPopup '{name}': {reason}.", this);
-        _hasLoggedConfigurationFailure = true;
+        Refresh();
     }
 }

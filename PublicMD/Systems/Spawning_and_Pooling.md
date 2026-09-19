@@ -53,6 +53,7 @@ Test/UI command
 | `Assets/Scripts/Enum/NPCType.cs` | gameplay role의 안정적인 serialized key |
 | `Assets/Scripts/Manager/NPCManager.cs` | role별 selector·stat definition 조립, 단일 spawn 진입점(`CreateNPC`), 예약 기반 2단계 스폰 API(`TryReserveWorker`/`CommitReservation`/`CancelReservation`)와 `_reservedWorkers` 소유 |
 | `Assets/Scripts/System/Lib/WorkerPool.cs` | 단일 `WorkerNPC` prefab의 Unity `ObjectPool` adapter |
+| `Assets/Data/Struct/WorkerReservation.cs` | 예약된 worker·role·stat·selector를 묶는 예약 값 |
 
 ## 변경 유형별 최소 확인 범위
 

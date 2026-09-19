@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: GuardActionCost
   m_EditorClassIdentifier: Assembly-CSharp::GuardActionCost
   PatrolArrivalDistance: 0.2
-  PatrolPointCount: 4
   HungerPerSecond: 10
   ThirstPerSecond: 10
   FatiguePerSecond: 10

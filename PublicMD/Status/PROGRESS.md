@@ -38,6 +38,30 @@
 - 후속: Unity에서 import 후 Edit Mode Checks, LocalizeTest Play/반복 Play, 검증 Player 빌드를 수행하고
   결과를 갱신한다. 한국어 표시용 폰트 도입 여부는 기본 폰트를 사용하라는 현재 사용자 지시 이후의 별도 선택이다.
 
+### 2026-09-19 — FarmerTest 경비·모집·초소 방어 통합
+
+- 승인 계획: `PublicMD/Plans/FarmerTest_Guard_Integration_Plan.md`. GuardPost 사각형 순찰,
+  기존 전투/욕구 복귀 경로, 초소 체력 100과 임시 1회 GameOver reporter를 구현했다.
+  고정 4점/GuardRadius/IGuardStatView를 제거하고 GuardStat 역할 호환성을 유지했다.
+- TownHallRecruitment 한 개가 Farmer 60초/100골드, Guard 90초/100골드의 후보·예약·낙하·쿨다운을
+  독립 관리한다. 초기 두 후보 준비, 각자 착지·기립 후 카운트다운, disable 시 코루틴 중지·커밋을 적용했다.
+- TownHallPopup에 마을 상태/모집 탭과 TownHallRecruitCard 두 개를 연결했다. 기본 모집 탭,
+  `준비중입니다` placeholder, 성공 후 팝업 유지. 기존 모집 프로브는 직군 지정 API로 이관했다.
+- FarmerTest의 Farmer/농사/거래 배선을 유지하고 Guard 생성 entry·cost·selector, 별도 초소·순찰 영역,
+  수동 Enemy 스포너를 추가했다. GuardTest의 기존 PatrolArea도 provider 방식으로 이관했다.
+  사용자 후속 허용에 따라 새 hierarchy까지 YAML로 조립했으며 Editor 조립 스크립트·프로젝트 복사는 없다.
+- 코드·배선 후 built-in imagegen으로 정면 초소 1개를 생성했다. `Assets/Art/Generated/guard-post-front.png`
+  (RGBA 1254×1254, 투명 외곽)을 확인하고 sprite만 지연 적용했다. collider·체력·순찰 영역은 변경하지 않았다.
+- 검증: 전체 production/TestOnly C# 컴파일 오류·경고 0, 변경 scene/prefab의 내부 참조 확인,
+  `git diff --check`. 기존 FarmerScene.Structure v1은 Refresh 후 33 checks Pass.
+  첫 실행의 Missing Script/provider Fail은 Editor가 새 스크립트를 import한 뒤 해소됐다.
+- **Play Mode: NOT_VERIFIED(사용자 명시적 생략)**. 독립 타이머, 연타·실패·disable transaction,
+  실제 Enemy 피해·GameOver 1회, 순찰 재사용/욕구·전투 복귀, UI 실제 표시/조작은 실행 검증하지 않았다.
+- 최종 독립 리뷰는 구현에 참여하지 않은 collaboration reviewer 한 명과 기존 review-evidence 계약을 사용한다.
+  최종 verdict/잔여 위험은 `.harness-runs/farmer-guard-20260919/review.json`, gate 결과는 같은 run의
+  `gate-results/`에 기록한다. 구조 gate는 새 gameplay 전반을 증명하지 않는다.
+- Phase별 보정 한도 2회, 현재 후보 보정 0회. 자동 commit/push, 씬 이름·시작 씬 변경은 하지 않았다.
+
 ### 2026-09-19 — 작은 씬·프리팹 YAML 직접 편집 허용
 
 - 사용자 요청에 따라 일반 작업의 작은 `.unity`/`.prefab` 속성·참조 변경은 Editor/MCP

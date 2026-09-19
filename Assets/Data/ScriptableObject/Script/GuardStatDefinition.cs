@@ -20,7 +20,6 @@ public class GuardStatDefinition : NPCStatDefinition
     [SerializeField] private float _attackPower = 1f;
     [SerializeField] private float _attackSpeed = 1f;
     [SerializeField] private float _attackRange = 1f;
-    [SerializeField] private float _guardRadius = 5f;
 
     public override NPCStat CreateRuntimeStat()
     {
@@ -37,7 +36,6 @@ public class GuardStatDefinition : NPCStatDefinition
             _thirstMax,
             _attackPower,
             _attackSpeed,
-            _attackRange,
-            _guardRadius);
+            _attackRange);
     }
 }

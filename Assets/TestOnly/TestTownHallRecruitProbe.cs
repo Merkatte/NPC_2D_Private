@@ -6,7 +6,7 @@ using UnityEngine;
 /// Deterministic probe for TownHallRecruitment/NPCManager's reservation transaction, limited to
 /// failure paths that never leave a partially-changed or hard-to-undo state (TownHallRecruitment's
 /// cooldown timer is real wall-clock state with no test-only setter, and a successful
-/// TryDispatchCandidate() commits a real NPC into the scene with no despawn API — this project
+/// TryDispatchCandidate(NPCType.Farmer) commits a real NPC into the scene with no despawn API — this project
 /// deliberately adds neither, so the success path is Play Mode manual verification instead; see
 /// PublicMD/Systems/Town_Hall.md).
 ///
@@ -34,6 +34,15 @@ public class TestTownHallRecruitProbe : MonoBehaviour
     private int _passCount;
     private int _failCount;
     private int _skipCount;
+
+    private RecruitmentStatus FarmerStatus
+    {
+        get
+        {
+            _recruitment.TryGetRecruitment(NPCType.Farmer, out RecruitmentStatus status);
+            return status;
+        }
+    }
 
     private void OnGUI()
     {
@@ -63,7 +72,7 @@ public class TestTownHallRecruitProbe : MonoBehaviour
         _skipCount = 0;
         _report.AppendLine("=== Town hall recruit probe ===");
 
-        CaseInitialRecruitingRejected();
+        CaseRecruitingRejected();
         CaseUnregisteredRoleRejected();
         CaseInsufficientGoldRejected();
         CaseMisconfiguredRecruitmentRejected();
@@ -80,18 +89,18 @@ public class TestTownHallRecruitProbe : MonoBehaviour
 
     // ---- cases ----
 
-    private void CaseInitialRecruitingRejected()
+    private void CaseRecruitingRejected()
     {
-        if (_recruitment.Phase != RecruitPhase.Recruiting)
+        if (FarmerStatus.Phase != RecruitPhase.Recruiting)
         {
-            Skip("Case 1", "_recruitment.Phase is already CandidateReady at the time this ran " +
+            Skip("Case 1", "FarmerStatus.Phase is already CandidateReady at the time this ran " +
                 "(cooldown elapsed before the button was pressed) — re-run right after entering Play Mode.");
             return;
         }
 
         int goldBefore = _goldManager.CurrentGold;
 
-        RecruitResult result = _recruitment.TryDispatchCandidate();
+        RecruitResult result = _recruitment.TryDispatchCandidate(NPCType.Farmer);
 
         Check("Case 1", "calling TryDispatchCandidate while still Recruiting is rejected and gold is untouched",
             result == RecruitResult.NotReady && _goldManager.CurrentGold == goldBefore);
@@ -121,9 +130,9 @@ public class TestTownHallRecruitProbe : MonoBehaviour
 
     private void CaseInsufficientGoldRejected()
     {
-        if (_recruitment.Phase != RecruitPhase.CandidateReady)
+        if (FarmerStatus.Phase != RecruitPhase.CandidateReady)
         {
-            Skip("Case 3", "_recruitment.Phase is not CandidateReady yet (cooldown still running) — " +
+            Skip("Case 3", "FarmerStatus.Phase is not CandidateReady yet (cooldown still running) — " +
                 "re-run after the cooldown elapses.");
             return;
         }
@@ -137,12 +146,12 @@ public class TestTownHallRecruitProbe : MonoBehaviour
 
         try
         {
-            RecruitResult result = _recruitment.TryDispatchCandidate();
+            RecruitResult result = _recruitment.TryDispatchCandidate(NPCType.Farmer);
 
             Check("Case 3", "dispatching with zero gold is rejected, leaving gold and phase untouched",
                 result == RecruitResult.NotEnoughGold &&
                 _goldManager.CurrentGold == 0 &&
-                _recruitment.Phase == RecruitPhase.CandidateReady);
+                FarmerStatus.Phase == RecruitPhase.CandidateReady);
         }
         finally
         {
@@ -162,7 +171,7 @@ public class TestTownHallRecruitProbe : MonoBehaviour
 
         int goldBefore = _goldManager.CurrentGold;
 
-        RecruitResult result = _misconfiguredRecruitment.TryDispatchCandidate();
+        RecruitResult result = _misconfiguredRecruitment.TryDispatchCandidate(NPCType.Farmer);
 
         Check("Case 4", "an unconfigured TownHallRecruitment refuses to dispatch and gold is untouched",
             result == RecruitResult.NotReady && _goldManager.CurrentGold == goldBefore);

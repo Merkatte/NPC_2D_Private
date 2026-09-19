@@ -76,7 +76,7 @@ public class GuardActionSelector : BaseNPCActionSelector
 
     public override bool CanUseStat(NPCStat stat)
     {
-        return stat is IGuardStatView;
+        return stat is GuardStat;
     }
 
     public override Queue<IAction> RequestNewActionQueue(NPCStat stat, NPCType npcType, NPCComponent component)
@@ -90,9 +90,9 @@ public class GuardActionSelector : BaseNPCActionSelector
             return BuildIdleQueue(component, stat);
         }
 
-        if (!(stat is IGuardStatView guardStat))
+        if (!(stat is GuardStat guardStat))
         {
-            Debug.LogError("Guard selector requires a stat implementing IGuardStatView; falling back to Idle.");
+            Debug.LogError("Guard selector requires a stat implementing GuardStat; falling back to Idle.");
             return BuildIdleQueue(component, stat);
         }
 
@@ -118,10 +118,10 @@ public class GuardActionSelector : BaseNPCActionSelector
             return BuildIdleQueue(component, stat);
         }
 
-        return BuildGuardQueue(component, stat, guardStat);
+        return BuildGuardQueue(component, stat);
     }
 
-    private bool TryBuildCombatQueue(NPCComponent component, NPCStat stat, IGuardStatView guardStat, out Queue<IAction> queue)
+    private bool TryBuildCombatQueue(NPCComponent component, NPCStat stat, GuardStat guardStat, out Queue<IAction> queue)
     {
         queue = null;
         CombatRuntimeState runtimeState = component.CombatRuntimeState;
@@ -147,7 +147,7 @@ public class GuardActionSelector : BaseNPCActionSelector
         return true;
     }
 
-    private Queue<IAction> BuildCombatQueue(NPCComponent component, NPCStat stat, IGuardStatView guardStat, CombatRuntimeState runtimeState)
+    private Queue<IAction> BuildCombatQueue(NPCComponent component, NPCStat stat, GuardStat guardStat, CombatRuntimeState runtimeState)
     {
         List<IAction> rented = new List<IAction>();
         CombatTargetHandle handle = runtimeState.TargetHandle;
@@ -204,34 +204,21 @@ public class GuardActionSelector : BaseNPCActionSelector
         return new Queue<IAction>(rented);
     }
 
-    private Queue<IAction> BuildGuardQueue(NPCComponent component, NPCStat stat, IGuardStatView guardStat)
+    private Queue<IAction> BuildGuardQueue(NPCComponent component, NPCStat stat)
     {
-        if (!_destinationDB.TryGetDestinationPos(BuildingType.GuardPost, out Vector3 guardPos))
-        {
-            Debug.LogError("GuardPost destination not found; Guard cannot patrol.");
+        if (!_destinationDB.TryGetDestinationPos(BuildingType.GuardPost, out Vector3 guardPos) ||
+            !_destinationDB.TryGetInteractionProvider(BuildingType.GuardPost, ActionType.Guard, out var provider) ||
+            !provider.TryGetActionPosition(ActionType.Guard, guardPos, out Vector3 firstPoint))
             return BuildIdleQueue(component, stat);
-        }
 
         List<IAction> rented = new List<IAction>();
-        ActionContext context = new ActionContext(component, stat, guardPos, _guardActionCostInfo);
-
-        Vector3 toPost = guardPos - component.Position;
-        toPost.z = 0f;
-        if (toPost.sqrMagnitude > guardStat.GuardRadius * guardStat.GuardRadius)
-        {
-            if (!TryRentAction(ActionType.Move, context, rented))
-            {
-                ReturnAll(rented);
-                return new Queue<IAction>();
-            }
-        }
-
+        ActionContext context = new ActionContext(component, stat, firstPoint, _guardActionCostInfo,
+            provider: provider);
         if (!TryRentAction(ActionType.Guard, context, rented))
         {
             ReturnAll(rented);
             return new Queue<IAction>();
         }
-
         return new Queue<IAction>(rented);
     }
 

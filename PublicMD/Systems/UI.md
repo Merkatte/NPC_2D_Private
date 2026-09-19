@@ -62,6 +62,7 @@ EventSystem(InputSystemUIInputModule)
 | `Assets/Scripts/UI/PopBase.cs` | popup 식별자와 open/close 공통 lifecycle |
 | `Assets/Scripts/UI/MerchantPopup.cs` | 이 프로젝트 최초의 concrete popup — 상단 거래 UI([Merchant Caravan](Merchant_Caravan.md) 주 소유) |
 | `Assets/Scripts/UI/TownHallPopup.cs` | 시청 모집 UI([Town Hall](Town_Hall.md) 주 소유) |
+| `Assets/Scripts/UI/TownHallRecruitCard.cs` | 시청 직군별 모집 상태 표시([Town Hall](Town_Hall.md) 주 소유) |
 | `Assets/Scripts/UI/SeedSelectionPopup.cs` | 창고의 `Seed` 재고를 상인 슬롯으로 표시하고 선택한 아이템의 심기 확인 문구를 보여주는 popup |
 | `Assets/Scripts/UI/UIManager.cs` | popup·hover registry와 현재 표시 상태를 조정하는 facade |
 

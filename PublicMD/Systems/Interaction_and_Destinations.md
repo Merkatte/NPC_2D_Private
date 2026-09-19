@@ -78,7 +78,7 @@ item을 옮기는 action:
 
 - 새 facility마다 domain 전용 provider interface나 `TryGetXxxProvider`를 추가하지 않는다.
 - provider는 자신의 domain transaction만 실행하고 NPC의 다음 행동을 결정하지 않는다.
-- selector는 semantic action을 선택한 뒤 같은 provider에서 action 위치를 한 번 조회하며, action은 이미 확정된 위치만 받는다. 위치를 따로 계산하지 않는 Deposit 같은 action도 이 조회 경로를 건너뛰지 않는다.
+- selector는 semantic action을 선택한 뒤 같은 provider에서 첫 action 위치를 조회한다. 장기 GuardAction은 도착마다 주입된 동일 provider에서 다음 순찰 위치를 요청한다. 이 반복은 선택된 경비 실행이며 새로운 시설·semantic 행동 선택이 아니다. 다른 action은 확정된 위치를 받으며 Deposit도 최초 조회를 건너뛰지 않는다.
 - item payload는 `InteractionRequest.Cargo`로만 전달하고 `ActionContext`나 `InteractionResult`에 domain 전용 필드를 추가하지 않는다.
 - provider는 요청자가 들고 온 cargo에만 접근하며 계약 밖의 조작(임의 비우기 등)을 하지 않는다.
 - action 위치를 별도로 제공하지 않는 provider는 등록된 destination 위치를 그대로 사용한다.
@@ -88,7 +88,7 @@ item을 옮기는 action:
 
 ## Unity 배선
 
-`DestinationDB` row에는 `BuildingType`, 이동 위치, provider가 붙은 destination object를 연결한다. 모든 `BaseInteractionProvider`는 `InteractableManager._interactables`에 등록한다. 현재 등록 대상은 Pub, Well, Farm, Warehouse이며 `BuildingType.Warehouse` row와 `WarehouseDepositPoint`가 함께 있어야 Farmer가 입고 목적지를 찾는다. `FarmerTest.unity`는 배선 완료, `GuardTest.unity`는 2026-09-04 기준 미배선이다.
+`DestinationDB` row에는 `BuildingType`, 이동 위치, provider가 붙은 destination object를 연결한다. 모든 `BaseInteractionProvider`는 `InteractableManager._interactables`에 등록한다. FarmerTest의 Farm/Warehouse 배선을 유지하며 GuardPost를 추가한다. GuardTest도 GuardPost provider를 등록하고 기존 PatrolArea를 위치 기준으로 사용한다. GuardPost.CanInteract는 초소 사망·비활성화를 반영한다.
 
 ## 알려진 제약과 TBD
 

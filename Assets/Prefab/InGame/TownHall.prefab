@@ -231,14 +231,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5484410c976343f4a20a033bfbdc2150, type: 3}
-  m_Name:
+  m_Name: null
   m_EditorClassIdentifier: Assembly-CSharp::TownHallRecruitment
   _npcManager: {fileID: 0}
   _goldManager: {fileID: 0}
   _visual: {fileID: 1129389846585863967}
   _landingPoint: {x: 0, y: -2}
-  _cooldownDuration: 60
-  _settlementCost: 100
   _dropHeight: 6
   _dropDuration: 0.7
   _dropEasing:
@@ -265,7 +263,13 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  _recruitNpcType: 0
+  _recruitments:
+  - _npcType: 0
+    _cooldownDuration: 60
+    _settlementCost: 100
+  - _npcType: 1
+    _cooldownDuration: 90
+    _settlementCost: 100
 --- !u!1 &1384790924544264643
 GameObject:
   m_ObjectHideFlags: 0

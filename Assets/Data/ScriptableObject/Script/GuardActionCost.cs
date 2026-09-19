@@ -7,7 +7,6 @@ public class GuardActionCost : DefaultActionCost
 
     [Header("Patrol")]
     public float PatrolArrivalDistance = 0.2f;
-    public int PatrolPointCount = 4;
 
     // Rate x FarmingAction._workingTime(3s) should stay below the matching FarmingActionPer* value
     // so Guard's needs decay slower per second than one Farming completion costs. See GQ-009 in
@@ -30,7 +29,6 @@ public class GuardActionCost : DefaultActionCost
     private void OnValidate()
     {
         PatrolArrivalDistance = Mathf.Max(0.01f, PatrolArrivalDistance);
-        PatrolPointCount = Mathf.Max(1, PatrolPointCount);
 
         HungerPerSecond = Mathf.Max(0f, HungerPerSecond);
         ThirstPerSecond = Mathf.Max(0f, ThirstPerSecond);
