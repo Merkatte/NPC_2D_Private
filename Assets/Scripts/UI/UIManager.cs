@@ -68,9 +68,12 @@ public class UIManager : MonoBehaviour, IUIService
         if (!_hoverRegistry.TryGetValue(hoverType, out HoverBase hover) || !hover)
             return false;
 
-        if (_activeHover && (_activeHover != hover || !_activeHover.IsOwnedBy(source)))
+        if (_activeHover == hover && hover.IsVisible && hover.IsOwnedBy(source))
+            return true;
+
+        if (_activeHover && _activeHover != hover)
         {
-            _activeHover.HideCurrent();
+            _activeHover.HideImmediately();
             _activeHover = null;
         }
 
@@ -90,7 +93,7 @@ public class UIManager : MonoBehaviour, IUIService
             return false;
 
         hover.HideCurrent();
-        _activeHover = null;
+        // Retain a closing view so a category switch or HideAll can finish it immediately.
         return true;
     }
 
@@ -105,7 +108,7 @@ public class UIManager : MonoBehaviour, IUIService
         _popupStack.Clear();
 
         if (_activeHover)
-            _activeHover.HideCurrent();
+            _activeHover.HideImmediately();
 
         _activeHover = null;
         RefreshBackBg();
@@ -187,7 +190,7 @@ public class UIManager : MonoBehaviour, IUIService
             }
 
             _hoverRegistry.Add(hover.HoverType, hover);
-            hover.HideCurrent();
+            hover.HideImmediately();
         }
     }
 

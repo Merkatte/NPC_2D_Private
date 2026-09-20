@@ -18,6 +18,17 @@ public class WorkerNPC : MonoBehaviour
     private bool _wasRigidbodySimulated;
     private bool[] _wereCollidersEnabled;
 
+    public bool TryGetCurrentState(out IStatView stat, out ActionType? actionType)
+    {
+        stat = null;
+        actionType = null;
+        if (!_isInitialized || !isActiveAndEnabled || _stat == null)
+            return false;
+        stat = _stat;
+        actionType = _currentAction?.GetMyActionType();
+        return true;
+    }
+
     private void Awake()
     {
         _wereCollidersEnabled = new bool[_gameplayColliders != null ? _gameplayColliders.Length : 0];

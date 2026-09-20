@@ -1,128 +1,161 @@
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-/// <summary>
-/// Pointer/raycast input adapter. Detects the <see cref="IHoverInfoSource"/> under the mouse
-/// and forwards show/hide intent to <see cref="IUIService"/>. Knows nothing about any concrete
-/// domain type (e.g. FarmWorkSite) or concrete UI type (HoverBase, UIManager) — only the
-/// IHoverInfoSource/IUIService contracts.
-///
-/// Requires the Collider2D and the IHoverInfoSource to live on the same GameObject
-/// (TryGetComponent only looks at the hit GameObject itself, not its parents/children).
-/// </summary>
+// Input adapter: only source/service contracts and category priority are known here.
+// Collider and IHoverInfoSource components must share a GameObject.
 public class PointerHoverRouter : MonoBehaviour
 {
     private const float MinimumPollInterval = 0.02f;
+    private const float SourceRetryInterval = 0.5f;
 
     [SerializeField] private Camera _worldCamera;
     [SerializeField] private MonoBehaviour _uiServiceSource;
     [SerializeField] private LayerMask _hoverableMask;
+    [SerializeField] private HoverType _priorityHoverType = HoverType.NPCMessage;
     [SerializeField, Min(MinimumPollInterval)] private float _pollInterval = 0.05f;
 
+    private sealed class SourceCache
+    {
+        public IHoverInfoSource[] Sources;
+        public float NextResolutionTime;
+    }
+
+    private readonly List<Collider2D> _hits = new List<Collider2D>();
+    private readonly Dictionary<Collider2D, SourceCache> _sources = new Dictionary<Collider2D, SourceCache>();
+    private readonly List<Collider2D> _expiredColliders = new List<Collider2D>();
+    private ContactFilter2D _filter;
     private IUIService _uiService;
     private float _nextPollTime;
-
-    // Candidate: whatever is currently under the mouse. Only re-resolved when the hit
-    // collider changes, so TryGetComponent runs on enter/exit, not every poll.
-    private Collider2D _candidateCollider;
-    private IHoverInfoSource _candidateSource;
-    private HoverType _candidateHoverType;
-
-    // Active: the source currently showing on screen (TryShow succeeded). Kept separate from
-    // the candidate so a failed TryShow (e.g. blocked by UI policy) retries on the next poll
-    // instead of being stuck until the mouse leaves and re-enters the same collider.
     private IHoverInfoSource _activeSource;
     private HoverType _activeHoverType;
 
     private void Awake()
     {
         _uiService = _uiServiceSource as IUIService;
-
-        if (!_worldCamera)
+        if (!_worldCamera || _uiService == null)
         {
-            Debug.LogError($"PointerHoverRouter '{name}': missing _worldCamera.", this);
+            Debug.LogError($"PointerHoverRouter '{name}': assign _worldCamera and _uiServiceSource implementing IUIService.", this);
             enabled = false;
             return;
         }
-
-        if (_uiService == null)
-        {
-            Debug.LogError($"PointerHoverRouter '{name}': _uiServiceSource does not implement IUIService.", this);
-            enabled = false;
-            return;
-        }
-
-        if (_hoverableMask.value == 0)
-            Debug.LogError($"PointerHoverRouter '{name}': _hoverableMask is empty, nothing will ever be hit.", this);
+        // Preserve each scene's existing farm mask while including Friendly NPCs.
+        _filter.SetLayerMask(_hoverableMask.value | LayerMask.GetMask("Friendly"));
+        _filter.useTriggers = Physics2D.queriesHitTriggers;
+        if (_filter.layerMask.value == 0)
+            Debug.LogError($"PointerHoverRouter '{name}': no hover layers are configured.", this);
     }
 
     private void OnDisable()
     {
         ClearActiveHover();
-        _candidateCollider = null;
-        _candidateSource = null;
+        _sources.Clear();
+        _hits.Clear();
+        _expiredColliders.Clear();
     }
 
     private void Update()
     {
         if (Time.unscaledTime < _nextPollTime)
             return;
-
         _nextPollTime = Time.unscaledTime + Mathf.Max(MinimumPollInterval, _pollInterval);
 
         Mouse mouse = Mouse.current;
-        if (mouse == null)
+        if (mouse == null || !_worldCamera || !_uiServiceSource)
         {
             ClearActiveHover();
             return;
         }
 
-        Vector3 screenPosition = mouse.position.ReadValue();
-        Vector2 worldPosition = _worldCamera.ScreenToWorldPoint(screenPosition);
-        Collider2D hit = Physics2D.OverlapPoint(worldPosition, _hoverableMask);
+        Vector2 worldPosition = _worldCamera.ScreenToWorldPoint(mouse.position.ReadValue());
+        Physics2D.OverlapPoint(worldPosition, _filter, _hits);
+        RefreshSources();
 
-        if (hit != _candidateCollider)
-            UpdateCandidate(hit);
-
-        if (_candidateSource == null)
+        // Try the configured category first, then all remaining usable sources.
+        // An invalid/disabled foreground collider cannot mask a usable farm.
+        IHoverInfoSource candidate = FindUsableSource(true) ?? FindUsableSource(false);
+        if (candidate == null)
         {
             ClearActiveHover();
             return;
         }
+        if (!ReferenceEquals(candidate, _activeSource))
+            ClearActiveHover();
 
-        if (ReferenceEquals(_candidateSource, _activeSource))
-            return;
-
-        ClearActiveHover();
-
-        if (_uiService.TryShow(_candidateHoverType, _candidateSource))
+        // Views can close themselves while their collider stays under the pointer.
+        // UIManager treats an already-visible source as an idempotent success.
+        if (_uiService.TryShow(candidate.HoverType, candidate))
         {
-            _activeSource = _candidateSource;
-            _activeHoverType = _candidateHoverType;
+            _activeSource = candidate;
+            _activeHoverType = candidate.HoverType;
+        }
+        else
+            ClearActiveHover();
+    }
+
+    private void RefreshSources()
+    {
+        _expiredColliders.Clear();
+        foreach (KeyValuePair<Collider2D, SourceCache> pair in _sources)
+            if (!pair.Key || !_hits.Contains(pair.Key))
+                _expiredColliders.Add(pair.Key);
+        for (int i = 0; i < _expiredColliders.Count; ++i)
+            _sources.Remove(_expiredColliders[i]);
+
+        for (int i = 0; i < _hits.Count; ++i)
+        {
+            Collider2D hit = _hits[i];
+            if (!hit)
+                continue;
+            if (!_sources.TryGetValue(hit, out SourceCache cache))
+            {
+                cache = new SourceCache();
+                _sources.Add(hit, cache);
+            }
+            if (cache.Sources != null && (!NeedsResolution(cache.Sources) || Time.unscaledTime < cache.NextResolutionTime))
+                continue;
+            cache.Sources = hit.GetComponents<IHoverInfoSource>();
+            cache.NextResolutionTime = Time.unscaledTime + SourceRetryInterval;
         }
     }
 
-    private void UpdateCandidate(Collider2D hit)
+    private IHoverInfoSource FindUsableSource(bool priorityOnly)
     {
-        _candidateCollider = hit;
-        _candidateSource = null;
+        for (int i = 0; i < _hits.Count; ++i)
+        {
+            Collider2D hit = _hits[i];
+            if (!hit || !hit.isActiveAndEnabled || !_sources.TryGetValue(hit, out SourceCache cache))
+                continue;
+            foreach (IHoverInfoSource source in cache.Sources)
+            {
+                if (source == null || !source.Owner || source.HoverType == HoverType.None
+                    || (source.HoverType == _priorityHoverType) != priorityOnly)
+                    continue;
+                if (source.Owner is Behaviour behaviour && !behaviour.isActiveAndEnabled)
+                    continue;
+                if (source.TryGetHoverInfo(out _))
+                    return source;
+            }
+        }
+        return null;
+    }
 
-        if (!hit || !hit.TryGetComponent(out IHoverInfoSource source))
-            return;
-
-        if (source.HoverType == HoverType.None)
-            return;
-
-        _candidateSource = source;
-        _candidateHoverType = source.HoverType;
+    private static bool NeedsResolution(IHoverInfoSource[] sources)
+    {
+        if (sources.Length == 0)
+            return true;
+        for (int i = 0; i < sources.Length; ++i)
+            if (sources[i] == null || !sources[i].Owner)
+                return true;
+        return false;
     }
 
     private void ClearActiveHover()
     {
         if (_activeSource == null)
             return;
-
-        _uiService.TryHide(_activeHoverType, _activeSource);
+        if (_uiServiceSource)
+            _uiService.TryHide(_activeHoverType, _activeSource);
         _activeSource = null;
     }
 

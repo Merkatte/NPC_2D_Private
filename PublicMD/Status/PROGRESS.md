@@ -5,6 +5,79 @@
 
 ## Current Reset Snapshot
 
+### 2026-09-20 — NPC 말풍선 DOTween 진입·퇴장
+
+- 사용자가 기존 말풍선 표시를 정상 확인하고 위로 올라오며 커지는 진입과 반대 퇴장 연출을 요청했다.
+- NPCMessageHover에 unscaled DOTween 진행도, 기본 0.2초 진입·0.15초 퇴장, 18 UI 단위 이동과
+  65%→100% 크기·alpha 연출을 적용했다. Inspector Motion에서 조정하며 현재 anchor 추적과 화면 경계 보정을 유지한다.
+- HoverBase는 source 해제와 퇴장 완료를 분리하고 기존 농장 hover는 즉시 닫힌다.
+  UIManager는 닫히는 view를 기억해 다른 category·HideAll 전환 시 정리한다. 재진입·비활성화는 기존 tween을 취소한다.
+- 변경은 UI 코드 세 파일과 관련 문서에 한정한다. 씬·프리팹 배선과 메시지 선택 규칙은 변경하지 않았다.
+  컴파일·독립 lifecycle 검사·기존 구조 Gate·리뷰와 미검증 항목은
+  `.harness-runs/npc-hover-motion-20260920/verification-summary.json`에 기록한다. 수정 예산은 2회다.
+
+### 2026-09-20 — 구조 검사 중 전역 조명 중복 등록 수정
+
+- 열린 FarmerTest를 SavedSceneInspection이 preview로 다시 로드하면서 URP Global Light2D가 중복 등록되는 경로를 수정했다.
+  clean loaded target은 그대로 읽기 전용 검사하고 검사기가 소유한 preview만 정리한다.
+- 닫힌 대상을 검사할 때 이미 활성 전역 조명이 있으면 preview 생성 전에 InfrastructureError로 거부한다.
+  미저장 씬·의존 asset 거부, 씬 상태·디스크 해시 보존 검사와 FarmerSceneValidator의 배선 기대값은 유지한다.
+- dependency evidence에 실제 inspectionSource를 기록한다. 열린 씬 검사는 외부 편집의 보류된 reload를 대체하지 않는다.
+- 이번 범위는 Editor 검사 도구와 문서뿐이다. 씬·조명·NPC gameplay 코드는 변경하지 않는다.
+  컴파일, 독립 회귀 host, 열린 Editor 반복 실행·로그 및 리뷰 결과는
+  `.harness-runs/scene-inspection-light-20260920/verification-summary.json`에 기록한다.
+  별도 버그 수정 예산은 2회이며 이전 NPC 기능의 미완료 실행 검증과 구분한다.
+
+### 2026-09-20 — NPC 말풍선 YAML 배선
+
+- 사용자 후속 지시로 씬·프리팹 YAML 배선을 진행했다. 앞으로도 기존 Hierarchy를 파악·유지하며
+  YAML로 작업하고 코드 품질 검증에 집중한다는 방침을 `AGENTS.md`에 기록했다.
+- `Canvas/HoveringUI/NPCMessageHover/MessageText`를 UIManager에 등록하고 기존 농장 게이지를 유지했다.
+  흰색 Sliced Image, 기본 폰트 Text/LocalizeText, 기존 Canvas/Main Camera를 연결했다.
+- 공유 NPCGirl에 NPCMessageSource·전용 SeededRandomSource, `Visual/MessageAnchor`와 새 Catalog asset을 연결했다.
+  기존 component·GUID·물리·Friendly 레이어·animation 배선을 보존했다. gameplay C# 변경은 없다.
+- LocalizeManager는 현재 코드의 영속 객체 계약에 맞춰 Systems 다음 별도 루트에 배치하고 기존 LocalizeData를 연결했다.
+- 작업 전 기존 읽기 전용 bridge로 FarmerScene.Structure v1의 33개 검사를 통과했다.
+  작업 후 현재 snapshot의 범위·참조·컴파일·구조 Gate·리뷰 결과는
+  `.harness-runs/npc-message-wiring-20260920/verification-summary.json`에 기록한다.
+  실제 Play Mode·한글·입력·pooling 검증은 별도이며, 확인하지 않은 동작을 완료로 판정하지 않는다.
+- 이전 후보의 수정 예산 2회 중 1회 사용 기록을 이어받는다. 이번 배선은 사용자가 다시 승인한 미구현 범위의 수행이다.
+
+### 2026-09-20 — NPC 생각·지정 대사 Hover 코드 후보 (통합 검증 미완료)
+
+- 승인된 오케스트레이터 계획으로 시작했으나 사용자가 **Editor를 유지하고 가능한 코드 작업만 진행**하도록
+  범위를 제한했다. NPCGirl, FarmerTest, Catalog asset 조립은 수행하지 않았으며 기존 미커밋 변경을 보존했다.
+- `NPCMessageSource`/`NPCMessageState`가 지정 대사 토큰·생각 캐시·실시간 수명을,
+  `NPCThoughtSelector`/`NPCThoughtCatalog`가 행동·욕구별 문구 선택과 공유 정의를 소유한다.
+  WorkerNPC는 읽기 전용 상태 조회만 제공한다. 문구 24개를 추가하고 기존 생성기로 enum을 갱신했다.
+- NPCMessageHover는 LocalizeText 표시·LateUpdate anchor 추적을 담당한다. Router는 겹친 source와
+  category 우선순위, 같은 collider 재사용을 처리하며 UIManager는 동일 source 재개방을 방지한다.
+  TestOnly 지정 대사 조작 도구는 추가했으나 씬에는 배치하지 않았다.
+- 현재 소스의 runtime/Editor 명령행 컴파일: 각각 오류 0·경고 0.
+  순수 메시지 규칙 검사 22개와 기존 지역화 검사 38개, CSV/소스/컴파일 enum 정합성 통과.
+  테스트 host 빌드에는 기존 Unity reference 버전 충돌 경고 MSB3276 하나가 있다.
+- 초기 검사에서 정확히 60%인 욕구가 Mono 중간 연산 정밀도 때문에 제외됐다. Single 정밀도로
+  비교하도록 수정 후 같은 기대값의 전체 검사를 통과했다. 후보 수정 예산 **2회 중 1회 사용**.
+- 선택한 `FarmerScene.Structure v1`은 열린 Editor의 기존 읽기 전용 bridge로 시도할 수 있다.
+  최신 Gate·snapshot·리뷰 판정은 `.harness-runs/npc-message-20260920/verification-summary.json`에 기록한다.
+  Gate는 메시지 동작 자체를 검증하지 않는다. 필수 실행 증거 전에는 전체 수락을 선언하지 않는다.
+- Unity pooling/재초기화, 실제 pointer 전환·겹침, 카메라 이동·줌, 한글·9-slice·화면 경계,
+  Farmer/Guard 행동·모집 회귀는 NOT_VERIFIED. 배선과 이 증거가 없으므로 기능은 검증 미완료다.
+- `reviewPolicy=RequiredByRisk`. 고정 요청 SHA-256:
+  `51cc668e89416b408b95ac980f0843e04bc6e7a249aaf14ee0df3022e20e32db`.
+  주 소유 문서: [NPC Messages](../Systems/NPC_Messages.md).
+
+### 2026-09-20 — 건물·작물 Art 폴더 정리
+
+- 건물·밭 이미지 7장을 `Assets/Art/Generated/Buildings`의 `TownHall`, `Inn`, `Restaurant`,
+  `Warehouse`, `GuardPost`, `MerchantCaravan`, `Farm` 폴더로 이동했다.
+- 당근·감자의 묶음/단일 성장 단계와 아이콘 18장을 `Crops/Carrot`, `Crops/Potato`로 모았다.
+  당근 리깅 이미지 4장은 기존 `Rigged` 폴더와 폴더 `.meta`를 함께 `Crops/Carrot/Rigged`로 이동했다.
+- PNG 29장과 기존 `.meta` 30개는 이동 전후 SHA256가 동일하다. 기존 GUID·sprite fileID·rig·importer 설정을 보존했다.
+  직접 경로를 사용하는 코드가 없어 C#·씬·프리팹 수정은 없으며 구조 지도·작물 문서·art routing을 갱신했다.
+- 검증: 이동 대상의 원본 경로 제거와 모든 파일 바이트 보존 PASS. Unity import/Play Mode 표시는 NOT_VERIFIED다.
+- 증거: `.harness-runs/art-folders-20260920/scope.json`, `before.json`, `result.json`.
+
 ### 2026-09-20 — 독립 흰색 말풍선 9-slice 이미지
 
 - `Assets/Art/Generated/UI/ui-speech-panel-white-9slice.png`와 `.meta`를 추가했다.

@@ -8,18 +8,24 @@ public readonly struct HoverInfo
     public Vector3 AnchorPosition { get; }
     public bool HasProgress { get; }
     public float NormalizedProgress { get; }
+    public LocalizeKey? MessageKey { get; }
+    public Transform TrackingAnchor { get; }
 
     public HoverInfo(
         [CanBeNull] string title,
         [CanBeNull] string description,
         Vector3 anchorPosition,
         bool hasProgress = false,
-        float normalizedProgress = 0f)
+        float normalizedProgress = 0f,
+        LocalizeKey? messageKey = null,
+        Transform trackingAnchor = null)
     {
         Title = title ?? string.Empty;
         Description = description ?? string.Empty;
         AnchorPosition = anchorPosition;
         HasProgress = hasProgress;
         NormalizedProgress = Mathf.Clamp01(normalizedProgress);
+        MessageKey = messageKey;
+        TrackingAnchor = trackingAnchor;
     }
 }

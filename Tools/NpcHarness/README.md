@@ -57,11 +57,13 @@ import/load/runtime 검사는 `NOT_VERIFIED`로 기록하며 코드 검증은 �
 
 ## 실제 Farmer 씬의 읽기 전용 검사
 
-`FarmerScene.Structure` v1 (`farmer-scene-structure`)는 저장된 `Assets/Scenes/FarmerTest.unity`를 preview scene으로 열어 검사합니다. NPCManager·WorkerPool·Farmer selector·DestinationDB·InteractableManager·FarmWorkSite·WarehouseDepositPoint·DataManager의 단일 활성 배치, Missing Script, 필수 참조, Farmer role 및 destination/provider 중복·누락, 입고 inventory의 동일 오브젝트 연결, 독립 난수원·작업 영역, 실제 scene consumer의 CropCatalog와 item CSV를 확인합니다. 시작 작물과 pool parent 같은 선택적 참조는 필수로 강제하지 않습니다.
+`FarmerScene.Structure` v1 (`farmer-scene-structure`)는 `Assets/Scenes/FarmerTest.unity`를 검사합니다. 대상이 이미 열려 있고 미저장 변경이 없으면 그 씬을 읽기 전용으로 검사하고, 열려 있지 않으면 저장본을 preview scene으로 엽니다. NPCManager·WorkerPool·Farmer selector·DestinationDB·InteractableManager·FarmWorkSite·WarehouseDepositPoint·DataManager의 단일 활성 배치, Missing Script, 필수 참조, Farmer role 및 destination/provider 중복·누락, 입고 inventory의 동일 오브젝트 연결, 독립 난수원·작업 영역, 실제 scene consumer의 CropCatalog와 item CSV를 확인합니다. 시작 작물과 pool parent 같은 선택적 참조는 필수로 강제하지 않습니다.
 
 이는 **현재 FarmerTest의 구조 계약**이며 임의의 다중 농장 씬, NPC 행동·수확/입고 transaction·시각 결과, 클릭/전투 mask 전체를 검증하지 않습니다. production 편집 권한도 확장하지 않습니다. 일반적인 구조 관찰은 `SceneWiringChecks`, 저장본 inspection lifecycle은 `SavedSceneInspection`, Farmer 전용 배선 규칙은 `FarmerSceneValidator`가 소유합니다. 기존 네 가지 선언형 도형 check schema는 그대로입니다.
 
-검사 대상 씬이나 로드된 의존 asset에 미저장 변경이 있거나 Editor가 Play Mode·컴파일·import 중이면 `InfrastructureError`로 거부합니다. 관련 없는 dirty 씬은 보존합니다. 검사 후 preview를 닫고 열린 씬 상태와 디스크 의존 파일 SHA-256을 비교하며, 파일별 전후 해시와 Unity 버전을 `.harness-runs/<runId>/artifacts/FarmerScene.Structure-dependencies.json`에 기록합니다. 이 증거는 해당 씬의 dependency 범위이며 전체 repository 격리나 최종 후보 수락을 대신하지 않습니다.
+검사 대상 씬이나 로드된 의존 asset에 미저장 변경이 있거나 Editor가 Play Mode·컴파일·import 중이면 `InfrastructureError`로 거부합니다. 관련 없는 dirty 씬은 보존합니다. URP는 일반 씬과 preview의 전역 조명을 함께 등록하므로 열린 대상을 중복 로드하지 않습니다. 대상이 닫혀 있고 활성 Global Light2D가 이미 로드되어 있으면 preview를 만들기 전에 `InfrastructureError`로 거부합니다. 이 경우 저장된 대상 씬을 열어 검사합니다. 조명 비활성화나 로그 억제는 하지 않습니다.
+
+검사기가 직접 만든 preview만 닫고 열린 씬 상태와 디스크 의존 파일 SHA-256을 비교합니다. 파일별 전후 해시, Unity 버전, 실제 검사 경로인 `inspectionSource` (`loaded-clean-scene` / `saved-preview-scene` / `not-inspected`)를 `.harness-runs/<runId>/artifacts/FarmerScene.Structure-dependencies.json`에 기록합니다. 열린 씬 검사는 현재 Editor에 로드된 상태를 관찰하며, 외부 파일 편집 뒤 보류된 씬 reload를 대신하지 않습니다. 디스크 해시는 검사 중 파일 보존 증거이며 메모리와 디스크의 동일성 증명은 아닙니다. 이 증거는 해당 씬의 dependency 범위이며 전체 repository 격리나 최종 후보 수락을 대신하지 않습니다.
 
 ```powershell
 .\run-harness.cmd verify --profile farmer-scene-structure

@@ -11,7 +11,7 @@ public abstract class HoverBase : MonoBehaviour
     private float _nextRefreshTime;
 
     public HoverType HoverType => _hoverType;
-    public bool IsVisible => gameObject.activeSelf && HasUsableSource(_source);
+    public bool IsVisible => isActiveAndEnabled && HasUsableSource(_source);
 
     internal bool TryShow(IHoverInfoSource source)
     {
@@ -26,6 +26,8 @@ public abstract class HoverBase : MonoBehaviour
 
         transform.SetAsLastSibling();
         ApplyInfo(info);
+        if (!IsVisible)
+            return false;
         OnShown();
         return true;
     }
@@ -35,11 +37,28 @@ public abstract class HoverBase : MonoBehaviour
 
     internal void HideCurrent()
     {
-        if (_source == null && !gameObject.activeSelf)
+        if (_source == null)
             return;
 
         _source = null;
         OnBeforeHide();
+        BeginHide();
+    }
+
+    internal void HideImmediately()
+    {
+        _source = null;
+        OnBeforeHide();
+        CompleteHide();
+    }
+
+    protected virtual void BeginHide()
+    {
+        CompleteHide();
+    }
+
+    protected void CompleteHide()
+    {
         gameObject.SetActive(false);
         OnHidden();
     }
@@ -60,7 +79,7 @@ public abstract class HoverBase : MonoBehaviour
 
     private void Update()
     {
-        if (Time.unscaledTime < _nextRefreshTime)
+        if (_source == null || Time.unscaledTime < _nextRefreshTime)
             return;
 
         _nextRefreshTime = Time.unscaledTime + Mathf.Max(MinimumRefreshInterval, _refreshInterval);
@@ -74,6 +93,11 @@ public abstract class HoverBase : MonoBehaviour
         ApplyInfo(info);
     }
 
+    protected virtual void OnDisable()
+    {
+        _source = null;
+    }
+
     private static bool TryReadInfo(IHoverInfoSource source, out HoverInfo info)
     {
         info = default;
@@ -81,7 +105,15 @@ public abstract class HoverBase : MonoBehaviour
     }
 
     private static bool HasUsableSource(IHoverInfoSource source)
-        => source != null && source.Owner;
+    {
+        if (source == null || !source.Owner)
+            return false;
+        if (source.Owner is Behaviour behaviour)
+            return behaviour.isActiveAndEnabled;
+        if (source.Owner is Component component)
+            return component.gameObject.activeInHierarchy;
+        return true;
+    }
 
     private void OnValidate()
     {

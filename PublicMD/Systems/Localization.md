@@ -51,6 +51,9 @@ LocalizeText.Start / OnEnable(두 번째부터) / SetKey
 ## 불변 규칙과 실패
 
 - 원본은 `Assets/Data/CSV/LocalizeData.csv`, 생성 소스는 `Assets/Scripts/Enum/LocalizeKey.cs`다.
+- 주민 생각 키 1101~1124와 기존 Hungry(1002)는 [NPC Messages](NPC_Messages.md)의 Catalog 기본 문구가 사용한다.
+  행동·욕구 조건과 지정 대사 수명은 지역화 시스템이 판단하지 않는다. 기존 생성기의 순수
+  `LocalizeKeySource.TryGenerate`로 키를 갱신하며 기존 ID는 유지한다.
 - UTF-8 BOM, RFC-style quoted field의 쉼표/줄바꿈/`""`를 보존한다. 빈 중간 행도 구조 오류다.
 - Id는 양의 Int32, Key는 대소문자 구분 C# identifier이며 키워드·타입명·`value__`는 금지한다.
 - `ko`는 필수, 언어 열 이름/키/ID 중복 및 빈 한국어 문구는 전체 적재 실패다.
@@ -71,7 +74,7 @@ LocalizeText.Start / OnEnable(두 번째부터) / SetKey
 ## Unity 배선과 사용법
 
 `Assets/Data/ScriptableObject/LocalizeData.asset`의 `_csv`는 원본 CSV,
-`Assets/Scenes/LocalizeTest.unity`의 전용 루트 Manager `_data`는 이 SO를 참조한다.
+`Assets/Scenes/LocalizeTest.unity`와 `Assets/Scenes/FarmerTest.unity`의 전용 루트 Manager `_data`는 이 SO를 참조한다.
 Canvas 아래 Legacy Text/TMP Text의 LocalizeText는 각각 자신의 Text/TMP만 참조하고 같은 키 1001로 시작한다.
 CanvasScaler 기준은 1280×720이다. 수동 도구는 IMGUI 버튼으로 키 순환, TMP 활성 전환,
 runtime Text 복제, Manager 중복 제거와 임시 scene 전환/해제를 실행한다.
@@ -98,7 +101,8 @@ Player 경로는 `.harness-runs/localization-player/LocalizeTest.exe`이며 Edit
 - 현재 언어 ko 고정, 언어 변경/선택 UI 미구현. 추가 언어 열은 같은 SO에 적재 가능하다.
 - 기본 폰트 사용 조건에서 한국어 글리프의 완전한 표시 보장은 제외된다.
 - Unity import/load, Editor 검사, Play/Player 실행과 Domain Reload off 실제 반복 진입은 `NOT_VERIFIED`다.
-- 전체 기존 UI 전환, NPC 문구 선택 정책, 타이핑/대화 진행, 키 migration은 후속 범위다.
+- 전체 기존 UI 전환, 타이핑/대화 진행, 키 migration은 후속 범위다.
+  NPC 문구 선택 정책과 FarmerTest 말풍선 YAML 배선은 [NPC Messages](NPC_Messages.md)를 참조한다. 실제 화면 검증은 미완료다.
 
 ## 관련 문서와 갱신 조건
 

@@ -102,6 +102,12 @@ selector는 registry에서 capability를 선택해 request와 함께 action cont
 
 domain은 표시 가능한 read model을 제공하고 UI facade는 category별 view lifecycle을 조정한다. 입력 adapter는 domain concrete type이나 concrete view를 몰라야 한다.
 
+주민 메시지는 별도 `NPCMessageSource`가 `WorkerNPC`의 읽기 전용 상태를 소비하고
+`IHoverInfoSource`로 지역화 키와 추적 anchor를 제공한다. `NPCThoughtCatalog`는 공유 정의,
+`NPCMessageState`는 개체별 지정 대사·캐시·timer, `NPCThoughtSelector`는 표시 문구 선택을 소유한다.
+행동 selector/action/NPCComponent에는 메시지 책임이 없다. 표시용 난수는 NPC별 전용이며
+gameplay 난수와 공유하지 않는다. 상세 계약은 [NPC Messages](Systems/NPC_Messages.md)를 따른다.
+
 세부 구조: [UI](Systems/UI.md)
 
 ### 3.7 지역화 정의와 표시

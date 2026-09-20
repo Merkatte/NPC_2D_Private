@@ -56,6 +56,11 @@ Harvesting 중 progress가 감소해도 마지막 stage를 유지한다. disable
 
 ## Unity 배선과 검증 도구
 
+- 작물 이미지는 `Assets/Art/Generated/Crops/Carrot`와 `Crops/Potato`에 종류별로 모은다.
+  각 폴더는 기존 묶음/단일 성장 단계 이미지와 `ui-item-*` 아이콘을 포함한다.
+  당근 리깅 이미지 `Carrot_Progress0~3.png`는 `Crops/Carrot/Rigged`에 둔다.
+  밭 바닥 이미지는 `Assets/Art/Generated/Buildings/Farm/farm-soil-bed.png`에 둔다.
+  폴더 정리 시 기존 `.meta`를 함께 이동하여 GUID, sprite fileID와 importer 설정을 유지한다.
 - `FarmCropPresenter`: `_workSite`, 미리 배치한 `CropVisualAnimator[]`, visual seed와 cascade interval을 배선한다.
 - `CropVisualAnimator`: 같은 object hierarchy의 `Animator`와 `SpriteRenderer`를 배선한다.
 - 첫 구현은 약 10개 visual의 위치와 배열 배선을 사용자가 scene/prefab에서 수동 구성한다.

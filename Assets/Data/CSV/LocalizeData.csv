@@ -2,3 +2,27 @@ Id,Key,ko
 1001,UI_Confirm,확인
 1002,NPC_Thought_Hungry,배가 고프네…
 1003,Tutorial_Welcome,"안녕, 우리 마을에 온 걸 환영해!"
+1101,NPC_Thought_Farming_1,흙을 고르게 다져야지.
+1102,NPC_Thought_Farming_2,튼튼하게 자라렴.
+1103,NPC_Thought_Harvest_1,잘 익었네!
+1104,NPC_Thought_Harvest_2,수확할 맛이 나는군.
+1105,NPC_Thought_Deposit_1,차곡차곡 정리하자.
+1106,NPC_Thought_Deposit_2,창고에 잘 맡겨 두자.
+1107,NPC_Thought_Guard_1,주변을 잘 살펴야지.
+1108,NPC_Thought_Guard_2,별일 없으면 좋겠네.
+1109,NPC_Thought_Attack_1,물러서지 않겠어!
+1110,NPC_Thought_Attack_2,빈틈을 노리자.
+1111,NPC_Thought_Eat_1,한입 먹으니 살겠네.
+1112,NPC_Thought_Eat_2,천천히 꼭꼭 씹자.
+1113,NPC_Thought_Drink_1,시원하다!
+1114,NPC_Thought_Drink_2,물을 마시니 개운하네.
+1115,NPC_Thought_Sleep_1,잠깐 푹 쉬자.
+1116,NPC_Thought_Sleep_2,좋은 꿈을 꾸고 싶네.
+1117,NPC_Thought_Idle_1,잠시 숨을 돌리자.
+1118,NPC_Thought_Idle_2,오늘은 어떤 하루일까?
+1119,NPC_Thought_Hungry_2,뭐라도 먹고 싶다.
+1120,NPC_Thought_Thirsty_1,목이 마르네…
+1121,NPC_Thought_Thirsty_2,물 한 모금이 생각나네.
+1122,NPC_Thought_Tired_1,눈꺼풀이 무겁네…
+1123,NPC_Thought_Tired_2,조금 쉬고 싶다.
+1124,NPC_Thought_Default,오늘도 하루가 흘러가네.

@@ -33,6 +33,7 @@ NPCManager / WorkerPool          생성과 조립
 | 상단(Merchant Caravan) | [Merchant Caravan](Systems/Merchant_Caravan.md) | 방문 phase·타이머, 클릭 가능 판정, 거래 transaction |
 | 시청(Town Hall) | [Town Hall](Systems/Town_Hall.md) | 모집 쿨다운·phase, 정착지원금 transaction, 예약 기반 NPC 스폰, 낙하 연출 |
 | NPC 표현 | [NPC Presentation](Systems/NPC_Presentation.md) | 이동 animation, Flip, 건물·도구 표현 |
+| NPC 생각·대사 | [NPC Messages](Systems/NPC_Messages.md) | 상태 기반 문구 선택, 지정 대사 토큰, Hover 메시지 수명 |
 | UI | [UI](Systems/UI.md) | popup, hover, gauge, pointer routing |
 | 문구와 지역화 | [Localization](Systems/Localization.md) | Localize CSV, 안정적인 Enum 생성, SO 조회, Text/TMP 표시 |
 | 생성과 pooling | [Spawning and Pooling](Systems/Spawning_and_Pooling.md) | role 생성, prefab catalog, worker pool |
@@ -60,6 +61,7 @@ NPCManager / WorkerPool          생성과 조립
 | 상단 방문·타이머·거래 | Merchant Caravan | Player Gold, Inventory and Items, UI |
 | 시청 모집·정착지원금·예약 스폰 | Town Hall | Player Gold, Spawning and Pooling, UI |
 | animation·Flip·도구 | NPC Presentation | 이를 호출하는 action 문서 |
+| 주민 생각·지정 대사 | NPC Messages | NPC Runtime, UI, Localization |
 | popup·hover·gauge·click 감지 | UI | 데이터를 제공하는 domain 문서 |
 | 문구·언어·LocalizeKey·Text/TMP 표시 | Localization | UI, singleton 접근 변경 시 ARCHITECTURE |
 | role·prefab·pool | Spawning and Pooling | 생성되는 role 문서 |
@@ -84,6 +86,10 @@ NPCManager / WorkerPool          생성과 조립
 | `Assets/Data/Struct` | 경계 사이를 전달하는 작은 request/result/value |
 | `Assets/Data/ScriptableObject/Script` | 공유 definition, cost와 tuning 타입 |
 | `Assets/TestOnly` | production이 의존하지 않는 수동 검증 도구 |
+| `Assets/Art/Generated/Buildings` | `TownHall`, `Inn`, `Restaurant`, `Warehouse`, `GuardPost`, `MerchantCaravan`, `Farm`별 건물·밭 이미지 |
+| `Assets/Art/Generated/Crops` | `Carrot`, `Potato`별 성장 단계와 아이콘, 당근 리깅 이미지는 `Carrot/Rigged` |
+| `Assets/Art/Generated/NPC` | 사람 NPC 이미지 |
+| `Assets/Art/Generated/UI`, `Assets/Art/Generated/Tiles` | UI 패널과 타일 이미지·Tile 에셋 |
 | `Assets/Editor/NpcHarness` | 제한된 원자적 Unity 편집 Tool, Job 실행기, 검증기, UI Toolkit 창과 Batch 진입점 |
 | `Tools/NpcHarness` | 자연어 해석 없이 명시적인 `verify`, `run-adapter`, `self-test`를 제공하는 cross-platform 결정적 runner |
 

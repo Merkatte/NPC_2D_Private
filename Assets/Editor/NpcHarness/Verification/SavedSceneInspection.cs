@@ -7,6 +7,7 @@ using System.Text;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
 internal static class SavedSceneInspection
@@ -16,6 +17,8 @@ internal static class SavedSceneInspection
     {
         HarnessGateResultBuilder builder = new HarnessGateResultBuilder(runId, profile, version);
         Scene preview = default;
+        Scene loadedTarget = default;
+        string inspectionSource = "not-inspected";
         SortedDictionary<string, string> before = null;
         string setup = CaptureSceneSetup();
         int previewCount = EditorSceneManager.previewSceneCount;
@@ -38,6 +41,10 @@ internal static class SavedSceneInspection
                 {
                     throw new InvalidOperationException("Target scene has unsaved changes: " + scenePath);
                 }
+                if (loaded.path == scenePath && loaded.isLoaded)
+                {
+                    loadedTarget = loaded;
+                }
             }
             if (!File.Exists(scenePath))
             {
@@ -45,8 +52,20 @@ internal static class SavedSceneInspection
             }
             before = CaptureDependencies(scenePath);
             RefuseDirtyDependencies(before.Keys);
-            preview = EditorSceneManager.OpenPreviewScene(scenePath);
-            inspect(preview, builder);
+            if (loadedTarget.IsValid())
+            {
+                // URP registers preview lights alongside regular scene lights. Reuse the clean
+                // loaded target so inspection neither duplicates its lights nor owns its lifetime.
+                inspectionSource = "loaded-clean-scene";
+                inspect(loadedTarget, builder);
+            }
+            else
+            {
+                RefuseGlobalLightPreviewOverlap();
+                preview = EditorSceneManager.OpenPreviewScene(scenePath);
+                inspectionSource = "saved-preview-scene";
+                inspect(preview, builder);
+            }
         }
         catch (Exception exception)
         {
@@ -86,7 +105,7 @@ internal static class SavedSceneInspection
                             Digest(before), Digest(after));
                     }
                     RefuseDirtyDependencies(after.Keys);
-                    WriteEvidence(runId, profile, scenePath, before, after, builder);
+                    WriteEvidence(runId, profile, scenePath, inspectionSource, before, after, builder);
                 }
             }
             catch (Exception exception)
@@ -95,6 +114,21 @@ internal static class SavedSceneInspection
             }
         }
         return builder.Build();
+    }
+
+    private static void RefuseGlobalLightPreviewOverlap()
+    {
+        // The target's light configuration is unavailable until loading. Conservatively refuse
+        // a potentially conflicting preview instead of changing user lights or suppressing errors.
+        foreach (Light2D light in Resources.FindObjectsOfTypeAll<Light2D>())
+        {
+            if (light && light.isActiveAndEnabled && light.lightType == Light2D.LightType.Global &&
+                light.gameObject.scene.IsValid())
+            {
+                throw new InvalidOperationException("Cannot open a scene inspection preview while an enabled global " +
+                    "Light2D is loaded. Open the saved target scene before inspecting it.");
+            }
+        }
     }
 
     private static SortedDictionary<string, string> CaptureDependencies(string scenePath)
@@ -165,13 +199,14 @@ internal static class SavedSceneInspection
         }
     }
 
-    private static void WriteEvidence(string runId, string profile, string scenePath,
+    private static void WriteEvidence(string runId, string profile, string scenePath, string inspectionSource,
         SortedDictionary<string, string> before, SortedDictionary<string, string> after, HarnessGateResultBuilder builder)
     {
         string relativePath = ".harness-runs/" + runId + "/artifacts/" + profile + "-dependencies.json";
         DependencyEvidence evidence = new DependencyEvidence
         {
             runId = runId, profile = profile, scenePath = scenePath, unityVersion = Application.unityVersion,
+            inspectionSource = inspectionSource,
             beforeDigest = Digest(before), afterDigest = Digest(after),
             files = before.Keys.Union(after.Keys, StringComparer.Ordinal).OrderBy(path => path, StringComparer.Ordinal)
                 .Select(path => new FileEvidence
@@ -189,7 +224,7 @@ internal static class SavedSceneInspection
     [Serializable]
     private sealed class DependencyEvidence
     {
-        public string runId, profile, scenePath, unityVersion, beforeDigest, afterDigest;
+        public string runId, profile, scenePath, unityVersion, inspectionSource, beforeDigest, afterDigest;
         public FileEvidence[] files;
     }
 

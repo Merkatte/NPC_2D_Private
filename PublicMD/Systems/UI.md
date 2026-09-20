@@ -18,12 +18,12 @@ popup과 hover의 category 기반 표시 lifecycle, pointer 입력 adapter, 농�
 
 ```text
 PointerHoverRouter
-  -> Physics2D.OverlapPoint(hoverable mask, 주기적 poll)
+  -> Physics2D.OverlapPoint(설정 mask의 겹친 collider 목록, 주기적 poll)
   -> 같은 GameObject의 IHoverInfoSource
   -> IUIService.TryShow(source.HoverType, source)
   -> UIManager registry
   -> HoverBase.TryShow/주기적 refresh
-  -> FarmGaugeHover.ApplyInfo
+  -> FarmGaugeHover.ApplyInfo / NPCMessageHover.ApplyInfo
 
 PointerClickRouter
   -> mouse.leftButton.wasPressedThisFrame (매 프레임 확인, poll 아님)
@@ -49,13 +49,14 @@ EventSystem(InputSystemUIInputModule)
 
 | 경로 | 한 줄 책임 |
 |---|---|
-| `Assets/Data/Struct/HoverInfo.cs` | hover view가 그릴 anchor와 progress 정보 값 |
+| `Assets/Data/Struct/HoverInfo.cs` | anchor/progress 및 선택적인 LocalizeKey·추적 Transform 정보 값 |
 | `Assets/Scripts/Enum/HoverType.cs` | hover registry category key |
 | `Assets/Scripts/Enum/PopupType.cs` | popup registry category key |
 | `Assets/Scripts/Interface/IHoverInfoSource.cs` | domain object가 hover 정보와 Unity owner를 제공하는 계약 |
 | `Assets/Scripts/Interface/IClickPopupSource.cs` | world object가 클릭 시 열 PopupType을 답하는 최소 계약 |
 | `Assets/Scripts/Interface/IUIService.cs` | popup·hover 표시 의도를 전달하는 UI facade 계약 |
 | `Assets/Scripts/UI/FarmGaugeHover.cs` | farm progress를 fill과 screen anchor로 표현하는 hover view |
+| `Assets/Scripts/UI/NPCMessageHover.cs` | LocalizeText 문구 표시와 머리 위 anchor의 LateUpdate 화면 위치 추적 |
 | `Assets/Scripts/UI/HoverBase.cs` | source 소유권, refresh, show/hide 공통 hover lifecycle |
 | `Assets/Scripts/UI/PointerHoverRouter.cs` | pointer hit를 hover source와 UI service 호출로 변환하는 입력 adapter |
 | `Assets/Scripts/UI/PointerClickRouter.cs` | pointer 클릭을 `IClickPopupSource`와 UI service 호출로 변환하는 입력 adapter |
@@ -104,9 +105,35 @@ Unity import/Canvas 실표시는 미검증이다. 원본 SVG·늘림 미리보�
 [Localization](Localization.md)이 주 소유한다. UIManager의 popup/hover registry에는 등록하지 않는다.
 첫 적용은 독립 LocalizeTest 씬이며 기존 UI 문구는 이번 작업에서 이관하지 않았다.
 
+주민 생각·지정 대사는 [NPC Messages](NPC_Messages.md)의 source가 `HoverType.NPCMessage`로 제공한다.
+`NPCMessageHover`는 문구를 선택하지 않고 `LocalizeText.SetKey`, 매 프레임 anchor 위치 추적과 표시 연출을 담당한다.
+기존 HoverInfo 생성 호출은 그대로 유효하며, 선택적인 MessageKey/TrackingAnchor를 메시지 view가 소비한다.
+FarmerTest의 `Canvas/HoveringUI/NPCMessageHover/MessageText`에 말풍선 한 개를 추가하고 UIManager에 등록했다.
+기존 농장 게이지·PopupUI 위치와 순서는 유지한다. Router는 기존 serialized layer mask에 Friendly를 runtime filter로 합친다.
+NPCGirl source/anchor/Catalog와 별도 루트 LocalizeManager 배선은 [NPC Messages](NPC_Messages.md)를 따른다.
+사용자가 기존 말풍선 표시를 정상 확인했다. 한글·9-slice·화면 경계 전체 시나리오의 독립 검증과 신규 연출의 시각 확인은 별도다.
+
+### NPC 말풍선 표시 연출
+
+- `NPCMessageHover`의 DOTween 하나가 0~1 표시 진행도를 움직인다. 기본 진입은 0.2초/OutCubic,
+  퇴장은 0.15초/InCubic이며 `SetUpdate(true)`로 게임 시간 배율과 독립적이다.
+- 진행도에 따라 원래 크기의 65%에서 100%로 커지며 18 Canvas UI 단위 아래에서 anchor로 올라온다.
+  CanvasGroup alpha도 함께 변한다. 퇴장은 반대 방향이다. Motion의 시간·거리·시작 크기는 Inspector에서 조정한다.
+- LateUpdate가 현재 anchor·카메라 위치에 연출 오프셋과 크기를 합친 뒤 화면 경계를 보정한다.
+  위치 tween이 anchor 추적을 덮어쓰지 않는다. 기존 scene 참조와 Hierarchy를 그대로 사용한다.
+- `HoverBase.HideCurrent`는 source를 즉시 해제하고 `BeginHide`를 호출한다. 기본 hover는 즉시 닫히며,
+  NPC 말풍선만 퇴장 완료 뒤 `CompleteHide`로 비활성화한다. 닫히는 동안 문구를 재조회하지 않는다.
+- UIManager는 닫히는 view 참조를 유지한다. 같은 말풍선 재진입은 남은 진행도에서 열리고,
+  다른 category 표시·HideAll·초기 registry 정리는 `HideImmediately`로 이전 view를 즉시 닫는다.
+  다른 NPC anchor로 바뀌면 새 진입 연출을 시작한다. 같은 source 재확인은 tween을 재시작하지 않는다.
+- NPCMessageHover 비활성화 시 자신이 소유한 tween을 완료 콜백 없이 Kill하고 진행도·anchor·문구 캐시를 정리한다.
+  anchor가 파괴되거나 비활성화되면 즉시 닫는다. HoverBase도 비활성화 시 source를 해제한다.
+
 ## 알려진 제약과 TBD
 
-- `Physics2D.OverlapPoint`는 겹친 collider의 명시적 UI 우선순위를 제공하지 않는다.
+- PointerHoverRouter는 겹친 collider의 유효 source 중 설정된 우선 category를 먼저 선택한다.
+  동일 source도 표시 상태를 재확인하여 닫힌 hover가 조건 회복 뒤 다시 열릴 수 있다.
+  UIManager는 이미 표시 중인 같은 source를 재개방하지 않는다.
 - 열린 popup 위에서 world 클릭이 그대로 통과해 다른 clickable에 닿을 수 있다 — 지금은 clickable이 상단 하나뿐이라 관측되지 않지만, `Physics2DRaycaster`/`EventSystem` 기반 world click-through 차단은 아직 없다.
 - concrete popup은 `MerchantPopup`, `TownHallPopup`, `SeedSelectionPopup` 세 종류다. 씨앗 popup은 창고 재고를 읽기만 하며 농경지 선택·재고 소비와는 연결되지 않았다.
 

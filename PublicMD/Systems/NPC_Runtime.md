@@ -11,6 +11,9 @@
 - stat definition: 공유 초기값에서 매번 새 runtime stat을 만든다.
 - selector는 queue를 구성하고 action은 실행한다. `WorkerNPC`는 우선순위나 도메인 규칙을 판단하지 않는다.
 - Unity 이동·애니메이션·방향 표현은 [NPC Presentation](NPC_Presentation.md)이 소유한다.
+- `TryGetCurrentState(out IStatView, out ActionType?)`는 초기화된 활성 worker의 읽기 전용 stat과
+  현재 행동 종류만 제공한다. 실패 시 null/null이며 action 객체·queue는 노출하지 않는다.
+  생각 선택·표시는 별도 [NPC Messages](NPC_Messages.md)가 소유한다.
 
 ## 현재 실행 흐름
 

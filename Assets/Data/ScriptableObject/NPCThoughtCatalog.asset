@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80944de020355e64b9e66d4eb1169ce6, type: 3}
+  m_Name: NPCThoughtCatalog
+  m_EditorClassIdentifier:
+  _actionThoughts:
+  - _actionType: 4
+    _keys: 4d0400004e040000
+  - _actionType: 8
+    _keys: 4f04000050040000
+  - _actionType: 9
+    _keys: 5104000052040000
+  - _actionType: 6
+    _keys: 5304000054040000
+  - _actionType: 7
+    _keys: 5504000056040000
+  - _actionType: 2
+    _keys: 5704000058040000
+  - _actionType: 3
+    _keys: 590400005a040000
+  - _actionType: 1
+    _keys: 5b0400005c040000
+  - _actionType: 5
+    _keys: 5d0400005e040000
+  _needThoughts:
+  - _needType: 0
+    _threshold: 0.6
+    _keys: ea0300005f040000
+  - _needType: 1
+    _threshold: 0.6
+    _keys: 6004000061040000
+  - _needType: 2
+    _threshold: 0.6
+    _keys: 6204000063040000
+  _fallbackKey: 1124
+  _holdDuration: 4

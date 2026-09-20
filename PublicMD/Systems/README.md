@@ -25,6 +25,7 @@
 | `Merchant_Caravan.md` | 단일 기능 문서 |
 | `Town_Hall.md` | 단일 기능 문서 |
 | `NPC_Presentation.md` | 단일 기능 문서 |
+| `NPC_Messages.md` | 주민 생각 선택·지정 대사·메시지 수명; YAML 배선 적용, 실제 실행 검증 미완료 |
 | `UI.md` | 단일 기능 문서 |
 | `Localization.md` | CSV/Enum, 언어별 데이터 조회, Text/TMP 문구 표시 |
 | `Spawning_and_Pooling.md` | 단일 기능 문서 |
