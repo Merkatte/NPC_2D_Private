@@ -182,3 +182,11 @@ ScriptableObject definition -> creates/configures runtime object
 - 기능 간 책임·의존 방향 변경: 이 문서와 관련 leaf 문서를 함께 갱신한다.
 - 새 시스템 추가: `ProjectStructure.md` 라우팅과 `Systems/README.md`를 갱신한다.
 - 세부 기능이 4개 이상이 된 영역: 폴더형 인덱스로 분할한다.
+
+## Navigation 의존 방향
+
+selector -> ActionContext(INavigationService) -> MoveAction/GuardAction -> NPCPathFollower -> NPCComponent.
+TilemapNavigation은 scene snapshot과 순수 A*/heap workspace를 소유한다.
+TileNavigationProfile은 공유 definition만 소유하며 actor 경로/커서는 action별 follower가 소유한다.
+WorkerNPC queue lifecycle, provider transaction, DestinationDecider 판단 책임은 유지한다.
+상세 주 소유 문서는 Systems/Navigation.md와 Systems/NPC_Decision_and_Actions/Movement.md다.

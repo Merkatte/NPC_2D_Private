@@ -23,6 +23,7 @@ NPCManager / WorkerPool          생성과 조립
 
 | 기능 영역 | 문서 | 읽는 경우 |
 |---|---|---|
+| 경로 탐색 | [Navigation](Systems/Navigation.md) | 노드 그리드, A*, 지형 비용, 지역 출입구 |
 | NPC 공통 runtime | [NPC Runtime](Systems/NPC_Runtime.md) | queue 소비, 공통 stat, disable/reset |
 | 판단과 action | [NPC Decision and Actions](Systems/NPC_Decision_and_Actions/README.md) | utility, selector, action lifecycle, 이동, 생활 action |
 | 농사 | [Farming](Systems/Farming/README.md) | 농장 progress, 수확 transaction, 생산 definition, 씨앗 선택·작물 표현, Farming/Harvest action |
@@ -76,6 +77,7 @@ NPCManager / WorkerPool          생성과 조립
 | `Assets/Scripts/Actor` | scene에 존재하는 actor root와 facility component |
 | `Assets/Scripts/Manager` | scene 조립, registry 진입점과 scene 단위 단일 접근점 runtime 상태 |
 | `Assets/Scripts/System/Actor` | actor runtime state, selector, Unity adapter |
+| `Assets/Scripts/System/Navigation` | 순수 노드 그리드, A*와 내부 힙 |
 | `Assets/Scripts/System/Action` | `IAction` 실행 구현 |
 | `Assets/Scripts/System/Farming` | 농경지 runtime 상태와 작물 표현 |
 | `Assets/Scripts/System/Inventory` | 시설과 NPC 운반 inventory runtime 상태 |

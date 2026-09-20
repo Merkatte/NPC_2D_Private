@@ -1,0 +1,36 @@
+{
+  "recordedUtc": "2026-09-20T15:33:49.998052+00:00",
+  "unityCompile": "User confirmed compilation complete without errors on this turn",
+  "structureGate": "FarmerScene.Structure v1 Pass / 33 checks / exit 0",
+  "pureChecks": 1446,
+  "coreAssertions": 42931,
+  "supplementalHostAssertions": 51,
+  "playMode": {
+    "status": "UserConfirmed",
+    "originalUserMessage": "잘 되네요",
+    "promptScope": "FarmerTest Play Mode, Tools/NPC/Navigation/Run Checks, facility road travel and farm/guard local movement",
+    "recordedUtc": "2026-09-20T15:34:23.943313+00:00",
+    "limits": "User-observed normal behavior; no Navigation checks passed marker was found in Editor.log. Menu assertion execution and every pool/reinit/failure branch are not proven by this confirmation."
+  },
+  "review": "Approve by /root/navigation_review; unchanged candidate, new user Play evidence considered",
+  "remediationsUsed": 0,
+  "remediationBudget": 2,
+  "infrastructureNotes": [
+    "Supplemental rerun initially targeted missing Debug binaries; corrected to existing Release configuration. No candidate mutation."
+  ],
+  "reviewHistory": [
+    {
+      "verdict": "InsufficientEvidence",
+      "blockingCodeFindings": 0,
+      "reason": "Missing native Play evidence in initial review inputs; user confirmation arrived near final delivery."
+    },
+    {
+      "verdict": "Approve",
+      "blockingCodeFindings": 0,
+      "reason": "New primary user normal Play observation combined with host checks and direct lifecycle tracing; no candidate changes"
+    }
+  ],
+  "reviewEvidence": "Harness.ReviewEvidence v1 Pass / exit 0",
+  "finalStatus": "Accepted within documented verification limits",
+  "completedUtc": "2026-09-20T15:37:14.794795+00:00"
+}

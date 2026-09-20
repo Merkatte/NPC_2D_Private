@@ -1,3 +1,15 @@
+# Grid Navigation — 2026-09-21 구현·검증 완료
+
+노드 그리드/힙 A*, 지역 내부 직접 이동, Farmer/Guard 시설 이동과 FarmerTest 배선을 통합했다.
+Runtime/Editor 컴파일, 핵심 42,931 assertion, tracked 순수 검사 1,446개,
+이동 host 21개와 저장 맵 30개 경로 검사가 통과했다.
+FarmerScene.Structure v1 33개 Pass, 독립 리뷰 Approve, Harness.ReviewEvidence v1 Pass/exit 0.
+사용자는 실제 Play에서 정상 이동을 확인했다. lifecycle 예외 분기는 host/코드 검토 근거이며
+모든 분기를 native Play에서 계측한 것은 아니다. 수정 예산은 0/2회 사용했다.
+
+맥북 인계와 검증 보관본: [Navigation 작업 인계](Navigation_20260921_Handoff.md).
+당시 snapshot 이후에는 인계용 문서/증거 보관만 추가했으며 gameplay 코드는 그대로다.
+
 # PROGRESS
 
 > 현재 경로: `PublicMD/Status/PROGRESS.md`

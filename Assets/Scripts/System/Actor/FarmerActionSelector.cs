@@ -5,6 +5,10 @@ public class FarmerActionSelector : BaseNPCActionSelector
 {
     [SerializeField] private DestinationDB _destinationDB;
     [SerializeField] private NPCDecisionTuning _decisionTuning;
+    [SerializeField] private MoveMode _facilityMoveMode;
+    [SerializeField] private TilemapNavigation _navigation;
+
+    private bool _hasLoggedNavigationSetup;
 
     private DestinationDecider _decider;
     private FarmingActionCost _farmingActionCostInfo;
@@ -44,6 +48,16 @@ public class FarmerActionSelector : BaseNPCActionSelector
     {
         if (!component)
             return new Queue<IAction>();
+
+        if (_facilityMoveMode == MoveMode.Navigation && (!_navigation || !_navigation.IsReady))
+        {
+            if (!_hasLoggedNavigationSetup)
+            {
+                Debug.LogError("FarmerActionSelector: Navigation mode requires a ready TilemapNavigation.", this);
+                _hasLoggedNavigationSetup = true;
+            }
+            return BuildIdleQueue(component, stat);
+        }
 
         if (_decider == null || _decisionTuning == null || stat == null)
         {
@@ -122,7 +136,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
 
         if (decision.DestinationKey != BuildingType.None)
         {
-            if (!TryRentAction(ActionType.Move, actionContext, rented))
+            if (!TryRentAction(ActionType.Move, BuildMoveContext(decision.DestinationPos, component, stat), rented))
             {
                 ReturnAll(rented);
                 return new Queue<IAction>();
@@ -169,7 +183,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
             provider: provider, request: request);
 
         List<IAction> rented = new List<IAction>();
-        if (!TryRentAction(ActionType.Move, context, rented) || !TryRentAction(ActionType.Harvest, context, rented))
+        if (!TryRentAction(ActionType.Move, BuildMoveContext(workPos, component, stat), rented) || !TryRentAction(ActionType.Harvest, context, rented))
         {
             ReturnAll(rented);
             return false;
@@ -196,7 +210,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
         ActionContext context = new ActionContext(component, stat, depositPos, provider: provider, request: request);
 
         List<IAction> rented = new List<IAction>();
-        if (!TryRentAction(ActionType.Move, context, rented) || !TryRentAction(ActionType.Deposit, context, rented))
+        if (!TryRentAction(ActionType.Move, BuildMoveContext(depositPos, component, stat), rented) || !TryRentAction(ActionType.Deposit, context, rented))
         {
             ReturnAll(rented);
             return false;
@@ -247,6 +261,14 @@ public class FarmerActionSelector : BaseNPCActionSelector
             default:
                 return new ActionContext(component, stat);
         }
+    }
+
+    private ActionContext BuildMoveContext(Vector3 destination, NPCComponent component, NPCStat stat)
+    {
+        MoveRequest request = _facilityMoveMode == MoveMode.Navigation
+            ? MoveRequest.Navigated(destination)
+            : MoveRequest.Fixed(destination);
+        return new ActionContext(component, stat, destination, moveRequest: request, navigation: _navigation);
     }
 
     private static ActionType ToActionType(NPCIntent intent)

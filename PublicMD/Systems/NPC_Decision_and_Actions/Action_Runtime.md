@@ -69,3 +69,9 @@ ReturnAction -> Clear -> pool
 ## 문서 갱신 조건
 
 action interface, context, result, base lifecycle 또는 cost base가 바뀌면 갱신한다.
+
+## 경로 조회 의존 전달
+
+ActionContext에 선택적인 `INavigationService Navigation`이 추가됐다.
+실제 경로 상태는 context나 WorkerNPC가 아니라 MoveAction/GuardAction의 NPCPathFollower가 소유한다.
+목적지와 MoveRequest의 의미는 Movement 문서를 따른다.

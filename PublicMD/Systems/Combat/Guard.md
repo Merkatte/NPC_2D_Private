@@ -77,3 +77,11 @@ Guard selector가 target 유지·획득 정책과 combat queue를 소유한다. 
 ## 문서 갱신 조건
 
 Guard 우선순위, 순찰, interrupt, stat·cost 또는 scene 배선이 바뀌면 갱신한다.
+
+## 시설 복귀와 지역 순찰 이동
+
+GuardAction은 action별 NPCPathFollower를 사용한다. 첫 이동과 다음 provider 표본에 같은 이동 모드를 적용한다.
+지역 밖에서는 경로를 찾고 같은 순찰 지역 안에서는 직접 이동한다.
+이동 중에도 적 감지, 욕구와 provider 유효성 검사 순서는 유지한다. 복귀용 MoveAction을 앞에 붙이지 않는다.
+전투 추적은 기존 Dynamic/Direct 요청이다. Stop/Clear에서 follower 상태를 정리한다.
+경로 실패는 1초 대기 후 재판단하며 세부 계약은 Movement/Navigation 문서를 따른다.

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "runId": "grid-navigation-20260921",
+  "inputRoots": [
+    "Assets/Scripts",
+    "Assets/Data",
+    "Assets/Editor",
+    "Assets/TestOnly",
+    "Assets/Prefab",
+    "Assets/Scenes/FarmerTest.unity",
+    "Assets/Art/Generated/Tiles",
+    "Tools/NpcHarness",
+    "PublicMD",
+    "AGENTS.md",
+    "ProjectSettings",
+    "Packages"
+  ],
+  "authorIds": [
+    "/root",
+    "/root/navigation_core"
+  ],
+  "requiredGates": [
+    {
+      "path": ".harness-runs/grid-navigation-20260921/gate-results/farmer-scene-structure.json",
+      "profile": "FarmerScene.Structure",
+      "version": 1,
+      "requiredCheckIds": [
+        "inspection.scene-setup",
+        "inspection.dependency-bytes",
+        "scene.missing-scripts"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "id": "conventions",
+      "documentPath": "PublicMD/CodeConvention.md",
+      "section": "2-15",
+      "allowNotApplicable": false
+    },
+    {
+      "id": "ownership",
+      "documentPath": "PublicMD/ARCHITECTURE.md",
+      "section": "2-5",
+      "allowNotApplicable": false
+    },
+    {
+      "id": "navigation",
+      "documentPath": "PublicMD/Systems/Navigation.md",
+      "section": "Grid, weighted A*, regions and wiring",
+      "allowNotApplicable": false
+    },
+    {
+      "id": "lifecycle",
+      "documentPath": "PublicMD/Systems/NPC_Decision_and_Actions/Movement.md",
+      "section": "Requests, following, failure and pooling",
+      "allowNotApplicable": false
+    }
+  ],
+  "reviewPath": ".harness-runs/grid-navigation-20260921/review.json"
+}

@@ -327,3 +327,9 @@ Phase A: 살아 움직이는 한 명
 - 책임, 데이터 소유권과 의존 방향이 바뀌면 `ProjectStructure.md` 또는 `ARCHITECTURE.md`를 갱신한다.
 - 실제 구현 상태는 `PROGRESS.md`에만 기록한다. 계획 문서에 구현 완료를 추측해 적지 않는다.
 - 폐기된 요구사항은 삭제만 하지 말고 제외 또는 대체 이유를 남긴다.
+
+## 활성 상세 계획: Grid Navigation
+
+[Grid Navigation 구현 계획](Plans/Grid_Navigation_Implementation_Plan.md)을 진행한다.
+구현 후보 이후 현재 컴파일/참조/구조 Gate/Play Mode와 독립 리뷰를 확인해야 완료다.
+실행 증거와 남은 검증은 Status/PROGRESS.md에서 추적한다.

@@ -1,0 +1,284 @@
+{
+    "schemaVersion": 1,
+    "runId": "grid-navigation-20260921",
+    "profile": "FarmerScene.Structure",
+    "profileVersion": 1,
+    "success": true,
+    "status": "Pass",
+    "message": "Gate profile FarmerScene.Structure passed 33 checks.",
+    "checks": [
+        {
+            "id": "scene.missing-scripts",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies scene.missing-scripts",
+            "expected": "no missing scripts, including inactive objects",
+            "actual": "none"
+        },
+        {
+            "id": "scene.npc-manager",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies scene.npc-manager",
+            "expected": "one active enabled NPCManager",
+            "actual": "1: /Systems/Manager/NPCManager (NPCManager) active=True enabled=True"
+        },
+        {
+            "id": "scene.worker-pool",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies scene.worker-pool",
+            "expected": "one active enabled WorkerPool",
+            "actual": "1: /Systems/Pool/WorkerPool (WorkerPool) active=True enabled=True"
+        },
+        {
+            "id": "scene.farmer-selector",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies scene.farmer-selector",
+            "expected": "one active enabled FarmerActionSelector",
+            "actual": "1: /Systems/ActionSelector/FarmerActionSelector (FarmerActionSelector) active=True enabled=True"
+        },
+        {
+            "id": "scene.destinations",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies scene.destinations",
+            "expected": "one active enabled DestinationDB",
+            "actual": "1: /Systems/Data/DestinationDB (DestinationDB) active=True enabled=True"
+        },
+        {
+            "id": "scene.interactables",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies scene.interactables",
+            "expected": "one active enabled InteractableManager",
+            "actual": "1: /Systems/Manager/InteractManager (InteractableManager) active=True enabled=True"
+        },
+        {
+            "id": "scene.farm",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies scene.farm",
+            "expected": "one active enabled FarmWorkSite",
+            "actual": "1: /InGameObjects/Map/Soil (FarmWorkSite) active=True enabled=True"
+        },
+        {
+            "id": "scene.deposit",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies scene.deposit",
+            "expected": "one active enabled WarehouseDepositPoint",
+            "actual": "1: /InGameObjects/Map/Warehouse (WarehouseDepositPoint) active=True enabled=True"
+        },
+        {
+            "id": "scene.data-manager",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies scene.data-manager",
+            "expected": "one active enabled DataManager",
+            "actual": "1: /Systems/Manager/DataManager (DataManager) active=True enabled=True"
+        },
+        {
+            "id": "npc.pool",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies npc.pool",
+            "expected": "WorkerPool = /Systems/Pool/WorkerPool (WorkerPool) in inspected scene",
+            "actual": "/Systems/Pool/WorkerPool (WorkerPool)"
+        },
+        {
+            "id": "npc.prefab",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies npc.prefab",
+            "expected": "WorkerNPC assigned",
+            "actual": "Assets/Prefab/InGame/NPCGirl.prefab (WorkerNPC)"
+        },
+        {
+            "id": "npc.prefab-asset",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies npc.prefab-asset",
+            "expected": "persistent WorkerNPC prefab asset",
+            "actual": "Assets/Prefab/InGame/NPCGirl.prefab (WorkerNPC)"
+        },
+        {
+            "id": "selector.destinations",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies selector.destinations",
+            "expected": "DestinationDB = /Systems/Data/DestinationDB (DestinationDB) in inspected scene",
+            "actual": "/Systems/Data/DestinationDB (DestinationDB)"
+        },
+        {
+            "id": "selector.data",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies selector.data",
+            "expected": "DataManager = /Systems/Manager/DataManager (DataManager) in inspected scene",
+            "actual": "/Systems/Manager/DataManager (DataManager)"
+        },
+        {
+            "id": "selector.action-pool",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies selector.action-pool",
+            "expected": "ActionPool assigned in inspected scene",
+            "actual": "/Systems/Pool/ActionPool (ActionPool)"
+        },
+        {
+            "id": "selector.tuning",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies selector.tuning",
+            "expected": "NPCDecisionTuning assigned",
+            "actual": "Assets/Data/ScriptableObject/NPCDecisionTuning.asset (NPCDecisionTuning)"
+        },
+        {
+            "id": "destinations.registry",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies destinations.registry",
+            "expected": "InteractableManager = /Systems/Manager/InteractManager (InteractableManager) in inspected scene",
+            "actual": "/Systems/Manager/InteractManager (InteractableManager)"
+        },
+        {
+            "id": "npc.creation-entries",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies npc.creation-entries",
+            "expected": "unique valid roles, assigned stat definitions and scene selectors; Farmer uses inspected selector",
+            "actual": "valid"
+        },
+        {
+            "id": "destinations.rows",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies destinations.rows",
+            "expected": "unique destination keys with scene references; Farm/Warehouse match inspected providers",
+            "actual": "valid"
+        },
+        {
+            "id": "providers.registration",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies providers.registration",
+            "expected": "unique active scene providers including inspected farm and warehouse deposit",
+            "actual": "valid"
+        },
+        {
+            "id": "farm.yield-random",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies farm.yield-random",
+            "expected": "SeededRandomSource assigned in inspected scene",
+            "actual": "/InGameObjects/Map/Soil (SeededRandomSource)"
+        },
+        {
+            "id": "farm.position-random",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies farm.position-random",
+            "expected": "SeededRandomSource assigned in inspected scene",
+            "actual": "/InGameObjects/Map/Soil (SeededRandomSource)"
+        },
+        {
+            "id": "farm.independent-random",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies farm.independent-random",
+            "expected": "separate yield and position random sources",
+            "actual": "/InGameObjects/Map/Soil (SeededRandomSource) / /InGameObjects/Map/Soil (SeededRandomSource)"
+        },
+        {
+            "id": "farm.work-area",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies farm.work-area",
+            "expected": "BoxCollider2D assigned in inspected scene",
+            "actual": "/InGameObjects/Map/Soil (BoxCollider2D)"
+        },
+        {
+            "id": "farm.work-area-size",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies farm.work-area-size",
+            "expected": "positive work-area size",
+            "actual": "(6.18, 2.77)"
+        },
+        {
+            "id": "farm.optional-starting-crop",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies farm.optional-starting-crop",
+            "expected": "empty farm allowed; assigned starting definition must be valid",
+            "actual": "Assets/Data/ScriptableObject/FarmProductionDefinition_Carrot.asset (FarmProductionDefinition)"
+        },
+        {
+            "id": "deposit.inventory",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies deposit.inventory",
+            "expected": "WarehouseInventory assigned in inspected scene",
+            "actual": "/InGameObjects/Map/Warehouse (WarehouseInventory)"
+        },
+        {
+            "id": "deposit.inventory-owner",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies deposit.inventory-owner",
+            "expected": "WarehouseInventory on the registered WarehouseDepositPoint object",
+            "actual": "/InGameObjects/Map/Warehouse (WarehouseInventory)"
+        },
+        {
+            "id": "data.items",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies data.items",
+            "expected": "ItemDataContext assigned",
+            "actual": "Assets/Data/ScriptableObject/ItemDataContext.asset (ItemDataContext)"
+        },
+        {
+            "id": "data.item-csv",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies data.item-csv",
+            "expected": "TextAsset assigned",
+            "actual": "Assets/Data/CSV/ItemData.csv (TextAsset)"
+        },
+        {
+            "id": "data.crop-catalog",
+            "success": true,
+            "status": "Pass",
+            "message": "Scene wiring satisfies data.crop-catalog",
+            "expected": "nonempty valid crop catalog; unique crop IDs and output items present in scene item CSV",
+            "actual": "valid"
+        },
+        {
+            "id": "inspection.scene-setup",
+            "success": true,
+            "status": "Pass",
+            "message": "Loaded scene setup is preserved.",
+            "expected": "Assets/Scenes/FarmerTest.unity|-20782|loaded=True|dirty=False|active=True",
+            "actual": "Assets/Scenes/FarmerTest.unity|-20782|loaded=True|dirty=False|active=True"
+        },
+        {
+            "id": "inspection.dependency-bytes",
+            "success": true,
+            "status": "Pass",
+            "message": "Saved scene dependencies are byte-identical.",
+            "expected": "7c9e53e0fff94a595881b449ceb8c0eced8fd5bf4437b9ae4a231bbbdadc1765",
+            "actual": "7c9e53e0fff94a595881b449ceb8c0eced8fd5bf4437b9ae4a231bbbdadc1765"
+        }
+    ],
+    "artifacts": [
+        {
+            "kind": "scene-dependency-sha256",
+            "path": ".harness-runs/grid-navigation-20260921/artifacts/FarmerScene.Structure-dependencies.json"
+        }
+    ],
+    "changedFiles": [],
+    "startedAtUtc": "2026-09-20T15:32:13.2300544Z",
+    "finishedAtUtc": "2026-09-20T15:32:14.5112139Z"
+}

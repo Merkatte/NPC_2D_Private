@@ -1,0 +1,2 @@
+# Preserve archived JSON byte identity for the recorded SHA-256 values.
+*.json -text

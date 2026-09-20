@@ -72,3 +72,5 @@ Feature/
 - 과거 구현 과정은 `Status`, 완료 계획은 `Archive/Plans`에 기록한다.
 - leaf 문서는 250줄 이하를 기본으로 하되 정보 삭제로 수치를 맞추지 않는다.
 - 코드와 문서가 다르면 코드를 현재 사실로 보고 같은 변경에서 문서를 교정한다.
+
+- [Navigation](Navigation.md): Tilemap 노드 그리드, A*, 힙, 지역과 출입구. 실제 이동은 Movement가 소유한다.

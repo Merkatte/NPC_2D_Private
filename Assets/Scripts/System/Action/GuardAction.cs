@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class GuardAction : DefaultAction
 {
+    private readonly NPCPathFollower _follower = new NPCPathFollower();
     private Vector3 _destination;
     private IInteractionProvider _provider;
     private Component _providerOwner;
@@ -32,6 +33,7 @@ public class GuardAction : DefaultAction
             return;
         }
         _destination = actionContext.Destination.Value;
+        BeginPatrolLeg();
     }
 
     public override void Tick()
@@ -71,7 +73,7 @@ public class GuardAction : DefaultAction
             RequestReplan();
             return;
         }
-        TickPatrol(component, stat, cost);
+        TickPatrol();
     }
 
     private static void ApplyNeedDecay(NPCStat stat, GuardActionCost cost)
@@ -81,27 +83,44 @@ public class GuardAction : DefaultAction
         stat.ChangeFatigue(cost.FatiguePerSecond * Time.deltaTime);
     }
 
-    private void TickPatrol(NPCComponent component, NPCStat stat, GuardActionCost cost)
+    private void TickPatrol()
     {
-        Vector3 toTarget = _destination - component.Position;
-        toTarget.z = 0f;
-        if (toTarget.sqrMagnitude <= cost.PatrolArrivalDistance * cost.PatrolArrivalDistance)
+        _follower.Tick(Time.deltaTime);
+        if (_follower.RequiresReplan)
         {
-            // Repeating the selected duty requests another point from the same facility only.
-            if (!_provider.TryGetActionPosition(ActionType.Guard, _destination, out _destination))
-                RequestReplan();
+            RequestReplan();
             return;
         }
-
-        float step = Mathf.Max(0f, stat.GetMoveSpeed * Time.deltaTime);
-        if (step <= 0f)
+        if (!_follower.HasArrived)
             return;
-        component.Flip(toTarget.x <= 0f);
-        component.Move(toTarget.normalized * Mathf.Min(1f, toTarget.magnitude / step));
+        if (!_provider.TryGetActionPosition(ActionType.Guard, _destination, out _destination))
+        {
+            RequestReplan();
+            return;
+        }
+        BeginPatrolLeg();
+    }
+
+    private void BeginPatrolLeg()
+    {
+        var cost = (GuardActionCost)actionContext.CostInfo;
+        bool navigation = actionContext.MoveRequest.HasValue &&
+            actionContext.MoveRequest.Value.Mode == MoveMode.Navigation;
+        MoveRequest request = navigation
+            ? MoveRequest.Navigated(_destination, cost.PatrolArrivalDistance)
+            : MoveRequest.Fixed(_destination, cost.PatrolArrivalDistance);
+        _follower.Begin(actionContext.Component, actionContext.Stat, request, actionContext.Navigation);
+    }
+
+    public override void Stop()
+    {
+        _follower.Clear();
+        base.Stop();
     }
 
     public override void Clear()
     {
+        _follower.Clear();
         _destination = Vector3.zero;
         _provider = null;
         _providerOwner = null;

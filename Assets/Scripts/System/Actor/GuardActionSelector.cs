@@ -5,6 +5,10 @@ public class GuardActionSelector : BaseNPCActionSelector
 {
     [SerializeField] private DestinationDB _destinationDB;
     [SerializeField] private NPCDecisionTuning _decisionTuning;
+    [SerializeField] private MoveMode _facilityMoveMode;
+    [SerializeField] private TilemapNavigation _navigation;
+
+    private bool _hasLoggedNavigationSetup;
 
     private DestinationDecider _decider;
     private GuardActionCost _guardActionCostInfo;
@@ -99,6 +103,16 @@ public class GuardActionSelector : BaseNPCActionSelector
         if (TryBuildCombatQueue(component, stat, guardStat, out Queue<IAction> combatQueue))
             return combatQueue;
 
+        if (_facilityMoveMode == MoveMode.Navigation && (!_navigation || !_navigation.IsReady))
+        {
+            if (!_hasLoggedNavigationSetup)
+            {
+                Debug.LogError("GuardActionSelector: Navigation mode requires a ready TilemapNavigation.", this);
+                _hasLoggedNavigationSetup = true;
+            }
+            return BuildIdleQueue(component, stat);
+        }
+
         // The decider is now consulted on every replan, not only above the interrupt threshold,
         // so a Guard that just ate re-decides from its real stats and its real position.
         // workCost units are role-dependent: for Guard this is one duty EVALUATION slice
@@ -183,7 +197,7 @@ public class GuardActionSelector : BaseNPCActionSelector
     {
         List<IAction> rented = new List<IAction>();
 
-        ActionContext moveContext = new ActionContext(component, stat, decision.DestinationPos);
+        ActionContext moveContext = BuildMoveContext(decision.DestinationPos, component, stat);
         if (!TryRentAction(ActionType.Move, moveContext, rented))
         {
             ReturnAll(rented);
@@ -212,8 +226,9 @@ public class GuardActionSelector : BaseNPCActionSelector
             return BuildIdleQueue(component, stat);
 
         List<IAction> rented = new List<IAction>();
+        ActionContext movement = BuildMoveContext(firstPoint, component, stat);
         ActionContext context = new ActionContext(component, stat, firstPoint, _guardActionCostInfo,
-            provider: provider);
+            provider: provider, moveRequest: movement.MoveRequest, navigation: movement.Navigation);
         if (!TryRentAction(ActionType.Guard, context, rented))
         {
             ReturnAll(rented);
@@ -234,6 +249,14 @@ public class GuardActionSelector : BaseNPCActionSelector
         }
 
         return new Queue<IAction>(rented);
+    }
+
+    private ActionContext BuildMoveContext(Vector3 destination, NPCComponent component, NPCStat stat)
+    {
+        MoveRequest request = _facilityMoveMode == MoveMode.Navigation
+            ? MoveRequest.Navigated(destination)
+            : MoveRequest.Fixed(destination);
+        return new ActionContext(component, stat, destination, moveRequest: request, navigation: _navigation);
     }
 
     private static ActionType ToActionType(NPCIntent intent)

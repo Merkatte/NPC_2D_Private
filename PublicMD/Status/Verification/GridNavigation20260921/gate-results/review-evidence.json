@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "runId": "grid-navigation-20260921",
+  "profile": "Harness.ReviewEvidence",
+  "profileVersion": 1,
+  "success": true,
+  "status": "Pass",
+  "message": "Required review evidence is complete for the unchanged snapshotted inputs; not a blanket project approval.",
+  "checks": [
+    {
+      "id": "review.evidence-complete",
+      "success": true,
+      "status": "Pass",
+      "message": "Required review evidence is complete for the unchanged snapshotted inputs; not a blanket project approval.",
+      "expected": "Current required gate and independent review evidence",
+      "actual": "Pass"
+    }
+  ],
+  "artifacts": [],
+  "changedFiles": [],
+  "startedAtUtc": "2026-09-20T15:36:58.0299183\u002B00:00",
+  "finishedAtUtc": "2026-09-20T15:36:58.7484020\u002B00:00"
+}

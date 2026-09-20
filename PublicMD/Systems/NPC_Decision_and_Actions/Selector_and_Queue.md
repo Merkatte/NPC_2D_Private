@@ -78,3 +78,11 @@ role selector는 scene object이며 공유 `ActionPool`, `DestinationDB`, `DataM
 ## 문서 갱신 조건
 
 selector 책임, queue 구성 원자성, action 대여·반환, Farmer 우선순위와 변환 규칙이 바뀌면 갱신한다.
+
+## 시설 이동 모드
+
+FarmerActionSelector와 GuardActionSelector는 `_facilityMoveMode`와 `_navigation`을 명시적으로 받는다.
+Navigation 모드의 시설 이동은 Navigated 요청, 기존 Direct 모드는 Fixed 요청이다.
+이동 context와 시설 interaction context를 분리하고 provider의 목적지/난수/transaction은 유지한다.
+Guard 전투 Dynamic 요청은 Direct다. 경로 서비스 미설정은 한 번 로그 후 Idle로 안전하게 재판단한다.
+세부 실행은 Movement, 씬 서비스는 Navigation 문서가 소유한다.

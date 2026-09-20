@@ -1,53 +1,40 @@
 # Movement
 
-## 기능 목적
+## 책임 범위와 주 소유 코드
 
-고정 위치 또는 움직이는 target을 추적해 NPC를 이동시키고 stopping distance에서 완료하는 action 경계를 설명한다.
-
-## 현재 실행 흐름
-
-```text
-selector
-  -> MoveRequest.Fixed(position, distance)
-     또는 MoveRequest.Dynamic(IMoveTarget, distance)
-  -> ActionContext.MoveRequest
-  -> MoveAction.Start(): target 검증과 즉시 도착 판정
-  -> Tick(): 현재 target 위치 재조회, 방향·Flip·Move
-  -> stopping distance 도달 시 Completed
-  -> dynamic target 소실 시 ReplanRequested
-```
-
-## 주 소유 스크립트
-
-| 경로 | 한 줄 책임 |
+| 파일 | 책임 |
 |---|---|
-| `Assets/Data/Struct/MoveRequest.cs` | 고정·동적 목표와 stopping distance를 표현하는 이동 요청 값 |
-| `Assets/Scripts/Interface/IMoveTarget.cs` | 현재 위치를 재조회할 수 있는 동적 이동 target 계약 |
-| `Assets/Scripts/System/Action/MoveAction.cs` | 목표 추적, 방향, stopping distance와 이동 완료 실행 |
+| `Assets/Data/Struct/MoveRequest.cs` | 고정/동적 목적지, Direct/Navigation 모드, 최종 정지 거리 |
+| `Assets/Scripts/Enum/MoveMode.cs` | Direct=0, Navigation=1 직렬화 계약 |
+| `Assets/Scripts/Interface/IMoveTarget.cs` | 동적 target의 위치/유효성 |
+| `Assets/Scripts/System/Actor/NPCPathFollower.cs` | action별 waypoint cursor, 실제 이동, 이탈 재탐색과 실패 대기 |
+| `Assets/Scripts/System/Action/MoveAction.cs` | 이동 실행 결과를 action 완료/재판단으로 변환 |
 
 ## 변경 유형별 최소 확인 범위
 
-| 변경 | 최소 파일·문서 |
-|---|---|
-| 고정 목적지 이동 | `MoveAction.cs`, `MoveRequest.cs`, queue를 구성하는 selector |
-| 움직이는 전투 target | `MoveAction.cs`, `IMoveTarget.cs`, [Targeting and Perception](../Combat/Targeting_and_Perception.md) |
-| 실제 이동·Flip 표현 | `MoveAction.cs`, [NPC Presentation](../NPC_Presentation.md) |
-| stopping distance | `MoveRequest.cs`, 생성 selector, range 규칙을 소유한 기능 문서 |
+요청/이동 변경은 위 다섯 파일, ActionContext, NPCComponent.Move와 WorkerNPC의 Stop/Clear 호출을 확인한다.
+지역/탐색 변경은 [Navigation](../Navigation.md), Guard 내부 순찰은 [Guard](../Combat/Guard.md)를 함께 확인한다.
 
-## 불변 규칙
+## 요청과 실행
 
-- selector는 이동 필요 여부를 복잡하게 예측하지 않고 `MoveAction.Start()`의 즉시 완료를 활용할 수 있다.
-- 동적 target은 매 tick 현재 위치를 제공하며 소실을 성공으로 가장하지 않는다.
-- 실제 transform 이동과 Animator speed 갱신은 `NPCComponent.Move()`를 통과한다.
-- 2D gameplay 거리 판정은 Z축을 제외하는 관련 시스템 규칙과 일치시킨다.
+selector는 MoveRequest.Fixed/Dynamic/Navigated 중 하나를 명시한다.
+Fixed와 Dynamic은 Direct, Navigated는 Navigation이다. 기본 최종 정지 거리는 0.1이다.
+ActionContext는 선택적인 INavigationService만 전달한다. service locator나 action queue를 노출하지 않는다.
+MoveAction은 요청이 없으면 실패하며 암묵적인 원점 이동을 만들지 않는다.
+동적 전투 추적은 매 Tick 위치를 다시 읽는 기존 Direct 흐름이다.
 
-## 관련 문서
+NPCPathFollower.Begin은 이전 상태를 지우고 경로를 요청한다. 같은 지역 안에서는 navigation service가
+직접 경로를 반환하므로 seeded random 목적지를 이용한 작업/순찰에 A*가 호출되지 않는다.
+경로 조회는 gameplay 난수를 소비하지 않는다.
+Tick은 stat 속도와 Time.deltaTime으로 이번 frame 이동 예산을 계산한다. 중간점에 최종 정지 거리를
+적용하지 않으며, 남은 예산으로 다음 구간을 진행해 긴 frame에서도 코너를 건너뛰지 않는다.
+실제 위치와 Flip/animation은 기존 NPCComponent adapter를 통해 변경한다.
 
-- [Action Runtime](Action_Runtime.md)
-- [Selector and Queue](Selector_and_Queue.md)
-- [NPC Presentation](../NPC_Presentation.md)
-- [Combat Attack Runtime](../Combat/Attack_Runtime.md)
+## 실패와 lifecycle
 
-## 문서 갱신 조건
-
-이동 request, target 계약, stopping distance, target 소실 또는 이동 완료 규칙이 바뀌면 갱신한다.
+외력으로 예상 위치를 벗어나면 지역 내부 직선 구간에서도 현재 위치에서 다시 질의한다.
+경로 실패는 gameplay 시간 1초 대기 후 RequiresReplan을 반환한다. 그동안 반복 탐색하지 않는다.
+실패한 MoveAction은 뒤의 시설 행동을 실행하지 않고 WorkerNPC의 기존 재판단 계약을 사용한다.
+Direct target 소실은 즉시 재판단한다. Stop/Clear/다음 Begin에서 경로, cursor, timer와 모든 참조를 지운다.
+WorkerNPC와 NPCComponent에 탐색 책임이나 별도 실행기를 추가하지 않는다.
+GuardAction도 자기 follower를 소유하지만 감지/욕구/시설 유효성 검사는 매 Tick 먼저 수행한다.

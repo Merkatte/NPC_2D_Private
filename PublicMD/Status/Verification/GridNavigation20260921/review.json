@@ -1,0 +1,40 @@
+﻿{
+  "schemaVersion": 2,
+  "runId": "grid-navigation-20260921",
+  "requestSha256": "ba45254394359f3ebeec91c0ddc314750bf5567745744b48753aafcd388e204e",
+  "snapshotSha256": "d6deec9848b92fe4f0a6ba711541085c24a74f59d8005d6ba8f92a80ae408e64",
+  "reviewerId": "/root/navigation_review",
+  "verdict": "Approve",
+  "gateEvidence": [{
+    "path": ".harness-runs/grid-navigation-20260921/gate-results/farmer-scene-structure.json",
+    "sha256": "a5f8ecf3527d7a28cb573d2cee550c760705c986046c87dfac4943bead7cb0eb"
+  }],
+  "ruleCoverage": [
+    {
+      "id": "conventions",
+      "status": "Satisfied",
+      "evidence": "Changed declarations follow CodeConvention naming, serialized-private-field and explicit enum-value rules. TileNavigationProfile validates configuration without shared runtime mutation. Runtime/editor build logs report zero warnings/errors; user additionally confirmed fresh Unity compilation without errors. No blocking convention defect established."
+    },
+    {
+      "id": "ownership",
+      "status": "Satisfied",
+      "evidence": "Pure grid/search/heap, scene geometry and action-local following remain separate owners. Selectors pass INavigationService through ActionContext; WorkerNPC, NPCComponent, providers and EnemyActionSelector remain unchanged. GuardAction checks perception/needs before movement, and GuardActionSelector retains combat priority before facility-navigation validation."
+    },
+    {
+      "id": "navigation",
+      "status": "Satisfied",
+      "evidence": "Direct inspection establishes cell nodes, indexed binary min heap, weighted octile A*, blocked-corner rejection and same-region routes bypassing A*. Pure checks and independent heap/Dijkstra oracles pass; saved-geometry tests establish 30 reachable facility/grass routes. Scene diff preserves hierarchy and explicitly wires references. The user's '잘 되네요', answering the specific FarmerTest Play request about facility road travel and farm/guard local movement, supplies normal native Play observation. FarmerScene.Structure v1 separately remains Pass for its 33 declared structural checks."
+    },
+    {
+      "id": "lifecycle",
+      "status": "Satisfied",
+      "evidence": "Direct tracing confirms follower reset through MoveAction/GuardAction Stop/Clear and WorkerNPC cancellation, reinitialization and disable paths. WorkerNPC discards remaining actions on ReplanRequested/Failed, preventing failed movement from executing the following facility action. Actual-source host checks cover movement budgets, displacement rebuilding, one-second failure delay, target loss, independent followers and second renter. Combined with the user's native normal-movement confirmation, this provides sufficient mixed verification; individual lifecycle edge cases are not claimed as natively instrumented Play tests."
+    }
+  ],
+  "findings": [],
+  "summary": {
+    "responsibilities": "Approved responsibility boundaries are preserved. No evidence-backed Critical or Major defect was established. The earlier evidence gap for normal Play behavior is resolved by the newly supplied user observation.",
+    "dependencies": "Dependencies remain explicit through scene references and ActionContext. Rechecked request/snapshot/gate hashes are unchanged; all 1193 captured files still match. The structural gate started after snapshot creation and its Pass remains unchanged.",
+    "remainingRisks": "Approval combines code inspection, actual-source automated host tests, structural Unity inspection and user-observed normal Play behavior. Editor menu assertion completion is unverified because no success marker was found. Pool/reinitialization/failure edge cases have host and integration-trace evidence rather than native Play instrumentation; do not report those as fully exercised Unity scenarios."
+  }
+}
