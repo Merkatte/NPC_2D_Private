@@ -1,6 +1,6 @@
 # Project Structure
 
-> 문서 기준일: 2026-09-17
+> 문서 기준일: 2026-09-21
 > 이 문서는 전체 구조 지도와 기능 문서 라우팅만 소유한다. 구체 클래스 흐름과 Unity 배선은 `PublicMD/Systems`의 해당 문서가 소유한다.
 
 ## 1. 구조 한눈에 보기
@@ -49,7 +49,8 @@ NPCManager / WorkerPool          생성과 조립
 | queue 처리·공통 stat | NPC Runtime | Action Runtime, Spawning |
 | utility·위험·look-ahead | Decision Policy | Interaction, role 문서 |
 | selector·새 action | Selector and Queue, Action Runtime | concrete action leaf |
-| 이동·동적 target | Movement | Presentation, Combat Targeting |
+| 이동 실행·동적 target·경로 추종 | [Movement](Systems/NPC_Decision_and_Actions/Movement.md) | Navigation(경로 조회 변경), Presentation, Combat Targeting |
+| 노드 그리드·A*·힙·지형 비용·지역 출입구 | [Navigation](Systems/Navigation.md) | Movement(추종 연결), Selector and Queue(요청 변경), Combat/Guard(순찰 연결) |
 | Farmer·농장·씨앗 | Farming | Decision Policy, Inventory, UI |
 | 수확물 운반·창고 입고 | Inventory and Items | Farming Runtime, Selector and Queue, Interaction |
 | Guard 순찰·판단 | Combat/Guard | Targeting, Attack, Decision Policy |
@@ -74,7 +75,7 @@ NPCManager / WorkerPool          생성과 조립
 
 | 경로 | 책임 |
 |---|---|
-| `Assets/Scripts/Actor` | scene에 존재하는 actor root와 facility component |
+| `Assets/Scripts/Actor` | scene에 존재하는 actor root, facility component와 scene 경로 서비스 |
 | `Assets/Scripts/Manager` | scene 조립, registry 진입점과 scene 단위 단일 접근점 runtime 상태 |
 | `Assets/Scripts/System/Actor` | actor runtime state, selector, Unity adapter |
 | `Assets/Scripts/System/Navigation` | 순수 노드 그리드, A*와 내부 힙 |
@@ -124,6 +125,7 @@ UI input -> IUIService <- domain IHoverInfoSource
 | 새 destination | `BuildingType`, scene `DestinationDB` row, 공통 provider registration |
 | 새 facility runtime state | 해당 domain의 scene component |
 | 새 item 운반·입고 흐름 | `ICarriedInventory` 소비 provider, `InteractionRequest.Cargo`, 실행 action, [Inventory and Items](Systems/Inventory_and_Items.md) |
+| 새 경로 지형·지역·출입구 | [Navigation](Systems/Navigation.md)의 profile과 scene 조립; 이동 실행 변경은 [Movement](Systems/NPC_Decision_and_Actions/Movement.md) |
 | 새 gameplay 난수 | `IRandomSource`를 주입받는 domain 계산 |
 | 새 popup·hover | category enum, base view 구현, `UIManager` registry |
 | 새 prefab 형태 | `NPCPrefabType`, prefab catalog, pool/spawn 조립 |

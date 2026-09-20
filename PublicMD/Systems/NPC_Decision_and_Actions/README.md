@@ -11,7 +11,8 @@ NPC가 다음 행동을 판단하고, 실행 가능한 action queue를 구성하
 | utility 점수, 위험도, look-ahead, `NPCDecision` | [Decision Policy](Decision_Policy.md) |
 | role selector, queue 조립, action 대여·반환 | [Selector and Queue](Selector_and_Queue.md) |
 | `IAction`, lifecycle, result, context, cost base | [Action Runtime](Action_Runtime.md) |
-| 고정·동적 목표 이동, stopping distance | [Movement](Movement.md) |
+| 고정·동적 목표 이동, 경로 추종, stopping distance와 이동 실패 | [Movement](Movement.md) |
+| 그리드 탐색, 지형 비용, 지역·출입구 배선 | [Navigation](../Navigation.md) |
 | Eat, Drink, Sleep, Idle 실행 | [Needs Actions](Needs_Actions.md) |
 
 농사·수확 action은 [Farming](../Farming/README.md), 수확물 운반과 창고 입고는 [Inventory and Items](../Inventory_and_Items.md), 전투 action은 [Combat](../Combat/README.md)이 소유한다.
@@ -35,6 +36,7 @@ Decision Policy -> semantic decision
 Selector and Queue -> decision을 action sequence로 변환
 Action Runtime -> 공통 실행 계약과 상태
 Movement / Needs Actions -> 계약을 구현하는 leaf action
+Movement -> 주입된 INavigationService로 경로 조회
 NPC Runtime -> 완성된 queue를 소비
 ```
 
@@ -50,6 +52,7 @@ NPC Runtime -> 완성된 queue를 소비
 
 - Farmer의 농사 실행: [Farming](../Farming/README.md)
 - Guard·Enemy의 role 우선순위와 전투 queue: [Combat](../Combat/README.md)
+- 경로 탐색과 scene 경로 서비스: [Navigation](../Navigation.md)
 - 목적지와 provider: [Interaction and Destinations](../Interaction_and_Destinations.md)
 - queue 소비: [NPC Runtime](../NPC_Runtime.md)
 

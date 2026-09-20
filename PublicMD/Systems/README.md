@@ -15,6 +15,7 @@
 
 | 기능 | 형태 |
 |---|---|
+| [Navigation](Navigation.md) | 노드 그리드, A*, 힙, 지형 비용과 지역 출입구를 소유하는 단일 기능 문서 |
 | `NPC_Runtime.md` | 단일 기능 문서 |
 | `NPC_Decision_and_Actions/` | 5개 leaf를 가진 기능 인덱스 |
 | `Farming/` | 4개 leaf를 가진 기능 인덱스 |
@@ -25,7 +26,7 @@
 | `Merchant_Caravan.md` | 단일 기능 문서 |
 | `Town_Hall.md` | 단일 기능 문서 |
 | `NPC_Presentation.md` | 단일 기능 문서 |
-| `NPC_Messages.md` | 주민 생각 선택·지정 대사·메시지 수명; YAML 배선 적용, 실제 실행 검증 미완료 |
+| `NPC_Messages.md` | 주민 생각 선택·지정 대사·메시지 수명과 말풍선 표현 |
 | `UI.md` | 단일 기능 문서 |
 | `Localization.md` | CSV/Enum, 언어별 데이터 조회, Text/TMP 문구 표시 |
 | `Spawning_and_Pooling.md` | 단일 기능 문서 |
@@ -72,5 +73,3 @@ Feature/
 - 과거 구현 과정은 `Status`, 완료 계획은 `Archive/Plans`에 기록한다.
 - leaf 문서는 250줄 이하를 기본으로 하되 정보 삭제로 수치를 맞추지 않는다.
 - 코드와 문서가 다르면 코드를 현재 사실로 보고 같은 변경에서 문서를 교정한다.
-
-- [Navigation](Navigation.md): Tilemap 노드 그리드, A*, 힙, 지역과 출입구. 실제 이동은 Movement가 소유한다.

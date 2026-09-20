@@ -8,7 +8,8 @@ FarmerScene.Structure v1 33개 Pass, 독립 리뷰 Approve, Harness.ReviewEviden
 모든 분기를 native Play에서 계측한 것은 아니다. 수정 예산은 0/2회 사용했다.
 
 맥북 인계와 검증 보관본: [Navigation 작업 인계](Navigation_20260921_Handoff.md).
-당시 snapshot 이후에는 인계용 문서/증거 보관만 추가했으며 gameplay 코드는 그대로다.
+당시 snapshot 이후에는 인계용 문서/증거 보관과 문서 라우팅을 보완했으며 gameplay 코드는 그대로다.
+ProjectStructure의 작업별 경로 탐색 진입점, Systems 기능 지도, NPC 기능 인덱스의 Navigation 연결을 확인·보완했다.
 
 # PROGRESS
 
