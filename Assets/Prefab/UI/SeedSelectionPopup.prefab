@@ -97,8 +97,6 @@ MonoBehaviour:
   _offScreenDistance: 1200
   _enterDuration: 0.35
   _exitDuration: 0.25
-  _warehouse: {fileID: 0}
-  _itemDataContext: {fileID: 11400000, guid: df1cde6d9ea68634494a9967845fe8ad, type: 2}
   _slotPrefab: {fileID: 400002, guid: ae8cadca2cd930212ab52145ace71b86, type: 3}
   _slotParent: {fileID: 200024}
   _emptyStateText: {fileID: 400025}
@@ -111,6 +109,8 @@ MonoBehaviour:
   _confirmationText: {fileID: 400017}
   _selectedSeedText: {fileID: 400018}
   _plantButton: {fileID: 500021}
+  _cancelButton: {fileID: 500019}
+  _closeButton: {fileID: 500014}
 --- !u!1 &100002
 GameObject:
   m_ObjectHideFlags: 0

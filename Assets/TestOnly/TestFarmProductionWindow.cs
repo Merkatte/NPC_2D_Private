@@ -8,6 +8,7 @@ public class TestFarmProductionWindow : MonoBehaviour
     private const int ProbeCargoCapacity = 10;
 
     [SerializeField] private FarmWorkSite _farmWorkSite;
+    [SerializeField] private FarmSeedSource _seedSource;
     [SerializeField] private WarehouseInventory _warehouse;
     [SerializeField] private WarehouseDepositPoint _depositPoint;
     [SerializeField] private CropCatalog _cropCatalog;
@@ -187,12 +188,13 @@ public class TestFarmProductionWindow : MonoBehaviour
 
     private void SelectCrop(FarmProductionDefinition definition)
     {
-        bool success = _farmWorkSite.TrySelectCrop(definition, out string failureReason);
+        SeedPlantResult result = SeedPlantResult.FarmUnavailable;
+        bool success = _seedSource && _seedSource.TryPlantSeed(definition.SeedItemId, out result);
 
         _hasLastSelection = true;
         _lastSelectionLabel = definition.DisplayName;
         _lastSelectionSuccess = success;
-        _lastSelectionFailureReason = failureReason;
+        _lastSelectionFailureReason = result.ToString();
     }
 
     // Records state directly before/after the call: the common InteractionResult intentionally

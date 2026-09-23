@@ -1,10 +1,16 @@
 # Seed System Implementation Plan
 
-> 상태: Seed Phase 1 completed, Seed Phase 2 implementation complete / verification pending, Phase 3 이후 승인 대기
+> 상태: Seed Phase 1 completed, Seed Phase 2 전체 시각 회귀는 별도, 심기 연결 구현·기본 Play 확인(2026-09-22) / 독립 리뷰 요청
 > 작성일: 2026-08-29
 > 상위 roadmap: `PublicMD/PLAN.md`
 > 요구사항: `PublicMD/SPEC.md`의 `SRC-024`, `REQ-F-052`~`REQ-F-060`, `REQ-D-016`
 > 현재 구현 지도: `PublicMD/Systems/Farming/README.md`
+
+## 2026-09-22 심기 연결 구현
+
+승인 범위는 빈 FarmerTest 시작, 밭 한 주기당 씨앗 1개 소비, 확정 후 교체·취소 금지, 실패 시 상태 보존이다. FarmSeedSource → FarmWorkSite → WarehouseInventory로 처리하고, popup은 클릭한 source를 IUIService/PopBase를 통해 전달받는다. 씨앗 매핑은 기존 crop definition의 SeedItemId에 두며 새 전역 manager나 NPC 행동은 추가하지 않는다.
+
+Runtime·Editor 소스 컴파일 0 경고/0 오류, production 코드의 host 검사 39개와 UI/router 수명 검사 12개가 통과했다. 사용자 자동 컴파일 완료 확인 후 새 DLL과 씬 해시를 확인하고 FarmerScene.Structure v1 33개 Pass/exit 0을 받았다(`.harness-runs/seed-planting-20260922-current/`). 그 전에 구 DLL로 받은 Pass는 후보 증거에서 제외했다. 실제 Editor 메뉴의 39개 검사 통과 로그를 확인했고, 사용자는 심기·차감·농부 작업과 취소·닫기 재고 보존이 정상임을 확인했다. 기존 Phase 2의 전체 시각 항목과 입력 예외 전체는 별도이며 독립 리뷰는 비동기로 요청했다.
 
 ## 1. 목표와 플레이 경험
 
@@ -71,12 +77,14 @@ CSV는 Phase 1 범위에 추가하지 않는다. crop 수가 늘어 숫자 일�
 
 | Gate | 결정할 내용 | 권장 기본안 | 상태 |
 |---|---|---|---|
-| SG-001 | 씨앗을 언제 변경할 수 있는가? | 빈 농경지에서만 선택, 성장·수확 중 변경 금지 | **확정(2026-08-29)**: 권장 기본안대로. `SPEC.md` 12절 Decision Log Q-030 참고. |
-| SG-002 | 실제 seed item을 inventory에서 소비하는가? | 첫 vertical slice는 선택만 하고 소비는 후속 단계로 보류 | **확정(2026-08-29)**: 권장 기본안대로. `SPEC.md` 12절 Decision Log Q-031 참고. |
+| SG-001 | 씨앗을 언제 변경할 수 있는가? | 작물이 없는 밭에서만 심기 | **변경 확정(2026-09-22)**: 확정 후 progress 0이어도 교체·취소 금지. Q-030의 Phase 1 예외를 대체하며 코드·YAML에 반영했으며 실제 실행 검증은 별도다. |
+| SG-002 | 실제 seed item을 inventory에서 소비하는가? | 밭 한 주기당 씨앗 1개 | **변경 확정(2026-09-22)**: 심기 성공 시 창고에서 1개 차감. 실패 시 재고와 밭 상태 모두 보존. Q-031의 소비 보류를 이번 연결 범위에서 해제하며 코드·YAML에 반영했으며 실제 실행 검증은 별도다. |
 | SG-003 | 첫 구현 crop 종류와 output item ID | 기존 item data에서 검증 가능한 2종부터 시작 | **확정(2026-08-29)**: Carrot(cropId 1, item 4), Potato(cropId 2, item 5), 둘 다 Food category로 `ItemData.csv`에 신규 추가. `SPEC.md` 12절 Decision Log Q-032 참고. |
 | SG-004 | 첫 crop의 성장 stage 수 | 데이터는 가변 배열, 첫 art는 4단계 | **확정(2026-09-01)**: Carrot·Potato 모두 `0 / 0.3333 / 0.6667 / 1` 네 stage. `SPEC.md` Decision Log Q-033 참고. |
-| SG-005 | popup 진입 입력 | 기존 hover collider를 재사용하되 click은 별도 interaction adapter가 처리 | 미확정 — Seed Phase 3 시작 전 결정 |
+| SG-005 | popup 진입 입력 | 빈 밭 클릭 | **확정(2026-09-22)**: 빈 밭 클릭 → 보유 씨앗 목록 → 선택 → 심기 확정. collider 구성은 구현 시 기존 Hover와 click 구조를 확인한다. |
 | SG-006 | 수확 완료 뒤 다음 cycle | 소멸 animation 완료 후 빈 상태로 전환하고 다시 선택 요구 | **확정(2026-09-01)**: 최종 수확 transaction 직후 current crop을 비우고 선택을 허용한다. 소멸 중 선택된 새 visual은 기존 소멸 완료 뒤 표시한다. `SPEC.md` Decision Log Q-035 참고. |
+
+2026-09-22 확정 규칙의 기준은 [SPEC](../SPEC.md)의 `씨앗 심기 — 2026-09-22 확정 규칙` 절이다. 아래 Phase별 과거 구현 기록과 소비 제외 기록은 당시 범위이며, 이번 심기 연결은 씨앗 소비를 포함한다. 자동 재파종 없이 최종 수확 후 다시 선택한다. UI 목록 선택만으로 재고나 밭을 변경하지 않는다.
 
 ## 5. Seed Phase 1 — 기본 기능과 데이터
 

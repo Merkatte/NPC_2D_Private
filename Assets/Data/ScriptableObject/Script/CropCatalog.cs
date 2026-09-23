@@ -28,6 +28,23 @@ public class CropCatalog : ScriptableObject
         return false;
     }
 
+    public bool TryGetDefinitionBySeedItemId(int seedItemId, out FarmProductionDefinition definition)
+    {
+        definition = null;
+        if (seedItemId < 0 || _definitions == null)
+            return false;
+
+        foreach (FarmProductionDefinition candidate in _definitions)
+        {
+            if (candidate && candidate.SeedItemId == seedItemId)
+            {
+                definition = candidate;
+                return true;
+            }
+        }
+        return false;
+    }
+
     // itemDataContext is required so output items are cross-checked against real item data, not
     // just structurally validated (see PublicMD/Systems/Farming/Definition_and_Catalog.md invariants).
     public bool TryValidate(ItemDataContext itemDataContext, out string failureReason)
@@ -45,6 +62,7 @@ public class CropCatalog : ScriptableObject
         }
 
         var seenCropIds = new HashSet<int>();
+        var seenSeedIds = new HashSet<int>();
 
         for (int i = 0; i < _definitions.Count; ++i)
         {
@@ -65,6 +83,14 @@ public class CropCatalog : ScriptableObject
             if (!seenCropIds.Add(definition.CropId))
             {
                 failureReason = $"duplicate crop id {definition.CropId} ('{definition.name}')";
+                return false;
+            }
+
+            if (!seenSeedIds.Add(definition.SeedItemId)
+                || !itemDataContext.TryGetItemInfo(definition.SeedItemId, out ItemInfo seed)
+                || seed.Category != ItemCategory.Seed)
+            {
+                failureReason = $"'{definition.name}' seed item id {definition.SeedItemId} is duplicate, missing or not Seed";
                 return false;
             }
 

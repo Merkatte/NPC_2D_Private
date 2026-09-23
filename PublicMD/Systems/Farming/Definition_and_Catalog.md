@@ -6,8 +6,8 @@ crop별 생산 규칙과 presentation reference, 선택 가능한 catalog와 정
 
 ## 책임 경계
 
-- `FarmProductionDefinition`은 crop ID·표시명, progress 변화량, output item·yield와 visual controller·stage 배열을 정의한다.
-- `CropCatalog`는 definition 목록, 중복 crop ID와 output item cross-reference를 검증한다.
+- `FarmProductionDefinition`은 crop ID·표시명·씨앗 item ID, progress 변화량, output item·yield와 visual controller·stage 배열을 정의한다.
+- `CropCatalog`는 definition 목록, 중복 crop/seed ID, 씨앗의 Seed category와 input/output item cross-reference를 검증한다.
 - runtime progress·phase와 현재 표시 stage는 공유 asset에 기록하지 않는다.
 
 ## 현재 데이터 흐름
@@ -16,7 +16,7 @@ crop별 생산 규칙과 presentation reference, 선택 가능한 catalog와 정
 CropCatalog.TryValidate(ItemDataContext)
   -> definition 생산 값 검증
   -> visual controller와 0..1 stage 배열 검증
-  -> crop ID 중복과 output item 존재 검증
+  -> crop/seed ID 중복, seed item 존재·Seed category와 output item 존재 검증
 
 FarmWorkSite -> 선택된 definition의 생산 값 소비
 FarmCropPresenter -> 같은 definition의 presentation 값 소비
@@ -43,14 +43,14 @@ stage threshold는 첫 값 0, 마지막 값 1이고 엄격한 오름차순이어
 
 - production과 presentation reference는 하나의 crop definition을 source of truth로 사용한다.
 - first threshold는 0, last threshold는 1이며 모든 stage sprite가 존재해야 한다.
-- catalog는 구조 검증과 ItemDataContext output item 검증을 함께 수행한다.
+- catalog는 구조 검증과 ItemDataContext seed/output item 검증을 함께 수행한다. `TryGetDefinitionBySeedItemId`로 씨앗에서 작물을 조회하며 표시 이름이나 ID 산술로 추측하지 않는다.
 - 공유 definition은 runtime에서 mutation하지 않는다.
 
 ## 에셋과 검증
 
-- `FarmProductionDefinition_Carrot.asset`, `FarmProductionDefinition_Potato.asset`: 네 stage와 공통 crop controller를 참조한다.
+- `FarmProductionDefinition_Carrot.asset`, `FarmProductionDefinition_Potato.asset`: 네 stage와 공통 crop controller를 참조한다. SeedItemId는 각각 6/7, OutputItemId는 4/5다.
 - `CropCatalog.asset`: Carrot과 Potato definition을 등록한다.
-- `TestFarmProductionWindow`가 catalog 초기화 경계에서 `TryValidate`를 한 번 호출한다.
+- `FarmSeedSource`는 최초 조회·요청에서 catalog와 item 연결을 검증한다. TestFarmProductionWindow도 표시 전 검증한다. UI 후보는 catalog에 연결되고 재고가 양수인 씨앗만 포함한다.
 
 ## 알려진 제약과 TBD
 

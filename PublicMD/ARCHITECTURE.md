@@ -51,7 +51,7 @@ ICombatTarget        -> 생존, 위치, damage
 IHoverInfoSource     -> UI가 읽을 표시 정보
 ```
 
-domain별 phase, recipe, item table, target 정책은 concrete owner가 유지한다.
+domain별 phase, recipe, item table, target 정책은 concrete owner가 유지한다. 플레이어 심기는 FarmSeedSource가 명시적으로 연결한 정의·창고를 FarmWorkSite에 전달하며, 농장이 검증·차감·상태 확정을 소유한다. IInventory에 임의 출고 권한을 추가하지 않고 WarehouseInventory의 전량 차감 API를 사용한다. UI는 선택한 IClickPopupSource를 전달하며 UIManager/PopBase는 농장 구체 타입을 참조하지 않는다.
 
 request는 값만이 아니라 transaction에 참여하는 capability도 나를 수 있다. `InteractionRequest.Cargo`가 그 예로, 요청자가 자기 inventory를 실어 보내면 provider는 방향(생산이면 넣고, 수령이면 뺀다)만 결정한다. 이렇게 하면 result에 domain 전용 payload를 추가하지 않고도 외부 수락 확인 후 내부 상태를 소모하는 순서를 유지할 수 있다.
 

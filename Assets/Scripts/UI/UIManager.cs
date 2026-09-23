@@ -29,8 +29,14 @@ public class UIManager : MonoBehaviour, IUIService
     }
 
     public bool TryShow(PopupType popupType)
+        => TryShow(popupType, null);
+
+    public bool TryShow(PopupType popupType, IClickPopupSource source)
     {
         if (!_popupRegistry.TryGetValue(popupType, out PopBase popup) || !popup)
+            return false;
+
+        if (!popup.TryBindSource(source))
             return false;
 
         RemoveFromPopupStack(popup);

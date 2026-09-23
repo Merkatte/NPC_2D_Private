@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FarmProductionDefinition
   _cropId: 2
   _displayName: Potato
+  _seedItemId: 7
   _maxProgress: 160
   _growthPerWork: 10
   _harvestProgressPerWork: 20

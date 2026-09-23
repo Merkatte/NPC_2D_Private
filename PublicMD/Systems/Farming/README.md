@@ -6,7 +6,7 @@
 
 | 작업 | 문서 |
 |---|---|
-| 농장 progress·phase·crop 선택·수확물 인도 | [Runtime and Transactions](Runtime_and_Transactions.md) |
+| 씨앗 심기·소비·농장 progress·phase·수확물 인도 | [Runtime and Transactions](Runtime_and_Transactions.md) |
 | crop 생산 규칙·catalog·검증 | [Definition and Catalog](Definition_and_Catalog.md) |
 | 성장 stage sprite·cascade animation·수확 소멸 | [Crop Presentation](Crop_Presentation.md) |
 | Farming/Harvest action 실행과 NPC 비용·작업 모션 | [Farming and Harvest Actions](Farming_Action.md) |
@@ -16,7 +16,7 @@
 ## 전체 흐름
 
 ```text
-crop 선택 -> FarmWorkSite runtime state
+빈 밭 클릭 -> 씨앗 popup -> FarmSeedSource -> 씨앗 1개 소비 + FarmWorkSite runtime crop 설정
 Farmer selector -> FarmWorkSite.TryGetActionPosition (batch당 1회)
   -> MoveAction + 같은 위치를 공유하는 FarmingAction batch (Growing)
   -> 또는 MoveAction + HarvestAction 1회 (Harvesting)

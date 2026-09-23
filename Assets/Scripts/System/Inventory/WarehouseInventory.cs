@@ -75,11 +75,20 @@ public class WarehouseInventory : MonoBehaviour, IInventory
         return _quantities.TryGetValue(itemId, out int quantity) ? quantity : 0;
     }
 
+    // Exact removal for facility transactions such as planting; no partial consumption.
+    public bool TryRemove(int itemId, int quantity)
+    {
+        if (itemId < 0 || quantity <= 0
+            || !_quantities.TryGetValue(itemId, out int current) || current < quantity)
+            return false;
+
+        _quantities[itemId] = current - quantity;
+        return true;
+    }
+
     /// <summary>
-    /// Not part of IInventory — that contract only covers accepting stock (partial accept
-    /// allowed), and nothing else in the project has authority to remove warehouse stock.
-    /// Only MerchantTradeSite calls this, for a completed sale (a whole cart at once, since a
-    /// single-item TryRemove would have no other caller). All-or-nothing across the whole batch:
+    /// Not part of IInventory — that contract covers accepting stock, not removal authority.
+    /// MerchantTradeSite removes a completed sale in one batch. All-or-nothing across the batch:
     /// a validation pass confirms every line before an execution pass mutates anything, so a
     /// request that fails partway through never leaves some items removed and others not.
     /// </summary>

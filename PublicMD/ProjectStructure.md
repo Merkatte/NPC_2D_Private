@@ -1,6 +1,6 @@
 # Project Structure
 
-> 문서 기준일: 2026-09-21
+> 문서 기준일: 2026-09-22
 > 이 문서는 전체 구조 지도와 기능 문서 라우팅만 소유한다. 구체 클래스 흐름과 Unity 배선은 `PublicMD/Systems`의 해당 문서가 소유한다.
 
 ## 1. 구조 한눈에 보기
@@ -52,6 +52,7 @@ NPCManager / WorkerPool          생성과 조립
 | 이동 실행·동적 target·경로 추종 | [Movement](Systems/NPC_Decision_and_Actions/Movement.md) | Navigation(경로 조회 변경), Presentation, Combat Targeting |
 | 노드 그리드·A*·힙·지형 비용·지역 출입구 | [Navigation](Systems/Navigation.md) | Movement(추종 연결), Selector and Queue(요청 변경), Combat/Guard(순찰 연결) |
 | Farmer·농장·씨앗 | Farming | Decision Policy, Inventory, UI |
+| 밭 클릭·씨앗 소비·심기 | [Farming Runtime](Systems/Farming/Runtime_and_Transactions.md) | Farming Definition and Catalog, Inventory, UI(source 바인딩) |
 | 수확물 운반·창고 입고 | Inventory and Items | Farming Runtime, Selector and Queue, Interaction |
 | Guard 순찰·판단 | Combat/Guard | Targeting, Attack, Decision Policy |
 | Enemy 판단·stat | Combat/Enemy | Targeting, Attack, Spawning |

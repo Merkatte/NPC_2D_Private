@@ -43,7 +43,7 @@
 |---|---|---|---|---|
 | S-01 | Seed Phase 1 — 기본 기능과 데이터 | 선택한 crop에 따라 결과물·요구치·수확량이 달라짐 | `REQ-F-053`~`REQ-F-056`, `REQ-D-016` | completed |
 | S-02 | Seed Phase 2 — 작물 실제 표현 | 성장 단계 sprite·idle·성장 transition·수확 소멸 표현 | `REQ-F-057`~`REQ-F-059` | implementation complete / verification pending |
-| S-03 | Seed Phase 3 — 선택 UI와 상호작용 | farm별 씨앗 popup, 선택 mutation, 기존 성장 UI 연동 | `REQ-F-052`, `REQ-F-060` | 승인 대기 |
+| S-03 | Seed Phase 3 — 선택 UI와 상호작용 | farm별 씨앗 popup, 씨앗 소비·심기, 기존 성장 UI 연동 | `REQ-F-052`, `REQ-F-060` | 2026-09-22 심기 연결 구현·기본 Play 확인 / 독립 리뷰 요청 |
 | S-04 | 전체 회귀 검증과 문서 종료 | 두 crop·두 farm·실패 transaction·재활성화 시나리오 통과 | 상세 계획 8절 | 승인 대기 |
 
 각 Seed Phase는 별도 승인과 검증을 거친다. 앞 단계의 완료 조건을 통과하기 전 다음 단계의 production 구현을 시작하지 않는다.

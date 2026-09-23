@@ -112,7 +112,7 @@ flowchart LR
 | 불쾌 수치 | 충족되지 않은 욕구로 인해 누적되며 폭동 발생에 영향을 주는 값. |
 | 폭동 | 불쾌 수치 임계 도달 후 주민이 정상 업무를 중단하는 위기 상태. 상세 행동은 미정이다. |
 | 생산물 | 주민의 업무로 생성되어 운반·보관·판매할 수 있는 자원 또는 물품. |
-| 씨앗 선택 | 플레이어가 빈 농경지의 다음 생산 cycle에 사용할 crop definition을 지정하는 관리 행동. 실제 seed item 소비 여부는 TBD다. |
+| 씨앗 선택 | 플레이어가 작물이 없는 농경지의 다음 생산 cycle을 지정하는 관리 행동. 2026-09-22 확정 규칙은 심기 성공 시 창고 씨앗 1개 소비이며, 현재 구현과의 차이는 아래 심기 규칙 절을 따른다. |
 | 작물 정의 | 결과 item, 성장·수확 요구치, 수확량과 presentation reference를 가진 변경 불가능한 공유 설정. 현재 runtime progress를 저장하지 않는다. |
 | 성곽 | 외곽 방어선이며 독립된 체력을 가진 방어 대상. |
 | 시청 | 정착지 성장의 중심 시설이자 적에게 파괴될 경우 게임오버를 발생시키는 핵심 건물. 명칭은 임시다. |
@@ -458,6 +458,22 @@ Open Question이 시스템 규칙으로 확정되면 이 절로 옮기고 표에
 | Q-035 (구 SG-006) | 최종 수확 transaction이 성공하면 current crop을 즉시 비우고 다음 선택을 허용한다. 수확 소멸은 gameplay를 지연시키지 않으며, 소멸 중 선택된 새 crop visual은 기존 소멸 완료 뒤 표시한다. | 2026-09-01 | [Seed System Implementation Plan](Plans/Seed_System_Implementation_Plan.md) SG-006, [Farming Runtime](Systems/Farming/Runtime_and_Transactions.md) |
 | Q-036 | Farmer는 Farming batch마다 농경지의 4 x 2 작업 셀 순환에서 위치를 하나 배정받고 batch 안에서는 그 위치를 유지한다. 셀 내부에는 최대 20% jitter를 적용한다. 첫 구현은 위치 예약·반납과 최대 작업 인원 제한을 지원하지 않아 8명을 초과하거나 순환이 겹치면 같은 위치가 재사용될 수 있다. | 2026-09-03 | [Farming Runtime](Systems/Farming/Runtime_and_Transactions.md), [Selector and Queue](Systems/NPC_Decision_and_Actions/Selector_and_Queue.md) |
 | Q-037 | 주민의 봇짐은 한 번에 한 item type만 담고 기본 용량은 10이다(REQ-F-022 구현). 목적지가 거부한 수량은 계속 운반 상태로 남아 소실되지 않으며(REQ-F-023), 1개 이상 수락되면 성공으로 처리하고 농장 progress는 pending yield 전량이 봇짐으로 넘어간 뒤에만 소모한다. 운반 예약과 다중 item 동시 운반은 지원하지 않는다. | 2026-09-04 | [Inventory and Items](Systems/Inventory_and_Items.md), [Farming Runtime](Systems/Farming/Runtime_and_Transactions.md) |
+
+## 씨앗 심기 — 2026-09-22 확정 규칙
+
+사용자가 다음 규칙 전체에 동의했다. Q-030의 진행도 0에서 교체 허용과 Q-031의 소비 보류는 당시 Phase 1 기록으로 보존하며, 이번 심기 연결 구현에는 아래 규칙을 우선한다.
+
+| 항목 | 확정 규칙 |
+|---|---|
+| 심기 단위·소비량 | 밭 하나의 생산 한 주기당 해당 씨앗 1개를 소비한다. 표시되는 작물 개수와는 무관하다. |
+| 소비 시점 | 목록 선택으로는 차감하지 않는다. 심기 확정이 성공할 때 창고에서 차감한다. |
+| 대상 상태 | current crop이 없는 밭에서만 심을 수 있다. |
+| 변경·취소 | 확정 전에는 자유롭게 선택을 바꿀 수 있다. 확정 후에는 진행도가 0이어도 교체·취소할 수 없다. |
+| 진입 흐름 | 빈 밭 클릭 → 보유 씨앗 목록 → 씨앗 선택 → 심기 확정. |
+| 수확 이후 | 최종 수확 성공 직후 빈 밭으로 돌아가 다시 선택한다. 자동 재파종은 하지 않는다. 기존 Q-035의 visual 처리 규칙은 유지한다. |
+| 실패 | 확정 시 재고와 대상 밭 상태를 다시 검사한다. 재고 부족이나 심기 실패 시 씨앗과 밭 상태를 모두 보존하고 이유를 표시한다. |
+
+추가 확정: FarmerTest는 빈 밭으로 시작하고 당근·감자 씨앗을 창고에 각각 5개 둔다. 코드·YAML 연결을 구현했으며 실제 검증 상태는 PROGRESS를 따른다. 구매·운반·자동 보충은 이번 범위에 포함하지 않는다.
 
 ## 주민 시설 경로 이동 — 승인된 첫 적용 범위
 

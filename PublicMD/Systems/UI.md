@@ -27,10 +27,12 @@ PointerHoverRouter
 
 PointerClickRouter
   -> mouse.leftButton.wasPressedThisFrame (매 프레임 확인, poll 아님)
-  -> Physics2D.OverlapPoint(clickable mask)
+  -> 클릭 순간 uGUI GraphicRaycaster hit가 있으면 world 입력 중단
+  -> Physics2D.OverlapPoint(clickable mask)의 겹친 collider 중 유효 source 탐색
   -> 같은 GameObject의 IClickPopupSource
   -> source.TryGetClickPopup(out PopupType) — 지금 클릭 가능한지는 source가 판단(예: MerchantVisual의 Animator 상태 조회)
-  -> IUIService.TryShow(popupType)
+  -> IUIService.TryShow(popupType, source)
+  -> PopBase.TryBindSource 성공 후 Open (이미 열린 대상의 재바인딩도 처리)
 ```
 
 popup은 `PopupType`, hover는 `HoverType`으로 등록한다. `UIManager`는 concrete view의 domain 데이터를 직접 읽지 않는다. hover는 continuous state(enter/exit)라 poll 주기가 있고, click은 discrete edge라 poll하지 않고 매 프레임 press edge만 확인한다 — `Physics2D.OverlapPoint`는 그 press 프레임에만 실행되므로 실질적으로 이미 self-throttling이다.
@@ -64,7 +66,7 @@ EventSystem(InputSystemUIInputModule)
 | `Assets/Scripts/UI/MerchantPopup.cs` | 이 프로젝트 최초의 concrete popup — 상단 거래 UI([Merchant Caravan](Merchant_Caravan.md) 주 소유) |
 | `Assets/Scripts/UI/TownHallPopup.cs` | 시청 모집 UI([Town Hall](Town_Hall.md) 주 소유) |
 | `Assets/Scripts/UI/TownHallRecruitCard.cs` | 시청 직군별 모집 상태 표시([Town Hall](Town_Hall.md) 주 소유) |
-| `Assets/Scripts/UI/SeedSelectionPopup.cs` | 창고의 `Seed` 재고를 상인 슬롯으로 표시하고 선택한 아이템의 심기 확인 문구를 보여주는 popup |
+| `Assets/Scripts/UI/SeedSelectionPopup.cs` | FarmSeedSource의 보유 씨앗 표시, 선택·확정 요청·실패 문구와 대상 수명 관리 |
 | `Assets/Scripts/UI/UIManager.cs` | popup·hover registry와 현재 표시 상태를 조정하는 facade |
 
 ## 변경 유형별 최소 확인 범위
@@ -89,7 +91,11 @@ EventSystem(InputSystemUIInputModule)
 
 ## Unity 배선
 
-`UIManager`에는 popup·hover 배열을 등록한다. `FarmerTest`의 `PopupUI` 아래에는 `SeedSelectionPopup.prefab`이 비활성 상태로 배치되어 `PopupType.SeedSelection`으로 등록된다. 이 인스턴스의 `_warehouse`는 scene의 `WarehouseInventory`를 가리킨다. popup은 `ItemDataContext`의 `ItemCategory.Seed` 항목 중 창고 수량이 양수인 아이템만 상인 UI와 같은 `MerchantItemSlot` 모양으로 표시하고, 열 때마다 수량을 다시 읽는다. 슬롯 클릭은 item ID와 현재 수량을 다시 확인한 뒤 심기 확인 문구를 보여준다. 실제 seed item 소비, 농경지 선택 변경과 world click 진입은 연결되지 않았으며 심기 버튼은 비활성 상태다. `PointerHoverRouter`에는 world camera, `IUIService` 구현 source, Hoverable layer mask가 필요하다. `PointerClickRouter`에는 world camera, `IUIService` 구현 source, Clickable layer mask가 필요하다(Hoverable과 별도 레이어 — 클릭과 hover는 의미가 다른 별개 관심사라 굳이 합치지 않는다). `FarmGaugeHover`에는 fill image와 camera가 필요하다.
+`UIManager`에는 popup·hover 배열을 등록한다. FarmerTest의 `Canvas/PopupUI/SeedSelectionPopup`은 비활성 상태로 배치되어 `PopupType.SeedSelection`으로 등록된다. 빈 Soil 클릭에서 전달된 FarmSeedSource가 해당 밭·창고·catalog를 제공하므로 popup에는 고정 창고 참조가 없다. 기존 MerchantItemSlot 모양과 씨앗 아이콘을 유지한다. 심기·취소·닫기 Button을 serialized field로 연결하고 OnEnable/OnDisable에서 listener를 등록·해제한다.
+
+열기·대상 전환 때 이전 선택을 지우고 목록을 읽는다. 선택은 재고를 변경하지 않고 확인 문구에 씨앗 1개 소비를 표시한다. 확정 전에 선택 ID를 비워 연속 입력을 막고 source가 현재 재고·밭 상태를 다시 검사한다. 성공은 RequestClose로 닫고 실패는 목록과 사유를 갱신한다. 닫기·비활성화에서 source와 선택을 해제하며, 대상이 파괴되거나 비활성화되면 닫는다. 종류만 받는 기존 TryShow overload는 유지하되 seed popup은 유효한 source 없이는 열리지 않는다.
+
+PointerHoverRouter/PointerClickRouter에는 world camera, IUIService 구현 source와 감지 mask가 필요하다. 현재 FarmerTest의 click mask는 전체 레이어이며 Soil의 기존 Hoverable collider를 재사용한다. Router는 NPC·농장 구체 타입을 참조하지 않는다. FarmGaugeHover에는 fill image와 camera를 연결한다.
 
 ## 문구 표시 연계
 
@@ -134,8 +140,8 @@ NPCGirl source/anchor/Catalog와 별도 루트 LocalizeManager 배선은 [NPC Me
 - PointerHoverRouter는 겹친 collider의 유효 source 중 설정된 우선 category를 먼저 선택한다.
   동일 source도 표시 상태를 재확인하여 닫힌 hover가 조건 회복 뒤 다시 열릴 수 있다.
   UIManager는 이미 표시 중인 같은 source를 재개방하지 않는다.
-- 열린 popup 위에서 world 클릭이 그대로 통과해 다른 clickable에 닿을 수 있다 — 지금은 clickable이 상단 하나뿐이라 관측되지 않지만, `Physics2DRaycaster`/`EventSystem` 기반 world click-through 차단은 아직 없다.
-- concrete popup은 `MerchantPopup`, `TownHallPopup`, `SeedSelectionPopup` 세 종류다. 씨앗 popup은 창고 재고를 읽기만 하며 농경지 선택·재고 소비와는 연결되지 않았다.
+- PointerClickRouter는 press 시점의 EventSystem raycast 중 GraphicRaycaster hit를 확인해 UI 뒤의 world 클릭을 차단한다. native 입력 순서·화면 회귀는 별도 Play 검증 대상이다.
+- concrete popup은 MerchantPopup, TownHallPopup, SeedSelectionPopup 세 종류다. 공통 UI는 source만 전달하며 씨앗 transaction은 [농장 runtime](Farming/Runtime_and_Transactions.md)이 소유한다.
 
 ## 관련 문서
 

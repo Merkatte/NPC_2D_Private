@@ -2,34 +2,41 @@
 
 ## Purpose
 
-LocalizeSystem 1차 구현을 책임 경계, 의존 방향, 런타임 정확성, Unity 직렬화 안전성 및 코드 규약 기준으로 검토했다. **리뷰만 수행했으며 파일을 수정하지 않았다.**
+승인된 씨앗 심기 변경을 아키텍처, 정확성·수명, Unity 직렬화 안전성, 코드 규약 순서로 검토했다. **리뷰만 수행했으며 파일을 수정하지 않았다.**
 
 ## Review Snapshot
 
-- **Date:** 2026-09-20
-- **Scope:** 제공된 로컬라이제이션 변경 70개 경로. C# 14개, CSV·Enum·SO, LocalizeTest 씬, TMP 리소스와 관련 문서.
-- **Excluded:** 기존 Guard·모집 변경과 무관한 미커밋 작업.
-- **Standards:** `reviewing-npc-work-code` 스킬, `ProjectStructure.md`, `CodeConvention.md`, `ARCHITECTURE.md`, `Systems/Localization.md`, `Systems/UI.md`, 승인된 구현 계획.
-- **Evidence:** 현재 소스·YAML·`.meta`, Git 상태와 문서 diff, `.harness-runs/localization-20260920`의 검사 코드·로그·기준 해시.
-
-신규 파일은 대부분 untracked 상태이므로 tracked diff에만 의존하지 않고 파일 전체를 읽었다.
+- **Date:** 2026-09-22
+- **Scope:** 제공된 변경 파일 31개 전체와 직접 영향을 받는 의존 코드·에셋.
+- **Standards:** `reviewing-npc-work-code` 스킬과 audit workflow, `ProjectStructure.md`, `CodeConvention.md`, `ARCHITECTURE.md`, 관련 Systems leaf 및 승인된 씨앗 규칙.
+- **Baseline:** 기존 dirty 문서의 승인된 규칙을 요구사항으로 인정했다.
+- **Evidence:** 현재 Git diff·신규 파일·YAML·메타데이터, `.harness-runs/seed-planting-20260922/`, 최신 `seed-planting-20260922-current/`, Unity Editor 로그.
+- **추가 상태:** 검토 중 인계 문서와 검증 기록이 갱신되었다. native 메뉴 성공은 로그로 확인했고, 기본 Play 정상 동작은 인계 문서에 기록된 사용자 확인으로 구분했다.
 
 ## Executive Summary
 
-**정적 검토에서 차단 수준의 결함은 발견하지 못했다.** 파서, Editor 생성기, SO 캐시, persistent Manager와 표시 어댑터의 책임이 분리되어 있으며 문서화된 의존 방향과 일치한다.
+**차단 수준의 코드 결함은 발견하지 못했다.** 심기 요청, 농장 transaction, 재고 저장소와 UI의 책임이 분리되어 있다. 씨앗 차감 후 작물 상태를 확정하기까지 외부 callback이나 추가 실패 분기가 없으며, 확정 이후 이벤트를 발행한다.
 
-낮은 심각도의 naming 규약 위반 1건이 있다. Unity import, 실제 캐시 lifecycle, Play Mode와 Player 검증은 여전히 미완료이므로 이번 결과를 기능 전체의 실행 검증 통과로 해석해서는 안 된다.
+확정된 규칙을 여전히 미결정으로 설명하는 **Low 문서 불일치 1건**이 있다.
 
 | 검토 우선순위 | 결과 |
 |---|---|
-| 1. Architecture / responsibility | 문제 발견 없음 |
-| 2. Correctness / lifecycle / cancellation / regression | 검토 범위에서 확정 결함 발견 없음. Unity 실행 검증은 미완료 |
-| 3. Scene / component / serialized references | 정적 검사에서 문제 발견 없음. 실제 import·rendering은 미검증 |
-| 4. Convention / maintainability / dead code / magic values | Low 1건. 그 외 별도 finding 없음 |
+| 1. Architecture / responsibility | 코드 책임 배치·의존 방향에서 문제 발견 없음 |
+| 2. Correctness / lifecycle / cancellation / regression | 검토 범위에서 확정 결함 발견 없음 |
+| 3. Unity scene / prefab / serialized references | 변경 배선과 정적 참조에서 문제 발견 없음 |
+| 4. Convention / maintainability / dead code / magic values | Low 문서 불일치 1건. 변경 코드에서 별도 지적 없음 |
 
 ## Improvements Since Previous Review
 
-기존 보고서는 NPC Harness를 대상으로 하므로 이번 로컬라이제이션 검토와 직접 비교할 수 없다. 기존 Harness finding의 해결 여부는 재검증하지 않았으며, 해결된 것으로 판정하지 않는다.
+기존 보고서는 LocalizeSystem 검토이므로 이번 후보와 직접 비교할 수 없다. 이전 finding의 해결 여부는 재검증하지 않았다.
+
+씨앗 기능의 변경 전후를 비교하면 다음이 개선되었다.
+
+- 무료 `TrySelectCrop` 경로를 제거하고, 테스트 창까지 실제 씨앗 소비 경로로 통일했다.
+- 진행도 0에서도 확정된 작물을 교체할 수 없도록 제한했다.
+- 팝업이 클릭한 밭의 source를 받아 대상과 재고를 조회한다.
+- UI raycast 차단과 겹친 collider 탐색을 추가했다.
+- 재고 부족, 반복 확정, 재활성화, 두 밭의 마지막 씨앗 경쟁을 검사한다.
 
 ## Findings By Severity
 
@@ -47,82 +54,92 @@ None found.
 
 ### Low
 
-#### L-01 — private static readonly 필드의 이름이 프로젝트 규약과 다르다
+#### L-01 — 아키텍처 문서에 폐기된 씨앗 규칙의 미결정 상태가 남아 있다
 
-- **Severity:** Low — 비차단 정리 항목.
-- **Category:** Code convention / Naming.
-- **Location:** `Assets/Scripts/System/Localization/LocalizeCsvParser.cs:38`, 사용 지점 `:49`.
-- **Evidence:** `private static readonly HashSet<string> ReservedNames`로 선언되어 있다. `PublicMD/CodeConvention.md:22`는 private field에 `_camelCase`를 요구하며 static readonly 예외를 두지 않는다.
-- **Description:** 새 코드의 필드 이름이 프로젝트의 명시적 규약과 일치하지 않는다. 동작 결함은 아니다.
-- **Recommended fix:** 선언과 사용 지점의 이름을 `_reservedNames`로 맞춘다.
-- **Impact if unfixed:** 기능 영향은 없지만 새 코드의 naming 일관성이 낮아진다.
+- **Severity:** Low — 비차단 문서 정리 항목.
+- **Category:** Maintainability / Documentation consistency.
+- **Location:** `PublicMD/ARCHITECTURE.md:175`, `현재 구조 부채`.
+- **Evidence:** “씨앗 선택을 포함한 농장 생산 대상 변경 규칙이 미결정이다”라고 기록되어 있다. 반면 `SPEC.md`의 2026-09-22 확정 규칙과 `FarmWorkSite.cs:37`, `:82–92`는 빈 밭에서만 심기, 씨앗 1개 소비, 확정 후 교체 금지를 명시한다.
+- **Description:** 기존 문구가 이번 구현 이후에도 현재 구조 부채로 남아 승인된 규칙과 모순된다. 같은 아키텍처 문서의 54행에는 새 transaction 책임도 이미 반영되어 있다.
+- **Recommended fix:** 해당 항목을 제거하거나 실제로 남은 미결정 범위만 기술하고 Farming 소유 문서로 연결한다.
+- **Impact if unfixed:** 후속 구현자가 확정된 규칙을 다시 설계하거나 이전의 교체 허용 동작을 복원할 수 있다. 현재 실행 동작에는 영향이 없다.
 
 ## Findings By File
 
-| 파일·그룹 | 검토 결과 |
+| 검토 파일 | 결과 |
 |---|---|
-| `LocalizeCsvParser.cs` | BOM, quoted comma/newline/escaped quote, 필수 열, 중복 ID·Key·언어, 빈 한국어와 구조 오류를 검사한다. 실패 시 Table을 공개하지 않는다. L-01 외 문제 없음 |
-| `LocalizeKeySource.cs`, `LocalizeKeyGenerator.cs`, `LocalizeKeyValidation.cs` | 이전 생성 소스를 ID 이력으로 사용한다. 기존 identity 변경 거부, ID 정렬, 변경 시에만 쓰기, CSV·소스·컴파일된 Enum 비교가 분리되어 있다 |
-| `LocalizeCsvPostprocessor.cs`, `LocalizeBuildValidator.cs` | import 후 지연 생성과 빌드 차단의 책임이 분리되어 있다. 빌드 검사 자체는 코드를 생성하지 않는다 |
-| `LocalizeData.cs` | 공유 정의에서 파생된 비직렬화 lookup만 소유한다. 검증 후 완성된 dictionary를 게시하고, 실패 반복과 세션별 캐시 재사용을 제어한다 |
-| `LocalizeManager.cs` | 문구 조회·중복 제거·persistent lifecycle만 소유한다. 전용 루트 검사와 소유 인스턴스의 정적 참조 정리가 있다 |
-| `LocalizeText.cs` | Text/TMP 중 정확히 하나를 요구한다. 최초 조회를 Start까지 지연하고 이후 재활성화·SetKey에서 갱신한다 |
-| 테스트·빌드 도구 | 순수 검사, Unity 의존 검사, 수동 probe와 Player 빌드가 구분되어 있다. 수동 persistence probe는 원본 씬 전체 unload를 검증하지 않는다 |
-| CSV·Enum·SO·씬·TMP 에셋 | 현재 키 1001–1003, 데이터 연결, 표시 대상, 폰트·머티리얼 참조가 정적 검사와 일치한다 |
-| 관련 문서 | 책임, singleton 접근 범위, 캐시 계약, 폰트 제약과 미검증 항목을 명시한다 |
+| `FarmSeedSource.cs`, `SeedPlantResult.cs` 및 각 `.meta` | 명시적 밭·창고·catalog·item 참조, 대상 수명 확인, 후보 검증과 결과 구분이 적절하다. 신규 GUID 중복 없음 |
+| `FarmWorkSite.cs` | 빈 밭 검증 → 전량 차감 → 작물 상태 확정 → 이벤트 순서를 유지한다. 무료 public 선택 API 제거 확인 |
+| `WarehouseInventory.cs` | 단일 항목 차감은 부족·잘못된 수량에서 무변경 실패한다. 기존 batch 판매 transaction 유지 |
+| `CropCatalog.cs`, `FarmProductionDefinition.cs` | 명시적 seed ID 매핑, 중복·누락·Seed category 검사. 공유 정의에 runtime 재고나 진행도를 저장하지 않음 |
+| Carrot·Potato definition assets | seed ID 6/7이 CSV와 일치하며 기존 생산·표현 설정 유지 |
+| `IUIService.cs`, `UIManager.cs`, `PopBase.cs` | 공통 계층은 농장 구체 타입을 참조하지 않는다. 바인딩 성공 후 열고 기존 source 없는 popup 경로 유지 |
+| `SeedSelectionPopup.cs` | 선택과 확정 분리, 확정 전 선택 ID 해제, 실패 표시, source 재바인딩, listener 등록·해제 확인 |
+| `PointerClickRouter.cs` | press 시점 UI raycast, Unity backing 참조, 비활성 source 제외와 겹친 collider 탐색 확인 |
+| `SeedSelectionPopup.prefab` | 심기·취소·닫기 버튼 참조가 존재하며 persistent callback 중복 없음. 고정 창고 참조 제거 |
+| `FarmerTest.unity` | Soil 인스턴스의 빈 시작 override, FarmSeedSource 의존성, 두 테스트 창 연결 확인. 기존 Hierarchy·collider 유지 |
+| `TestFarmProductionWindow.cs` | 실제 source를 통한 유료 심기로 전환. 기존 수확·입고 probe 경로 유지 |
+| `SeedPlantingTests.cs` 및 `.meta` | 임시 fixture 정리, 두 crop의 반복 cycle, 중복 확정, 공유 재고, 비활성·파괴 대상, catalog 오류 검사 확인 |
+| `ARCHITECTURE.md` | L-01 |
+| `PLAN.md`, 활성 Seed 계획, `ProjectStructure.md`, `SPEC.md`, `PROGRESS.md` | 승인 범위·라우팅·현재 구현 및 검증 상태 검토 |
+| Farming `README.md`, `Definition_and_Catalog.md`, `Runtime_and_Transactions.md`, `Inventory_and_Items.md`, `UI.md` | 변경 파일의 소유권, transaction 흐름과 배선 설명이 구현과 일치 |
+
+직접 의존성으로 `BaseInteractionProvider`, `SeededRandomSource`, `ItemDataContext`, inventory·interaction 계약, `FarmCropPresenter`, `ItemSlotView`, `BackBg`, 기존 Merchant·TownHall click source와 관련 에셋도 확인했다.
 
 ## Cross-Cutting Findings
 
-- production의 `LocalizeManager` 접근은 `LocalizeText`에 한정되어 있다. action·selector·provider로의 의존 확장은 검색에서 발견하지 못했다.
-- SO 캐시는 actor·scene별 mutable gameplay 상태를 포함하지 않는다.
-- production 로컬라이제이션 코드에서 매 프레임 조회, 반복 scene search 또는 Editor API 의존을 발견하지 못했다.
-- 늦게 생성된 Manager의 자동 연결, 실행 중 CSV hot reload, 키 migration은 현재 계약 밖으로 문서화되어 있다. 이를 이번 구현의 누락 결함으로 처리하지 않았다.
-- 기본 TMP 폰트의 한국어 글리프 부족은 승인 범위에 기록된 제약이다. 문자열 조회 성공과 한국어 화면 표시 성공은 별도로 판단해야 한다.
+- `WorkerNPC`, selector, action에 씨앗 선택·차감 책임이 추가되지 않았다.
+- `FarmSeedSource`는 후보와 요청 진입점을, `FarmWorkSite`는 심기 확정을, `WarehouseInventory`는 수량 변경을 소유한다.
+- `IInventory`에 출고 권한을 추가하지 않았다. production 단일 차감 호출은 농장 transaction에 있다.
+- 전용 팝업의 `FarmSeedSource` 참조는 UI 문서의 전용 view–domain 연결 규칙과 일치한다.
+- `_startingDefinition`은 기존 배치 초기화 경로로 유지되며, FarmerTest 인스턴스에서만 null로 override한다. 승인 범위와 일치한다.
+- 기존의 무관한 구조 부채나 변경되지 않은 스타일을 이번 후보의 신규 결함으로 확대하지 않았다.
 
 ## Positive Notes
 
-- 명시적 Enum ID와 이전 생성 소스 검증으로 행 재정렬 및 연속 import 중 identity 변경을 방어한다.
-- CSV 오류 시 부분 적재를 공개하지 않는다.
-- 빌드 시 CSV, 생성 소스와 컴파일된 Enum을 모두 확인한다.
-- lookup 컬렉션을 외부에 mutable 상태로 노출하지 않는다.
-- 첫 OnEnable과 Manager Awake 사이의 순서 문제를 피하도록 최초 UI 조회를 지연한다.
-- 사용자 기존 변경과 로컬라이제이션 후보를 분리했으며, 검사되지 않은 Unity 실행 항목을 PASS로 기록하지 않았다.
+- 차감과 작물 적용 사이에 재진입 가능한 callback이 없다.
+- `StateChanged` 구독자는 이미 확정된 재고·농장 상태를 관측한다.
+- 선택·취소·닫기는 재고를 변경하지 않는다.
+- 확정 시 현재 재고와 밭 상태를 다시 검사한다.
+- 재활성화가 농장 상태나 씨앗 재고를 초기화하지 않는다.
+- source 바인딩 실패가 기존 팝업의 대상이나 stack을 먼저 변경하지 않는다.
+- 실제 Unity 실행과 대체 host 검증의 차이를 인계 자료에 명시했다.
 
 ## Verification
 
-| 항목 | 이번 리뷰 결과 |
+| 항목 | 결과 |
 |---|---|
-| Git 상태·범위 내 문서 diff | 확인 |
-| 범위 내 문서 `git diff --check` | PASS |
-| 신규 C#의 trailing whitespace·충돌 표식 | 발견 없음 |
-| 기존 순수 테스트 바이너리 재실행 | Unity 내장 Mono에서 **38개 + 실제 CSV/생성 소스 일치 PASS** |
-| 직렬화 검사 재실행 | 결과 파일 쓰기를 제거한 메모리 실행으로 **84개 PASS** |
-| 기존 파일 보존 | 제공된 기준 해시와 비교해 **1,316개 일치** |
-| 범위 내 `.meta` | 누락 및 Assets 내 GUID 충돌 발견 없음 |
-| TMP 원본 폰트 문자 검사 | 샘플의 한국어 고유 문자 **19개 미포함** 재확인 |
-| Runtime / Editor 컴파일 | 기존 로그 각각 **0 errors / 0 warnings** 확인. 새 빌드는 실행하지 않음 |
+| Git status·전체 변경 diff·신규 파일 | 확인 |
+| `git diff --check` | PASS. CRLF 정규화 안내만 발생 |
+| 신규 C# 공백·충돌 표식·메타 GUID 중복 | 문제 없음 |
+| 기존 host 바이너리 재실행 | domain **39개**, popup/router **12개 PASS** |
+| 저장된 Runtime·Editor 빌드 로그 | 각각 **0 errors / 0 warnings** 확인 |
+| 최신 FarmerScene.Structure v1 | **33 checks PASS** 기록 확인 |
+| 최신 Gate 의존 파일 해시 | **848개 모두 현재 파일과 일치**. PackageCache의 40개 경로를 해석해 비교 |
+| 배선 검사 메모리 재실행 | 기존 Hierarchy·collider **132개 블록 보존**, 외부 GUID **133개**, source·버튼 참조 PASS |
+| 변경 문서 로컬 링크 검사 | **134개 PASS** |
+| native 메뉴 검사 | Unity Editor 로그에서 `Seed planting checks passed: 39` 확인 |
+| 기본 Play | 갱신된 인계 문서에 사용자 정상 확인이 기록됨. 리뷰어 직접 관찰은 아님 |
+
+구 DLL로 실행된 최초 구조 Gate는 현재 후보의 증거에서 제외했다.
 
 ## Verification Limits
 
-- read-only 지시를 준수하기 위해 `dotnet build`를 재실행하지 않았다. 빌드는 출력·중간 파일을 생성한다.
-- 순수 테스트는 기존 바이너리를 재사용했다. 현재 소스를 새로 컴파일한 독립 검증은 아니다.
-- 테스트 EXE 직접 실행은 예외 출력 실패로 종료되었으나, 설치된 Unity의 Mono로 실행했을 때 통과했다.
-- 순수 테스트 host의 기존 빌드 로그에는 MSB3276 경고 1건이 있다. Runtime / Editor 컴파일의 무경고 결과와 구분한다.
-- Unity import/load, 실제 Editor 캐시 검사, UI lifecycle, 전체 씬 교체, Domain Reload off 반복 Play, Player 빌드·실행·렌더링은 **NOT_VERIFIED**다.
-- 84개 검사는 YAML 참조와 지정된 구조 조건을 확인한다. Unity importer의 수용, callback 순서 또는 실제 화면 표시를 증명하지 않는다.
-- `TestLocalizeControls.CheckPersistence()`는 임시 씬을 만들고 제거하지만 원본 씬을 unload하지 않는다. 전체 씬 교체 검증을 대신하지 않는다.
+- read-only 지시에 따라 `dotnet build`와 Unity 재컴파일을 실행하지 않았다. 빌드는 출력·중간 파일을 생성한다.
+- host 재실행은 기존 바이너리를 사용했다. 현재 소스를 새로 컴파일한 독립 검증은 아니다.
+- host의 Unity·UI·물리·트윈 대체 구현은 실제 입력 순서, 애니메이션 또는 렌더링을 증명하지 않는다.
+- 구조 Gate는 저장된 참조·배선 검증이며 심기 동작 전체의 실행 검증이 아니다.
+- native 메뉴 성공은 확인했지만, 모든 UI 예외 경로와 두 crop의 전체 성장·수확·소멸 cycle을 직접 실행하지 않았다.
+- 검토 중 추가된 기본 Play 확인은 repository 인계 기록에 근거한다. 전체 Seed Phase 2·4 회귀 완료로 확대하지 않는다.
 
 ## Recommended Next Actions
 
-1. Unity에서 import·컴파일 후 `Run Edit Mode Checks`를 실행한다.
-2. 첫 표시, Start 전 SetKey, 재활성화, runtime 생성, 중복 Manager 제거와 **원본 씬 전체 교체**를 검증한다.
-3. Domain Reload off 반복 진입과 다음 세션의 캐시 재구성을 확인한다.
-4. CSV 추가·재정렬·identity 변경 거부, 반복 import, 불일치 빌드 차단을 실제 Editor에서 확인한다.
-5. LocalizeTest Player를 빌드·실행하고 문자열 결과와 글리프 표시를 별도로 기록한다.
-6. L-01의 필드 이름을 규약에 맞춘다.
+1. L-01의 아키텍처 문구를 현재 확정 규칙에 맞춘다.
+2. 남은 native 회귀에서 두 crop의 전체 cycle, 소멸 중 재심기, 팝업 재개방·대상 상실, 기존 Merchant·TownHall 입력을 확인한다.
+3. 전체 Seed slice 완료 여부는 활성 계획의 미완료 시각·회귀 조건과 별도로 판단한다.
 
 ## Final Verdict
 
-**정적 코드 리뷰: Approve with nits.**
+**Approve with nits.**
 
-아키텍처·정확성·직렬화에서 확인된 차단 결함은 없으며, Low naming 항목 1건이 남는다. **LocalizeSystem 1차의 최종 완료 판정은 Unity 실행 검증 이후로 보류한다.**
+검토 범위에서 아키텍처·정확성·직렬화의 차단 결함은 발견하지 못했다. Low 문서 불일치 1건이 남는다. 이번 판정은 승인된 심기 후보에 대한 코드 리뷰이며, 전체 Seed slice의 시각·회귀 검증 완료를 의미하지 않는다.

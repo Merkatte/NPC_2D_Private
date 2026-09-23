@@ -209,6 +209,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TestFarmProductionWindow
   _farmWorkSite: {fileID: 415537985}
+  _seedSource: {fileID: 2400000001}
   _warehouse: {fileID: 2106675833}
   _depositPoint: {fileID: 2106675836}
   _cropCatalog: {fileID: 11400000, guid: 438d66d42c5e491ca877e19caeceaa77, type: 2}
@@ -640,6 +641,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TestFarmProductionWindow
   _farmWorkSite: {fileID: 415537985}
+  _seedSource: {fileID: 2400000001}
   _warehouse: {fileID: 2106675833}
   _depositPoint: {fileID: 2106675836}
   _cropCatalog: {fileID: 11400000, guid: 438d66d42c5e491ca877e19caeceaa77, type: 2}
@@ -12819,6 +12821,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 638045448}
     m_Modifications:
+    - target: {fileID: 7624489968676248884, guid: e2b3aac942fcfa746a10b0341adc6b00, type: 3}
+      propertyPath: _startingDefinition
+      value:
+      objectReference: {fileID: 0}
     - target: {fileID: 1882286153031904773, guid: e2b3aac942fcfa746a10b0341adc6b00, type: 3}
       propertyPath: _warehouse
       value: 
@@ -12887,6 +12893,9 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 2300000011}
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5865412015043443405, guid: e2b3aac942fcfa746a10b0341adc6b00, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2400000001}
     - targetCorrespondingSourceObject: {fileID: 5865412015043443405, guid: e2b3aac942fcfa746a10b0341adc6b00, type: 3}
       insertIndex: -1
       addedObject: {fileID: 415537989}
@@ -13122,10 +13131,6 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 600001, guid: 71e8695f244844b29c76c724b36184de, type: 3}
-      propertyPath: _warehouse
-      value: 
-      objectReference: {fileID: 2106675833}
     - target: {fileID: 7994024276954514054, guid: 71e8695f244844b29c76c724b36184de, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -14552,3 +14557,19 @@ MonoBehaviour:
   _start: {fileID: 2300000011}
   _destination: {fileID: 7284313867165062563}
   _showWindow: 0
+--- !u!114 &2400000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 415537983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aae8b199d67d47ae816da23e774212b2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::FarmSeedSource
+  _farm: {fileID: 415537985}
+  _warehouse: {fileID: 2106675833}
+  _cropCatalog: {fileID: 11400000, guid: 438d66d42c5e491ca877e19caeceaa77, type: 2}
+  _itemDataContext: {fileID: 11400000, guid: df1cde6d9ea68634494a9967845fe8ad, type: 2}

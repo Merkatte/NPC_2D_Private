@@ -1,3 +1,20 @@
+# 씨앗 심기 — 2026-09-22 구현·기본 Play 확인 / 독립 리뷰 요청
+
+- 사용자가 제안된 심기 규칙 전체에 동의했다. 밭 한 생산 주기당 씨앗 1개를 심기 성공 시 창고에서 소비한다.
+- 빈 밭 클릭 → 보유 씨앗 선택 → 심기 확정으로 진입한다. current crop이 없는 밭만 허용하며 확정 후에는 progress 0이어도 교체·취소하지 않는다.
+- 최종 수확 후 다시 선택하고 자동 재파종은 하지 않는다. 실패 시 재고와 밭 상태를 보존하고 이유를 표시한다.
+- [SPEC](../SPEC.md), [활성 씨앗 계획](../Plans/Seed_System_Implementation_Plan.md), [농장 runtime 문서](../Systems/Farming/Runtime_and_Transactions.md)에 기록했다.
+- FarmSeedSource를 클릭·조회·요청 진입점으로 추가하고 FarmWorkSite가 창고 씨앗 차감과 작물 적용을 함께 확정한다. 무료 TrySelectCrop 경로를 제거했으며 테스트 창도 실제 소비 경로를 사용한다.
+- IUIService/UIManager/PopBase는 source를 전달하고 SeedSelectionPopup은 대상·선택·결과 표시를 관리한다. PointerClickRouter에 UI 관통 방지와 겹친 collider의 유효 source 탐색을 추가했다.
+- FarmerTest의 Soil 인스턴스만 빈 밭으로 설정했다. 씨앗 각 5개, 기존 collider·레이어·Hierarchy와 popup 모습을 유지하고 버튼을 연결했다. 새 production C# 2개, 수정 9개, TestOnly 신규·수정 각 1개, Unity 에셋 수정 4개다.
+- Runtime·Editor 소스 컴파일 0 경고/0 오류. 실제 production 코드 host 검사 39개, popup/router 수명 검사 12개 Pass. host의 Unity·UI·물리·트윈 대체 구현은 native 실행 증거가 아니다.
+- 사용자 자동 컴파일 완료 확인 후 새 DLL(2026-09-22 22:58:20), 현재 씬·FarmSeedSource 해시를 확인했다. FarmerScene.Structure v1 33개 Pass/exit 0이며 빈 밭과 catalog를 loaded-clean-scene에서 확인했다. 구 DLL로 먼저 받은 Gate 결과는 후보 증거에서 제외했다.
+- 기존 Hierarchy/collider 블록 132개 보존, 외부 GUID 133개와 문서 링크 검사 통과. 현재 씬 구조 Gate는 심기 동작·시각 확인을 대체하지 않는다.
+- 실제 Editor 로그에서 `Seed planting checks passed: 39`를 확인했다. 사용자는 Play에서 빈 밭 클릭 → 씨앗 선택 → 심기, 재고 1개 감소, 농부 작업, 취소·닫기 시 재고 보존이 정상임을 확인했다. 두 작물의 전체 시각 cycle과 모든 입력 예외를 native Play에서 계측한 것은 아니다.
+- implement-npc-feature 스킬의 지정 launcher로 별도 읽기 전용 Codex 리뷰를 비동기 시작했다(PID 38980, `.codex/agent-runs/20260922-230345-272-*`). 결과는 아직 확인하지 않았으며 리뷰 통과로 기록하지 않는다.
+- 증거: `.harness-runs/seed-planting-20260922/`, 최신 구조 Gate: `.harness-runs/seed-planting-20260922-current/`. 후보 코드 수정 예산 0/2회 사용. host adapter의 누락 API와 참조 검사기의 package 검색 경로 보완은 gameplay 후보 수정과 구분한다.
+- 파일별 변경량과 검증 한계: [씨앗 심기 구현 기록](SeedPlanting_20260922_Implementation.md).
+
 # Grid Navigation — 2026-09-21 구현·검증 완료
 
 노드 그리드/힙 A*, 지역 내부 직접 이동, Farmer/Guard 시설 이동과 FarmerTest 배선을 통합했다.

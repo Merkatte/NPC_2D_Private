@@ -1,5 +1,8 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 /// <summary>
 /// Pointer/raycast input adapter for discrete clicks. Detects the <see cref="IClickPopupSource"/>
@@ -22,6 +25,8 @@ public class PointerClickRouter : MonoBehaviour
     [SerializeField] private LayerMask _clickableMask;
 
     private IUIService _uiService;
+    private readonly List<Collider2D> _hits = new List<Collider2D>();
+    private readonly List<RaycastResult> _uiHits = new List<RaycastResult>();
 
     private void Awake()
     {
@@ -52,15 +57,43 @@ public class PointerClickRouter : MonoBehaviour
             return;
 
         Vector3 screenPosition = mouse.position.ReadValue();
+        if (!_worldCamera || !_uiServiceSource || IsOverUi(screenPosition))
+            return;
+
         Vector2 worldPosition = _worldCamera.ScreenToWorldPoint(screenPosition);
-        Collider2D hit = Physics2D.OverlapPoint(worldPosition, _clickableMask);
+        var filter = new ContactFilter2D();
+        filter.SetLayerMask(_clickableMask);
+        filter.useTriggers = true;
+        _hits.Clear();
+        Physics2D.OverlapPoint(worldPosition, filter, _hits);
 
-        if (!hit || !hit.TryGetComponent(out IClickPopupSource source))
-            return;
+        foreach (Collider2D hit in _hits)
+        {
+            if (!hit || !hit.TryGetComponent(out IClickPopupSource source)
+                || source is Behaviour behaviour && !behaviour.isActiveAndEnabled)
+                continue;
 
-        if (!source.TryGetClickPopup(out PopupType popupType) || popupType == PopupType.None)
-            return;
+            if (source.TryGetClickPopup(out PopupType popupType) && popupType != PopupType.None
+                && _uiService.TryShow(popupType, source))
+                return;
+        }
+    }
 
-        _uiService.TryShow(popupType);
+    private bool IsOverUi(Vector2 screenPosition)
+    {
+        EventSystem eventSystem = EventSystem.current;
+        if (!eventSystem)
+            return false;
+
+        // Query this press directly; IsPointerOverGameObject can reflect the previous input update.
+        var pointer = new PointerEventData(eventSystem) { position = screenPosition };
+        _uiHits.Clear();
+        eventSystem.RaycastAll(pointer, _uiHits);
+        foreach (RaycastResult hit in _uiHits)
+        {
+            if (hit.module is GraphicRaycaster)
+                return true;
+        }
+        return false;
     }
 }

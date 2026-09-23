@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Shows seed items currently held by the warehouse in inventory slots. Planting is not connected.
+/// Displays a source farm's available seeds and submits one explicit planting request.
 /// </summary>
 public sealed class SeedSelectionPopup : PopBase
 {
@@ -25,8 +25,6 @@ public sealed class SeedSelectionPopup : PopBase
         public Sprite Icon => _icon;
     }
 
-    [SerializeField] private WarehouseInventory _warehouse;
-    [SerializeField] private ItemDataContext _itemDataContext;
     [SerializeField] private ItemSlotView _slotPrefab;
     [SerializeField] private RectTransform _slotParent;
     [SerializeField] private Text _emptyStateText;
@@ -36,11 +34,66 @@ public sealed class SeedSelectionPopup : PopBase
     [SerializeField] private Text _confirmationText;
     [SerializeField] private Text _selectedSeedText;
     [SerializeField] private Button _plantButton;
+    [SerializeField] private Button _cancelButton;
+    [SerializeField] private Button _closeButton;
 
     private readonly List<ItemInfo> _availableSeeds = new List<ItemInfo>();
     private readonly List<ItemSlotView> _slots = new List<ItemSlotView>();
     private readonly List<Button> _slotButtons = new List<Button>();
     private bool _hasLoggedConfigurationFailure;
+    private FarmSeedSource _source;
+    private int _selectedSeedId = -1;
+
+    internal override bool TryBindSource(IClickPopupSource source)
+    {
+        FarmSeedSource farmSource = source as FarmSeedSource;
+        if (!farmSource || !farmSource.CanPlant || !HasConfiguration())
+            return false;
+
+        _source = farmSource;
+        ClearSelection();
+        if (IsOpen)
+            RefreshSlots();
+        return true;
+    }
+
+    private void OnEnable()
+    {
+        if (!HasConfiguration())
+            return;
+        _plantButton.onClick.AddListener(PlantSelectedSeed);
+        _cancelButton.onClick.AddListener(CancelSelection);
+        _closeButton.onClick.AddListener(RequestClose);
+    }
+
+    private void OnDisable()
+    {
+        if (_plantButton)
+            _plantButton.onClick.RemoveListener(PlantSelectedSeed);
+        if (_cancelButton)
+            _cancelButton.onClick.RemoveListener(CancelSelection);
+        if (_closeButton)
+            _closeButton.onClick.RemoveListener(RequestClose);
+        ClearSelection();
+        _source = null;
+    }
+
+    private void Update()
+    {
+        // Closing animation may still be visible after OnBeforeClose releases the source.
+        if (ReferenceEquals(_source, null))
+            return;
+        if (!_source || !_source.IsAvailable)
+        {
+            RequestClose();
+            return;
+        }
+        if (!_source.CanPlant && _selectedSeedId >= 0)
+        {
+            _plantButton.interactable = false;
+            _confirmationText.text = "이미 작물이 심어진 밭입니다.";
+        }
+    }
 
     protected override void OnOpened()
     {
@@ -51,6 +104,7 @@ public sealed class SeedSelectionPopup : PopBase
     protected override void OnBeforeClose()
     {
         ClearSelection();
+        _source = null;
     }
 
     public void CancelSelection()
@@ -62,24 +116,14 @@ public sealed class SeedSelectionPopup : PopBase
     {
         _availableSeeds.Clear();
 
-        if (!_warehouse || !_itemDataContext || !_slotPrefab || !_slotParent || !_emptyStateText)
+        if (!_source || !_source.IsAvailable || !HasConfiguration())
         {
-            ReportConfigurationFailure();
             ShowEmptyState("씨앗 재고를 불러올 수 없습니다.");
             HideSlots();
             return;
         }
 
-        Dictionary<ItemCategory, List<ItemInfo>> itemsByCategory = _itemDataContext.ItemInfos();
-        if (itemsByCategory.TryGetValue(ItemCategory.Seed, out List<ItemInfo> seedItems))
-        {
-            for (int i = 0; i < seedItems.Count; ++i)
-            {
-                ItemInfo seed = seedItems[i];
-                if (_warehouse.GetQuantity(seed.ID) > 0)
-                    _availableSeeds.Add(seed);
-            }
-        }
+        _source.GetAvailableSeeds(_availableSeeds);
 
         int visibleCount = Mathf.Max(MinimumVisibleSlots, _availableSeeds.Count);
         for (int i = 0; i < visibleCount; ++i)
@@ -92,10 +136,11 @@ public sealed class SeedSelectionPopup : PopBase
             if (i < _availableSeeds.Count)
             {
                 ItemInfo seed = _availableSeeds[i];
-                slot.Bind(seed.ID, seed.ItemName, _warehouse.GetQuantity(seed.ID), GetIcon(seed.ID));
+                _source.TryGetSeedInfo(seed.ID, out _, out int quantity);
+                slot.Bind(seed.ID, seed.ItemName, quantity, GetIcon(seed.ID));
                 int itemId = seed.ID;
                 button.onClick.AddListener(() => SelectSeed(itemId));
-                button.interactable = true;
+                button.interactable = _source.CanPlant;
             }
             else
             {
@@ -147,18 +192,50 @@ public sealed class SeedSelectionPopup : PopBase
 
     private void SelectSeed(int itemId)
     {
-        if (!_warehouse || !_itemDataContext || !_confirmationPanel ||
-            !_confirmationText || !_selectedSeedText || _warehouse.GetQuantity(itemId) <= 0 ||
-            !_itemDataContext.TryGetItemInfo(itemId, out ItemInfo seed) ||
-            seed.Category != ItemCategory.Seed)
+        if (!_source || !_source.CanPlant
+            || !_source.TryGetSeedInfo(itemId, out ItemInfo seed, out int quantity) || quantity <= 0)
         {
+            ClearSelection();
             RefreshSlots();
             return;
         }
 
-        _confirmationText.text = "이 씨앗을 심을까요?";
+        _selectedSeedId = itemId;
+        _confirmationText.text = "이 씨앗을 심을까요? (씨앗 1개 소비)";
         _selectedSeedText.text = seed.ItemName;
         _confirmationPanel.SetActive(true);
+        _plantButton.interactable = true;
+    }
+
+    private void PlantSelectedSeed()
+    {
+        if (_selectedSeedId < 0)
+            return;
+
+        int seedItemId = _selectedSeedId;
+        _selectedSeedId = -1;
+        _plantButton.interactable = false;
+        SeedPlantResult result = SeedPlantResult.FarmUnavailable;
+        if (_source && _source.TryPlantSeed(seedItemId, out result))
+        {
+            RequestClose();
+            return;
+        }
+
+        RefreshSlots();
+        _confirmationText.text = GetFailureMessage(result);
+        _confirmationPanel.SetActive(true);
+    }
+
+    private static string GetFailureMessage(SeedPlantResult result)
+    {
+        switch (result)
+        {
+            case SeedPlantResult.NotEnoughSeeds: return "씨앗 재고가 부족합니다. 다시 선택해 주세요.";
+            case SeedPlantResult.FarmOccupied: return "이미 작물이 심어진 밭입니다.";
+            case SeedPlantResult.FarmUnavailable: return "지금은 이 밭에 심을 수 없습니다.";
+            default: return "씨앗 정보를 확인할 수 없습니다.";
+        }
     }
 
     private Sprite GetIcon(int itemId)
@@ -196,6 +273,7 @@ public sealed class SeedSelectionPopup : PopBase
 
     private void ClearSelection()
     {
+        _selectedSeedId = -1;
         if (_confirmationPanel)
             _confirmationPanel.SetActive(false);
 
@@ -203,12 +281,16 @@ public sealed class SeedSelectionPopup : PopBase
             _plantButton.interactable = false;
     }
 
-    private void ReportConfigurationFailure()
+    private bool HasConfiguration()
     {
+        if (_slotPrefab && _slotParent && _emptyStateText && _confirmationPanel && _confirmationText
+            && _selectedSeedText && _plantButton && _cancelButton && _closeButton)
+            return true;
         if (_hasLoggedConfigurationFailure)
-            return;
+            return false;
 
-        Debug.LogError($"SeedSelectionPopup '{name}': missing warehouse, item data, slot prefab, slot parent or empty-state text.", this);
+        Debug.LogError($"SeedSelectionPopup '{name}': missing slots, confirmation text or plant/cancel/close buttons.", this);
         _hasLoggedConfigurationFailure = true;
+        return false;
     }
 }

@@ -43,7 +43,7 @@ MerchantPopup -> MerchantTradeSite.TryTrade(quantitiesByItemId: Dictionary<int,i
 
 `WorkerInventory`는 MonoBehaviour가 아닌 plain C#이며 `NPCComponent`가 `CombatRuntimeState`와 같은 방식으로 인라인 소유한다. 한 번에 한 item type만 담고, 표시 여부 판단(비었는지 여부)은 자신이 하되 실제 `SpriteRenderer` 조작은 생성자로 받은 콜백을 통해 `NPCComponent`에 위임한다. `Clear()`는 `ICarriedInventory`에 없고 소유자인 `NPCComponent`만 pool 재사용 시 호출한다 — 외부 provider가 남의 봇짐을 비울 권한은 없다.
 
-`ItemData.csv`는 농사 crop 결과 item(현재 Carrot=4, Potato=5, Food category)도 다른 item과 동일한 10열 계약으로 보유한다(마지막 열 `sellPrice` — 상단 판매가, item마다 다르고 창고에 실제로 쌓이지 않는 item(Water/Beer/Bread)은 0으로 둔다). CSV에는 씨앗 item(Carrot Seed=6, Potato Seed=7)도 `ItemCategory.Seed`(Food/Drink와 분리된 별도 category — `Pub.cs`의 `ActionType.Eat -> ItemCategory.Food` 조회가 씨앗을 식품으로 취급하지 않도록 분리)로 등록돼 있으나, 이 item을 구매·운반·소비하는 코드 경로는 아직 없다([Seed System Implementation Plan](../Plans/Seed_System_Implementation_Plan.md) SG-002가 seed item 실제 inventory 소비를 후속 단계로 보류했다). `SeedSelectionPopup`은 이 category를 조회하고 `WarehouseInventory.GetQuantity`가 양수인 item만 표시한다. `ItemDataContext.TryGetItemInfo(id, out info)`가 id 기준 조회를 제공하며, `CropCatalog.TryValidate(itemDataContext, out reason)`가 catalog에 등록된 모든 crop의 `OutputItemId`를 이 조회로 cross-check해 CSV에 없는 id를 가진 crop을 거부한다. 이 검증은 catalog를 소비하는 초기화 경계(현재 `TestFarmProductionWindow`)에서만 실행되며, `FarmWorkSite`가 item table 전체를 들고 있지는 않는다 — `TrySelectCrop`을 catalog를 거치지 않고 직접 호출하면 이 cross-check를 우회한다. `FarmProductionDefinition_Carrot`/`_Potato`의 `_outputItemId`(4/5)가 CSV의 Carrot=4/Potato=5와 실제로 일치함을 직접 확인했다 — 창고 재고 조회가 item 가격 조회와 안전하게 연결된다.
+`ItemData.csv`는 농사 crop 결과 item(현재 Carrot=4, Potato=5, Food category)도 다른 item과 동일한 10열 계약으로 보유한다(마지막 열 `sellPrice` — 상단 판매가, item마다 다르고 창고에 실제로 쌓이지 않는 item(Water/Beer/Bread)은 0으로 둔다). CSV의 Carrot Seed=6, Potato Seed=7은 ItemCategory.Seed다. FarmSeedSource가 catalog와 Seed category를 검증하고, FarmWorkSite가 심기 성공 시 WarehouseInventory.TryRemove로 1개를 소비한다. 구매·운반·자동 보충은 아직 없다. CropCatalog.TryValidate(ItemDataContext)는 중복 crop/seed ID, seed item 존재·category와 output item 존재를 검사하며 FarmSeedSource와 TestFarmProductionWindow가 검증 경계다. `FarmProductionDefinition_Carrot`/`_Potato`의 `_outputItemId`(4/5)가 CSV의 Carrot=4/Potato=5와 실제로 일치함을 직접 확인했다 — 창고 재고 조회가 item 가격 조회와 안전하게 연결된다.
 
 `MerchantTradeSite`([Merchant Caravan](Merchant_Caravan.md) 주 소유)가 `IDataManager.TryGetItemInfo`를 통해 가격을 조회한다 — `DataManager`가 여러 불변 데이터의 조회 창구 역할을 하도록 그 뒤에서 `ItemDataContext`를 감싼다. `Pub.cs`는 여전히 `ItemDataContext`를 `DataManager` 없이 직접 참조한다 — 이 두 접근 방식이 지금 코드베이스에 공존한다(아래 TBD 참고).
 
@@ -60,7 +60,7 @@ MerchantPopup -> MerchantTradeSite.TryTrade(quantitiesByItemId: Dictionary<int,i
 | `Assets/Scripts/Interface/IInventory.cs` | item 수량의 부분 수락 계약과 조회 계약 |
 | `Assets/Scripts/Manager/DataManager.cs` | `ActionType`별 `DefaultActionCost` registry와 `ItemDataContext` 경유 item info 조회 창구 |
 | `Assets/Scripts/System/Action/DepositAction.cs` | 창고 입고 interaction 1회 실행 |
-| `Assets/Scripts/System/Inventory/WarehouseInventory.cs` | item ID별 runtime 정수 수량 저장소, `TryRemoveBatch`(판매 전용, `IInventory` 밖. 검증 패스→실행 패스 all-or-nothing) |
+| `Assets/Scripts/System/Inventory/WarehouseInventory.cs` | item ID별 runtime 정수 수량 저장소, `TryRemove`(심기 1항목 전량 차감)·`TryRemoveBatch`(판매 batch all-or-nothing), 둘 다 IInventory 밖 |
 | `Assets/Scripts/System/Inventory/WorkerInventory.cs` | NPC 1명의 단일 item type 운반 cargo와 표시 콜백 |
 | `Assets/Scripts/System/Lib/CSVParser.cs` | `TextAsset` CSV를 문자열 row로 파싱 |
 | `Assets/Scripts/System/Mapper/ItemInfoCsvMapper.cs` | CSV row를 category별 `ItemInfo` dictionary로 변환 |
@@ -88,12 +88,12 @@ MerchantPopup -> MerchantTradeSite.TryTrade(quantitiesByItemId: Dictionary<int,i
 - 봇짐은 한 번에 한 item type만 담고, 다른 item type의 입고는 수락 0으로 거부한다.
 - 봇짐을 비우는 권한은 소유자인 `NPCComponent`에만 있다. provider는 `ICarriedInventory` 계약 밖의 조작을 하지 않는다.
 - `WarehouseInventory`는 순수 저장소로 남기고 interaction protocol은 `WarehouseDepositPoint`가 담당한다.
-- 창고 재고를 차감하는 권한은 `MerchantTradeSite`(판매 transaction)에만 있다. `TryRemoveBatch`는 `IInventory`에 없다 — 그 계약은 "부분 수락 가능한 추가"만 의미하고, 제거는 별개의 특권적 capability다(`WorkerInventory.Clear()`가 `ICarriedInventory` 밖에 있는 것과 같은 이유). 단일 아이템 `TryRemove(int,int,out int)`는 호출자가 batch 하나로 통합되며 삭제됐다.
+- 창고 차감은 MerchantTradeSite(판매 batch)와 FarmWorkSite(심기)의 domain transaction에서 실행한다. TryRemove와 TryRemoveBatch는 전량 성공 또는 무변경 실패이며, IInventory의 부분 수락 추가 계약에는 넣지 않는다. UI가 재고를 직접 차감하지 않는다.
 - item ID와 serialized enum 변경은 기존 CSV·asset 호환성을 함께 검토한다.
 
 ## Unity 배선
 
-`WarehouseInventory._initialStock`은 창고 인스턴스의 시작 재고를 Inspector에서 item ID와 수량으로 지정한다. `Awake`에서 각 항목을 한 번만 `TryAdd`하며, 기본 `Warehouse` prefab의 목록은 비어 있다. `FarmerTest.unity`의 창고 인스턴스에는 Carrot Seed(ID 6)와 Potato Seed(ID 7)를 각각 5개씩 설정했다. `GuardTest.unity`의 창고에는 이 시작 재고를 적용하지 않는다. 씨앗 선택 팝업은 이 재고를 조회해 시작 시 보유 씨앗을 표시하며, 씨앗 소모와 심기 기능은 아직 연결되지 않았다.
+`WarehouseInventory._initialStock`은 창고 인스턴스의 시작 재고를 Inspector에서 item ID와 수량으로 지정한다. `Awake`에서 각 항목을 한 번만 `TryAdd`하며, 기본 `Warehouse` prefab의 목록은 비어 있다. `FarmerTest.unity`의 창고 인스턴스에는 Carrot Seed(ID 6)와 Potato Seed(ID 7)를 각각 5개씩 설정했다. `GuardTest.unity`의 창고에는 이 시작 재고를 적용하지 않는다. 씨앗 선택 팝업은 이 재고를 조회해 시작 시 보유 씨앗을 표시하며, 확정 성공 시 해당 씨앗 1개를 소비한다. 시작 재고를 모두 사용하면 추가 심기는 거부된다.
 
 `DataManager._costInfos`에는 같은 `ActionType`의 cost가 중복되지 않아야 한다. `WarehouseDepositPoint._inventorySource`는 `IInventory`를 구현한 `MonoBehaviour`(현재 같은 오브젝트의 `WarehouseInventory`)여야 하며, 이 provider도 `InteractableManager._interactables`와 `DestinationDB`의 `BuildingType.Warehouse` row에 함께 등록해야 Farmer가 입고 목적지를 찾는다. `NPCComponent._cargoCapacity`(기본 10)와 `_carryPresenter`(화물 등장/퇴장 연출을 소유하는 `CarryVisualPresenter`, [NPC Presentation](NPC_Presentation.md) 참고)는 NPC prefab에서 설정한다.
 
@@ -101,7 +101,7 @@ MerchantPopup -> MerchantTradeSite.TryTrade(quantitiesByItemId: Dictionary<int,i
 
 ## 알려진 제약과 TBD
 
-- 창고 용량, 출고, 예약, 저장 persistence는 아직 없다. 따라서 창고 쪽 입고 거부 경로는 Play Mode에서 재현할 수 없고, 부분 수락은 봇짐이 가득 찬 경우로만 관측된다.
+- 창고 용량 제한, 예약, 저장 persistence는 아직 없다. 출고는 판매와 씨앗 심기에 연결되어 있다. 따라서 창고 쪽 입고 거부 경로는 Play Mode에서 재현할 수 없고, 부분 수락은 봇짐이 가득 찬 경우로만 관측된다.
 - `NPCComponent.ResetRuntimeState`가 봇짐을 비우므로 despawn 경로가 생기면 운반 중이던 생산물이 조용히 사라진다. 현재 despawn 경로가 없어 관측되지 않는다.
 - 여러 item type 동시 운반과 item별 봇짐 스프라이트는 지원하지 않는다.
 - `DataManager.instance`는 현재 static service reference이며 수명 정책이 단순하다.

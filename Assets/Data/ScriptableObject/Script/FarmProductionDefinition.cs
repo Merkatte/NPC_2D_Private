@@ -6,6 +6,7 @@ public class FarmProductionDefinition : ScriptableObject
     [Header("Identity")]
     [SerializeField] private int _cropId = -1;
     [SerializeField] private string _displayName;
+    [SerializeField] private int _seedItemId = -1;
 
     [Header("Gauge")]
     [SerializeField] private float _maxProgress = 100f;
@@ -23,6 +24,7 @@ public class FarmProductionDefinition : ScriptableObject
 
     public int CropId => _cropId;
     public string DisplayName => _displayName;
+    public int SeedItemId => _seedItemId;
     public float MaxProgress => _maxProgress;
     public float GrowthPerWork => _growthPerWork;
     public float HarvestProgressPerWork => _harvestProgressPerWork;
@@ -32,7 +34,7 @@ public class FarmProductionDefinition : ScriptableObject
     public RuntimeAnimatorController VisualController => _visualController;
     public int VisualStageCount => _visualStages == null ? 0 : _visualStages.Length;
 
-    public bool IsValid => _cropId >= 0 && !string.IsNullOrWhiteSpace(_displayName)
+    public bool IsValid => _cropId >= 0 && _seedItemId >= 0 && !string.IsNullOrWhiteSpace(_displayName)
         && _maxProgress > 0f && _growthPerWork > 0f && _harvestProgressPerWork > 0f
         && _outputItemId >= 0 && _minimumYield >= 1 && _maximumYield >= _minimumYield
         && HasValidPresentation();

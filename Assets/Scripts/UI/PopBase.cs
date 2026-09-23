@@ -22,6 +22,9 @@ public abstract class PopBase : MonoBehaviour
     public PopupType PopupType => _popupType;
     public bool IsOpen => gameObject.activeSelf;
 
+    // Called before Open, including rebinding an already visible popup. Legacy views need no source.
+    internal virtual bool TryBindSource(IClickPopupSource source) => true;
+
     /// <summary>
     /// Called once by UIManager for every popup it successfully registers, so RequestClose() can
     /// route through the same TryHide() path an external caller would use — instead of every

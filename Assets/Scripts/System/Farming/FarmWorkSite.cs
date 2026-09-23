@@ -5,6 +5,7 @@ using UnityEngine.Serialization;
 public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
 {
     private const int WorkPositionRandomResolution = 10000;
+    private const int SeedsPerCycle = 1;
 
     [FormerlySerializedAs("_definition")]
     [SerializeField] private FarmProductionDefinition _startingDefinition;
@@ -33,7 +34,7 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
 
     public FarmProductionDefinition CurrentDefinition => _currentDefinition;
     public bool HasCrop => _currentDefinition;
-    public bool CanSelectCrop => !HasCrop || (_phase == FarmWorkPhase.Growing && _currentProgress <= 0f);
+    public bool CanSelectCrop => !HasCrop;
 
     public FarmWorkPhase Phase => _phase;
     public float CurrentProgress => _currentProgress;
@@ -62,36 +63,42 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
         return true;
     }
 
-    // Empty farms are a normal, expected state (no crop selected yet), not a wiring failure, so
-    // this intentionally does not log. TryInitializeCore only validates fixed scene dependencies.
-    public bool TrySelectCrop(FarmProductionDefinition definition, out string failureReason)
+    // FarmSeedSource validates catalog membership. No callbacks occur between payment and commit.
+    internal bool TryPlantCrop(FarmProductionDefinition definition, WarehouseInventory warehouse,
+        out SeedPlantResult result)
     {
-        if (!definition)
-        {
-            failureReason = "definition is null";
+        result = SeedPlantResult.FarmUnavailable;
+        if (!isActiveAndEnabled || !warehouse || !warehouse.isActiveAndEnabled)
             return false;
-        }
 
-        if (!definition.IsValid)
-        {
-            failureReason = $"'{definition.name}' has invalid values";
+        result = SeedPlantResult.InvalidConfiguration;
+        if (!TryInitialize(out _))
             return false;
-        }
 
+        result = SeedPlantResult.InvalidSeed;
+        if (!definition || !definition.IsValid)
+            return false;
+
+        result = SeedPlantResult.FarmOccupied;
         if (!CanSelectCrop)
-        {
-            failureReason = "farm is not empty (phase/progress)";
             return false;
-        }
 
+        result = SeedPlantResult.NotEnoughSeeds;
+        if (!warehouse.TryRemove(definition.SeedItemId, SeedsPerCycle))
+            return false;
+
+        SetCrop(definition);
+        result = SeedPlantResult.Success;
+        StateChanged?.Invoke();
+        return true;
+    }
+
+    private void SetCrop(FarmProductionDefinition definition)
+    {
         _currentDefinition = definition;
         _phase = FarmWorkPhase.Growing;
         _currentProgress = 0f;
         _pendingYield = -1;
-
-        failureReason = null;
-        StateChanged?.Invoke();
-        return true;
     }
 
     protected override bool SupportsCore(ActionType type)
@@ -151,9 +158,15 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
             return false;
         }
 
-        if (_startingDefinition && !TrySelectCrop(_startingDefinition, out string selectFailureReason))
+        if (_startingDefinition)
         {
-            Debug.LogError($"FarmWorkSite '{name}': starting definition rejected ({selectFailureReason}); starting empty.", this);
+            if (_startingDefinition.IsValid)
+            {
+                SetCrop(_startingDefinition);
+                StateChanged?.Invoke();
+            }
+            else
+                Debug.LogError($"FarmWorkSite '{name}': invalid starting definition; starting empty.", this);
         }
 
         failureReason = null;
