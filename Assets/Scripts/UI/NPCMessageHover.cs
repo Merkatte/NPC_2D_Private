@@ -16,6 +16,9 @@ public sealed class NPCMessageHover : HoverBase
     [SerializeField, Min(0f)] private float _riseDistance = 18f;
     [SerializeField, Range(0f, 1f)] private float _hiddenScale = 0.65f;
 
+    [Header("Typing")]
+    [SerializeField, Min(0f)] private float _characterInterval = 0.025f;
+
     private readonly Vector3[] _corners = new Vector3[4];
     private RectTransform _rect;
     private RectTransform _canvasRect;
@@ -25,11 +28,16 @@ public sealed class NPCMessageHover : HoverBase
     private Vector3 _restingScale;
     private float _motionProgress;
     private Tween _motionTween;
+    private Text _typingText;
+    private bool _isTypingPending;
+    private string _fullMessage;
+    private Tween _typingTween;
 
     private void Awake()
     {
         _rect = transform as RectTransform;
         _canvasRect = _canvas ? _canvas.transform as RectTransform : null;
+        _typingText = _messageText ? _messageText.GetComponent<Text>() : null;
         _isConfigured = _messageText && _worldCamera && _canvas && _canvasRect && _rect && _canvasGroup;
         if (!_isConfigured)
         {
@@ -52,27 +60,32 @@ public sealed class NPCMessageHover : HoverBase
             HideImmediately();
             return;
         }
-        if (_trackingAnchor && _trackingAnchor != info.TrackingAnchor)
+        bool hasAnchorChanged = _trackingAnchor != info.TrackingAnchor;
+        if (_trackingAnchor && hasAnchorChanged)
         {
             StopMotion();
             _motionProgress = 0f;
         }
         _trackingAnchor = info.TrackingAnchor;
-        if (_displayedKey != info.MessageKey)
+        if (_displayedKey != info.MessageKey || hasAnchorChanged)
         {
+            ResetTyping();
             _displayedKey = info.MessageKey;
             _messageText.SetKey(info.MessageKey.Value);
+            _isTypingPending = true;
         }
         UpdatePosition();
     }
 
     protected override void OnShown()
     {
+        _typingTween?.Play();
         PlayMotion(true);
     }
 
     protected override void BeginHide()
     {
+        _typingTween?.Pause();
         if (!_isConfigured || !isActiveAndEnabled || !_trackingAnchor)
         {
             HideImmediately();
@@ -113,6 +126,7 @@ public sealed class NPCMessageHover : HoverBase
     protected override void OnDisable()
     {
         StopMotion();
+        ResetTyping();
         _motionProgress = 0f;
         _trackingAnchor = null;
         _displayedKey = null;
@@ -131,7 +145,36 @@ public sealed class NPCMessageHover : HoverBase
             HideImmediately();
             return;
         }
+        UpdateTyping();
         UpdatePosition();
+    }
+
+    private void UpdateTyping()
+    {
+        if (!_isTypingPending || !IsVisible || !_typingText)
+            return;
+        // Wait until LateUpdate so LocalizeText's first Start has resolved its key.
+        _isTypingPending = false;
+        _messageText.Refresh();
+        _fullMessage = _typingText.text;
+        if (_characterInterval <= 0f || string.IsNullOrEmpty(_fullMessage))
+            return;
+        _typingText.text = string.Empty;
+        _typingTween = _typingText.DOText(_fullMessage, _fullMessage.Length * _characterInterval,
+                _typingText.supportRichText)
+            .SetEase(Ease.Linear)
+            .SetUpdate(true)
+            .OnComplete(() => _typingTween = null);
+    }
+
+    private void ResetTyping()
+    {
+        _typingTween?.Kill();
+        _typingTween = null;
+        if (_typingText && _fullMessage != null)
+            _typingText.text = _fullMessage;
+        _isTypingPending = false;
+        _fullMessage = null;
     }
 
     private void UpdatePosition()
@@ -183,5 +226,6 @@ public sealed class NPCMessageHover : HoverBase
         _exitDuration = Mathf.Max(0f, _exitDuration);
         _riseDistance = Mathf.Max(0f, _riseDistance);
         _hiddenScale = Mathf.Clamp01(_hiddenScale);
+        _characterInterval = Mathf.Max(0f, _characterInterval);
     }
 }

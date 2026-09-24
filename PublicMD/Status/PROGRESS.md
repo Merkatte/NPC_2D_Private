@@ -1,3 +1,13 @@
+# NPC 말풍선 타이핑 — 2026-09-24 코드 적용 / Play 확인 대기
+
+- NPCMessageHover의 기존 Legacy Text 대사를 기본 글자당 0.025초, unscaled 시간으로 표시한다. Inspector의 Typing / Character Interval로 조절하며 0은 즉시 표시다.
+- 사용자 피드백에 따라 직접 만든 문자열 캐시를 제거하고 기존 DOTween `DOText`로 단순화했다. 길이 × 글자 간격의 duration, Linear easing, unscaled update를 사용한다. 정렬·줄바꿈은 현재 표시 문자열을 따른다.
+- 같은 source refresh에서는 재시작하지 않는다. key/anchor 변경은 재시작, 퇴장은 Pause, 재진입은 Play, 비활성화는 Kill과 원문 복구로 정리한다. LocalizeText 첫 Start 이후 표시를 시작한다.
+- 코드 변경은 `Assets/Scripts/UI/NPCMessageHover.cs` 한 파일이며 UI/NPC Messages 문서를 갱신했다. 현재 FarmerTest의 LocalizeText/Text 동일 오브젝트 배선을 확인했다. TMP는 즉시 표시를 유지한다.
+- `dotnet build Assembly-CSharp.csproj --no-restore -v minimal`: 0 경고/0 오류. `git diff --check` 통과. 기존 scene/prefab/GUID와 domain 책임 변경 없음.
+- 일반 SceneWork 경로로 진행했으며 별도 strict Gate/독립 리뷰는 선택하지 않았다. 수정 예산 0/2회 사용. 증거: `.harness-runs/npc-typewriter-20260924/scene-work.md`.
+- Unity import와 Play 시각 검증은 NOT_VERIFIED. 다음 확인은 최초 표시, 대상 전환, 빠른 이탈·재진입과 표시 속도다.
+
 # 씨앗 심기 — 2026-09-22 구현·기본 Play 확인 / 독립 리뷰 요청
 
 - 사용자가 제안된 심기 규칙 전체에 동의했다. 밭 한 생산 주기당 씨앗 1개를 심기 성공 시 창고에서 소비한다.

@@ -78,7 +78,7 @@ CSV/enum과 `LocalizeText`는 [Localization](Localization.md)이 주 소유한�
   graphic raycast와 CanvasGroup interaction을 차단하고 Main Camera·기존 Canvas를 참조한다.
 - 기존 LocalizeData를 참조하는 독립 루트 LocalizeManager를 Systems 다음 root로 배치했다.
   `LocalizeManager.Awake`의 dedicated-root/DontDestroyOnLoad 계약을 지키기 위한 배치이며 다른 Manager를 이동하지 않았다.
-  자동 표시·아이콘·타이핑은 없다.
+  자동 표시·아이콘은 없다. 기존 Legacy Text 말풍선의 타이핑은 [UI](UI.md)의 NPCMessageHover가 소유한다.
 - 진입 시 위로 올라오며 커지고 퇴장 시 반대로 움직이는 DOTween 연출은 [UI](UI.md)의
   NPCMessageHover가 소유한다. 메시지 선택·유지 시간·지정 대사 계약은 그대로다.
 

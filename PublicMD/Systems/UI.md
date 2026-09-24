@@ -121,6 +121,14 @@ NPCGirl source/anchor/Catalog와 별도 루트 LocalizeManager 배선은 [NPC Me
 
 ### NPC 말풍선 표시 연출
 
+- 기존 Legacy Text 말풍선은 DOTween `DOText`로 빈 문자열부터 대사를 표시한다. duration은 문자열 길이 ×
+  기본 글자당 0.025초이며 `Ease.Linear`, `SetUpdate(true)`를 사용한다. Inspector의 Typing / Character Interval로
+  조절하며 0이면 즉시 표시한다. 현재 CSV의 완성형 한글은 글자 단위로 나타난다.
+  LocalizeText의 첫 Start 이후 LateUpdate에서 문구를 읽고 tween을 시작한다. Rich Text 설정은 Text의 값을 따른다.
+  새 key 또는 다른 anchor에서 재시작하며 같은 source의 refresh에는 이어서 표시한다. 퇴장 시 Pause하고
+  완전히 닫히기 전 같은 대상 재진입 시 Play한다. 비활성화·대사 교체 시 Kill하고 원문을 복구한다.
+  현재 배선처럼 LocalizeText와 Text가 같은 오브젝트에 있어야 한다. TMP는 기존 즉시 표시를 유지한다.
+  별도 문자열 캐시·투명 뒷부분은 사용하지 않으므로 정렬·줄바꿈은 현재까지 표시된 문자열을 기준으로 한다.
 - `NPCMessageHover`의 DOTween 하나가 0~1 표시 진행도를 움직인다. 기본 진입은 0.2초/OutCubic,
   퇴장은 0.15초/InCubic이며 `SetUpdate(true)`로 게임 시간 배율과 독립적이다.
 - 진행도에 따라 원래 크기의 65%에서 100%로 커지며 18 Canvas UI 단위 아래에서 anchor로 올라온다.
