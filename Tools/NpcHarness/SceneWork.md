@@ -56,6 +56,11 @@ unclear, ask the user. The common checks remain the same in both modes.
 4. **Connected Unity tools (optional direct-work transport):** use existing Unity MCP tools for scene, prefab,
    component, reference and importer operations. A registered tool without a connected
    Editor is not an executable route. Verify instance/project identity before writes.
+   Official Unity CLI with an installed Pipeline package is also an available local
+   Editor connection. For existing read-only structure profiles, `verify` defaults
+   to this connection and preserves the validator/result contracts; legacy file
+   requests require explicit `--editor-transport file-bridge`. Neither transport
+   authorizes arbitrary scene writes or installing/upgrading packages. See README.
 5. **Legacy Harness Job:** remains available for its existing TestOnly fixtures only.
    Its v1 policies/assignment/`verify-scope` are unchanged and do not validate the
    other routes. Do not fabricate v1 evidence for a different execution route.

@@ -60,6 +60,9 @@ public class ActionPool : MonoBehaviour
             case ActionType.Move:
                 _actionDictionary[actionType].Enqueue(new MoveAction());
                 break;
+            case ActionType.Wander:
+                _actionDictionary[actionType].Enqueue(new WanderAction());
+                break;
             case ActionType.Eat:
                 _actionDictionary[actionType].Enqueue(new EatAction());
                 break;

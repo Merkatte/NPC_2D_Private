@@ -3,6 +3,15 @@ using UnityEngine.Serialization;
 
 public class NPCComponent : MonoBehaviour
 {
+    [System.Serializable]
+    private struct RoleTool
+    {
+        [SerializeField] private NPCType _role;
+        [SerializeField] private Sprite _sprite;
+        public NPCType Role => _role;
+        public Sprite Sprite => _sprite;
+    }
+
     private static readonly int SpeedParameterHash = Animator.StringToHash("Speed");
     private static readonly int IsInsideBuildingParameterHash = Animator.StringToHash("IsInsideBuilding");
     private static readonly int IsWorkingParameterHash = Animator.StringToHash("IsWorking");
@@ -18,6 +27,7 @@ public class NPCComponent : MonoBehaviour
     [SerializeField] private GameObject _gameObject;
     [SerializeField] [FormerlySerializedAs("_guardPerception")] private CombatPerception _combatPerception;
     [SerializeField] private SpriteRenderer _toolRenderer;
+    [SerializeField] private RoleTool[] _roleTools = System.Array.Empty<RoleTool>();
     [SerializeField] private CarryVisualPresenter _carryPresenter;
     [SerializeField] private AnimationClip _spawnLandingClip;
     [SerializeField, Min(1)] private int _cargoCapacity = 10;
@@ -28,6 +38,7 @@ public class NPCComponent : MonoBehaviour
     [SerializeField] private bool _requiresAnimator = true;
 
     private NPCStat _stat;
+    private Sprite _defaultToolSprite;
     private readonly CombatRuntimeState _combatRuntimeState = new CombatRuntimeState();
     private WorkerInventory _cargo;
     private bool _hasSpeedParameter;
@@ -48,6 +59,7 @@ public class NPCComponent : MonoBehaviour
 
     void Awake()
     {
+        _defaultToolSprite = _toolRenderer ? _toolRenderer.sprite : null;
         _cargo = new WorkerInventory(_cargoCapacity, SetCarryVisible);
         CacheAnimatorParameters();
 
@@ -81,6 +93,11 @@ public class NPCComponent : MonoBehaviour
     /// </summary>
     public void ResetRuntimeState()
     {
+        if (_toolRenderer)
+        {
+            _toolRenderer.sprite = _defaultToolSprite;
+            SetToolVisible(false);
+        }
         _combatRuntimeState.ClearTarget();
         _cargo.Clear();
 
@@ -126,6 +143,23 @@ public class NPCComponent : MonoBehaviour
         {
             _animator.SetBool(IsWorkingParameterHash, isWorking);
         }
+    }
+
+    public void ApplyRoleTool(NPCType role)
+    {
+        if (!_toolRenderer)
+            return;
+        // Unconfigured older prefabs retain their original Farmer tool.
+        Sprite sprite = role == NPCType.Farmer ? _defaultToolSprite : null;
+        foreach (RoleTool tool in _roleTools)
+        {
+            if (tool.Role != role)
+                continue;
+            sprite = tool.Sprite;
+            break;
+        }
+        _toolRenderer.sprite = sprite;
+        SetToolVisible(sprite != null);
     }
 
     public void SetToolVisible(bool isVisible)

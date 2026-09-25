@@ -14,6 +14,7 @@ NPC가 다음 행동을 판단하고, 실행 가능한 action queue를 구성하
 | 고정·동적 목표 이동, 경로 추종, stopping distance와 이동 실패 | [Movement](Movement.md) |
 | 그리드 탐색, 지형 비용, 지역·출입구 배선 | [Navigation](../Navigation.md) |
 | Eat, Drink, Sleep, Idle 실행 | [Needs Actions](Needs_Actions.md) |
+| 건축가 배회·생활 queue, Wander 실행 | [Builder](../Builder.md) |
 
 농사·수확 action은 [Farming](../Farming/README.md), 수확물 운반과 창고 입고는 [Inventory and Items](../Inventory_and_Items.md), 전투 action은 [Combat](../Combat/README.md)이 소유한다.
 

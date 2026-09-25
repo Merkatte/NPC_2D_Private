@@ -7,7 +7,9 @@ internal sealed record VerifyCommand(
     string? UnityPath,
     string? RunId,
     string? OutputPath,
-    TimeSpan Timeout) : HarnessCommand;
+    TimeSpan Timeout,
+    string EditorTransport,
+    string? UnityCliPath) : HarnessCommand;
 
 internal sealed record RunAdapterCommand(
     string JobPath,
@@ -97,6 +99,10 @@ internal static class HarnessCommandLine
         writer.WriteLine();
         writer.WriteLine("run-adapter options:");
         writer.WriteLine("  --allow-overwrite    Permit adapter overwrites allowed by Unity policy");
+        writer.WriteLine("verify options (open Editor only):");
+        writer.WriteLine("  --editor-transport <unity-cli|file-bridge>  Default: unity-cli; no implicit fallback");
+        writer.WriteLine("  --unity-cli <path>   Official Unity CLI executable override");
+        writer.WriteLine("                       Also: NPC_HARNESS_UNITY_CLI_PATH");
         writer.WriteLine();
         writer.WriteLine("verify-scope options:");
         writer.WriteLine("  --policy <path>      Tracked SkillPolicy JSON under Tools/NpcHarness/SkillPolicies");
@@ -171,7 +177,9 @@ internal static class HarnessCommandLine
             options.UnityPath,
             options.RunId,
             options.OutputPath,
-            options.Timeout);
+            options.Timeout,
+            options.EditorTransport,
+            options.UnityCliPath);
         return true;
     }
 
@@ -330,6 +338,22 @@ internal static class HarnessCommandLine
                 case "--unity":
                     options.UnityPath = value;
                     break;
+                case "--editor-transport" when !allowJob && !allowScope:
+                    if (value != "unity-cli" && value != "file-bridge")
+                    {
+                        error = "--editor-transport must be unity-cli or file-bridge.";
+                        return false;
+                    }
+                    options.EditorTransport = value;
+                    break;
+                case "--unity-cli" when !allowJob && !allowScope:
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        error = "--unity-cli requires an executable path.";
+                        return false;
+                    }
+                    options.UnityCliPath = value;
+                    break;
                 case "--run-id":
                     options.RunId = value;
                     break;
@@ -362,6 +386,8 @@ internal static class HarnessCommandLine
         public string? AssignmentPath { get; set; }
         public string? AssignmentSha256 { get; set; }
         public string? UnityPath { get; set; }
+        public string EditorTransport { get; set; } = "unity-cli";
+        public string? UnityCliPath { get; set; }
         public string? RunId { get; set; }
         public string? OutputPath { get; set; }
         public TimeSpan Timeout { get; set; }

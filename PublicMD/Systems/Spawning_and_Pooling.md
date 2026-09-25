@@ -4,6 +4,8 @@
 
 NPC role 생성 조립, prefab 종류 catalog, `WorkerNPC` GameObject pool의 수명 경계를 설명한다.
 
+2026-09-26 `NPCType.Builder`를 끝에 추가했다(기존 Farmer=0, Guard=1, Cook=2, Enemy=3 유지, Builder=4). Builder selector/stat 생성 entry는 `BuilderCitizenSetup.Setup`이 조립하며 현재 Unity 적용 대기다. TestNPCSpawnWindow의 건축가 버튼도 entry 적용 후 사용할 수 있다. 기존 예약·커밋·반환 transaction은 변경하지 않았다.
+
 ## 세부 기능
 
 | 세부 기능 | 책임 |

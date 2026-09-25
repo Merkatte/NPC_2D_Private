@@ -25,7 +25,7 @@ MoveAction/GuardAction -> NPCComponent.Move(direction)
 
 BaseBuildingAction -> SetInsideBuilding(bool)
 BaseWorkingAction(Farming/Harvest) -> SetWorking(bool)
-WorkerNPC.Init(Farmer) -> SetToolVisible(true)
+WorkerNPC.Init(role) -> ApplyRoleTool(role) -> sprite 교체 + SetToolVisible
 
 WorkerInventory 적재/이관/Clear -> 생성자 콜백
   -> NPCComponent.SetCarryVisible(bool)
@@ -40,7 +40,7 @@ NPCComponent.Awake / ResetRuntimeState -> CarryVisualPresenter.ResetImmediate()
 
 `Visual`의 자손인 `CarryAnchor -> CarryMotion -> Basket` 계층은 부모 `Visual`이 Idle/Move/ToolWork에서 움직이는 `localPosition.y`/`localScale`을 자동으로 상속한다. `CarryMotion`은 그 위에 자기 자신의 등장/퇴장 모션만 합성하므로 메인 클립에 화물 트랙을 추가할 필요가 없다.
 
-도구 표시(`SetToolVisible`)는 `WorkerNPC.Init`이 정하는 역할 스위치이고, 봇짐 표시는 cargo 상태를 따르는 별개 스위치다. 두 스위치를 겹치지 않게 두어 pool 재사용 시 복원 순서에 의존하지 않는다 — 운반 중에도 호미는 계속 보인다.
+도구 표시는 `WorkerNPC.Init`이 `NPCComponent.ApplyRoleTool`에 역할을 전달하면 `_roleTools`에서 sprite를 선택해 적용한다. 미등록 Farmer는 Awake 때 보관한 기본 도구를 사용하고 나머지는 숨긴다. ResetRuntimeState는 기본 sprite로 복원하고 도구를 숨긴다. 봇짐 표시는 cargo 상태를 따르는 별개 스위치다. 건축가 망치의 실제 prefab 등록은 `BuilderCitizenSetup.Setup` 실행 대기 상태다.
 
 ## 주 소유 스크립트
 
@@ -93,7 +93,7 @@ NPCComponent.Awake / ResetRuntimeState -> CarryVisualPresenter.ResetImmediate()
 ## 알려진 제약과 TBD
 
 - Enemy는 현재 전용 Animator가 없어 `_requiresAnimator = false`다.
-- Farmer와 Guard가 같은 NPC prefab을 공유하며 역할별 전용 presentation 분리는 아직 없다.
+- Farmer와 Guard가 같은 NPC prefab을 공유한다. Builder도 이를 재사용하도록 도구 sprite 매핑을 추가했으나 실제 Builder prefab/scene 배선과 손 위치 확인은 대기 중이다.
 - 작물별 봇짐 스프라이트는 `itemId -> Sprite` 테이블이 없어 지원하지 않는다. 현재는 `worker-cargo-basket.png` 단일 스프라이트만 표시한다.
 - Hide 애니메이션 재생 도중 같은 tick에 새 화물이 들어오는 동시성 edge case는 다루지 않는다 — `TryTransferAllTo` 직후 같은 tick에 `TryAdd`가 성립하는 경로가 현재 구조에 없다.
 

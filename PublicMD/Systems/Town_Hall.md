@@ -52,6 +52,8 @@ WorkerReservation의 계약과 소유는 [Spawning and Pooling](Spawning_and_Poo
 
 ## Unity 배선과 검증
 
+2026-09-26 Builder 추가 코드: TownHallPopup은 고정 두 카드 대신 비어 있지 않은 카드 목록을 사용하고 null/중복 직군을 거부한다. TownHallRecruitCard에는 건축가 이름을 추가했다. `BuilderCitizenSetup.Setup`은 세 번째 카드와 초기 준비 상태의 100골드/60초 Builder 설정을 추가한다. 사용자 지시로 Setup을 아직 실행하지 않아 현재 prefab/scene은 아래의 기존 두 직업 구성이다. [Builder 계획](../Plans/Builder_Citizen_Implementation_Plan.md) 참고.
+
 FarmerTest의 기존 TownHall 인스턴스는 NPCManager/GoldManager를 prefab override로 참조한다. TownHall.prefab의 단일 Farmer 값을 `_recruitments` 목록의 Farmer 행으로 이관하고 Guard 행을 추가했다. FarmerTest NPCManager에는 Farmer와 Guard 생성 entry가 있고 worker pool을 공유한다.
 
 TownHallPopup.prefab은 기존 목재 외곽·제목·닫기 버튼을 유지하며 상인 탭과 양피지 스타일을 재사용한다. 두 카드에는 기존 farmer-hoe와 guard-sword sprite subasset을 지정한다. scene의 `_recruitment`와 UIManager popup 등록은 유지한다. PointerClickRouter와 시청 클릭 collider의 layer 9 mask 연결은 이미 존재하며 레이어 이름 자체는 필수 조건이 아니다.

@@ -1,5 +1,9 @@
 # Navigation
 
+## 건축가 배회 위치 조회 — 2026-09-26
+
+`TilemapNavigation.TryGetRandomReachablePosition(start, random, out position)`은 초기화 시 캐시한 이동 가능 ground node 목록에서 주입된 `IRandomSource`로 최대 16개 후보를 추출한다. 현재 위치와 같은 후보를 제외하고 기존 `TryBuildPath`가 성공한 위치만 반환한다. 실패 시 position은 기본값이며 selector가 Idle로 대기한다. Disable 시 후보·임시 경로 cache도 지운다. `INavigationService` 계약과 기존 지역/출입구/차단 규칙은 유지한다. 동적 건물 배치에 따른 그리드 갱신은 추가하지 않았다. 소비자는 [Builder](Builder.md)다.
+
 ## 책임 범위
 
 Tilemap의 지형을 노드 그리드로 만들고 고정 목적지까지 이동할 waypoint를 제공한다.

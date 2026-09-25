@@ -51,6 +51,7 @@ Harvest는 queue당 1회만 대여한다. 봇짐 용량 경계는 시도할 때�
 | 수확·입고 우선순위 | `FarmerActionSelector.cs`, [Inventory and Items](../Inventory_and_Items.md), [Farming Runtime](../Farming/Runtime_and_Transactions.md) |
 | 새 action type | `ActionPool.cs`, `ActionType.cs`, 새 action 구현, 사용하는 selector |
 | Guard·Enemy queue | [Guard](../Combat/Guard.md), [Enemy](../Combat/Enemy.md) |
+| Builder queue·Wander factory | [Builder](../Builder.md), `ActionPool.cs` |
 
 ## 불변 규칙
 

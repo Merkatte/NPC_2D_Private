@@ -25,7 +25,7 @@ FarmerTest·GuardTest 같은 실제 씬은 작은 속성·참조 변경에 한�
 일반 작업은 원본 프로젝트 직접 편집이 기본이다. 대규모 씬·공유 프리팹 일괄 변경이나
 직렬화 migration처럼 영향과 복구 부담이 큰 작업만 이유를 알리고 격리 복사본을 사용한다.
 격리 모드의 SceneWorkspace는 지정 파일과 원본 충돌을 확인한 뒤 반영한다.
-MCP는 선택 사항이며 설치하지 않았다. YAML 파일 편집에는 Editor 연결이 필요 없다.
+MCP는 선택 사항이다. YAML 파일 편집에는 Editor 연결이 필요 없다.
 열린 Editor의 API 실행에는 실제 진입점이 필요하며, 연결이 없다는 이유로 일반 작업을
 자동으로 복사하지 않는다. 기존 GUID/fileID와 미커밋·미저장 작업을 보존한다.
 YAML 변경 후 diff·저장 값·변경 참조를 확인하고 Unity import/load/runtime 미실행은
@@ -34,6 +34,14 @@ YAML 변경 후 diff·저장 값·변경 참조를 확인하고 Unity import/loa
 기존 `Assets/TestOnly` allowlist는 legacy Harness Job에만 해당한다.
 구현 helper는 선택한 프로젝트의 승인된 Editor 전용 경로에 두고 runtime 코드로 넣지 않는다.
 원본 Editor를 자동 종료하거나 미저장 상태를 버리지 않는다.
+
+### 2026-09-26 열린 Editor 검증 연결
+
+`verify`는 열린 원본 Editor에 공식 Unity CLI/Pipeline을 기본 연결로 사용한다. `UnityCliLocator`는 실행 파일 탐색, `UnityCliTransport`는 명시적 프로젝트 라우팅·고정 eval_file 호출·응답 검사를 소유한다. Editor의 `HarnessInteractiveGateBridge.RunRequest`는 프로젝트 일치와 요청 정책을 확인하고 기존 구조 validator를 실행한다. gameplay는 Pipeline이나 CLI 타입을 참조하지 않는다.
+
+검증 항목·profile/version·GateResult schema·기대값은 그대로 유지한다. CLI process 성공과 eval 성공은 실행 증거이며 validator 결과가 별도로 있어야 한다. 호출마다 고유한 결과 경로를 사용하고 성공한 응답과 일치하는 결과만 요청한 출력으로 승격한다. 실패·timeout에 자동 fallback하지 않는다. 기존 파일 요청은 `--editor-transport file-bridge`로 선택할 수 있고, 닫힌 프로젝트의 batch 경로는 유지한다. CLI 호출은 창을 만들지 않는 기존 ProcessRunner를 사용한다.
+
+이 변경은 검증 기준을 생성하거나 eval 결과를 AI가 해석해서 Pass를 부여하는 기능이 아니다. 기존 validator의 독립 회귀 확인과 연결부 검증·리뷰를 구분한다. 실제 증거는 `Status/PROGRESS.md`에 기록한다.
 
 ```text
 사용자 요청

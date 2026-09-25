@@ -120,17 +120,28 @@ internal sealed class HarnessRunner
                 return Program.InfrastructureErrorExitCode;
             }
 
-            bool receivedResult = await RequestOpenEditorGateAsync(
-                profile,
-                runId,
-                resultPath,
-                command.Timeout);
-            if (!receivedResult)
+            if (command.EditorTransport == "unity-cli")
             {
-                Console.Error.WriteLine(
-                    $"Infrastructure error: open Unity Editor did not return a GateResult within " +
-                    $"{command.Timeout.TotalSeconds:0} seconds.");
-                return Program.InfrastructureErrorExitCode;
+                ValidateInteractiveResultPath(resultPath);
+                Console.WriteLine("Editor transport: unity-cli");
+                await UnityCliTransport.RunAsync(_repositoryRoot, command.UnityCliPath, profile, runId,
+                    resultPath, runDirectory, command.Timeout, _processRunner);
+            }
+            else
+            {
+                Console.WriteLine("Editor transport: file-bridge (explicit)");
+                bool receivedResult = await RequestOpenEditorGateAsync(
+                    profile,
+                    runId,
+                    resultPath,
+                    command.Timeout);
+                if (!receivedResult)
+                {
+                    Console.Error.WriteLine(
+                        $"Infrastructure error: open Unity Editor did not return a GateResult within " +
+                        $"{command.Timeout.TotalSeconds:0} seconds.");
+                    return Program.InfrastructureErrorExitCode;
+                }
             }
         }
         else

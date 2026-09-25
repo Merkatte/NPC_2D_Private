@@ -69,7 +69,23 @@ import/load/runtime 검사는 `NOT_VERIFIED`로 기록하며 코드 검증은 �
 .\run-harness.cmd verify --profile farmer-scene-structure
 ```
 
-열린 Editor에서는 `Tools > NPC Harness > Verify Farmer Scene Structure` 메뉴 또는 같은 CLI 명령의 interactive bridge를 사용합니다. 새 C#을 먼저 Unity에 import/compile해야 합니다. 메뉴는 .NET SDK 없이 사용할 수 있습니다.
+열린 Editor에서는 `Tools > NPC Harness > Verify Farmer Scene Structure` 메뉴 또는 같은 runner 명령의 **공식 Unity CLI 연결**을 사용합니다. 새 C#을 먼저 Unity에 import/compile해야 합니다. 메뉴는 .NET SDK 없이 사용할 수 있습니다.
+
+### 열린 Editor 연결 — Unity CLI
+
+`verify`의 열린 Editor 기본 transport는 `unity-cli`입니다. 설치된 공식 `unity` 실행 파일과 프로젝트의 `com.unity.pipeline`이 필요합니다. `--unity-cli <path>` → `NPC_HARNESS_UNITY_CLI_PATH` → PATH → 플랫폼별 기본 설치 경로 순으로 찾습니다. 명시한 경로가 잘못되면 다른 실행 파일로 대체하지 않습니다.
+
+```powershell
+.\run-harness.cmd verify --profile farmer-scene-structure --editor-transport unity-cli
+# 기존 파일 요청 방식이 필요한 경우에만 명시적으로 선택
+.\run-harness.cmd verify --profile farmer-scene-structure --editor-transport file-bridge
+```
+
+Runner는 `unity command --project-path <현재 저장소> ... eval_file <고정 호출 스크립트> ... --json`을 실행합니다. `HarnessInteractiveGateBridge.RunRequest`는 실제 Editor 프로젝트가 요청과 같은지 확인한 뒤 기존 세 가지 구조 profile만 실행합니다. CLI 성공, 내부 eval 성공, 프로젝트 일치, 반환 상태, 실제 GateResult의 run/profile/version/변경 파일 계약을 모두 확인합니다. 실행 로그와 고정 호출 스크립트는 해당 run의 `logs`/`artifacts`에 남깁니다. CLI 성공 자체를 검증 통과로 취급하지 않습니다.
+
+연결·응답 오류나 timeout에서는 자동으로 file-bridge 또는 다른 Editor를 실행하지 않습니다. timeout 뒤 늦게 도착한 결과가 다음 요청에 사용되지 않도록 호출마다 고유 결과 경로를 사용합니다. 검증 실패는 exit 1, 연결/실행 실패는 exit 2이며 기존 GateResult 계약은 유지합니다. Editor 연결 파일을 읽지 못하는 샌드박스에서는 사용자 권한으로 runner 실행이 필요할 수 있습니다. 인증 토큰을 runner가 읽거나 복사하지 않습니다.
+
+닫힌 프로젝트는 기존 Unity batch 경로를 유지합니다. `beacon-playmode`의 열린 Editor 실행, 새로운 Play/화면 assertion, 자동 저장·Editor 종료·패키지 설치는 이번 변경에 포함하지 않습니다. 변경된 연결부의 기록은 [H-15](../../PublicMD/Plans/NPC_Harness_Implementation_Plan.md)를 참고합니다.
 
 ## 가벼운 리뷰 기록 확인
 

@@ -40,6 +40,21 @@
 | H-12 | 실제 Farmer 씬 구조 Gate | 읽기 전용 저장본 검사, 배선 고장 fixture, CLI/Editor 연결 | implementation and independent self-tests complete; final run/review evidence in PROGRESS |
 | H-13 | 가벼운 리뷰 증거 연결 | pinned request/snapshot, compact 문서 기반 리뷰, 누락·stale 차단 | implementation and 121 runner self-tests verified; final candidate evidence in PROGRESS |
 | H-14 | 실제 씬 작업 경로 | 셸 기반 Unity API 작업 복사본, 지정 asset 반영, 공통 최소 확인 | implementation and isolated Unity scene/prefab smoke verified; final regression/review in PROGRESS |
+| H-15 | Unity CLI transport | 열린 Editor의 공식 CLI 연결, 명시적 기존 방식 선택, 동일 검증 기준 | 구현·검증 상세는 PROGRESS |
+
+## H-15 Unity CLI transport
+
+2026-09-26 사용자 선택: “CLI 실행·연결부터 전환”. 전면 재설계와 Play/화면 검증 확대는 범위 밖이다.
+
+- 열린 Editor의 `verify` 기본 경로를 공식 Unity CLI로 바꾼다. `--editor-transport unity-cli|file-bridge`와 `--unity-cli` override를 제공한다.
+- 명시적 프로젝트 경로와 고정 C# 호출로 기존 Editor gate entry를 실행한다. 실제 프로젝트를 다시 확인하고 기존 profile만 허용한다.
+- CLI 오류·내부 eval 오류·잘못된 프로젝트·누락/불일치 결과·timeout은 성공으로 처리하지 않는다. 실패를 구제하는 자동 fallback은 없다.
+- 늦은 이전 호출 결과가 재시도를 통과시키지 못하도록 호출별 고유 결과 파일을 사용한다. 토큰을 코드나 증거에 복사하지 않는다.
+- 기존 GateResult, validator, assertion, batch 경로와 gameplay는 유지한다. 별도 CLI/패키지 자동 설치, Editor 종료·저장·Play 진입은 하지 않는다.
+
+수용 조건: 변경 전 121개 runner self-test 보존 및 재실행, 독립 연결부 오류/경계 테스트, .NET/Unity 컴파일, 공식 CLI를 거친 FarmerScene.Structure v1의 실제 읽기 전용 실행, 독립 후보 리뷰. 수정 예산 2회. 별도 Builder 작업과 사용자가 설치한 패키지 변경은 보존한다.
+
+검증기 원래 target은 net10.0이다. 현재 환경의 .NET 9 SDK에서는 프로젝트 target을 변경하지 않고 `dotnet msbuild Tools/NpcHarness/NpcHarness.csproj -restore -p:TargetFramework=net9.0 -p:TargetFrameworks=net9.0`으로 호환 빌드해 `dotnet Tools/NpcHarness/bin/Debug/net9.0/NpcHarness.dll <command>`를 검증한다. 기본 `.cmd`/`.sh` 실행에는 기존대로 .NET 10 SDK가 필요하다. 이 호환 검증을 .NET 10 실기 검증으로 기록하지 않는다.
 
 ## 4. H-02 — GateResult 기반
 

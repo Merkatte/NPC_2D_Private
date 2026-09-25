@@ -15,12 +15,15 @@ public sealed class TownHallPopup : PopBase
     private void Awake()
     {
         _isConfigured = _recruitment && _townStatusPanel && _recruitmentPanel &&
-            _townStatusTab && _recruitmentTab && _resultText && _cards != null && _cards.Length == 2;
+            _townStatusTab && _recruitmentTab && _resultText && _cards != null && _cards.Length > 0;
         if (_isConfigured)
+        {
+            var roles = new System.Collections.Generic.HashSet<NPCType>();
             foreach (TownHallRecruitCard card in _cards)
-                _isConfigured &= card;
+                _isConfigured &= card && roles.Add(card.NpcType);
+        }
         if (!_isConfigured)
-            Debug.LogError($"TownHallPopup '{name}': missing recruitment, tabs, panels or cards.", this);
+            Debug.LogError($"TownHallPopup '{name}': missing recruitment, tabs, panels or cards, or duplicate card role.", this);
     }
 
     private void OnEnable()

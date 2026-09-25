@@ -145,7 +145,7 @@ internal static class HarnessInteractiveGateRequestPolicy
 }
 
 [InitializeOnLoad]
-internal static class HarnessInteractiveGateBridge
+public static class HarnessInteractiveGateBridge
 {
     private const double PollIntervalSeconds = 1d;
     private const string PendingFileName = "PendingGateRequest.json";
@@ -218,14 +218,34 @@ internal static class HarnessInteractiveGateBridge
             return;
         }
 
+        try
+        {
+            RunRequest(json, ProjectRoot);
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            Debug.LogError($"NPC Harness interactive gate request rejected: {exception.Message}");
+        }
+    }
+
+    // Called by the CLI's fixed eval_file wrapper and the legacy file transport.
+    // This entry never exits the Editor, saves scenes, or accepts arbitrary methods.
+    public static string RunRequest(string json, string expectedProjectRoot)
+    {
+        StringComparison comparison = Application.platform == RuntimePlatform.WindowsEditor
+            ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        string expected = Path.GetFullPath(expectedProjectRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        string actual = Path.GetFullPath(ProjectRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (!string.Equals(expected, actual, comparison))
+            throw new InvalidOperationException("NPC Harness request targets a different Unity project.");
+
         if (!HarnessInteractiveGateRequestPolicy.TryParseAndValidate(
                 json,
                 ProjectRoot,
                 out HarnessInteractiveGateRequest request,
                 out string error))
         {
-            Debug.LogError($"NPC Harness interactive gate request rejected: {error}");
-            return;
+            throw new ArgumentException($"NPC Harness interactive gate request rejected: {error}");
         }
 
         HarnessGateResult result;
@@ -244,7 +264,10 @@ internal static class HarnessInteractiveGateBridge
         {
             try
             {
-                result = Evaluate(request.runId, kind);
+                result = EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling || EditorApplication.isUpdating
+                    ? HarnessGateResultBuilder.CreateInfrastructureError(request.runId, request.profile, profileVersion,
+                        "NPC Harness requires an idle Edit Mode Editor.")
+                    : Evaluate(request.runId, kind);
             }
             catch (Exception exception)
             {
@@ -258,6 +281,7 @@ internal static class HarnessInteractiveGateBridge
 
         HarnessResultWriter.Write(request.resultPath, result);
         Debug.Log($"NPC Harness interactive gate result: {result.status} - {result.message}");
+        return result.status.ToString();
     }
 
     private static HarnessGateResult Evaluate(string runId, HarnessInteractiveGateKind kind)

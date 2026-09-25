@@ -1,3 +1,27 @@
+# 검증기 Unity CLI 연결 — 2026-09-26 구현·실기·독립 리뷰 수용
+
+- 사용자 범위 선택은 “CLI 실행·연결부터 전환”. `$orchestrate-unity-work`로 진행하며 기존 검증 항목·profile/version·schema는 유지했다. 기존 Builder와 사용자 Pipeline 패키지 변경은 보존했다.
+- 변경 파일: `Tools/NpcHarness/HarnessCommandLine.cs`, `HarnessRunner.cs`, 신규 `UnityCliLocator.cs`·`UnityCliTransport.cs`, Editor의 `HarnessInteractiveGateBridge.cs`. README·SceneWork·HARNESS_ARCHITECTURE·H-15 계획을 갱신했다.
+- 열린 Editor 검증은 공식 Unity CLI가 기본이다. `--editor-transport file-bridge`로 기존 방식만 명시 선택할 수 있다. CLI override/env/PATH/기본 설치 위치 탐색, 프로젝트 경로 고정과 Editor 재확인, outer CLI/nested eval/실제 GateResult 검증을 추가했다. timeout 후 지연 결과는 호출별 고유 파일에 남아 재시도 결과로 채택되지 않는다. 연결 오류에 자동 fallback하지 않는다.
+- 사용 환경: CLI `1.0.0-beta.11`, 사용자가 설치한 Pipeline `0.7.0-exp.1`, Unity `6000.3.9f1`. 연결 descriptor의 사용자 ACL 때문에 sandbox 계정에서는 조회가 거부되어 승인된 사용자 권한에서 CLI를 실행했다. 창을 숨기는 기존 ProcessRunner와 토큰 자동 처리를 유지한다.
+- 변경 전·후 동일한 runner self-test **121/121**, 독립 작성된 연결부 테스트 **83/83** 통과. 실제 숨김 fixture subprocess의 timeout/nonzero/응답 오류/프로젝트·run·profile·version 불일치/변경 파일/상태 모순/이전 결과 보존을 포함한다. 기존 HarnessSelfTest 원문 SHA-256 `52781F4E849DEB4D77D5305DE0CC9E3E7049B0AEC768D9CF94C052C58B526ADD` 유지.
+- 공식 CLI `recompile` 결과 오류·경고 0. 별도 dotnet Editor 빌드는 오류 0, Pipeline 도입 뒤 System.Memory/Tasks.Extensions assembly 충돌 경고 5개를 보고했다. 이를 Unity 컴파일 오류와 구분하며 패키지/생성 csproj를 임의 수정하지 않았다.
+- **FarmerScene.Structure v1: 33/33 Pass**, 실제 `unity-cli` transport, exit 0. 열린 FarmerTest 상태와 의존 파일 SHA-256 보존, changedFiles 빈 배열 확인. 검증기 변경의 실행 증거이며 보류 중인 Builder 기능 수용을 뜻하지 않는다. Play/화면 검증 확대와 닫힌 Editor batch 재실행은 범위 밖이다.
+- `.NET 10` 프로젝트 target은 유지했다. 현재 설치된 SDK9에서는 명시적 net9 호환 빌드 및 DLL 실행으로 검증했다. 기본 run-harness.cmd/sh에는 기존 .NET10 SDK가 필요하며 해당 target 실기 검증은 미수행이다. 재현 명령은 [H-15](../Plans/NPC_Harness_Implementation_Plan.md)에 있다.
+- run: `.harness-runs/unity-cli-transport-20260926/`; 결과 `gate-results/farmer-scene-structure.json`, CLI `logs`·`artifacts`, 독립 `independent-tests/test-output.txt`. 요청 hash `F40E1F067ED6B117409C44C83C935D31F3E03D11E0DC663A420360D9C93E0314`, snapshot `5ed15b4cac103df022f07c380d9d2f60238be2818ab392ed99b0507136fcd7f9`.
+- 리뷰 정책 RequiredByRisk. 독립 `/root/cli_transport_review`가 Approve(지적 없음)를 반환했고, `Harness.ReviewEvidence v1`의 `accept-review`가 Pass/exit 0이다. 증거는 같은 run의 `review.json`과 `gate-results/review-evidence.json`. CLI 연결 전환 후보를 수용한다. 수정 예산 2회 중 0회 사용, 실패 candidate gate/리뷰 없음. 초기 sandbox 연결 거부와 SDK target 불일치는 환경 진단으로 기록했다.
+
+# 건축가 시민 — 2026-09-26 코드·이미지 후보 / Unity 적용 보류
+
+- 사용자 승인 계획에 따라 `$orchestrate-unity-work`와 NPC 기능 구현 절차를 적용했다. [상세 계획](../Plans/Builder_Citizen_Implementation_Plan.md), [Builder 주 소유 문서](../Systems/Builder.md)에 범위·책임·후속 TBD를 기록했다.
+- 추가: `BuilderActionSelector`, `WanderAction`, `WanderActionCost`, `builder-hammer.png`, 명시적 Editor 설정 도구 `BuilderCitizenSetup`.
+- 변경: NPCType/ActionType 끝에 Builder/Wander 추가, ActionPool factory, TilemapNavigation의 도달 가능한 난수 위치 조회, NPCComponent의 직업별 도구 및 pool reset, WorkerNPC 초기화, TownHallPopup의 가변 카드/중복 검사, 카드 이름, TestNPCSpawnWindow. 관련 Systems·SPEC·PLAN·ProjectStructure 문서를 갱신했다.
+- 설정 도구는 기존 NPCGirl 공유 prefab, 독립 Builder stat/cost, FarmerTest selector/생성 entry, 시청 100골드/60초 세 번째 모집 카드를 조립하도록 작성했다. **아직 실행하지 않았다. 현재 게임에는 Builder 배선이 적용되지 않았다.**
+- 검증: runtime `dotnet build Assembly-CSharp.csproj --no-restore -v minimal`, Editor 빌드(아직 Unity 프로젝트 파일에 포함되지 않은 Setup 소스를 임시 MSBuild targets로 포함) 모두 0 경고/0 오류. `git diff --check` 통과. 기존 enum 값 유지와 변경 코드의 책임·참조 필드명을 확인했다. 망치 후보를 시각 확인했으며 게임 내 손 위치는 미확인이다.
+- 사용자 지시: “다음에는 Unity CLI로 켜도록 하겠습니다. 지금은 넘어가세요.” 이에 따라 Unity 연결 재시도·설정 메뉴 실행·실제 import/배선 검증·Play는 보류했다. `FarmerScene.Structure v1`, 독립 후보 acceptance, `Harness.ReviewEvidence`도 NOT_RUN이며 통과로 처리하지 않는다.
+- NPC 스킬의 비동기 독립 코드 리뷰를 숨김 창으로 시작했다(PID 40736, `.codex/agent-runs/20260926-020547-841-*`). 최초 실행 정책 및 샌드박스 쓰기 제한 이후 승인된 실행으로 시작되었다. 결과를 기다리거나 열람하지 않았으며 리뷰 통과를 주장하지 않는다. 보고서 작성은 해당 리뷰 프로세스가 소유한다.
+- 수정 예산 2회 중 0회 사용. 실패 gate/후보 리뷰 없음(실행 전 보류). 증거: `.harness-runs/builder-citizen-20260926/scene-work.md`, `compile.log`, `art/`. 다음 작업은 저장된 원본 프로젝트에서 `Tools/NPC/Builder/Setup` 또는 닫힌 Unity의 CLI `-executeMethod BuilderCitizenSetup.Setup` 실행 후 배선·모집·생활 복귀·pool 재사용·기존 직업 회귀 및 최종 gate/리뷰다.
+
 # NPC 말풍선 타이핑 — 2026-09-24 코드 적용 / Play 확인 대기
 
 - NPCMessageHover의 기존 Legacy Text 대사를 기본 글자당 0.025초, unscaled 시간으로 표시한다. Inspector의 Typing / Character Interval로 조절하며 0은 즉시 표시다.

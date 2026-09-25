@@ -3,7 +3,7 @@ using UnityEngine;
 public class TestNPCSpawnWindow : MonoBehaviour
 {
     private const float WindowWidth = 220f;
-    private const float WindowHeight = 130f;
+    private const float WindowHeight = 170f;
 
     [SerializeField] private NPCManager _npcManager;
 
@@ -32,6 +32,11 @@ public class TestNPCSpawnWindow : MonoBehaviour
         if (GUILayout.Button("Create Guard NPC", GUILayout.Height(32f)))
         {
             CreateNPC(NPCType.Guard);
+        }
+
+        if (GUILayout.Button("Create Builder NPC", GUILayout.Height(32f)))
+        {
+            CreateNPC(NPCType.Builder);
         }
 
         GUI.DragWindow();

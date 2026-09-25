@@ -6,6 +6,7 @@ using UnityEngine.Tilemaps;
 public sealed class TilemapNavigation : MonoBehaviour, INavigationService
 {
     private const float GeometryTolerance = 0.001f;
+    private const int WanderCandidateAttempts = 16;
 
     [Serializable]
     private sealed class LocalArea
@@ -25,6 +26,8 @@ public sealed class TilemapNavigation : MonoBehaviour, INavigationService
     private NavigationGrid _grid;
     private readonly AStarPathfinder _pathfinder = new AStarPathfinder();
     private readonly List<int> _nodePath = new List<int>();
+    private readonly List<int> _walkableNodes = new List<int>();
+    private readonly List<Vector3> _wanderPath = new List<Vector3>();
     private BoundsInt _cellBounds;
     private Rect[] _areaRects;
     private Vector3[] _entrances;
@@ -50,6 +53,8 @@ public sealed class TilemapNavigation : MonoBehaviour, INavigationService
         _entrances = null;
         _entranceNodes = null;
         _nodePath.Clear();
+        _walkableNodes.Clear();
+        _wanderPath.Clear();
         _initializationAttempted = false;
     }
 
@@ -103,6 +108,28 @@ public sealed class TilemapNavigation : MonoBehaviour, INavigationService
         AddPoint(output, destination, start.z);
         failure = NavigationFailure.None;
         return true;
+    }
+
+    public bool TryGetRandomReachablePosition(Vector3 start, IRandomSource random, out Vector3 position)
+    {
+        position = default;
+        if (random == null || !IsReady || _walkableNodes.Count == 0)
+            return false;
+        for (int attempt = 0; attempt < WanderCandidateAttempts; ++attempt)
+        {
+            int node = _walkableNodes[random.NextInclusive(0, _walkableNodes.Count - 1)];
+            Vector3 candidate = GetCenter(node);
+            candidate.z = start.z;
+            if ((candidate - start).sqrMagnitude <= GeometryTolerance * GeometryTolerance)
+                continue;
+            if (!TryBuildPath(start, candidate, _wanderPath, out _))
+                continue;
+            position = candidate;
+            _wanderPath.Clear();
+            return true;
+        }
+        _wanderPath.Clear();
+        return false;
     }
 
     private bool EnsureInitialized()
@@ -252,6 +279,10 @@ public sealed class TilemapNavigation : MonoBehaviour, INavigationService
                 }
             }
             _grid = candidate;
+            _walkableNodes.Clear();
+            for (int node = 0; node < _groundCosts.Length; ++node)
+                if (_groundCosts[node] > 0)
+                    _walkableNodes.Add(node);
         }
         catch (ArgumentException exception)
         {

@@ -5,5 +5,6 @@ public enum NPCType
     Farmer,
     Guard,
     Cook,
-    Enemy
+    Enemy,
+    Builder
 }

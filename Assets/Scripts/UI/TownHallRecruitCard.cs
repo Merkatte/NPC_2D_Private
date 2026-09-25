@@ -26,7 +26,13 @@ public sealed class TownHallRecruitCard : MonoBehaviour
             enabled = false;
             return;
         }
-        _nameText.text = _npcType == NPCType.Guard ? "경비병" : "농부";
+        switch (_npcType)
+        {
+            case NPCType.Farmer: _nameText.text = "농부"; break;
+            case NPCType.Guard: _nameText.text = "경비병"; break;
+            case NPCType.Builder: _nameText.text = "건축가"; break;
+            default: _nameText.text = _npcType.ToString(); break;
+        }
     }
 
     private void OnEnable()

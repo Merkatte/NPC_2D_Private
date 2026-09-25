@@ -25,6 +25,7 @@ NPCManager / WorkerPool          생성과 조립
 |---|---|---|
 | 경로 탐색 | [Navigation](Systems/Navigation.md) | 노드 그리드, A*, 지형 비용, 지역 출입구 |
 | NPC 공통 runtime | [NPC Runtime](Systems/NPC_Runtime.md) | queue 소비, 공통 stat, disable/reset |
+| 건축가 시민 | [Builder](Systems/Builder.md) | 배회·생활 queue, 건축가 tuning, 망치·모집 연결 |
 | 판단과 action | [NPC Decision and Actions](Systems/NPC_Decision_and_Actions/README.md) | utility, selector, action lifecycle, 이동, 생활 action |
 | 농사 | [Farming](Systems/Farming/README.md) | 농장 progress, 수확 transaction, 생산 definition, 씨앗 선택·작물 표현, Farming/Harvest action |
 | 전투 | [Combat](Systems/Combat/README.md) | 감지, target, 공격, Guard, Enemy |
