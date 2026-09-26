@@ -1,11 +1,15 @@
 ---
 name: implement-npc-feature
-description: Plan and implement Unity NPC or worker C# features in NPC_Work_2D, then delegate a read-only architecture review to an independent Codex agent and update PROGRESS.md. Use for feature implementation, script creation, worker behavior, IAction, selector, decision policy, destination provider, movement, stats, manager, or Unity wiring requests. Require the active agent's native planning mode, explicit user approval, and a separate implementation phase.
+description: Plan NPC or worker features, delegate implementation to separate code, graphics and assembly workers, await independent code review, and update PROGRESS.md. Use for NPC feature or wiring work. Preserve native planning mode, explicit plan approval and a separate implementation phase.
 ---
 
 # Implement NPC Feature
 
 Follow the phases in order. Do not combine planning and implementation.
+
+This is the canonical NPC implementation workflow. The `.agents` entry delegates
+here. Apply `../orchestrate-unity-work/references/worker-coordination.md` for role
+ownership/context. Root plans, schedules and verifies; role workers implement.
 
 ## 1. Plan
 
@@ -32,39 +36,47 @@ Follow the phases in order. Do not combine planning and implementation.
    - In Codex, require Default collaboration mode. Use the current Codex model unless the user or project instructions require a specific Codex model.
    - If the applicable implementation mode or model requirement is not satisfied, stop and ask the user to switch before editing implementation files.
 3. Re-read any project document changed since planning.
-4. Implement only the approved scope. Preserve the documented architecture and local style.
+4. Delegate approved C# work to `$author-unity-code`, images to `$create-project-sprites`, and Unity wiring to `$assemble-unity-objects` with fresh role contexts and disjoint paths. Parallelize independent preparation; assembly writes follow ready code/art and compilation. Root does not implement role files. Preserve the documented architecture and local style.
 5. Keep utility policy in decision code, role priority and queue composition in selectors, selected behavior lifecycle in actions, execution dependencies in `ActionContext`, facility transactions in providers, movement/presentation in `NPCComponent`, and active queue lifecycle in `WorkerNPC`.
-6. Validate in proportion to the change: compile, run relevant tests, and inspect Unity scene or prefab serialized wiring when applicable.
-7. Treat implementation as complete only after validation results are known.
+6. Validate in proportion to the change: compile, run relevant non-Play-Mode tests, and inspect Unity scene or prefab serialized wiring when applicable. Follow `Tools/NpcHarness/SceneWork.md` automatic verification exclusions: Play Mode/game-screen automation, retries and dedicated verification code require a separate explicit user request. Hand off existing runtime/visual QA items for human checking; report them as unverified without blocking implementation completion solely on their absence.
+7. Require code-worker compile, convention, ownership, dependency and scope evidence. Inspect actual diff and collect common checks or selected gates. This produces a candidate; completion also requires the independent review below.
 
 ## 3. Delegate Review to an Independent Codex Agent
 
-Immediately after implementation validation, launch Codex as a separate background review agent. Do not review on Codex's behalf and do not wait for, poll, or summarize its result.
+After successful current validation, spawn an independent read-only collaboration
+agent with `fork_turns="none"`, using `$reviewing-unity-candidate`. Every C# change
+requires this review. It must not be an implementation worker; wait for an available
+slot if necessary. Do not launch the legacy background CLI reviewer for this workflow.
 
-Read the focused reviewer role, priorities, output format, and tool restrictions in [references/codex-review-agent.md](references/codex-review-agent.md), then run:
+Read [references/codex-review-agent.md](references/codex-review-agent.md). Supply
+original request, approved scope/exclusions, actual diff, relevant rules, current
+compile/scope/reference evidence and selected gates if any. Do not pass the whole
+conversation, author's reasoning or self-assessed compliance as review evidence.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File "<skill-directory>/scripts/start_codex_review_agent.ps1" `
-  -RepoRoot "<project-root>" `
-  -ImplementationSummary "<implemented scope and validation summary>" `
-  -ChangedFiles "<comma-separated changed files>"
-```
+Wait for the result. Confirm conventions, ownership and dependency coverage using
+code/document locations; compile success or reviewer launch alone is insufficient.
+Route blocking fixes to the original role or a fresh same-role worker. Reviewer
+stays read-only; root does not patch implementation files. Rerun affected checks and
+review on a changed candidate within the shared remediation budget. Missing/failed
+review remains incomplete. For a selected pinned workflow, also require accept-review.
 
-The launched Codex process receives its own context, runs with a read-only sandbox, and returns the complete report as its final response. The launcher writes that response to `PublicMD/Status/Code_Evaluation_Result.md`. Continue immediately after a successful launch. If launch fails, record the failure and continue to the progress update.
+Store the actual review under the run evidence path. Do not overwrite the separate
+repository-wide `PublicMD/Status/Code_Evaluation_Result.md` audit for a bounded review.
 
-## 4. Update Progress Immediately
+## 4. Update Progress
 
-Update `PublicMD/Status/PROGRESS.md` immediately after launching the reviewer. Follow the document's existing format and terminology. Record:
+Update `PublicMD/Status/PROGRESS.md` with the actual final or blocked state. Follow its existing format. Record:
 
 - completed task or slice;
 - files changed;
 - implementation decisions;
 - verification performed and its actual result;
 - next actions and blockers;
-- that the Codex review agent was launched, but not an unreceived review outcome.
+- role/agent ownership, independent reviewer identity, actual verdict and unresolved findings.
 
-Do not modify `PublicMD/Status/Code_Evaluation_Result.md`; the Codex review agent owns that file.
+Pending review may be recorded as pending, never as accepted. Preserve the separate repository audit report.
 
 ## 5. Report
 
-Report the implemented scope, validation result, Codex agent launch status, and progress update. Do not claim the asynchronous review passed.
+Report the implemented scope, actual checks, independent review outcome, unresolved
+items and progress update. Complete only when required evidence and review are present.

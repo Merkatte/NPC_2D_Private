@@ -6,6 +6,13 @@
 
 `Tools/NpcHarness`는 명시적인 명령만 실행하고 Unity가 만든 결과 계약과 process exit code를 검증합니다. 이전의 Codex 재호출, 자연어 2분류와 고정 WorkOrder 생성 경로는 제거했습니다.
 
+코드·그래픽·배선은 각각 전담 작업자에게 위임합니다. 루트는 조정·실제 diff와 증거
+확인·검증 실행·공통 기록을 담당합니다. 작업자는 전체 대화를 상속하지 않고 필요한
+역할 명세와 연결 규약만 전달받습니다. 코드·그래픽은 독립된 범위를 병렬 수행하고
+배선은 입력 준비 후 적용합니다. C# 변경은 컴파일·컨벤션·책임·의존 방향·범위 근거와
+독립 리뷰의 실제 결과를 확인해야 완료됩니다. 세부 규칙은
+[Worker Coordination](../../.codex/skills/orchestrate-unity-work/references/worker-coordination.md)을 따릅니다.
+
 ## FarmerTest·GuardTest에서 일반 작업하기
 
 [SceneWork.md](SceneWork.md)에 따라 일반 작업은 원본 프로젝트에서 직접 수행합니다.
@@ -19,15 +26,23 @@ import/load/runtime 검사는 `NOT_VERIFIED`로 기록하며 코드 검증은 �
 기능별 전용 검사기는 필요하지 않습니다. 공통 최소 확인과 변경 기록은 필수이며,
 아래 기존 v1 Job/Scope Gate/기능 profile은 선택한 실행에 그대로 유지됩니다.
 
+자동 Play Mode 실행과 게임 화면 검증(스크린샷 수집·판독)은 기본 절차와 필수 완료
+조건에서 제외합니다. 해당 검증의 재시도·전용 코드 작성도 하지 않습니다. 사용자가
+그 자동 검증을 별도로 명시 요청할 때만 실행하며, 기존 계획의 runtime/시각 QA는
+사람의 확인 항목으로 짧게 전달합니다. 미검증으로 기록하되 그 부재만으로 구현
+완료를 막지 않습니다. 컴파일·정적 검사·씬 참조와 구조 검사는 유지합니다.
+아래 Play Mode 명령은 명시 요청용으로 남아 있으며 기본 검증 권고가 아닙니다.
+
 ## 구조
 
 ```text
 사용자 요청
-  -> 루트 Codex + project Skill: scope, worker, candidate 조정
+  -> 루트 Codex + project Skill: scope, 역할별 worker와 candidate 조정
+  -> 코드/그래픽 worker 병렬 제작 -> assembly worker의 Unity 배선
   -> Tools/NpcHarness: 명시적인 gate 또는 adapter 실행
   -> Assets/Editor/NpcHarness: Unity 구조·PlayMode 검증 또는 제한된 Tool 실행
   -> GateResult: check별 expected/actual과 Pass/Fail/InfrastructureError
-  -> 필요한 경우 독립 read-only Reviewer
+  -> C# 변경 또는 필수 위험 범위의 독립 read-only Reviewer 결과 확인
 ```
 
 `Assets/Editor/NpcHarness`의 Tool은 각각 한 가지 작업만 수행합니다.

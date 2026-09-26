@@ -1,6 +1,6 @@
 ---
 name: reviewing-unity-candidate
-description: Independently review one bounded Unity candidate against its confirmed scope, acceptance criteria, actual diff, and passing deterministic gate evidence. Use after implementation and gating; do not use for repository-wide or NPC/worker architecture audits.
+description: Independently review one bounded Unity candidate against scope, rules, actual diff and current successful common-check or selected-gate evidence. Cover conventions, ownership and dependencies for C# changes. Do not use for repository-wide audits.
 ---
 
 # Reviewing Unity Candidate
@@ -8,6 +8,26 @@ description: Independently review one bounded Unity candidate against its confir
 Act as an independent, read-only reviewer of one candidate change. Judge the candidate from primary evidence, not from the implementer's confidence or conclusion.
 
 ## Required Input
+
+### Ordinary common-check review
+
+When root explicitly selects ordinary work without a GateResult profile, review the
+actual diff after successful common checks from Tools/NpcHarness/SceneWork.md.
+Require original request, scope/exclusions, relevant rules, current changed-file
+hashes/baseline, actual compile logs for C# and scope/reference check evidence.
+Do not fabricate GateResult or require a new validator for this route. Every C#
+change needs conventions, ownership and dependency review with concrete code and
+document locations. Inspect primary evidence; do not consume author conclusions.
+
+Return a compact ordinary record with `reviewerId`, `verdict`, `reviewedFiles`,
+`candidateHashes`, `ruleCoverage` (category/status/evidence), `findings`
+(severity/file/evidence/recommendation) and `remainingRisks`. Verdicts are Approve,
+ChangesRequested or InsufficientEvidence. Missing/stale evidence blocks; Critical
+or Major findings block; Minor findings do not. The root waits for and validates
+this record. Do not write files or fix the candidate. Preserve all boundaries below;
+GateResult-specific requirements below apply only to selected gate workflows.
+
+### Selected gate workflow
 
 Require all of the following:
 
@@ -19,7 +39,7 @@ Require all of the following:
 
 Do not request or accept the implementer's conclusion as review evidence. If a required input is absent, unreadable, internally inconsistent, or stale relative to the diff, return `InsufficientEvidence` without guessing.
 
-Read [references/review-result-contract.md](references/review-result-contract.md) before reviewing or emitting a result.
+For a selected gate workflow, read [references/review-result-contract.md](references/review-result-contract.md) before emitting a result. For ordinary review use the record above and [references/document-review.md](references/document-review.md).
 
 When supplied a pinned review request and snapshot, use the compact v2 record in
 `Tools/NpcHarness/ReviewEvidence.md` and read

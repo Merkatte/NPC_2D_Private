@@ -4,7 +4,7 @@
 
 NPC role 생성 조립, prefab 종류 catalog, `WorkerNPC` GameObject pool의 수명 경계를 설명한다.
 
-2026-09-26 `NPCType.Builder`를 끝에 추가했다(기존 Farmer=0, Guard=1, Cook=2, Enemy=3 유지, Builder=4). Builder selector/stat 생성 entry는 `BuilderCitizenSetup.Setup`이 조립하며 현재 Unity 적용 대기다. TestNPCSpawnWindow의 건축가 버튼도 entry 적용 후 사용할 수 있다. 기존 예약·커밋·반환 transaction은 변경하지 않았다.
+2026-09-26 `NPCType.Builder`를 끝에 추가했다(기존 Farmer=0, Guard=1, Cook=2, Enemy=3 유지, Builder=4). Unity CLI로 `BuilderCitizenSetup.Setup`을 실행해 FarmerTest의 Builder selector/stat 생성 entry를 저장했다. TestNPCSpawnWindow의 건축가 버튼은 이 entry를 사용하며 실제 생성·플레이 확인은 사람의 QA 항목이다. 기존 예약·커밋·반환 transaction은 변경하지 않았다.
 
 ## 세부 기능
 
@@ -80,10 +80,10 @@ Test/UI command
 
 ## Unity 배선과 검증 도구
 
-- `Assets/Prefab/InGame/NPCGirl.prefab`: Farmer·Guard가 공유하는 actor prefab. presentation이 주 소유한다.
+- `Assets/Prefab/InGame/NPCGirl.prefab`: Farmer·Guard·Builder가 공유하는 actor prefab. presentation이 주 소유한다. FarmerTest의 Builder 생성 entry는 BuilderActionSelector와 독립 BuilderStatContext를 참조한다.
 - `Assets/Prefab/InGame/Enemy.prefab`: Enemy용 별도 prefab. combat이 주 소유한다.
 - `Assets/Data/ScriptableObject/NPCPrefabCatalog.asset`: prefab catalog instance.
-- `Assets/TestOnly/TestNPCSpawnWindow.cs`: Farmer·Guard 생성 진입점 검증.
+- `Assets/TestOnly/TestNPCSpawnWindow.cs`: Farmer·Guard·Builder 생성 진입점 수동 확인 도구.
 - `Assets/TestOnly/TestEnemyRainSpawner.cs`: Enemy 연속 생성과 melee/ranged definition 교대 검증.
 
 ## 알려진 제약과 TBD

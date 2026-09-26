@@ -2,7 +2,7 @@
 
 ## 기능 목적과 책임 경계
 
-하나의 TownHallRecruitment가 직군별 후보, 쿨다운, 예약과 낙하 코루틴을 독립적으로 소유한다. Farmer는 60초/100골드, Guard는 90초/100골드이며 두 후보 모두 초기 준비 상태다. 골드 잔액은 [Player Gold](Player_Gold.md), worker 예약 API는 [Spawning and Pooling](Spawning_and_Pooling.md)이 소유한다.
+하나의 TownHallRecruitment가 직군별 후보, 쿨다운, 예약과 낙하 코루틴을 독립적으로 소유한다. Farmer는 60초/100골드, Guard는 90초/100골드, Builder는 60초/100골드이며 세 후보 모두 초기 준비 상태로 구성된다. 골드 잔액은 [Player Gold](Player_Gold.md), worker 예약 API는 [Spawning and Pooling](Spawning_and_Pooling.md)이 소유한다.
 
 TownHallVisual은 클릭 표면과 월드 아이콘만 소유한다. TownHallPopup은 탭 선택과 모집 의도를 전달하고 TownHallRecruitCard는 읽기 전용 상태를 표시한다. UI가 타이머나 골드를 직접 변경하지 않는다.
 
@@ -52,11 +52,11 @@ WorkerReservation의 계약과 소유는 [Spawning and Pooling](Spawning_and_Poo
 
 ## Unity 배선과 검증
 
-2026-09-26 Builder 추가 코드: TownHallPopup은 고정 두 카드 대신 비어 있지 않은 카드 목록을 사용하고 null/중복 직군을 거부한다. TownHallRecruitCard에는 건축가 이름을 추가했다. `BuilderCitizenSetup.Setup`은 세 번째 카드와 초기 준비 상태의 100골드/60초 Builder 설정을 추가한다. 사용자 지시로 Setup을 아직 실행하지 않아 현재 prefab/scene은 아래의 기존 두 직업 구성이다. [Builder 계획](../Plans/Builder_Citizen_Implementation_Plan.md) 참고.
+2026-09-26 Unity CLI로 `BuilderCitizenSetup.Setup`을 실행해 세 번째 카드와 초기 준비 상태의 100골드/60초 Builder 설정을 prefab/scene에 저장했다. TownHallPopup은 비어 있지 않은 카드 목록을 사용하고 null/중복 직군을 거부한다. TownHallRecruitCard에는 건축가 이름이 등록돼 있다. 실제 모집 플레이는 사람의 확인 항목이다. [Builder 계획](../Plans/Builder_Citizen_Implementation_Plan.md) 참고.
 
-FarmerTest의 기존 TownHall 인스턴스는 NPCManager/GoldManager를 prefab override로 참조한다. TownHall.prefab의 단일 Farmer 값을 `_recruitments` 목록의 Farmer 행으로 이관하고 Guard 행을 추가했다. FarmerTest NPCManager에는 Farmer와 Guard 생성 entry가 있고 worker pool을 공유한다.
+FarmerTest의 기존 TownHall 인스턴스는 NPCManager/GoldManager를 prefab override로 참조한다. TownHall.prefab과 scene 인스턴스의 `_recruitments`에는 Farmer·Guard·Builder 행이 있다. FarmerTest NPCManager에도 세 직업의 생성 entry가 있고 worker pool을 공유한다. Builder 추가 시 기존 Farmer·Guard 비용과 쿨다운은 유지했다.
 
-TownHallPopup.prefab은 기존 목재 외곽·제목·닫기 버튼을 유지하며 상인 탭과 양피지 스타일을 재사용한다. 두 카드에는 기존 farmer-hoe와 guard-sword sprite subasset을 지정한다. scene의 `_recruitment`와 UIManager popup 등록은 유지한다. PointerClickRouter와 시청 클릭 collider의 layer 9 mask 연결은 이미 존재하며 레이어 이름 자체는 필수 조건이 아니다.
+TownHallPopup.prefab은 기존 목재 외곽·제목·닫기 버튼을 유지하며 상인 탭과 양피지 스타일을 재사용한다. 세 카드에는 farmer-hoe, guard-sword, builder-hammer sprite subasset을 지정한다. 카드 폭은 330, 중심 x는 -350/0/350으로 설정한다. scene의 `_recruitment`와 UIManager popup 등록은 유지한다. PointerClickRouter와 시청 클릭 collider의 layer 9 mask 연결은 이미 존재하며 레이어 이름 자체는 필수 조건이 아니다.
 
 기존 TestTownHallRecruitProbe를 직군 지정 API로 이관했다. 현재 Farmer가 Recruiting일 때의 거부, 미등록 role 예약 실패, 준비 상태의 골드 부족, 미구성 인스턴스 거부를 확인한다. 만들 수 없는 상태는 SKIP이며 초기 대기 상태를 가정하지 않는다.
 

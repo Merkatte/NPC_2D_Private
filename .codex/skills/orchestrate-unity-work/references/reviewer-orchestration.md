@@ -1,6 +1,9 @@
 # Reviewer Orchestration
 
-Use the policy section during scoping. Use the invocation and verdict sections only after the exact current candidate has a valid deterministic `GateResult` with `Pass` status.
+Use the policy section during scoping. Review after selected gates pass, or after
+successful ordinary common checks when no gate profile was selected. Every C# change,
+including temporary helpers, requires independent conventions/ownership/dependency
+review. Compilation alone is not that review. Non-code work follows the risk policy.
 
 ## Review Policy
 
@@ -14,13 +17,17 @@ Do not downgrade the policy after implementation merely to avoid review. Upgrade
 
 ## Lightweight evidence mode
 
-For new code-candidate reviews use `Tools/NpcHarness/ReviewEvidence.md`. Pin request
+When existing relevant gates support the pinned workflow, use `Tools/NpcHarness/ReviewEvidence.md`. Pin request
 SHA-256 before work; snapshot inputs before gates; use one compact v2 review and the
 `accept-review` evidence gate after it. Historical/unrelated v1 reviews remain valid
 only in their original workflow and are not silently upgraded to the new envelope.
 Choose conventions and ownership categories for C#; include cross-feature architecture
 when applicable. A category not mechanically covered needs the same independent reviewer,
 not another agent. Review only the diff and necessary adjacent dependencies/documents.
+
+Always include dependency direction in code review. Ordinary work with no selected
+GateResult uses the ordinary record in reviewing-unity-candidate; do not invent a
+gate/result or build a bespoke validator merely to use accept-review.
 
 Unrequested responsibility moves, new layers or shared-contract changes require user
 direction before implementation. Updating current-state documentation does not authorize
@@ -35,7 +42,7 @@ the pinned hash; re-establish an authorized candidate and rerun affected steps.
 
 ## Reviewer Identity and Invocation
 
-Create a separate collaboration subagent and direct it to use `$reviewing-unity-candidate`. The reviewer must be read-only and must not be the root author or any agent listed in a `WorkerAssignment` for this candidate. Record its agent identity with the review result.
+Create a separate collaboration subagent with `fork_turns="none"` and direct it to use `$reviewing-unity-candidate`. It must be read-only and not a candidate author/worker. Record its identity. Wait for and inspect the actual result before completion. Wait for a free slot rather than reusing a worker as reviewer. Do not launch a detached CLI review and finish without its result.
 
 The reviewer remains separate throughout the candidate lifecycle. Do not assign it remediation, implementation, gate editing, or worker duties after review. A worker peer opinion is not the independent review.
 
@@ -47,20 +54,24 @@ Give the reviewer only primary evidence:
 2. confirmed scope, exclusions, and every acceptance condition;
 3. relevant project requirement and architecture documents;
 4. the root-inspected actual diff, including relevant untracked files;
-5. the current candidate's passing GateResult and essential raw logs/artifacts;
-6. candidate freshness evidence used to bind the diff to that gate run.
+5. the current candidate's passing selected gates or ordinary common-check results, with compile logs and scope evidence;
+6. candidate freshness evidence binding the diff to the common checks or selected gate run.
 
 Do not include implementation summaries, WorkerReports, claims of completion, the implementer's reasoning, suspected defects, expected findings, recommended verdict, or proposed remediation. These bias an independent review and are not primary evidence.
 
 ## Result Intake
 
-Accept exactly one `ReviewResult` that follows the reviewer Skill contract. At minimum confirm:
+Accept exactly one review record that follows the reviewer Skill contract. Ordinary
+review uses its ordinary record: verify reviewer identity, current candidate hashes,
+reviewed files, required rule coverage, findings and verdict against common checks.
+The GateResult/run-ID fields below apply only to selected gated workflows.
+For those workflows, at minimum confirm:
 
 For compact v2, use the field mapping and deterministic intake in
 `Tools/NpcHarness/ReviewEvidence.md` instead of the legacy v1 field names below.
 
 - `candidateRunId` equals the current GateResult run ID;
-- the recorded gate profile/version/status match and `preserved` is true;
+- selected gate profile/version/status match and `preserved` is true (ordinary review instead checks common evidence);
 - `reviewerRole` is independent and read-only;
 - freshness evidence applies to the unchanged current candidate;
 - acceptance coverage includes every confirmed condition;
@@ -73,23 +84,23 @@ Treat a missing, malformed, stale, contradictory, or ineligible self-review resu
 
 ### Approve
 
-`Approve` satisfies the review step only while the same deterministic `Pass` remains current. Minor non-blocking findings may be reported, but approval cannot replace the gate or turn a non-passing gate into success.
+`Approve` satisfies review only while the unchanged candidate has current successful ordinary common checks or selected deterministic gates. Minor non-blocking findings may be reported; approval cannot replace verification or turn a failed check into success.
 
 ### ChangesRequested
 
-Use only evidenced `Critical` or `Major` blocking findings to scope remediation. The root, never the reviewer, decides the smallest authorized correction under the existing retry budget.
+Use only evidenced blocking findings to scope remediation. Root assigns the smallest authorized correction to the original role worker or a fresh same-role worker. Root and reviewer do not patch implementation files.
 
 After any candidate mutation:
 
-1. expire the prior GateResult and ReviewResult;
+1. expire affected verification and review evidence;
 2. inspect the actual new diff and scope;
-3. rerun the complete deterministic gate;
-4. only after a new `Pass`, invoke an eligible read-only reviewer again with a fresh primary-evidence bundle.
+3. refresh affected ordinary common checks and candidate hashes, or rerun complete selected gate profiles;
+4. only after successful current verification, invoke an eligible read-only reviewer with a fresh primary-evidence bundle.
 
-Do not ask the reviewer to edit the candidate or confirm a fix without a new passing gate.
+Do not ask the reviewer to edit the candidate or confirm a fix without current successful verification under the chosen route.
 
 ### InsufficientEvidence
 
-Completion is forbidden. If the evidence defect can be repaired without changing the candidate and within current authority, supply the corrected primary evidence and rerun review against the still-current gate. If the candidate changes, return to deterministic gating first.
+Completion is forbidden. If the evidence defect can be repaired without changing the candidate and within current authority, supply corrected primary evidence and rerun review against still-current verification. Candidate changes require refreshed common checks or complete selected gate profiles first.
 
 Do not consume candidate remediation budget for evidence-only repair. Stop for the user when obtaining evidence requires new permission, broader scope, or an unavailable external action. Stop rather than loop if the same evidence gap recurs after one correction.

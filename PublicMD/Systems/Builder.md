@@ -3,7 +3,7 @@
 ## 기능 목적과 현재 상태
 
 전용 건축가 시민의 배회와 생활 행동을 소유한다. 실제 건축·수리는 후속 범위다.
-2026-09-26 코드와 망치 이미지 후보를 작성했으며, 사용자 지시에 따라 Unity 조립·Play 검증은 보류했다. 현재 FarmerTest에는 아직 Builder 생성 entry가 없다.
+2026-09-26 Unity CLI에서 `BuilderCitizenSetup.Setup`을 실행해 FarmerTest와 공유 프리팹에 배선을 저장했다. FarmerTest에는 Builder selector와 생성 entry가 있고 시청에는 세 번째 모집 카드가 있다. 자동 Play Mode·화면 검증은 사용자 결정으로 제외하며 실제 플레이와 망치 손 위치는 사람의 확인 항목이다.
 
 ## 책임 경계와 흐름
 
@@ -35,6 +35,6 @@ Selector는 생활 utility를 복제하지 않는다. 시설 transaction은 기�
 
 `Assets/TestOnly/Editor/BuilderCitizenSetup.cs`의 명시적 메뉴 `Tools/NPC/Builder/Setup`이 BuilderStatContext, WanderActionCost 에셋 및 scene selector/random source/creation entry를 만든다. 기존 공유 pool과 NPCGirl, 시청 transaction을 재사용한다. Farmer는 호미, Builder는 `builder-hammer.png`, 미등록 역할은 도구 숨김이다. 세 번째 모집 카드는 100골드/60초다.
 
-위 설명은 Setup의 적용 내용이며 아직 실제 prefab/scene에 저장된 상태를 뜻하지 않는다. Editor helper는 import 시 자동 실행되지 않는다. 새 asset GUID와 sprite slice는 Unity API가 생성한다.
+위 구성은 실제 prefab/scene에 저장돼 있다. BuilderActionSelector는 기존 ActionSelector 묶음 아래에 있고 Farmer와 같은 공통 dependency를 참조한다. 독립 SeededRandomSource의 seed는 260926이다. BuilderStatContext와 WanderActionCost는 별도 에셋이며, 망치는 900 PPU로 import됐다. Editor helper는 import 시 자동 실행되지 않는다. 새 asset GUID와 sprite slice는 Unity API가 생성한다.
 
-검증 대기: import·실제 배선, 모집부터 배회/생활 복귀까지 Play, 망치 손 위치, 반복 pooling, FarmerScene.Structure v1과 독립 후보 acceptance. [승인 계획](../Plans/Builder_Citizen_Implementation_Plan.md)에 수용 조건과 후속 TBD를 기록한다.
+배선 적용 증거는 `.harness-runs/builder-cli-wiring-20260926/`에 보관한다. Unity에서 저장된 참조·세 직업 카드·모집 수치를 읽어 확인하며, FarmerScene.Structure v1과 독립 리뷰의 최종 결과는 PROGRESS에 기록한다. 모집부터 배회/생활 복귀까지의 플레이, 망치 손 위치와 반복 pooling은 미검증인 사람 확인 항목이며 배선 구현 완료를 막지 않는다. [승인 계획](../Plans/Builder_Citizen_Implementation_Plan.md)에 수용 조건과 후속 TBD를 기록한다.

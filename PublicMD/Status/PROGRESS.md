@@ -1,3 +1,29 @@
+# 역할별 에이전트 분리 — 2026-09-27 작업 정책 적용
+
+- 사용자 요청에 따라 코드·그래픽·Unity 배선을 각각 전용 worker에 배정하도록 AGENTS와 관련 스킬을 변경했다. 루트는 범위·계약·일정·실제 diff/검증·공유 문서·최종 보고를 맡고, 작은 수정이나 기존 도구 실행도 구현 역할을 대신하지 않는다. 이번 정책 문서 유지보수는 루트 책임이다.
+- 새 worker/reviewer는 `fork_turns="none"`과 역할별 최소 문맥을 사용한다. 독립적인 코드·그래픽은 병렬 진행하고 배선은 사전 조사 후 코드·이미지 준비와 컴파일을 기다린다. Unity import/save는 순차 실행하며 임시 C# 도구도 코드 worker가 작성한다. 공유 작업 디렉터리를 OS 수준 격리로 간주하지 않고 경로 소유권과 실제 변경을 확인한다.
+- 모든 C# 변경은 컴파일·컨벤션·소유권·의존 방향·변경 범위 근거와 별도 읽기 전용 리뷰 결과를 요구한다. 실패 수정은 동일 역할에 돌려주며 리뷰 실행만으로 완료하지 않는다. 일반 공통 검사 경로에는 별도 게이트를 신설하지 않고, 선택한 기존 게이트 경로의 계약은 유지한다.
+- `.agents` NPC 구현 스킬을 `.codex/skills/implement-request-feature`의 얇은 진입점으로 통합했다. 자동 Play Mode·게임 화면 검증 제외는 유지했다. 게임 코드·에셋 변경은 이번 작업 범위가 아니다.
+- 스킬 7개 형식 검사·링크 16개·diff 검사와 독립 검토자의 6개 상황별 정책 적용 검토를 수행했다. 일반 경로의 게이트 강제 문구와 루트의 배선 적용 문구를 교정한 뒤 독립 재확인에서 두 지적 해소를 확인했다. 작업 시작 해시 대비 추적 중인 Assets 변경 없음. 증거: `.harness-runs/role-separation-20260926/validation.json`, `policy-review.md`. 실제 병렬 구현의 시간 절감은 이번 정책 검토에서 측정하지 않았다.
+
+# 공병(Builder) Unity CLI 배선 — 2026-09-26 적용·구조 확인 완료
+
+- 사용자 재개 요청에 따라 공식 Unity CLI의 `eval_file`로 기존 `BuilderCitizenSetup.Setup()`을 실행했다. 열린 FarmerTest의 idle Edit Mode·미저장 변경 없음·프로젝트 일치를 먼저 확인했고 설정 실행은 한 번 성공했다. UI 이름은 기존 승인 설정의 `건축가`다.
+- 적용: FarmerTest의 BuilderActionSelector·seed 260926·NPCManager 생성 entry, 독립 BuilderStatContext/WanderActionCost, NPCGirl의 Farmer 호미/Builder 망치 매핑, TownHall 및 TownHallPopup의 세 번째 모집 설정/카드(100골드·60초). 기존 Farmer·Guard 설정과 에셋 GUID를 보존했다. 관련 Systems·상세 계획·PLAN을 현재 배선 상태로 갱신했다.
+- Unity CLI `recompile`은 up_to_date·오류/경고 0. Unity 참조 readback에서 생성·모집·UI 참조 누락 없음, scene/prefab 카드 직업 0/1/4와 clean scene을 확인했다. 실제 runtime/Editor C# 변경은 없다. runner는 기존 .NET10 target을 유지하고 설치된 SDK9의 명시적 net9 호환 빌드로 실행했다(오류/경고 0).
+- **FarmerScene.Structure v1: 33/33 Pass**, 실제 unity-cli transport/exit 0. 독립 `/root/builder_wiring_review` 최종 Approve·finding 없음, **Harness.ReviewEvidence v1 accept-review: Pass/exit 0**. `git diff --check` 통과. 구현 배선 범위의 수용이며 전체 gameplay 검증 완료를 의미하지 않는다.
+- 원본/적용/읽기 증거: `.harness-runs/builder-cli-wiring-20260926/`. 최종 문서 정정 후 gate/review 증거: `.harness-runs/builder-cli-wiring-20260926-r1/`. 최종 요청 hash `4127bf59b68d6c62e7739a10f3abfa66f16e941d6ea6370ad476e37ee6e1527e`, snapshot `094f1f1ece047ca1ce1cf137d37cb80102424415c135d8e854d1207493df81f4`.
+- Unity 저장으로 기존 YAML block 순서·빈 문자열과 NPCMessageHover의 기존 initializer 기본값이 직렬화됐다. 객체 삭제는 없으며 생성된 trailing whitespace만 정리했다. 범위 밖 변경 없음, 이전 검증 정책 변경을 보존했다.
+- 초기 sandbox 연결 탐색 실패는 사용자 권한 CLI로 해결했다. 읽기 보고서의 Vector2 직렬화 오류와 runner 옵션 오기는 진단 단계에서 교정했고 설정 도구는 재실행하지 않았다. 리뷰의 경미한 문서 상태 불일치 1건을 고친 뒤 새 snapshot·전체 구조 gate·독립 리뷰로 확인했다. 수정 예산 2회 중 문서 정정 1회 사용, 배선 수정 0회.
+- 자동 Play Mode·게임 화면 검증은 실행하지 않았다. 실제 모집·배회·생활 복귀·반복 pooling·망치 손 위치는 사람의 확인 항목이며 미검증이다. 실제 건축·수리는 후속 범위다.
+
+# 자동 플레이·화면 검증 — 2026-09-26 기본 절차에서 제외
+
+- 사용자 요청에 따라 자동 Play Mode 실행·게임 화면 수집/판독과 해당 재시도·전용 검증 코드 작성을 기본 절차 및 필수 완료 조건에서 제외했다. 별도 명시 요청 시에만 실행한다.
+- AGENTS, SceneWork, 하네스 README/아키텍처와 Codex 구현·조립·오케스트레이션 지침에 반영했다. 기존 계획/스킬의 runtime·시각 QA는 사람의 확인 항목으로 인계하며, 그 미실행만으로 구현 완료를 막지 않는다. 통과로 간주하지도 않는다.
+- 컴파일·정적 검사·씬 참조와 구조 검사·책임/의존 방향 검증은 유지한다. 기존 Play Mode 검사 코드·명령·과거 결과는 삭제하거나 변경하지 않았다.
+- 검증 범위는 문서·스킬 정책 정합성과 diff 확인이다. Unity 실행이나 게임 동작 검증은 이번 정책 변경의 대상이 아니다.
+
 # 검증기 Unity CLI 연결 — 2026-09-26 구현·실기·독립 리뷰 수용
 
 - 사용자 범위 선택은 “CLI 실행·연결부터 전환”. `$orchestrate-unity-work`로 진행하며 기존 검증 항목·profile/version·schema는 유지했다. 기존 Builder와 사용자 Pipeline 패키지 변경은 보존했다.

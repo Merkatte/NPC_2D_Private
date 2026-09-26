@@ -9,6 +9,11 @@ Produce a scoped Unity asset candidate, not final acceptance. Ordinary work perm
 small `.unity`/`.prefab` YAML edits under SceneWork.md; this does not authorize direct
 `.asset` or importer `.meta` editing or bypass a selected legacy Job contract.
 
+Follow `../orchestrate-unity-work/references/worker-coordination.md` as the assigned
+assembly worker. Do not author/modify C# or raster images, including temporary
+helper/eval logic. Request needed code from the code role and execute the supplied
+helper only within your asset scope.
+
 ## Choose the Execution Route First
 
 **Ordinary scene work (default):** read
@@ -17,8 +22,8 @@ bounded YAML route or Unity Editor tools for the exact assigned scene/prefab pat
 are supported work targets, not a blanket grant to edit every scene. This route is
 not a Harness Job and must not be passed to the legacy v1 `verify-scope` contract.
 Follow the editor-workflow reference and return its concise report; the legacy
-sections below do not apply. The root may execute this role directly without
-spawning a worker.
+sections below do not apply. The root delegates this role to a separate worker,
+including existing authoring-tool execution, unless the user explicitly requests an exception.
 
 Ordinary work edits the original project directly; do not create a scene/project
 copy by default. Reserve the existing isolated workflow for large/high-impact work

@@ -7,6 +7,12 @@ The domain audit categories in `../../reviewing-npc-work-code/references/review-
 are a checklist reference, not an instruction to run another review or overwrite its
 project-wide report.
 
+Every C# candidate, including temporary helpers, must cover conventions, ownership
+and dependency direction. In ordinary review use the same categories with current
+common-check evidence and candidate hashes; a pinned request is not mandatory unless
+that workflow was selected. Check the actual diff and source, not a worker's claimed
+compliance. One independent reviewer covers these categories; do not spawn one per rule.
+
 - Conventions: changed declarations, local-style precedence, serialization and naming.
 - Ownership: changed classes remain within documented responsibilities and owning leaves.
 - Dependencies: actual new references/calls, not just folder placement; flag unapproved

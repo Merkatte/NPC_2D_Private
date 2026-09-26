@@ -4,6 +4,38 @@ Use this route for scoped work in `Assets/Scenes/FarmerTest.unity`,
 `Assets/Scenes/GuardTest.unity`, other explicitly assigned scenes and related prefabs.
 Do not create a new Harness Job tool or gameplay validator for every request.
 
+## Role ownership
+
+Follow `.codex/skills/orchestrate-unity-work/references/worker-coordination.md`.
+Root delegates code, graphics and assembly to separate workers with fresh contexts
+(`fork_turns="none"`), exclusive paths and a shared handoff contract. Root owns
+coordination, actual diff/evidence checks, verification commands and workflow/status
+documents; it does not implement role files. Small changes and existing authoring
+tools still belong to the relevant worker. Only explicit user direction can change
+that boundary. Fixes return to the original role, never the reviewer.
+
+Run independent code/art work in parallel. Assembly can inspect/prepare concurrently;
+asset mutations wait for stable inputs and compilation. New C# helper/eval logic is
+written by code, then run by assembly. Coordinate imports/compilation/saves on the
+same Editor sequentially; use staging when live auto-import prevents safe overlap.
+"Direct work" below describes the original project rather than an isolated copy,
+not which agent edits it.
+
+## Automatic verification exclusions — 2026-09-26
+
+Automatic Play Mode execution and game-screen verification (screenshot capture and
+analysis) are excluded from the default workflow and mandatory completion checks.
+Do not retry these checks or write dedicated verification code for them. Run them
+only when the user separately and explicitly requests that automation, within the
+requested scope. A generic runtime/visual QA item in an existing plan or skill does
+not constitute that request; hand it off for human checking instead.
+
+Keep compilation, static checks, scene references/structure and responsibility/
+dependency checks. Report human play/screen checks briefly as unverified without
+blocking implementation completion solely on their absence. Never report them as
+Pass. Existing Play Mode commands remain available for explicit use; this policy
+does not delete their implementations or change GateResult schemas.
+
 ## Scope before work
 
 Record one compact `.harness-runs/<runId>/scene-work.json` (or equivalent Markdown):
@@ -151,14 +183,15 @@ The root verifies actual evidence, not only a worker's success claim:
 - edited assets: intended saved values/references read back and GUIDs preserved. For
   YAML edits, inspect changed blocks and resolve changed references on disk; report
   Unity load/Missing Script checks separately, `NOT_VERIFIED` if not executed;
-- conventions/pattern: relevant code conventions, reference art family or existing
-  hierarchy/wiring comparison, limited to the changed slice;
+- conventions/pattern: code workers provide code/document evidence for conventions,
+  ownership and dependency direction in addition to compile/scope evidence. Art and
+  assembly compare the reference family or hierarchy/wiring for the changed slice;
 - concise record: what changed, which reference/rule was used, deviations, checks
   actually run and unverified behavior. Store long tool output/logs on disk.
 
 Code compilation, code conventions and responsibility/dependency checks are unchanged.
 For a YAML-only edit, scope/diff, serialized readback, changed-reference inspection and
-the concise record are the completion minimum; unavailable Unity import/load/Play Mode
+the concise record are the completion minimum; unavailable Unity import/load
 checks do not block that disk-edit scope alone. If the agreed task or selected workflow
 requires those Unity checks, they remain mandatory and missing evidence blocks completion.
 Shell/diff checks and
@@ -170,10 +203,16 @@ It is **not** a sandbox or Git hook, and cannot contain malicious Editor scripts
 A missing required check means Blocked/incomplete. A Pass only proves the checks
 actually run, never all gameplay behavior. No custom functional profile is required
 by default; select existing tests or an extended check when the request calls for it.
-Keep specialized NPC planning/approval and runtime verification requirements intact.
-Root confirms ordinary changes; commission independent review only when the user,
-specialized skill or material structural/serialization risk requires it. Existing
-review-evidence commands remain available when that workflow is selected.
+Keep specialized NPC planning/approval requirements intact. Apply the automatic
+verification exclusions above to runtime and game-screen QA in those workflows.
+Root confirms ordinary changes after actual evidence inspection. Every C# change,
+including temporary helpers, requires an independent read-only reviewer and its
+received result for conventions, ownership and dependency direction. Non-code work
+requires review when the user, skill or structural/serialization risk calls for it.
+Wait for actual review; launch-only/author self-review is not completion. Ordinary
+review uses current common checks and candidate hashes. Existing review-evidence
+commands apply only when that gate workflow was selected; no new validator is needed
+merely to record review. Play/screen exclusions above remain in force.
 
 ## Optional connection setup
 

@@ -2,6 +2,12 @@
 
 Use this reference after a deterministic gate did not return `Pass`, or after a required independent review returned `ChangesRequested`.
 
+The GateResult fields and complete-profile reruns below apply to selected gated
+workflows. Ordinary work retains the same budget, same-role correction and repeat-cause
+rules, but records failed common checks/findings instead of gate IDs. Bind review to
+candidate hashes; after a correction refresh affected common checks and hashes, then
+obtain fresh independent review. Do not create a gate to remediate ordinary work.
+
 ## Retry Record
 
 Keep a compact run record containing:
@@ -13,7 +19,7 @@ Keep a compact run record containing:
 - the correction made, changed paths, and resulting failure signature;
 - the final disposition: passed, exhausted, repeated cause, infrastructure blocked, or user authority required.
 
-One remediation attempt means one corrective mutation of the candidate, whether prompted by a failed gate or blocking review finding and whether performed by the root or one worker. Preliminary investigation, an evidence-only repair, and a gate or review rerun without candidate mutation do not consume a candidate remediation attempt. Never reset or silently increase the shared budget because a new candidate was produced.
+One remediation attempt means one corrective candidate mutation prompted by a failed check or review finding. Code/art/wiring corrections belong to the original role worker or a fresh same-role worker, never root or reviewer. Workflow/status documents and evidence remain root duties. Preliminary investigation, evidence-only repair and verification without candidate mutation do not consume an attempt. Never reset or silently increase the shared budget.
 
 ## Candidate Fail
 

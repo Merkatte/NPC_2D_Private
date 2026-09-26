@@ -7,6 +7,12 @@ description: Create or edit bounded raster sprite candidates for NPC_Work_2D usi
 
 Act as a candidate-producing graphics worker, not as the root orchestrator or final art reviewer. Produce the requested raster artifact and evidence without wiring it into a Unity scene.
 
+Follow `../orchestrate-unity-work/references/worker-coordination.md` for fresh role
+context, exclusive paths and handoff. Report needed code or Unity edits to root;
+an assignment does not authorize taking over those roles. Source-image inspection
+and art checks stay in scope; game-screen verification remains excluded under
+SceneWork.md unless separately requested by the user.
+
 ## Required Assignment
 
 For ordinary project work, follow `Tools/NpcHarness/SceneWork.md`: require a bounded
@@ -60,7 +66,7 @@ Explicit assignment constraints take precedence over reference dimensions and im
 - Generate the smallest useful number of variants. Promote only the selected candidate into the assigned output path. Leave provider-generated or run-artifact variants untouched unless their cleanup is explicitly authorized.
 - Preserve transparent background requirements and keep unrelated surrounding pixels, text, shadows, or presentation mockups out of production sprites unless requested.
 - Write only assigned raster output and explicitly assigned source or manifest files. Do not modify C#, scenes, prefabs, materials, animation controllers, ScriptableObjects, ProjectSettings, or accepting gates.
-- Do not hand-edit Unity `.meta` YAML. Return an `importSpec`; Unity import and scene wiring belong to a later root-owned or object-assembly step.
+- Do not hand-edit Unity `.meta` YAML. Return an `importSpec`; Unity import and scene wiring belong to the assembly worker, scheduled by root.
 - If placing a raster directly under `Assets` is not explicitly authorized, keep it in the assigned staging or run-artifact path.
 
 ## Verify Observable Properties

@@ -7,6 +7,11 @@ description: Implement a bounded Unity C# candidate according to NPC_Work_2D doc
 
 Act as a candidate-producing code worker, not as the root orchestrator. Implement only the assigned code slice and return evidence for root inspection. Never mark the overall run accepted.
 
+Follow `../orchestrate-unity-work/references/worker-coordination.md` for fresh role
+context and handoff. Code ownership includes assigned Editor/assembly/eval helpers
+outside Assets; executing them to change Unity assets belongs to assembly. Ordinary
+assignments may include helper C# paths without widening legacy v1 policies.
+
 ## Required Assignment
 
 For ordinary project work, follow `Tools/NpcHarness/SceneWork.md`: require a bounded
@@ -69,26 +74,35 @@ Do not read or modify `CLAUDE.md` or `.claude`. Treat actual code and serialized
 - Place new code according to `PublicMD/ProjectStructure.md`; do not introduce future architecture that the project does not have.
 - Preserve serialized enum values, field migration, and existing `.meta` GUIDs.
 - For a new C# asset, prefer Unity import to create its `.meta`. When the assignment requires creating the companion `.meta` without an importer, generate a unique GUID, verify that it does not occur elsewhere in the repository, and never replace the GUID of an existing asset.
-- Do not edit scenes, prefabs, materials, textures, animation assets, ProjectSettings, accepting gate code, or gate fixtures unless the assignment explicitly makes one of those files the code worker's sole owned path.
-- Keep scene/prefab wiring in a separately scoped root/assembly slice. That ordinary
+- Do not edit scenes, prefabs, materials, textures, animation assets, ProjectSettings, accepting gate code or fixtures. An assignment cannot override the role boundary; report cross-role needs to the root. Only a separate explicit user exception may change that boundary.
+- Keep scene/prefab wiring in a separately scoped assembly-worker slice. That ordinary
   slice may use bounded YAML edits under SceneWork.md without an Editor connection;
   this does not expand this code worker's ownership or legacy v1 permissions.
 - When a required non-code change is outside the assignment, report it as unresolved instead of performing it.
 
 ## Preliminary Verification
 
-Run the narrowest meaningful combination authorized by the assignment:
+Provide all five evidence categories for each code change, scoped to the diff:
 
-- compile the affected assembly or perform the repository's equivalent compile check;
-- run focused tests for changed behavior;
-- search for forbidden references or stale serialized names when relevant;
-- inspect actual changed paths and run `git diff --check`.
+- compilation: affected assembly/equivalent command, actual outcome and log;
+- conventions: applicable CodeConvention sections and changed code locations;
+- ownership: changed classes/responsibilities and their owning Systems leaves;
+- dependencies: changed references/calls, allowed direction and relevant forbidden-reference or stale-serialized-name searches;
+- scope: actual paths versus assignment/baseline, preserved prior edits and `git diff --check`.
+
+Use one short evidence row per category in `checksRun`/`evidence`. Reading a document
+or passing compilation alone does not prove structural compliance. Run additional
+focused non-Play-Mode tests only when meaningful; avoid implementation-mirroring
+tests. Follow SceneWork.md's automatic play/screen exclusions. Coordinate imports/
+compilation with the root. A helper compile check is code work; executing its asset
+mutations is assembly work. The root checks actual evidence and obtains an independent
+review; the author cannot review its own candidate.
 
 Normal compiler output under `Library`, `Temp`, or an assignment-authorized temporary directory is verification output, not a candidate change. Persisted logs and reports must stay within `artifactPaths`. Do not add generated build output to Git or treat it as permission to alter unrelated source files.
 
 Compilation does not prove scene wiring or runtime behavior. Record `NOT_VERIFIED` for checks that require Unity Editor, Play Mode, external authority, or another worker.
 
-After preliminary verification, return the candidate and evidence to the root. Do not run the trust-boundary Scope Gate yourself. The root must run:
+After preliminary verification, return the candidate and evidence to the root. Do not run the trust-boundary Scope Gate yourself. For selected legacy v1 only, the root must run:
 
 `./run-harness.sh verify-scope --policy Tools/NpcHarness/SkillPolicies/author-unity-code.json --assignment <assignment-path> --assignment-sha256 <pre-delegation-hash> --run-id <runId>`
 

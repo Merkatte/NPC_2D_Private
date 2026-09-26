@@ -1,7 +1,7 @@
 # 건축가 시민 1차 구현 계획
 
 승인: 사용자의 `Implement the plan.` 지시. 구현 방식은 `$orchestrate-unity-work`이며 NPC 기능의 계획·승인·구현 단계를 분리한다.
-현재 상태: 코드·망치 이미지 후보 작성, Unity 적용 및 검증 보류(2026-09-26 사용자 지시).
+현재 상태: 코드·망치 이미지에 이어 Unity CLI로 실제 배선 적용(2026-09-26 사용자 재개 요청). 자동 플레이·화면 검증은 제외하고 구조·참조 검사 및 독립 리뷰 결과를 PROGRESS에 기록한다.
 
 ## Approved scope and acceptance
 
@@ -29,15 +29,20 @@ Unity에서 저장을 마친 Edit Mode에 `Tools > NPC > Builder > Setup`을 실
 
 Unity를 닫은 상태에서는 원본 프로젝트에 CLI `-batchmode -quit -projectPath <project> -executeMethod BuilderCitizenSetup.Setup -logFile <log>`을 사용할 수 있다. 열린 프로젝트에 두 번째 Editor를 띄우지 않는다.
 
+2026-09-26 실제 적용은 열린 FarmerTest의 idle/clean 상태를 확인한 뒤 공식 Unity CLI의 `command --project-path <project> eval_file <script> ... --json`으로 `BuilderCitizenSetup.Setup()`을 호출했다. 씬과 NPCGirl·TownHall·TownHallPopup, 망치 importer 및 두 SO 에셋에 저장했다. `.harness-runs/builder-cli-wiring-20260926/`에 원본 백업과 적용·참조 확인 증거를 보관한다.
+
 필수 확인:
 
 - 런타임·Editor 컴파일 및 Unity import 오류, 실제 serialized 참조와 누락 스크립트.
+- 기존 FarmerScene.Structure v1, 독립 후보 리뷰와 Harness.ReviewEvidence 검증. 후보 수정 예산 2회.
+
+사람의 확인 항목(자동 실행·스크린샷 검증 제외, 미실행만으로 구현 완료를 막지 않음):
+
 - 세 직업 모집·골드 부족·연타·독립 쿨다운·낙하·기립.
 - 건축가의 물/건물 우회, 휴식, 생활시설 방문과 배회 복귀.
 - 망치 손잡이 위치·크기·좌우 이동, Farmer/Builder/Guard 반복 pool 재사용.
-- 기존 FarmerScene.Structure v1, 독립 후보 리뷰와 Harness.ReviewEvidence 검증. 후보 수정 예산 2회.
 
-현재 컴파일 통과만으로 위 Play 항목을 통과 처리하지 않는다. 2026-09-26 사용자가 Unity 연결·실행 단계를 이번 작업에서 건너뛰도록 요청했다. 따라서 Setup 실행·실제 에셋 배선·Play·최종 gate/후보 acceptance는 다음 작업으로 남긴다.
+컴파일·구조 검사 통과만으로 위 플레이 항목을 통과 처리하지 않는다. 이전 Unity 적용 보류는 사용자의 CLI 배선 적용 요청으로 해제됐으며, 플레이·화면 확인은 미검증으로 남긴다.
 
 ## 제외 범위와 후속 건축 시스템
 

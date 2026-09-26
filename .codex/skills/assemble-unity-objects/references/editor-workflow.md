@@ -1,6 +1,10 @@
 # Practical Unity scene/prefab work
 
 Read `Tools/NpcHarness/SceneWork.md` for the shared scope and evidence contract.
+Apply `../../orchestrate-unity-work/references/worker-coordination.md`: work only
+as the assembly worker with fresh role context and exclusive asset paths. Root
+coordinates; code helpers come from the code worker. "Direct" below means editing
+the original project instead of a copy, not root implementation.
 This route uses bounded YAML edits or Unity APIs, not the TestOnly Harness Job allowlist. Default to direct
 work in the original project. Use SceneWork.md's isolated shell workflow only for
 large/high-impact work; briefly state the reason first. MCP is optional and was not
@@ -36,10 +40,11 @@ is closed, a scoped `-executeMethod` may operate directly on that project. If op
 require a working in-Editor entrypoint, not a second batch Editor. Missing connectivity
 is a blocker to explain, not a reason to silently clone the project.
 
-Only when isolation was selected, prepare the scoped workspace, put the authorized static
+Only when isolation was selected, prepare the scoped workspace, put the code worker's authorized static
 Editor method under `Assets/Editor/SceneWork` in that copy, run it with SceneWorkspace,
 and inspect the method result plus saved assets. Keep manifest/receipt hashes outside
-worker-controlled evidence. Root alone applies the candidate after common checks.
+worker-controlled evidence. Root confirms common checks and schedules promotion;
+the assembly worker executes SceneWorkspace Apply and reports saved-asset readback.
 The method uses normal Unity APIs; do not add a new permanent Tool/profile for its
 feature. It must write the current success/failure result passed via
 `-sceneWorkResultPath`; process exit alone is insufficient.
@@ -60,9 +65,10 @@ Save All / global SaveAssets where unrelated dirty assets could be persisted.
 One Unity mutation owner at a time. No automatic scene/prefab deletion or broad
 rebuild: only remove objects/assets when the task authorizes that removal.
 
-For shell work or an edit tools cannot express, a small temporary Editor script using Unity APIs
-is permitted **when the root includes its path, entrypoint and target assets in the
-assignment**. It is implementation code, not a new mandatory feature validator.
+For an edit existing tools cannot express, request a temporary Editor script from
+the code worker. Root assigns its C# path to code and its execution entrypoint/target
+assets to assembly. Do not write or repair C# (including eval snippets) yourself.
+The helper is implementation code, not a new mandatory feature validator.
 Use an existing execution route (`-executeMethod` on a closed/isolated project, or
 a connected tool/menu entrypoint). Do not launch a second Editor on the open project.
 Do not use arbitrary script execution to bypass scope, approvals or dirty-state checks.
@@ -86,11 +92,12 @@ overrides or broad reconstruction just to finish.
    deterministic proof of architecture or visual similarity.
 
 Use relevant existing tests/profiles when they cover the changed area. Do not create
-a new gameplay gate per request. Play Mode is required when the agreed task/project
-workflow requires runtime verification, not merely because an object was edited.
+a new gameplay gate per request. Apply SceneWork.md's automatic verification exclusions:
+Play Mode and game-screen automation require a separate explicit user request.
+Existing task/project runtime or visual QA items are human checks by default.
 For YAML-only disk-edit scope, unavailable Unity import/load/runtime checks alone
-do not block completion. They still block if the agreed task or selected workflow
-requires them. No missing check may be represented as Pass.
+do not block completion. Explicitly required import/load checks still block when
+missing; human play/screen QA alone does not. No missing check may be represented as Pass.
 
 Return `Candidate | Blocked | Failed`, changed paths, tool/result evidence, the four
 checks above, deviations and unverified items. The root checks the actual diff and

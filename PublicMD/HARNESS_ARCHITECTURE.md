@@ -43,15 +43,21 @@ YAML 변경 후 diff·저장 값·변경 참조를 확인하고 Unity import/loa
 
 이 변경은 검증 기준을 생성하거나 eval 결과를 AI가 해석해서 Pass를 부여하는 기능이 아니다. 기존 validator의 독립 회귀 확인과 연결부 검증·리뷰를 구분한다. 실제 증거는 `Status/PROGRESS.md`에 기록한다.
 
+### 2026-09-26 자동 플레이·화면 검증 제외
+
+사용자 결정에 따라 자동 Play Mode 실행과 게임 화면 검증(스크린샷 수집·판독)을 기본 절차와 필수 완료 조건에서 제외한다. 이를 위한 재시도와 전용 검증 코드 작성도 수행하지 않는다. 사용자가 해당 자동 검증을 별도로 명시 요청한 경우에만 범위를 정해 실행한다. 기존 계획·스킬의 일반적인 runtime/시각 QA 항목은 사람에게 인계하며 자동 실행 의무로 해석하지 않는다.
+
+컴파일·정적 검사·씬 참조와 구조 검사·책임 및 의존 방향 검증은 유지한다. 사람의 플레이·화면 확인은 짧게 인계하고 미검증으로 기록하되 그 부재만으로 구현 완료를 막지 않는다. 기존 Play Mode 검사 코드·명령과 과거 증거는 유지하며, 아래 Play Mode Gate 설명은 명시 요청 시 사용할 수 있는 기능 설명이다. 공통 완료 계약은 [SceneWork](../Tools/NpcHarness/SceneWork.md)를 따른다.
+
 ```text
 사용자 요청
   -> 프로젝트 Skill
     -> 루트 Codex (오케스트레이터)
-      -> 직접 작업 또는 선택적 작업 에이전트
+      -> 역할별 별도 작업 에이전트 (독립 코드·그래픽은 병렬)
         -> 후보 결과물
           -> 결정적 하네스
             -> GateResult: PASS | FAIL
-              -> 독립 리뷰가 필요하면 읽기 전용 Reviewer
+              -> C# 변경 또는 필수 위험 범위는 읽기 전용 Reviewer 결과 확인
                 -> 루트 Codex의 최종 완료 판정
 ```
 
@@ -94,15 +100,17 @@ YAML 변경 후 diff·저장 값·변경 참조를 확인하고 Unity import/loa
 
 프로젝트 Skill로 호출된 루트 Codex가 현재 대화의 사용자 의도와 권한을 보존한다. 외부 .NET 프로그램, Unity Editor 창이나 Batch 진입점은 오케스트레이터라는 이름을 사용하지 않는다. 이들은 결정적 실행기 또는 검증기다.
 
-### HA-002: 에이전트 수는 작업에 따라 최소화한다
+### HA-002: 역할별 위임과 컨텍스트 분리
 
-루트 Codex는 다음 순서로 가장 작은 실행 방식을 선택한다.
+사용자 승인 정책(2026-09-27)에 따라 코드·그래픽·Unity 배선은 각 전담 작업자에게 위임한다. 작은 변경이나 기존 설정 도구 실행도 해당 역할이 담당한다.
 
-1. 결정적 도구만으로 끝낼 수 있으면 도구를 사용한다.
-2. 한 작업자가 안전하고 충분하면 직접 수행하거나 작업자 한 명을 사용한다.
-3. 독립 조사, 분리된 파일 소유권 또는 전문 검토가 실제 이익을 줄 때만 복수 에이전트를 사용한다.
+1. 루트는 범위·파일 소유권·연결 규약을 정하고 조정·검증·최종 취합을 맡는다. 공통 문서·스킬 정책·상태와 증거는 관리하되 코드·이미지·배선 구현을 대신하지 않는다. 사용자 명시 예외만 이 경계를 변경한다.
+2. 작업자와 Reviewer는 `fork_turns="none"`으로 시작하고 필요한 명세·문서·승인·연결 규약만 받는다. 전체 대화나 다른 작업자의 추론을 전달하지 않는다. 다른 역할로 재사용하지 않는다.
+3. 필요한 역할만 생성한다. 독립된 코드·그래픽은 병렬화하고 배선 담당은 조사·준비를 병행한다. 실제 적용은 참조 코드·이미지와 컴파일 준비 후 수행한다. 같은 Editor의 import·컴파일·저장은 순차 진행한다.
+4. 코드 담당은 C# helper/eval까지 작성하고 배선 담당은 준비된 도구를 실행한다. 담당 밖 변경·수정은 루트가 해당 역할에 다시 할당하며 Reviewer는 수정하지 않는다.
+5. C# 변경은 컴파일·컨벤션·책임 배치·의존 방향·실제 변경 범위 근거와 독립 리뷰 결과를 확인한다. 리뷰 시작이나 자기 보고만으로 완료하지 않는다.
 
-복수 에이전트 사용 자체는 성공 조건이 아니다. 공식 OpenAI 문서도 멀티에이전트 하네스에서 위임 시기와 정도를 명시적으로 조정하도록 안내한다.
+일반 작업의 짧은 기록과 기존 검증 도구를 사용하며 역할 분리를 위해 전용 validator를 매번 만들지 않는다. 공유 worktree는 강제 파일 격리가 아니므로 실제 diff·기준 해시를 확인한다. 공통 실행 규칙은 [Worker Coordination](../.codex/skills/orchestrate-unity-work/references/worker-coordination.md), 완료 계약은 [SceneWork](../Tools/NpcHarness/SceneWork.md)를 따른다. 자동 플레이·화면 검증 제외는 유지한다.
 
 ### HA-003: 작업자의 완료 보고는 후보 제출이다
 
@@ -117,7 +125,7 @@ YAML 변경 후 diff·저장 값·변경 참조를 확인하고 Unity import/loa
 
 ### HA-005: Reviewer는 확률적 품질 검사다
 
-Reviewer도 AI이므로 결정적 게이트가 아니다. Reviewer는 `PASS`가 나온 후보만 읽기 전용으로 검토하며, 파일·근거·심각도를 포함한 finding을 반환한다. 미해결 blocking finding이 있으면 루트 Codex는 수정 후 결정적 게이트를 다시 실행한다.
+Reviewer도 AI이므로 결정적 게이트가 아니다. Reviewer는 일반 공통 검사 또는 선택한 게이트가 통과한 후보를 읽기 전용으로 검토하며, 파일·근거·심각도를 포함한 finding을 반환한다. 미해결 blocking finding은 해당 역할 worker가 수정한다. 루트 Codex는 일반 경로의 영향받은 공통 검사와 후보 해시를 갱신하거나 선택한 게이트 전체를 다시 실행한 뒤 독립 재검토 결과를 받는다.
 
 ### HA-006: 실패는 증거와 함께 반환한다
 
@@ -169,12 +177,12 @@ Received
 
 1. 관련 프로젝트 문서와 현재 작업 트리를 읽는다.
 2. 사용자 요청에서 목표, 허용 범위, 금지 범위와 관찰 가능한 완료 조건을 정리한다.
-3. 직접 작업, 결정적 도구, 단일 작업자 또는 복수 작업자 중 가장 작은 방식을 선택한다.
+3. 필요한 역할별 별도 작업자를 배정하고 독립 작업을 병렬화한다. 루트는 구현을 대신하지 않는다.
 4. 작업자를 사용할 때는 겹치지 않는 책임과 파일 범위를 할당한다.
 5. 결과 보고가 아니라 실제 작업 트리에서 후보 결과물을 확인한다.
 6. 요청에 맞는 gate profile을 실행한다.
 7. `FAIL`이면 증거를 포함해 수정하고 모든 영향받은 게이트를 다시 실행한다.
-8. 구조적 위험이 있거나 Skill이 요구하면 독립 Reviewer를 호출한다.
+8. C# 변경, 구조적 위험 또는 사용자/Skill 요구가 있으면 별도 읽기 전용 Reviewer를 호출하고 실제 결과를 확인한다.
 9. 모든 필수 게이트 통과와 미해결 blocking finding 부재를 확인한 뒤 완료를 보고한다.
 
 ### 6.3 병렬 작업 규칙
@@ -197,7 +205,7 @@ Received
 
 역할 Skill은 반복되는 행동 규약을 소유하고, Assignment는 이번 작업의 목표·입력·쓰기 경로·허용 Tool·금지 동작·수용 조건을 소유한다. Skill은 보안 경계가 아니므로 Scope Gate, Tool policy, 실행 영수증과 actual diff가 준수 여부를 별도로 검사해야 한다.
 
-모든 작업에 세 역할을 호출하지 않는다. 코드와 그래픽은 계약과 쓰기 경로가 분리되면 병렬화할 수 있지만, 그 결과를 참조하는 object 조립은 두 후보의 경로가 확정된 뒤 순차 실행한다.
+모든 작업에 세 역할을 호출하지 않는다. 코드·그래픽은 계약과 쓰기 경로가 분리되면 병렬화한다. 배선 담당의 조사·준비는 병행 가능하지만 실제 조립은 코드·이미지 입력과 컴파일이 준비된 뒤 수행한다. 수정은 원래 역할로 돌려보내며, 빈 실행 슬롯이 없으면 기다린 뒤 독립 Reviewer를 새로 생성한다.
 
 ## 7. 실행 계약
 
@@ -239,7 +247,7 @@ ReviewResult는 `verdict`와 finding 목록을 가진다. 각 finding에는 최�
 
 ## 8. 결정적 게이트
 
-gate profile은 작업에 필요한 검사만 조합한다. 모든 작업에 Play Mode나 전체 회귀 검사를 강제하지 않는다.
+gate profile은 작업에 필요한 검사만 조합한다. 자동 Play Mode·게임 화면 검증은 위 제외 정책에 따라 사용자의 별도 명시 요청이 있을 때만 선택한다.
 
 | 게이트 | 책임 |
 |---|---|
@@ -333,7 +341,7 @@ logs/
 - `HarnessGateResult`를 Job 실행 결과와 분리하고 check별 증거를 포함했다.
 - 구조와 Play Mode는 Batch와 interactive에서 같은 GateResult 판정을 사용한다.
 - `Tools/NpcHarness`는 자연어를 받지 않고 `verify`, `verify-scope`, `run-adapter`, `self-test`만 실행한다.
-- `.codex/skills/orchestrate-unity-work`가 직접·단일 worker·선택적 복수 worker, bounded remediation과 Reviewer 호출을 조정한다.
+- `.codex/skills/orchestrate-unity-work`가 역할별 별도 worker·병렬 준비·순차 Unity 적용, bounded remediation과 실제 Reviewer 결과 확인을 조정한다. `.agents`의 NPC 구현 entry는 `.codex`의 공통 기준을 참조한다.
 - `.codex/skills/reviewing-unity-candidate`가 결정적 Pass 뒤 독립 read-only review를 수행한다.
 - `HarnessTest.SquareCharacter.Structure`의 profile identity, scene path와 20개 기대값을 JSON manifest로 분리했다. Unity의 공통 선언형 scene evaluator가 제한된 check type registry를 해석하므로 같은 구조 검사는 새 profile 전용 C# 판정기를 요구하지 않는다. loader는 평가 전에 raw JSON의 필수 필드, 값 종류, 중복·미등록 필드를 엄격히 거부한다.
 - `SkillPolicy`와 `WorkerAssignment` v1 계약 및 공통 `verify-scope` runner를 추가했다. `candidateRules`가 역할별 경로·확장자를 결합하고, `execution.kind`가 object assembly, direct C#, raster art 증거를 구분한다. 세 역할 정책은 각각 TestOnly Job/receipt, 선언된 C#·Systems 문서·신규 companion `.meta`, 단일 exact Generated PNG·CRC/critical chunk/scanline까지 decode 가능한 PNG stream·reference importer 설정을 검사한다. 루트가 기록한 pre-delegation assignment SHA-256에 baseline dirty snapshot을 결합하며 worker가 반환한 뒤 루트가 Scope Gate를 실행하므로 assignment나 baseline 예외의 사후 수정은 전체 Gate를 실패시킨다.
@@ -419,9 +427,9 @@ NPC/worker production 기능에는 기존 `implement-npc-feature`의 planning·a
 1. **경계 고정**: 이 문서와 현재 prototype의 역할 차이가 문서 routing에 반영된다.
 2. **결정적 GateResult**: Codex 없이 HarnessBeacon 정상·의도적 실패를 재현 가능하게 판정한다.
 3. **Cross-platform runner**: 새 checkout의 macOS와 Windows에서 같은 명령 계약을 제공한다.
-4. **단일 작업 흐름**: 루트 Codex가 한 후보를 만들고 하네스 결과에 따라 완료 또는 수정한다.
+4. **단일 작업 흐름**: 루트 Codex가 역할별 worker의 후보를 조정하고 검증·독립 검토 결과에 따라 완료하거나 해당 역할에 수정을 배정한다.
 5. **독립 리뷰**: 결정적 통과 후 읽기 전용 Reviewer와 blocking finding 흐름을 검증한다.
-6. **선택적 멀티에이전트**: 독립 작업에만 위임하고 파일 충돌·증거 누락을 검출한다.
+6. **역할별 멀티에이전트**: 필요한 역할을 분리해 위임하고 독립 작업을 병렬화하며 실제 파일 충돌·증거 누락을 검출한다.
 7. **회귀 평가**: 정상 fixture와 오염 fixture 집합으로 하네스 자체의 거짓 통과를 검사한다.
 
 각 단계는 이전 단계의 종료 조건을 통과한 뒤 진행한다. 세부 파일 변경과 검증 시나리오는 별도 구현 계획이 소유한다.

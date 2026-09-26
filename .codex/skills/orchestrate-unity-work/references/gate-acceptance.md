@@ -17,6 +17,12 @@ Current HarnessBeacon profiles demonstrate the contract, but they do not validat
 
 ## Acceptance Decision
 
+Apply SceneWork.md's automatic verification exclusions before selecting gates.
+Select Play Mode or game-screen automation only on the user's separate explicit
+request. Existing runtime/visual QA items are human checks by default; their absence
+alone is not a gate gap or an implementation-completion blocker. Do not create or
+retry excluded checks. The acceptance rules below apply to selected required gates.
+
 Accept only when all conditions hold:
 
 1. The result exists and conforms to the schema.
