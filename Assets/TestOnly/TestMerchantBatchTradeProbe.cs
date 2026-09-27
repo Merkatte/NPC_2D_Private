@@ -4,12 +4,12 @@ using UnityEngine;
 
 /// <summary>
 /// Deterministic probe for MerchantTradeSite's batch trade transaction and
-/// WarehouseInventory.TryRemoveBatch.
+/// ResourceManager.TryRemoveBatch.
 ///
 /// The project has no assembly definitions, so there is no Unity Test Framework assembly to host
 /// EditMode tests (see TestDecisionScenarioProbe for the established alternative this follows).
-/// Unlike a pure decision probe, every case here actually mutates real WarehouseInventory/
-/// GoldManager state, so each case that changes something restores it in a try/finally before the
+/// Unlike a pure decision probe, every case here actually mutates real ResourceManager/
+/// ResourceManager state, so each case that changes something restores it in a try/finally before the
 /// next case runs — the probe is safe to run repeatedly in the same Play session.
 /// </summary>
 public class TestMerchantBatchTradeProbe : MonoBehaviour
@@ -20,9 +20,9 @@ public class TestMerchantBatchTradeProbe : MonoBehaviour
     private const int NonCatalogItemId = 123456789;
     private const int SuccessCaseQuantity = 3;
 
-    [SerializeField] private WarehouseInventory _warehouse;
+    [SerializeField] private ResourceManager _warehouse;
     [SerializeField] private MerchantTradeSite _tradeSite;
-    [SerializeField] private GoldManager _goldManager;
+    [SerializeField] private ResourceManager _goldManager;
     [SerializeField] private CropCatalog _cropCatalog;
     [SerializeField] private MonoBehaviour _dataManagerSource;
 
@@ -96,12 +96,12 @@ public class TestMerchantBatchTradeProbe : MonoBehaviour
 
     private void CaseEmptyBatchRejected()
     {
-        int goldBefore = _goldManager.CurrentGold;
+        int goldBefore = _goldManager.GetQuantity(ResourceManager.GoldItemId);
 
         TradeResult result = _tradeSite.TryTrade(new Dictionary<int, int>());
 
         Check("Case 1", "an empty batch is rejected and gold is untouched",
-            result == TradeResult.InvalidRequest && _goldManager.CurrentGold == goldBefore);
+            result == TradeResult.InvalidRequest && _goldManager.GetQuantity(ResourceManager.GoldItemId) == goldBefore);
     }
 
     /// <summary>
@@ -111,20 +111,20 @@ public class TestMerchantBatchTradeProbe : MonoBehaviour
     private void CaseUnknownItemRejected()
     {
         int stockBefore = _warehouse.GetQuantity(UnknownItemId);
-        int goldBefore = _goldManager.CurrentGold;
+        int goldBefore = _goldManager.GetQuantity(ResourceManager.GoldItemId);
 
         TradeResult result = _tradeSite.TryTrade(new Dictionary<int, int> { [UnknownItemId] = 1 });
 
         Check("Case 2", "an unknown item id is rejected and nothing changes",
             result == TradeResult.InvalidRequest &&
             _warehouse.GetQuantity(UnknownItemId) == stockBefore &&
-            _goldManager.CurrentGold == goldBefore);
+            _goldManager.GetQuantity(ResourceManager.GoldItemId) == goldBefore);
     }
 
     private void CaseInsufficientStockRejected(int itemId)
     {
         int stockBefore = _warehouse.GetQuantity(itemId);
-        int goldBefore = _goldManager.CurrentGold;
+        int goldBefore = _goldManager.GetQuantity(ResourceManager.GoldItemId);
         int requestedQuantity = stockBefore + 1000;
 
         TradeResult result = _tradeSite.TryTrade(new Dictionary<int, int> { [itemId] = requestedQuantity });
@@ -132,7 +132,7 @@ public class TestMerchantBatchTradeProbe : MonoBehaviour
         Check("Case 3", "requesting more than warehouse stock is rejected and no stock is removed",
             result == TradeResult.OutOfStock &&
             _warehouse.GetQuantity(itemId) == stockBefore &&
-            _goldManager.CurrentGold == goldBefore);
+            _goldManager.GetQuantity(ResourceManager.GoldItemId) == goldBefore);
     }
 
     /// <summary>
@@ -150,7 +150,7 @@ public class TestMerchantBatchTradeProbe : MonoBehaviour
         }
 
         int stockBefore = _warehouse.GetQuantity(itemId);
-        int goldBefore = _goldManager.CurrentGold;
+        int goldBefore = _goldManager.GetQuantity(ResourceManager.GoldItemId);
         int overflowQuantity = (int)overflowQuantityLong;
 
         TradeResult result = _tradeSite.TryTrade(new Dictionary<int, int> { [itemId] = overflowQuantity });
@@ -158,15 +158,15 @@ public class TestMerchantBatchTradeProbe : MonoBehaviour
         Check("Case 4", "a price total that would overflow int is rejected before touching stock",
             result == TradeResult.InvalidRequest &&
             _warehouse.GetQuantity(itemId) == stockBefore &&
-            _goldManager.CurrentGold == goldBefore);
+            _goldManager.GetQuantity(ResourceManager.GoldItemId) == goldBefore);
     }
 
     private void CaseGoldCapRejected(int itemId)
     {
         int stockBefore = _warehouse.GetQuantity(itemId);
-        int goldBefore = _goldManager.CurrentGold;
+        int goldBefore = _goldManager.GetQuantity(ResourceManager.GoldItemId);
 
-        _goldManager.Add(int.MaxValue); // Add saturates, so this always lands exactly on int.MaxValue.
+        _goldManager.TryRefund(new System.Collections.Generic.Dictionary<int, int> { { ResourceManager.GoldItemId, int.MaxValue - goldBefore } }); // Add saturates, so this always lands exactly on int.MaxValue.
 
         try
         {
@@ -175,22 +175,22 @@ public class TestMerchantBatchTradeProbe : MonoBehaviour
             Check("Case 5", "a sale that would overflow the gold balance is rejected before touching stock",
                 result == TradeResult.InvalidRequest &&
                 _warehouse.GetQuantity(itemId) == stockBefore &&
-                _goldManager.CurrentGold == int.MaxValue);
+                _goldManager.GetQuantity(ResourceManager.GoldItemId) == int.MaxValue);
         }
         finally
         {
             int overflowAmount = int.MaxValue - goldBefore;
             if (overflowAmount > 0)
-                _goldManager.TrySpend(overflowAmount);
+                _goldManager.TrySpend(new System.Collections.Generic.Dictionary<int, int> { { ResourceManager.GoldItemId, overflowAmount } });
         }
     }
 
     private void CaseSuccessfulTradeAppliesExactly(int itemId, int sellPrice)
     {
-        _warehouse.TryAdd(itemId, SuccessCaseQuantity, out _);
+        _warehouse.TryDeposit(itemId, SuccessCaseQuantity, out _);
 
         int stockBefore = _warehouse.GetQuantity(itemId);
-        int goldBefore = _goldManager.CurrentGold;
+        int goldBefore = _goldManager.GetQuantity(ResourceManager.GoldItemId);
 
         try
         {
@@ -199,17 +199,17 @@ public class TestMerchantBatchTradeProbe : MonoBehaviour
             Check("Case 6", "a valid batch succeeds, removing exactly the requested stock and crediting the exact total",
                 result == TradeResult.Success &&
                 _warehouse.GetQuantity(itemId) == stockBefore - SuccessCaseQuantity &&
-                _goldManager.CurrentGold == goldBefore + sellPrice * SuccessCaseQuantity);
+                _goldManager.GetQuantity(ResourceManager.GoldItemId) == goldBefore + sellPrice * SuccessCaseQuantity);
         }
         finally
         {
             int consumed = stockBefore - _warehouse.GetQuantity(itemId);
             if (consumed > 0)
-                _warehouse.TryAdd(itemId, consumed, out _);
+                _warehouse.TryDeposit(itemId, consumed, out _);
 
-            int goldGained = _goldManager.CurrentGold - goldBefore;
+            int goldGained = _goldManager.GetQuantity(ResourceManager.GoldItemId) - goldBefore;
             if (goldGained > 0)
-                _goldManager.TrySpend(goldGained);
+                _goldManager.TrySpend(new System.Collections.Generic.Dictionary<int, int> { { ResourceManager.GoldItemId, goldGained } });
         }
     }
 
@@ -221,12 +221,12 @@ public class TestMerchantBatchTradeProbe : MonoBehaviour
     /// </summary>
     private void CaseNonCatalogItemRejected()
     {
-        int goldBefore = _goldManager.CurrentGold;
+        int goldBefore = _goldManager.GetQuantity(ResourceManager.GoldItemId);
 
         TradeResult result = _tradeSite.TryTrade(new Dictionary<int, int> { [NonCatalogItemId] = 1 });
 
         Check("Case 7", "an id outside CropCatalog.Definitions is rejected even with a well-formed quantity",
-            result == TradeResult.InvalidRequest && _goldManager.CurrentGold == goldBefore);
+            result == TradeResult.InvalidRequest && _goldManager.GetQuantity(ResourceManager.GoldItemId) == goldBefore);
     }
 
     // ---- helpers ----

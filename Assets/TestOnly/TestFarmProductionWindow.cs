@@ -9,7 +9,7 @@ public class TestFarmProductionWindow : MonoBehaviour
 
     [SerializeField] private FarmWorkSite _farmWorkSite;
     [SerializeField] private FarmSeedSource _seedSource;
-    [SerializeField] private WarehouseInventory _warehouse;
+    [SerializeField] private ResourceManager _warehouse;
     [SerializeField] private WarehouseDepositPoint _depositPoint;
     [SerializeField] private CropCatalog _cropCatalog;
     [SerializeField] private ItemDataContext _itemDataContext;
@@ -50,7 +50,7 @@ public class TestFarmProductionWindow : MonoBehaviour
     {
         if (!_farmWorkSite || !_warehouse)
         {
-            GUILayout.Label("Missing FarmWorkSite or WarehouseInventory reference.");
+            GUILayout.Label("Missing FarmWorkSite or ResourceManager reference.");
             GUI.DragWindow();
             return;
         }

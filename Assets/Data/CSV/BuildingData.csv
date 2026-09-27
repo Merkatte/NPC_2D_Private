@@ -1,0 +1,6 @@
+buildingId,buildingType,displayName,requiredWork,maxWorkers,providedCapacity
+1,Warehouse,창고,100,2,500
+2,Pub,식당,100,2,0
+3,Inn,숙소,100,2,0
+4,GuardPost,초소,100,2,0
+5,Farm,농경지,100,2,0

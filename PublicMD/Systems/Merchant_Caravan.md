@@ -6,9 +6,9 @@
 
 상단의 건물·상인·새 3마리는 게임플레이 NPC가 아니라 하나의 방문 연출 세트다. `WorkerNPC`/`IAction`/selector/action queue/`NPCType`을 거치지 않고, 범용 AI 상태 머신이나 외부 event bus도 두지 않는다.
 
-이 문서가 소유하지 않는 것: `GoldManager`(잔액 자체는 [Player Gold](Player_Gold.md) 소유), 클릭 감지 입력 adapter(`PointerClickRouter`/`IClickPopupSource`는 [UI](UI.md) 소유), item 가격 데이터 저장(`ItemInfo`/`ItemDataContext`는 [Inventory and Items](Inventory_and_Items.md) 소유 — 이 문서는 그 소비자일 뿐이다).
+이 문서가 소유하지 않는 것: `ResourceManager`(잔액 자체는 [Player Gold](Player_Gold.md) 소유), 클릭 감지 입력 adapter(`PointerClickRouter`/`IClickPopupSource`는 [UI](UI.md) 소유), item 가격 데이터 저장(`ItemInfo`/`ItemDataContext`는 [Inventory and Items](Inventory_and_Items.md) 소유 — 이 문서는 그 소비자일 뿐이다).
 
-핵심 분리: `MerchantVisual`(클릭 표면)과 `MerchantTradeSite`(거래 도메인)는 서로를 전혀 모른다. 유일한 연결점은 `PopupType.Merchant`로 여는 `MerchantPopup`이다. `MerchantCaravan`(방문 연출 director)도 `GoldManager`나 거래 로직을 모른다 — "언제 거래 가능해지는지"만 `MerchantVisual.SetTradeAvailable(bool)`로 알릴 뿐, "무엇을 살 수 있는지"는 전혀 모른다.
+핵심 분리: `MerchantVisual`(클릭 표면)과 `MerchantTradeSite`(거래 도메인)는 서로를 전혀 모른다. 유일한 연결점은 `PopupType.Merchant`로 여는 `MerchantPopup`이다. `MerchantCaravan`(방문 연출 director)도 `ResourceManager`나 거래 로직을 모른다 — "언제 거래 가능해지는지"만 `MerchantVisual.SetTradeAvailable(bool)`로 알릴 뿐, "무엇을 살 수 있는지"는 전혀 모른다.
 
 ## 현재 실행 흐름
 
@@ -40,7 +40,7 @@ PointerClickRouter -> MerchantVisual.TryGetClickPopup()
 
 거래(판매 탭, 드래그 앤 드롭 + 일괄 확정):
 MerchantPopup.OnOpened() -> MerchantTradeSite.GetAvailableOffers()
-  -> CropCatalog.Definitions 순회, WarehouseInventory.GetQuantity > 0 그리고 SellPrice > 0인 것만
+  -> CropCatalog.Definitions 순회, ResourceManager.GetQuantity > 0 그리고 SellPrice > 0인 것만
   -> IDataManager.TryGetItemInfo로 표시명·가격 join
   -> 창고 슬롯 그리드로 표시(칸 하나 = 아이템 한 종류)
 
@@ -56,9 +56,8 @@ MerchantPopup.ConfirmSell() -> MerchantTradeSite.TryTrade(pendingSales: Dictiona
   -> TryComputeTotal: CropCatalog 기준 판매 가능 품목인지 자체 재검증
      + IDataManager.TryGetItemInfo로 각 줄 가격 재조회(Popup이 넘긴 값 불신)
      + long 승격 계산으로 곱셈·합계 오버플로 방지, SellPrice<=0인 줄은 개별 거절
-  -> 창고 차감 전 (long)GoldManager.CurrentGold + total <= int.MaxValue 검증(골드 포화로 인한 불일치 방지)
-  -> WarehouseInventory.TryRemoveBatch(pendingSales) — all-or-nothing, 실패 시 창고·골드 모두 무변경
-  -> 성공 시 GoldManager.Add(total) 합계 1회 지급
+  -> 골드 상한을 사전 검증하고 ResourceManager.TryExchange(pendingSales, goldCredit) 호출
+  -> 물품 차감과 골드 지급을 함께 검증한 뒤 한 번 변경, 실패 시 모두 무변경
   -> TradeResult(Success/OutOfStock/InvalidRequest) 반환
      -> OutOfStock이면 Popup이 카트를 최신 재고 이내로 자동 정리, InvalidRequest면 카트를 그대로 둔다
         (재고와 무관한 실패까지 재고 기준으로 정리하지 않기 위함)
@@ -79,7 +78,7 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 | `Assets/Scripts/Actor/MerchantArrivalScheduler.cs` | 방문 간 간격 타이머(gap 기반, 겹침 불가) |
 | `Assets/Scripts/System/Actor/MerchantVisual.cs` | 클릭 표면. `SetTradeAvailable(bool)`로 받은 상태만 저장·반환, 퇴장 시 팝업 자동 닫힘 |
 | `Assets/Scripts/Actor/TransportBird.cs` | 새 한 마리의 Animator 표현 명령(Play*)과 체류 중 랜덤 지상 연출(Start/StopGroundPresentation) |
-| `Assets/Scripts/Actor/MerchantTradeSite.cs` | 상단 거래만 담당하는 도메인 provider. `GoldManager`를 아는 유일한 컴포넌트. batch 판매 가격 검증(`TryComputeTotal`)과 판매 가능 품목 재검증(`IsSellableItem`)을 소유 |
+| `Assets/Scripts/Actor/MerchantTradeSite.cs` | 상단 거래만 담당하는 도메인 provider. `ResourceManager`를 아는 유일한 컴포넌트. batch 판매 가격 검증(`TryComputeTotal`)과 판매 가능 품목 재검증(`IsSellableItem`)을 소유 |
 | `Assets/Data/Struct/MerchantOffer.cs` | Popup에 전달하는 판매 가능 품목 표시 값 |
 | `Assets/Scripts/Enum/TradeResult.cs` | 거래 결과(Success/OutOfStock/InvalidRequest) |
 | `Assets/Scripts/UI/MerchantPopup.cs` | 구매/판매 탭을 가진 거래 UI. 판매 대기 카트(로컬 `Dictionary<itemId,quantity>`)와 세션 상태의 유일한 소유자 |
@@ -99,7 +98,7 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 | 방문 주기 | `MerchantArrivalScheduler.cs` |
 | 연출 순서·타이밍·높이 | `MerchantCaravan.cs`(`VisitRoutine`, tuning field) |
 | 새 지상 연출 | `TransportBird.cs` |
-| 거래 로직·가격·batch 검증 | `MerchantTradeSite.cs`(`TryComputeTotal`/`IsSellableItem`), [Inventory and Items](Inventory_and_Items.md)의 `IDataManager`/`WarehouseInventory.TryRemoveBatch` |
+| 거래 로직·가격·batch 검증 | `MerchantTradeSite.cs`(`TryComputeTotal`/`IsSellableItem`), [Inventory and Items](Inventory_and_Items.md)의 `IDataManager`/`ResourceManager.TryExchange` |
 | 거래 가능 판정 시점 | `MerchantCaravan.cs`의 `SetTradeAvailable` 호출 지점, `MerchantVisual.cs` |
 | 판매 UI(슬롯·카트·드래그·수량입력) | `MerchantPopup.cs`, `ItemSlotView.cs`, `ItemSlotDragHandle.cs`, `CartSlotRemoveHandle.cs`, `SellCartDropZone.cs`, `DragGhostView.cs`, `QuantityPromptPanel.cs`, [UI](UI.md) |
 | 클릭 감지 | [UI](UI.md)의 `PointerClickRouter`/`IClickPopupSource` |
@@ -107,13 +106,13 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 
 ## 불변 규칙
 
-- `MerchantCaravan`은 `GoldManager`나 거래 로직을 모른다. `MerchantVisual`도 마찬가지다. `MerchantTradeSite`만 `GoldManager`를 안다.
+- `MerchantCaravan`은 `ResourceManager`나 거래 로직을 모른다. `MerchantVisual`도 마찬가지다. `MerchantTradeSite`만 `ResourceManager`를 안다.
 - `MerchantTradeSite`는 상단 거래만 담당한다. 나중에 모집·업그레이드가 생겨도 각자 자기 전용의 작은 provider를 새로 만들고 이 컴포넌트를 거치지 않는다 — "모든 거래의 총괄자" 역할을 만들지 않는다.
 - 체류(dwell) 타이머를 건드리는 외부 메서드는 없다. 상호작용으로 리셋되거나 연장되지 않는다.
 - 거래 가능 여부는 `MerchantCaravan`이 착륙 완료/출발 시작 시점에 `MerchantVisual.SetTradeAvailable(bool)`로 명시 설정한다. Animator 상태를 실시간 조회하지 않는다(이전 방식) — `MerchantVisual`은 더 이상 Animator를 소유하지 않는다.
 - `Popup`은 가격을 계산·지급에 쓰지 않는다. `TryTrade`/`TryGetSaleQuote`에 itemId·수량 의도(카트)만 전달하고, 실제 가격 계산·검증은 `MerchantTradeSite`가 그 순간 다시 한다 — `GetAvailableOffers()`가 주는 `MerchantOffer.UnitPrice`는 창고 슬롯에 단가를 찍는 표시 전용 스냅샷일 뿐, 이걸로 합계를 직접 계산하거나 트랜잭션에 쓰지 않는다.
 - `MerchantTradeSite`는 판매 가능 품목(`CropCatalog.Definitions` 기준)을 스스로 재검증한다. UI가 보낸 itemId를 신뢰하지 않는다.
-- 창고를 차감하기 전에 골드 상한(`int.MaxValue`) 초과 여부를 검증한다 — `GoldManager.Add`가 포화되므로, 이 순서를 지키지 않으면 창고는 전량 빠지고 골드는 일부만 늘어나는 불일치가 생길 수 있다.
+- 판매 차감과 골드 지급은 ResourceManager.TryExchange의 원자적 거래다. 골드 상한 초과는 무변경 실패이며 포화 지급하지 않는다.
 - `TryGetSaleQuote`와 `TryTrade`는 같은 가격·검증 로직(`TryComputeTotal`)을 공유한다 — 견적과 실제 거래 결과가 서로 다른 규칙으로 갈리지 않는다.
 - `MerchantPopup`-`MerchantTradeSite`는 1:1 전용 배선이라 interface로 감싸지 않는다(concrete 참조) — 대체 구현이나 테스트 필요가 없다. 판매 대기 카트를 런타임에 생성한 슬롯 컴포넌트(`ItemSlotDragHandle`/`CartSlotRemoveHandle`)에 연결할 때도 직렬화가 아니라 `Initialize(...)` 런타임 주입을 쓴다 — 프리팹 자산은 자신을 생성한 팝업 인스턴스를 미리 참조할 수 없기 때문이다.
 - 상단은 `NPCType`/`NPCManager`/`WorkerPool`을 거치지 않는다. Worker NPC 역할이 아니다.
@@ -158,13 +157,13 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 - 창고 재고 열거는 `CropCatalog.Definitions`를 순회하는 방식이라, farm 산출물이 아닌 item(예: Pub의 Water/Beer/Bread)은 애초에 판매 목록에 나타나지 않는다 — 창고에 쌓이지 않는 item이라 의도된 동작이다.
 - Bird 3마리의 지상 착륙 local position, 각 lift height/duration은 Unity 에디터 육안 검증 후 확정해야 하는 TBD다.
 - `MerchantPopup`/`MerchantItemSlot`/`MerchantCartSlot` 프리팹의 실제 레이아웃(칸 크기, 색상, `GridLayoutGroup` 셀 크기)은 디자인 영역이라 수치를 못 박지 않았다 — 에디터에서 사용자가 조정.
-- 단일 `WarehouseInventory.TryRemove(int,int,out int)`/`MerchantTradeSite.TryTrade(int,int)`는 batch API로 교체되며 삭제됐다(breaking change, 이전 문서 기술과 다름).
+- 판매는 batch API만 제공한다. 공유 자원 이관 이후 수량 변경은 ResourceManager.TryExchange를 사용한다.
 - 드래그 앤 드롭 팝업의 실제 Play Mode 검증(첫 오픈 슬롯 채움, 재오픈 시 카트 리셋, 드래그 중 상단 퇴장 시 고스트 정리 등)은 이 저장소 작업에서 수행하지 못했다 — Unity 에디터에서 사용자가 확인해야 하는 TBD. batch 거래 트랜잭션 자체는 `Assets/TestOnly/TestMerchantBatchTradeProbe.cs`로 자동 검증 가능하다(§Unity 배선과 검증 도구에 언급 없던 신규 도구, `TestDecisionScenarioProbe.cs`와 같은 IMGUI PASS/FAIL 패턴).
 
 ## 관련 문서
 
 - [Player Gold](Player_Gold.md) — 골드 잔액과 획득·지출 계약
-- [Inventory and Items](Inventory_and_Items.md) — `WarehouseInventory.TryRemoveBatch`, `IDataManager.TryGetItemInfo`, item 가격 데이터
+- [Inventory and Items](Inventory_and_Items.md) — `ResourceManager.TryExchange`, `IDataManager.TryGetItemInfo`, item 가격 데이터
 - [UI](UI.md) — `PointerClickRouter`, `IClickPopupSource`, `PopBase`/`MerchantPopup`, uGUI 드래그 앤 드롭
 - [NPC Presentation](NPC_Presentation.md) — Animator 기반 표현의 선례(`CarryVisualPresenter`)
 - [Spawning and Pooling](Spawning_and_Pooling.md) — 상단이 이 체계를 따르지 않는 이유(Worker 역할이 아님)
@@ -172,3 +171,7 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 ## 문서 갱신 조건
 
 방문 연출 순서·타이밍, 클릭 가능 판정, 거래 계약(`TryTrade`/`TradeResult`), Unity 배선이 바뀌면 갱신한다.
+
+## 공유 자원 이관
+
+MerchantTradeSite._warehouse는 scene의 공유 ResourceManager다. 별도 골드 참조는 제거한다. MerchantPopup은 ResourcesChanged를 구독해 재고를 갱신하고 닫기/disable에서 해제한다. 자원 알림은 공급 목록과 견적을 갱신하되 판매 중인 카트를 수정하지 않는다. 성공 후 카트를 비우고, OutOfStock 결과일 때 최신 재고 이내로 카트를 조정한다. 현재 이관 검증은 PROGRESS를 따른다.

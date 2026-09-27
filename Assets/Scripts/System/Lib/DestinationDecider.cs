@@ -59,6 +59,8 @@ public class DestinationDecider
     private struct Candidate
     {
         public CandidateKind Kind;
+        public DestinationInfo Destination;
+        public IInteractionProvider Provider;
         public NPCIntent Intent;
         public BuildingType Key;
         public Vector3 Position;
@@ -117,7 +119,7 @@ public class DestinationDecider
         if (stat == null)
             return false;
 
-        return BuildCriticalMask(ToSnapshot(stat)) != 0;
+        return _tuning && _tuning.HasCriticalNeed(stat);
     }
 
     public NPCDecision Decide(IStatView stat, NPCType npcType, Vector3 npcLoc, StatEffect workCost)
@@ -254,26 +256,21 @@ public class DestinationDecider
         {
             BuildingType key = keys[i];
 
-            if (!_destinationDB.TryGetDestinationPos(key, out Vector3 destinationPos))
-                continue;
-
-            float travelTime = GetTravelTime(pos, destinationPos, moveSpeed);
-
-            AddItemCandidatesForType(candidates, key, ActionType.Eat, destinationPos, travelTime, state);
-            AddItemCandidatesForType(candidates, key, ActionType.Drink, destinationPos, travelTime, state);
-
-            // TODO: Inn 전용 provider가 생기면 SleepAction과 마찬가지로 provider 기반으로 옮긴다.
-            if (key == BuildingType.Inn)
-                AddSleepCandidate(candidates, key, destinationPos, travelTime, state);
+            AddItemCandidatesForType(candidates, key, ActionType.Eat, pos, moveSpeed, state);
+            AddItemCandidatesForType(candidates, key, ActionType.Drink, pos, moveSpeed, state);
+            if (key == BuildingType.Inn && _destinationDB.TrySelectNearest(key, ActionType.Sleep, pos,
+                out var inn, out _, out Vector3 sleepPosition))
+                AddSleepCandidate(candidates, key, sleepPosition, GetTravelTime(pos, sleepPosition, moveSpeed), state, inn);
         }
     }
 
     private void AddItemCandidatesForType(List<Candidate> candidates, BuildingType key, ActionType type,
-        Vector3 pos, float travelTime, NeedSnapshot state)
+        Vector3 origin, float moveSpeed, NeedSnapshot state)
     {
-        if (!_destinationDB.TryGetInteractionProvider(key, type, out IInteractionProvider provider))
+        if (!_destinationDB.TrySelectNearest(key, type, origin, out var destination, out var provider, out Vector3 pos))
             return;
 
+        float travelTime = GetTravelTime(origin, pos, moveSpeed);
         _optionBuffer.Clear();
         provider.AppendOptions(type, _optionBuffer);
 
@@ -286,6 +283,8 @@ public class DestinationDecider
             candidates.Add(new Candidate
             {
                 Kind = CandidateKind.Supply,
+                Destination = destination,
+                Provider = provider,
                 Intent = type == ActionType.Eat ? NPCIntent.Eat : NPCIntent.Drink,
                 Key = key,
                 Position = pos,
@@ -300,7 +299,7 @@ public class DestinationDecider
         }
     }
 
-    private void AddSleepCandidate(List<Candidate> candidates, BuildingType key, Vector3 pos, float travelTime, NeedSnapshot state)
+    private void AddSleepCandidate(List<Candidate> candidates, BuildingType key, Vector3 pos, float travelTime, NeedSnapshot state, DestinationInfo destination)
     {
         // Mirrors SleepAction's own full-recovery calculation (stat.ChangeFatigue(-stat.GetFatigue)).
         StatEffect sleepEffect = new StatEffect(fatigueDelta: -state.Fatigue);
@@ -309,6 +308,7 @@ public class DestinationDecider
         {
             Kind = CandidateKind.Supply,
             Intent = NPCIntent.Sleep,
+            Destination = destination,
             Key = key,
             Position = pos,
             ActionType = ActionType.Sleep,
@@ -349,12 +349,14 @@ public class DestinationDecider
         if (safeRepeats < _tuning.MinimumWorkBatch)
             return;
 
-        if (!_destinationDB.TryGetDestinationPos(BuildingType.Farm, out Vector3 workPos))
+        if (!_destinationDB.TrySelectNearest(BuildingType.Farm, ActionType.Farming, pos, out var destination, out var provider, out Vector3 workPos))
             return;
 
         candidates.Add(new Candidate
         {
             Kind = CandidateKind.FarmerWork,
+            Destination = destination,
+            Provider = provider,
             Intent = NPCIntent.Work,
             Key = BuildingType.Farm,
             Position = workPos,
@@ -375,9 +377,8 @@ public class DestinationDecider
     /// </summary>
     private void AddGuardDutyCandidate(List<Candidate> candidates, NeedSnapshot state, Vector3 pos, float moveSpeed, StatEffect dutyCost)
     {
-        if (!_destinationDB.TryGetDestinationPos(BuildingType.GuardPost, out Vector3 postPos) ||
-            !_destinationDB.TryGetInteractionProvider(BuildingType.GuardPost, ActionType.Guard, out var provider) ||
-            !provider.CanInteract(ActionType.Guard))
+        if (!_destinationDB.TrySelectNearest(BuildingType.GuardPost, ActionType.Guard, pos,
+            out var destination, out var provider, out Vector3 postPos))
             return;
 
         float seconds = _tuning.GuardDutyEvaluationSeconds;
@@ -385,6 +386,8 @@ public class DestinationDecider
         candidates.Add(new Candidate
         {
             Kind = CandidateKind.GuardDuty,
+            Destination = destination,
+            Provider = provider,
             // Exposed as Idle: NPCIntent.Guard is deliberately not added in this pass, and
             // GuardActionSelector treats any non-supply result as "build the Guard queue".
             Intent = NPCIntent.Idle,
@@ -406,11 +409,11 @@ public class DestinationDecider
     {
         int mask = 0;
 
-        if (Normalize(state.Fatigue, state.FatigueMax) > _tuning.CriticalNeedThreshold)
+        if (_tuning.IsCriticalNeed(state.Fatigue, state.FatigueMax))
             mask |= CriticalBitFatigue;
-        if (Normalize(state.Hunger, state.HungerMax) > _tuning.CriticalNeedThreshold)
+        if (_tuning.IsCriticalNeed(state.Hunger, state.HungerMax))
             mask |= CriticalBitHunger;
-        if (Normalize(state.Thirst, state.ThirstMax) > _tuning.CriticalNeedThreshold)
+        if (_tuning.IsCriticalNeed(state.Thirst, state.ThirstMax))
             mask |= CriticalBitThirst;
 
         return mask;
@@ -552,7 +555,7 @@ public class DestinationDecider
     private static NPCDecision ToDecision(Candidate c)
     {
         InteractionRequest? request = c.OptionId >= 0 ? new InteractionRequest(c.ActionType, c.OptionId) : (InteractionRequest?)null;
-        return new NPCDecision(c.Intent, c.Key, c.Position, c.RepeatCount, request);
+        return new NPCDecision(c.Intent, c.Key, c.Position, c.RepeatCount, request, c.Destination, c.Provider);
     }
 
     // ---- Work batch simulation ----

@@ -29,10 +29,11 @@ public sealed class TownHallRecruitment : MonoBehaviour
         public WorkerReservation Reservation;
         public Coroutine DropRoutine;
         public bool IsDispatching;
+        public int PendingRefund;
     }
 
     [SerializeField] private NPCManager _npcManager;
-    [SerializeField] private GoldManager _goldManager;
+    [SerializeField] private ResourceManager _goldManager;
     [SerializeField] private TownHallVisual _visual;
 
     [SerializeField] private List<RecruitmentSetting> _recruitments = new List<RecruitmentSetting>();
@@ -105,20 +106,23 @@ public sealed class TownHallRecruitment : MonoBehaviour
         Vector3 dropStart = landingPosition + Vector3.up * _dropHeight;
         if (!_npcManager || !_goldManager || !_npcManager.TryReserveWorker(npcType, dropStart, out WorkerReservation reservation))
             return RecruitResult.SpawnUnavailable;
-        if (!_goldManager.TrySpend(state.Setting.SettlementCost))
+        using (_goldManager.DeferNotifications())
         {
-            _npcManager.CancelReservation(reservation);
-            return RecruitResult.NotEnoughGold;
-        }
+            if (!_goldManager.TrySpend(new System.Collections.Generic.Dictionary<int, int> { { ResourceManager.GoldItemId, state.Setting.SettlementCost } }))
+            {
+                _npcManager.CancelReservation(reservation);
+                return RecruitResult.NotEnoughGold;
+            }
 
-        // Each role waits for its own landing/get-up before its cooldown can tick.
-        state.Reservation = reservation;
-        state.IsDispatching = true;
-        state.Phase = RecruitPhase.Recruiting;
-        state.CooldownRemaining = state.Setting.CooldownDuration;
-        RefreshWorldIcon();
-        state.DropRoutine = StartCoroutine(DropRoutine(state, dropStart, landingPosition));
-        return RecruitResult.Success;
+            // Each role waits for its own landing/get-up before its cooldown can tick.
+            state.Reservation = reservation;
+            state.IsDispatching = true;
+            state.Phase = RecruitPhase.Recruiting;
+            state.CooldownRemaining = state.Setting.CooldownDuration;
+            RefreshWorldIcon();
+            state.DropRoutine = StartCoroutine(DropRoutine(state, dropStart, landingPosition));
+            return RecruitResult.Success;
+        }
     }
 
     private IEnumerator DropRoutine(RecruitmentState state, Vector3 from, Vector3 to)
@@ -188,14 +192,29 @@ public sealed class TownHallRecruitment : MonoBehaviour
             return;
         if (_npcManager)
             _npcManager.CancelReservation(state.Reservation);
-        if (_goldManager)
-            _goldManager.Add(state.Setting.SettlementCost);
+        state.PendingRefund = state.Setting.SettlementCost;
         state.Reservation = default;
-        state.IsDispatching = false;
         state.DropRoutine = null;
-        state.Phase = RecruitPhase.CandidateReady;
-        state.CooldownRemaining = 0f;
-        RefreshWorldIcon();
+        TryRefundPending(state);
+    }
+
+    public bool TryRetryRefund(NPCType npcType)
+        => _states.TryGetValue(npcType, out var state) && TryRefundPending(state);
+
+    private bool TryRefundPending(RecruitmentState state)
+    {
+        if (!_goldManager || state.PendingRefund <= 0) return false;
+        using (_goldManager.DeferNotifications())
+        {
+            if (!_goldManager.TryRefund(new Dictionary<int, int> { { ResourceManager.GoldItemId, state.PendingRefund } }))
+                return false;
+            state.PendingRefund = 0;
+            state.IsDispatching = false;
+            state.Phase = RecruitPhase.CandidateReady;
+            state.CooldownRemaining = 0f;
+            RefreshWorldIcon();
+            return true;
+        }
     }
 
     private void RefreshWorldIcon()

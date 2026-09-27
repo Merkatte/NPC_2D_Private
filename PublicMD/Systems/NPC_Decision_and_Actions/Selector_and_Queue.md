@@ -18,7 +18,7 @@ FarmerActionSelector.RequestNewActionQueue
   -> DestinationDecider.HasCriticalNeed 이면 아래 물류 분기를 건너뛴다
   -> 봇짐에 여유가 있고 Farm이 Harvest 가능: Move + Harvest 1회
   -> 봇짐이 비어 있지 않음: Move + Deposit (Warehouse)
-     -> 창고 provider가 없으면 1회만 오류 로그 후 Idle로 대기
+     -> 사용 가능한 창고 provider가 없거나 공유 용량이 가득 차면 Idle로 대기
   -> 그 외: DestinationDecider.Decide
      -> Work이면 같은 provider에서 batch 작업 위치를 한 번 결정
      -> 필요한 경우 MoveAction
@@ -30,7 +30,7 @@ Farmer 우선순위는 긴급 욕구 > Harvest(봇짐에 여유가 있을 때만
 
 Harvest는 queue당 1회만 대여한다. 봇짐 용량 경계는 시도할 때마다 재판단으로 처리되므로 미리 여러 개를 대여할 이득이 없다.
 
-`decision.Intent == Work`인데 작업 위치를 얻지 못한 경우, `BuildingType.Farm`이 `DestinationDB`에 아예 등록되지 않았을 때만 오류로 기록한다. 등록은 되어 있지만 지금 상호작용할 수 없는 상태(빈 밭, 이미 Harvesting phase)는 정상이므로 조용히 Idle로 대체한다 — `DestinationDecider`의 Farmer work 후보 생성은 destination 등록 여부만 보고 `CanInteract`를 확인하지 않기 때문이다.
+`DestinationDecider`는 `CanInteract`를 만족하는 시설 중 등록된 입구까지 가장 가까운 실제 시설을 선택하고, `NPCDecision`에 그 시설과 provider를 보존한다. Work 선택 뒤 해당 provider에서 작업 위치를 한 번 얻는다. 선택 이후 시설 상태가 바뀌어 작업 위치를 얻지 못하면 Idle로 대체한다. 같은 유형의 다른 시설로 다시 조회하여 선택된 시설을 바꾸지 않는다.
 
 중간 대여나 초기화가 실패하면 이미 대여한 action을 모두 pool에 반환하고 null이 섞인 queue를 반환하지 않는다.
 
@@ -58,7 +58,7 @@ Harvest는 queue당 1회만 대여한다. 봇짐 용량 경계는 시도할 때�
 - `TryRentAction`으로 초기화된 action만 queue에 넣는다.
 - queue 구성 실패 시 대여 목록 전체를 반환한다.
 - selector 안에서 거리·욕구 utility 공식을 복제하지 않는다. 긴급 욕구 판단은 `DestinationDecider.HasCriticalNeed`를 호출해 decider의 기존 임계 규칙을 그대로 재사용한다.
-- `DestinationDecider`는 등록된 농장 중심으로 Work utility를 계산하고, 분산 위치 난수는 Work 선택 뒤 selector의 queue 구성에서만 소비한다.
+- `DestinationDecider`는 선택된 농장의 등록 입구를 기준으로 Work utility를 계산하고, 분산 위치 난수는 Work 선택 뒤 selector의 queue 구성에서만 소비한다.
 - 위치 난수를 소비하는 `TryGetActionPosition`은 실제로 queue를 만들기로 확정한 분기에서만 호출한다.
 - 물류 분기도 Farming과 동일하게 destination 조회 → provider 조회 → action 위치 조회 순서를 거치고, action에는 확정된 위치만 넘긴다.
 - `CanUseStat`으로 role selector와 runtime stat의 호환성을 spawn 전에 확인한다.

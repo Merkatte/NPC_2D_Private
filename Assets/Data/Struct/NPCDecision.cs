@@ -12,14 +12,20 @@ public readonly struct NPCDecision
     public Vector3 DestinationPos { get; }
     public int RepeatCount { get; }
     public InteractionRequest? Request { get; }
+    public DestinationInfo Destination { get; }
+    public IInteractionProvider Provider { get; }
+    public bool HasLiveDestination => Destination != null && Destination.DestinationObject
+        && Destination.DestinationObject.activeInHierarchy && Destination.DestinationLoc;
 
-    public NPCDecision(NPCIntent intent, BuildingType destinationKey, Vector3 destinationPos, int repeatCount, InteractionRequest? request = null)
+    public NPCDecision(NPCIntent intent, BuildingType destinationKey, Vector3 destinationPos, int repeatCount, InteractionRequest? request = null, DestinationInfo destination = null, IInteractionProvider provider = null)
     {
         Intent = intent;
         DestinationKey = destinationKey;
         DestinationPos = destinationPos;
         RepeatCount = repeatCount;
         Request = request;
+        Destination = destination;
+        Provider = provider;
     }
 
     public static NPCDecision Idle(Vector3 pos) => new NPCDecision(NPCIntent.Idle, BuildingType.None, pos, 1);

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Trade UI for the merchant caravan — the first concrete PopBase in the project. Owns the whole
 /// sell session's local state (drag/drop warehouse grid, sell cart, quantity prompt) and forwards
-/// only finished intent to MerchantTradeSite; never touches GoldManager or item pricing directly.
+/// only finished intent to MerchantTradeSite; never mutates ResourceManager or item pricing directly.
 /// Concrete reference to MerchantTradeSite (no interface): this is a 1:1 feature-specific pairing,
 /// not a polymorphic UI/domain boundary like IHoverInfoSource.
 /// </summary>
@@ -89,6 +89,11 @@ public sealed class MerchantPopup : PopBase
         if (!_isConfigured)
             return;
 
+        if (_tradeSite.Resources)
+        {
+            _tradeSite.Resources.ResourcesChanged -= RefreshResourceOffers;
+            _tradeSite.Resources.ResourcesChanged += RefreshResourceOffers;
+        }
         _pendingSales.Clear();
         ShowSellMode();
         RefreshOffers();
@@ -102,6 +107,7 @@ public sealed class MerchantPopup : PopBase
 
     protected override void OnBeforeClose()
     {
+        if (_tradeSite && _tradeSite.Resources) _tradeSite.Resources.ResourcesChanged -= RefreshResourceOffers;
         ResetSellSession();
     }
 
@@ -112,6 +118,7 @@ public sealed class MerchantPopup : PopBase
     /// </summary>
     private void OnDisable()
     {
+        if (_tradeSite && _tradeSite.Resources) _tradeSite.Resources.ResourcesChanged -= RefreshResourceOffers;
         ResetSellSession();
     }
 
@@ -246,6 +253,13 @@ public sealed class MerchantPopup : PopBase
 
         RebuildWarehouseSlots();
         RebuildCartSlots();
+        RefreshEstimate();
+    }
+
+    private void RefreshResourceOffers()
+    {
+        RefreshOffers();
+        RebuildWarehouseSlots();
         RefreshEstimate();
     }
 

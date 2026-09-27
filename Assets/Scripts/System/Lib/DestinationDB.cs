@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -5,89 +6,82 @@ public class DestinationDB : MonoBehaviour
 {
     [SerializeField] private List<DestinationInfo> _destionations;
     [SerializeField] private InteractableManager _interactableManager;
-
-    private Dictionary<BuildingType, DestinationInfo> _destinationDB;
+    private Dictionary<BuildingType, List<DestinationInfo>> _destinationDB;
     private List<BuildingType> _registeredKeys;
-
-    public IReadOnlyList<BuildingType> RegisteredKeys
-    {
-        get
-        {
-            EnsureInitialized();
-            return _registeredKeys;
-        }
-    }
-
-    void Awake()
-    {
-        EnsureInitialized();
-    }
-
-    public bool TryGetDestinationPos(BuildingType destionationName, out Vector3 destination)
-    {
-        EnsureInitialized();
-        destination = Vector3.zero;
-
-        if (!_destinationDB.TryGetValue(destionationName, out var info))
-            return false;
-
-        if (!info.DestinationLoc)
-            return false;
-
-        destination = info.DestinationLoc.position;
-        return true;
-    }
-
-    public bool TryGetInteractionProvider(BuildingType destinationName, ActionType actionType, out IInteractionProvider provider)
-    {
-        EnsureInitialized();
-        provider = null;
-
-        if (!_interactableManager)
-            return false;
-
-        if (!_destinationDB.TryGetValue(destinationName, out var info))
-            return false;
-
-        if (!info.DestinationObject)
-            return false;
-
-        return _interactableManager.TryGetInteractionProvider(info.DestinationObject, actionType, out provider);
-    }
-
+    public IReadOnlyList<BuildingType> RegisteredKeys { get { EnsureInitialized(); return _registeredKeys.AsReadOnly(); } }
+    private void Awake() { EnsureInitialized(); }
     private void EnsureInitialized()
     {
-        if (_destinationDB != null)
-            return;
-
-        Convert2Dict();
-    }
-
-    private void Convert2Dict()
-    {
-        _destinationDB = new Dictionary<BuildingType, DestinationInfo>();
+        if (_destinationDB != null) return;
+        _destinationDB = new Dictionary<BuildingType, List<DestinationInfo>>();
         _registeredKeys = new List<BuildingType>();
-
-        if (_destionations == null)
-            return;
-
-        foreach (var info in _destionations)
+        if (_destionations != null)
+            foreach (DestinationInfo info in _destionations) Register(info);
+    }
+    public bool Register(DestinationInfo info)
+    {
+        EnsureInitialized();
+        if (info == null || !info.DestinationLoc || !info.DestinationObject) return false;
+        if (!_destinationDB.TryGetValue(info.BuildingType, out var entries))
         {
-            if (info == null)
-                continue;
-
-            if (!info.DestinationLoc)
-                continue;
-
-            if (!_destinationDB.ContainsKey(info.BuildingType))
-                _registeredKeys.Add(info.BuildingType);
-
-            _destinationDB[info.BuildingType] = info;
+            _destinationDB.Add(info.BuildingType, entries = new List<DestinationInfo>());
+            _registeredKeys.Add(info.BuildingType);
         }
+        if (!entries.Contains(info)) entries.Add(info);
+        return true;
+    }
+    public void Unregister(DestinationInfo info)
+    {
+        EnsureInitialized();
+        if (info == null || !_destinationDB.TryGetValue(info.BuildingType, out var entries)) return;
+        entries.Remove(info);
+        if (entries.Count == 0) { _destinationDB.Remove(info.BuildingType); _registeredKeys.Remove(info.BuildingType); }
+    }
+    public IReadOnlyList<DestinationInfo> GetCandidates(BuildingType type)
+    {
+        EnsureInitialized();
+        return _destinationDB.TryGetValue(type, out var entries) ? entries.AsReadOnly() : Array.Empty<DestinationInfo>();
+    }
+    public bool TrySelectNearest(BuildingType type, ActionType action, Vector3 origin,
+        out DestinationInfo destination, out IInteractionProvider provider, out Vector3 position)
+    {
+        EnsureInitialized();
+        destination = null; provider = null; position = default;
+        if (!_destinationDB.TryGetValue(type, out var entries)) return false;
+        float bestDistance = float.PositiveInfinity;
+        foreach (DestinationInfo entry in entries)
+        {
+            if (!entry.DestinationLoc || !entry.DestinationObject || !entry.DestinationObject.activeInHierarchy) continue;
+            IInteractionProvider candidate = null;
+            if (action != ActionType.Sleep && (!_interactableManager
+                || !_interactableManager.TryGetInteractionProvider(entry.DestinationObject, action, out candidate))) continue;
+            Vector3 candidatePosition = entry.DestinationLoc.position;
+            float distance = (origin - candidatePosition).sqrMagnitude;
+            if (distance >= bestDistance) continue;
+            bestDistance = distance; destination = entry; provider = candidate; position = candidatePosition;
+        }
+        return destination != null;
+    }
+    // Compatibility queries are read-only. Selectors use the instance-bearing nearest result.
+    public bool TryGetDestinationPos(BuildingType type, out Vector3 position)
+    {
+        position = default;
+        foreach (DestinationInfo entry in GetCandidates(type))
+            if (entry.DestinationLoc && entry.DestinationObject && entry.DestinationObject.activeInHierarchy)
+            { position = entry.DestinationLoc.position; return true; }
+        return false;
+    }
+    public bool TryGetInteractionProvider(BuildingType type, ActionType action, out IInteractionProvider provider)
+    {
+        provider = null;
+        foreach (DestinationInfo entry in GetCandidates(type))
+            if (_interactableManager && entry.DestinationObject && entry.DestinationObject.activeInHierarchy
+                && _interactableManager.TryGetInteractionProvider(entry.DestinationObject, action, out provider)) return true;
+        return false;
     }
 }
 
-[System.Serializable]
+[Serializable]
 public class DestinationInfo
 {
     public BuildingType BuildingType;

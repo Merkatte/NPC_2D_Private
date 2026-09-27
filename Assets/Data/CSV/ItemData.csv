@@ -1,8 +1,11 @@
-id,category,itemName,itemDescription,healthDelta,hungerDelta,thirstDelta,fatigueDelta,moodDelta,sellPrice
-1,Drink,Water,Cold well water,0,0,-30,0,0,0
-2,Drink,Beer,Cheap tavern beer,-2,0,-20,0,10,0
-3,Food,Bread,Freshly baked bread,0,-25,0,0,0,0
-4,Food,Carrot,Freshly harvested carrot,0,-15,0,0,0,2
-5,Food,Potato,Freshly harvested potato,0,-20,0,0,0,3
-6,Seed,Carrot Seed,Seed for planting carrots,0,0,0,0,0,1
-7,Seed,Potato Seed,Seed for planting potatoes,0,0,0,0,0,1
+id,category,itemName,itemDescription,healthDelta,hungerDelta,thirstDelta,fatigueDelta,moodDelta,sellPrice,usesStorage,showInWarehouse
+1,Drink,Water,Cold well water,0,0,-30,0,0,0,true,true
+2,Drink,Beer,Cheap tavern beer,-2,0,-20,0,10,0,true,true
+3,Food,Bread,Freshly baked bread,0,-25,0,0,0,0,true,true
+4,Food,Carrot,Freshly harvested carrot,0,-15,0,0,0,2,true,true
+5,Food,Potato,Freshly harvested potato,0,-20,0,0,0,3,true,true
+6,Seed,Carrot Seed,Seed for planting carrots,0,0,0,0,0,1,true,true
+7,Seed,Potato Seed,Seed for planting potatoes,0,0,0,0,0,1,true,true
+8,Resource,Gold,Common currency,0,0,0,0,0,0,false,false
+9,Resource,Wood,Construction timber,0,0,0,0,0,0,true,true
+10,Resource,Stone,Construction stone,0,0,0,0,0,0,true,true

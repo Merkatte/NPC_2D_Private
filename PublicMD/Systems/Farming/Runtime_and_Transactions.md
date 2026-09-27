@@ -19,7 +19,7 @@ FarmSeedSource.TryPlantSeed(seedItemId)
   -> catalog membership + Seed category + 대상/창고 수명 검증
   -> FarmWorkSite.TryPlantCrop(definition, warehouse) (internal)
   -> 초기화 성공 + 유효 definition + current crop 없음 확인
-  -> WarehouseInventory.TryRemove(seedItemId, 1) 전량 차감 성공
+  -> ResourceManager.TrySpend({seedItemId: 1}) 전량 차감 성공
   -> current definition + Growing + progress 0 + pending yield 초기화
   -> StateChanged (재고와 농장 상태 확정 이후)
 
@@ -98,13 +98,13 @@ Farming과 Harvest가 phase로 배타적이므로 selector는 `FarmWorkPhase`를
 
 ### 2026-09-22 심기 연결
 
-FarmerTest의 `/InGameObjects/Map/Soil` 인스턴스에 FarmSeedSource를 추가하고 FarmWorkSite·WarehouseInventory·CropCatalog·ItemDataContext를 명시적으로 연결했다. 기존 collider·레이어·Hierarchy를 유지하며 시작 작물만 null로 override한다. 원본 Soil prefab은 변경하지 않았다. 두 TestFarmProductionWindow의 선택 버튼도 이 source를 사용해 실제 씨앗을 소비한다.
+FarmerTest의 `/InGameObjects/Map/Soil` 인스턴스에 FarmSeedSource를 추가하고 FarmWorkSite·ResourceManager·CropCatalog·ItemDataContext를 명시적으로 연결했다. 기존 collider·레이어·Hierarchy를 유지하며 시작 작물만 null로 override한다. 건설 이관에서는 Soil prefab에도 빈 밭과 명시적 dependency 주입을 위한 CompletedBuildingFacility 연결을 추가한다. 두 TestFarmProductionWindow의 선택 버튼도 이 source를 사용해 실제 씨앗을 소비한다.
 
 `Tools/NPC/Farming/Run Seed Checks`는 임시 객체로 production transaction을 검사하고 정리하며 플레이어 밭·재고를 변경하지 않는다. host 대체 환경에서 이 검사 39개와 UI/router 검사 12개를 통과했다. native Unity 실행·화면 결과는 PROGRESS를 따른다.
 
 ## 알려진 제약과 TBD
 
-- `WarehouseInventory`는 용량 제한이 없어 창고 측 입고 거부 경로를 Play Mode에서 재현할 수 없다. 부분 수락은 봇짐이 가득 찬 경우로만 관측된다.
+- 공유 창고는 용량 제한이 있다. 부분 입고 잔량을 cargo에 보존하고 가득 찬 창고밖에 없으면 Farmer는 Idle 후 재판단한다.
 - 씨앗 소비와 심기 연결은 구현했다. 씨앗 구매·운반·자동 보충은 없으며 시작 재고 소진 후 다시 심을 수 없다. 실제 Play 검증은 별도다.
 - 서로 다른 작물이 한 봇짐에 섞이는 상황은 현재 게임 구조상 도달할 수 없다고 판단해 item type 불일치는 단순 거부로 처리한다.
 
@@ -118,3 +118,9 @@ FarmerTest의 `/InGameObjects/Map/Soil` 인스턴스에 FarmSeedSource를 추가
 ## 문서 갱신 조건
 
 crop 선택, phase/progress, capability 게이트, 수확물 인도, 최종 cycle 종료와 `StateChanged` 의미가 바뀌면 갱신한다.
+
+## 건설·공유 자원 연결
+
+FarmSeedSource가 전달하는 공유 ResourceManager의 DeferNotifications 범위 안에서 씨앗 지출과 SetCrop을 완료한다. 수량 알림에서 다시 심기를 요청해도 이미 작물 상태가 확정돼 있다. SeedSelectionPopup은 자원 알림에 맞춰 재고를 표시하고 바인딩/닫기 수명을 정리한다.
+
+새 완공 Farm은 빈 밭으로 생성하며 Factory가 plot 외곽 작업 영역·공유 자원·catalog를 주입한 뒤 초기화한다. 작업 위치 난수와 수확량 난수는 별도 source다. 시설 후보 비교는 등록 anchor를 사용하고 작업점 난수는 선택 후 소비한다. 클릭 collider와 FarmSeedSource는 같은 오브젝트에 연결하며 부지의 공사 클릭 source는 완료 후 비활성이다.

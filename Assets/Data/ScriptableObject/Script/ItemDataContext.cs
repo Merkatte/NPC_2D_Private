@@ -7,6 +7,7 @@ public class ItemDataContext : ScriptableObject
     [SerializeField] private TextAsset _itemTextData;
 
     private Dictionary<ItemCategory, List<ItemInfo>> _itemInfos;
+    private void OnValidate() { _itemInfos = null; }
 
     public Dictionary<ItemCategory, List<ItemInfo>> ItemInfos()
     {

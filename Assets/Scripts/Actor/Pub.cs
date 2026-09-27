@@ -6,6 +6,7 @@ public class Pub : BaseInteractionProvider
     [SerializeField] private ItemDataContext _itemDataContext;
 
     private Dictionary<ItemCategory, List<ItemInfo>> _itemInfos;
+    public void Configure(ItemDataContext items) { _itemDataContext = items; }
 
     protected override bool TryInitializeCore(out string failureReason)
     {

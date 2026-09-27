@@ -8,6 +8,8 @@ public sealed class BuilderActionSelector : BaseNPCActionSelector
     [SerializeField] private TilemapNavigation _navigation;
     [SerializeField] private WanderActionCost _wanderCost;
     [SerializeField] private MonoBehaviour _randomSource;
+    [SerializeField] private BuildingPlotRegistry _buildingPlots;
+    [SerializeField] private BuildActionCost _buildCost;
 
     private DestinationDecider _decider;
     private IRandomSource _random;
@@ -41,10 +43,11 @@ public sealed class BuilderActionSelector : BaseNPCActionSelector
         var rented = new List<IAction>();
         if (decision.Intent == NPCIntent.Eat || decision.Intent == NPCIntent.Drink || decision.Intent == NPCIntent.Sleep)
         {
+            if (!decision.HasLiveDestination) return BuildIdleQueue(component, stat);
             ActionType type = decision.Intent == NPCIntent.Eat ? ActionType.Eat :
                 decision.Intent == NPCIntent.Drink ? ActionType.Drink : ActionType.Sleep;
-            IInteractionProvider provider = null;
-            if (type != ActionType.Sleep && !_destinationDB.TryGetInteractionProvider(decision.DestinationKey, type, out provider))
+            IInteractionProvider provider = decision.Provider;
+            if (type != ActionType.Sleep && provider == null)
                 return BuildIdleQueue(component, stat);
             var movement = new ActionContext(component, stat, decision.DestinationPos,
                 moveRequest: MoveRequest.Navigated(decision.DestinationPos), navigation: _navigation);
@@ -59,8 +62,28 @@ public sealed class BuilderActionSelector : BaseNPCActionSelector
         }
 
         // A critical unmet need must not be replaced with a role activity.
-        if (_decider.HasCriticalNeed(stat) ||
-            !_navigation.TryGetRandomReachablePosition(component.Position, _random, out Vector3 target))
+        if (_decider.HasCriticalNeed(stat))
+            return BuildIdleQueue(component, stat);
+
+        if (_buildingPlots && _buildCost && _buildCost.IsConfigured)
+        {
+            var candidates = new List<BuildingPlot>();
+            foreach (BuildingPlot plot in _buildingPlots.Plots)
+                if (plot && plot.CanReserve) candidates.Add(plot);
+            candidates.Sort((left, right) => left.ApplicationOrder.CompareTo(right.ApplicationOrder));
+            foreach (BuildingPlot plot in candidates)
+            {
+                if (!plot.TryReserve(out ConstructionReservation reservation)) continue;
+                var buildContext = new ActionContext(component, stat, reservation.WorkPosition, _buildCost,
+                    provider: plot, request: new InteractionRequest(ActionType.Build, reservation: reservation),
+                    moveRequest: MoveRequest.Navigated(reservation.WorkPosition), navigation: _navigation);
+                if (TryRentAction(ActionType.Build, buildContext, rented)) return new Queue<IAction>(rented);
+                reservation.Dispose();
+                ReturnAll(rented);
+                return BuildIdleQueue(component, stat);
+            }
+        }
+        if (!_navigation.TryGetRandomReachablePosition(component.Position, _random, out Vector3 target))
             return BuildIdleQueue(component, stat);
 
         var context = new ActionContext(component, stat, target, _wanderCost,

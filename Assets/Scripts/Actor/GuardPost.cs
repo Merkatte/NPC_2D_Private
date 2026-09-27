@@ -20,9 +20,9 @@ public sealed class GuardPost : BaseInteractionProvider, IHealthState
     private void Awake()
     {
         InitializeHealth();
-        if (!TryInitialize(out string reason))
-            Debug.LogError($"GuardPost '{name}': {reason}", this);
     }
+
+    public void ConfigureConstruction(BoxCollider2D patrolArea) { _patrolArea = patrolArea; }
 
     private void InitializeHealth()
     {

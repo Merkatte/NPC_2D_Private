@@ -18,11 +18,12 @@
 | [Navigation](Navigation.md) | 노드 그리드, A*, 힙, 지형 비용과 지역 출입구를 소유하는 단일 기능 문서 |
 | `NPC_Runtime.md` | 단일 기능 문서 |
 | `NPC_Decision_and_Actions/` | 5개 leaf를 가진 기능 인덱스 |
+| [Construction](Construction/README.md) | 정의·부지·완공 시설·UI의 4개 leaf |
 | `Farming/` | 4개 leaf를 가진 기능 인덱스 |
 | `Combat/` | 4개 leaf를 가진 기능 인덱스 |
 | `Interaction_and_Destinations.md` | 단일 기능 문서 |
-| `Inventory_and_Items.md` | 단일 기능 문서 |
-| `Player_Gold.md` | 단일 기능 문서 |
+| [Inventory and Items](Inventory_and_Items/README.md) | 정의·공유 자원·운반 및 입고·창고 UI의 4개 leaf |
+| `Player_Gold.md` | 공유 자원으로 이동하는 안내 |
 | `Merchant_Caravan.md` | 단일 기능 문서 |
 | `Town_Hall.md` | 단일 기능 문서 |
 | `NPC_Presentation.md` | 단일 기능 문서 |

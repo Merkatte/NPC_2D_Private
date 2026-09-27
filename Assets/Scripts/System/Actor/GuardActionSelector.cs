@@ -132,7 +132,7 @@ public class GuardActionSelector : BaseNPCActionSelector
             return BuildIdleQueue(component, stat);
         }
 
-        return BuildGuardQueue(component, stat);
+        return BuildGuardQueue(component, stat, decision);
     }
 
     private bool TryBuildCombatQueue(NPCComponent component, NPCStat stat, GuardStat guardStat, out Queue<IAction> queue)
@@ -195,6 +195,7 @@ public class GuardActionSelector : BaseNPCActionSelector
 
     private Queue<IAction> BuildNeedQueue(NPCDecision decision, NPCComponent component, NPCStat stat)
     {
+        if (!decision.HasLiveDestination) return BuildIdleQueue(component, stat);
         List<IAction> rented = new List<IAction>();
 
         ActionContext moveContext = BuildMoveContext(decision.DestinationPos, component, stat);
@@ -205,7 +206,7 @@ public class GuardActionSelector : BaseNPCActionSelector
         }
 
         ActionType actionType = ToActionType(decision.Intent);
-        _destinationDB.TryGetInteractionProvider(decision.DestinationKey, actionType, out var provider);
+        IInteractionProvider provider = decision.Provider;
         ActionContext interactContext = new ActionContext(component, stat, decision.DestinationPos,
             provider: provider, request: decision.Request);
 
@@ -218,11 +219,14 @@ public class GuardActionSelector : BaseNPCActionSelector
         return new Queue<IAction>(rented);
     }
 
-    private Queue<IAction> BuildGuardQueue(NPCComponent component, NPCStat stat)
+    private Queue<IAction> BuildGuardQueue(NPCComponent component, NPCStat stat, NPCDecision decision)
     {
-        if (!_destinationDB.TryGetDestinationPos(BuildingType.GuardPost, out Vector3 guardPos) ||
-            !_destinationDB.TryGetInteractionProvider(BuildingType.GuardPost, ActionType.Guard, out var provider) ||
-            !provider.TryGetActionPosition(ActionType.Guard, guardPos, out Vector3 firstPoint))
+        IInteractionProvider provider = decision.HasLiveDestination ? decision.Provider : null;
+        Vector3 guardPos = decision.DestinationPos;
+        if (provider == null && !_destinationDB.TrySelectNearest(BuildingType.GuardPost, ActionType.Guard,
+            component.Position, out _, out provider, out guardPos))
+            return BuildIdleQueue(component, stat);
+        if (!provider.CanInteract(ActionType.Guard) || !provider.TryGetActionPosition(ActionType.Guard, guardPos, out Vector3 firstPoint))
             return BuildIdleQueue(component, stat);
 
         List<IAction> rented = new List<IAction>();

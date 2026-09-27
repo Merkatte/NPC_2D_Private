@@ -27,7 +27,7 @@ public class InteractableManager : MonoBehaviour
         if (!_providerCache.TryGetValue((destinationObject, actionType), out var component))
             return false;
 
-        if (!component || !component.CanInteract(actionType))
+        if (!component || !component.isActiveAndEnabled || !component.CanInteract(actionType))
             return false;
 
         provider = component;
@@ -61,18 +61,24 @@ public class InteractableManager : MonoBehaviour
             if (!provider.TryInitialize(out string failureReason))
                 Debug.LogError($"InteractableManager: {provider.name} failed to initialize: {failureReason}");
 
-            RegisterProvider(provider);
+            TryRegisterProvider(provider);
         }
     }
 
-    private void RegisterProvider(BaseInteractionProvider provider)
+    public bool TryRegisterProvider(BaseInteractionProvider provider)
     {
+        EnsureInitialized();
+        if (!provider || !provider.TryInitialize(out _)) return false;
+        foreach (ActionType type in Enum.GetValues(typeof(ActionType)))
+            if (provider.Supports(type) && _providerCache.TryGetValue((provider.gameObject, type), out var current)
+                && current != provider) return false;
         foreach (ActionType type in Enum.GetValues(typeof(ActionType)))
         {
             if (!provider.Supports(type))
                 continue;
 
             var key = (provider.gameObject, type);
+            if (_providerCache.TryGetValue(key, out var existing) && existing == provider) continue;
             if (_providerCache.ContainsKey(key))
             {
                 Debug.LogError($"InteractableManager: duplicate provider for ({provider.gameObject.name}, {type}); keeping the first registered provider.");
@@ -80,6 +86,16 @@ public class InteractableManager : MonoBehaviour
             }
 
             _providerCache[key] = provider;
+        }
+        return true;
+    }
+    public void UnregisterProvider(BaseInteractionProvider provider)
+    {
+        if (!provider) return;
+        foreach (ActionType type in Enum.GetValues(typeof(ActionType)))
+        {
+            var key = (provider.gameObject, type);
+            if (_providerCache.TryGetValue(key, out var current) && current == provider) _providerCache.Remove(key);
         }
     }
 }

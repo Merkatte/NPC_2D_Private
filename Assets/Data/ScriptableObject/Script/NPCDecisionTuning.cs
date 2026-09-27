@@ -91,6 +91,14 @@ public class NPCDecisionTuning : ScriptableObject
 
     public bool LogDecisionTrace => _logDecisionTrace;
 
+    public bool IsCriticalNeed(float value, float maximum)
+        => maximum > 0f && Mathf.Clamp01(value / maximum) > _criticalNeedThreshold;
+
+    public bool HasCriticalNeed(IStatView stat)
+        => stat != null && (IsCriticalNeed(stat.GetFatigue, stat.GetFatigueMax)
+            || IsCriticalNeed(stat.GetHunger, stat.GetHungerMax)
+            || IsCriticalNeed(stat.GetThirst, stat.GetThirstMax));
+
     private const float MinEstimatedSeconds = 0.01f;
 
     private void OnValidate()

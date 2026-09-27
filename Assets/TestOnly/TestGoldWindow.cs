@@ -8,7 +8,7 @@ public class TestGoldWindow : MonoBehaviour
     private const int AffordableSpendAmount = 10;
     private const int UnaffordableSpendAmount = 1000;
 
-    [SerializeField] private GoldManager _goldManager;
+    [SerializeField] private ResourceManager _goldManager;
 
     private Rect _windowRect = new Rect(560f, 20f, WindowWidth, WindowHeight);
 
@@ -19,7 +19,7 @@ public class TestGoldWindow : MonoBehaviour
     {
         if (!_goldManager)
         {
-            _goldManager = FindFirstObjectByType<GoldManager>();
+            _goldManager = FindFirstObjectByType<ResourceManager>();
         }
     }
 
@@ -32,12 +32,12 @@ public class TestGoldWindow : MonoBehaviour
     {
         if (!_goldManager)
         {
-            GUILayout.Label("Missing GoldManager reference.");
+            GUILayout.Label("Missing ResourceManager reference.");
             GUI.DragWindow();
             return;
         }
 
-        GUILayout.Label($"Gold: {_goldManager.CurrentGold}");
+        GUILayout.Label($"Gold: {_goldManager.GetQuantity(ResourceManager.GoldItemId)}");
 
         if (GUILayout.Button($"Add {EarnAmount} Gold", GUILayout.Height(28f)))
         {
@@ -64,16 +64,16 @@ public class TestGoldWindow : MonoBehaviour
 
     private void Earn(int amount)
     {
-        int previousGold = _goldManager.CurrentGold;
-        _goldManager.Add(amount);
-        RecordResult($"Add({amount}): {previousGold} -> {_goldManager.CurrentGold}");
+        int previousGold = _goldManager.GetQuantity(ResourceManager.GoldItemId);
+        _goldManager.TryRefund(new System.Collections.Generic.Dictionary<int, int> { { ResourceManager.GoldItemId, amount } });
+        RecordResult($"Add({amount}): {previousGold} -> {_goldManager.GetQuantity(ResourceManager.GoldItemId)}");
     }
 
     private void Spend(int amount)
     {
-        int previousGold = _goldManager.CurrentGold;
-        bool success = _goldManager.TrySpend(amount);
-        RecordResult($"TrySpend({amount})={success}: {previousGold} -> {_goldManager.CurrentGold}");
+        int previousGold = _goldManager.GetQuantity(ResourceManager.GoldItemId);
+        bool success = _goldManager.TrySpend(new System.Collections.Generic.Dictionary<int, int> { { ResourceManager.GoldItemId, amount } });
+        RecordResult($"TrySpend({amount})={success}: {previousGold} -> {_goldManager.GetQuantity(ResourceManager.GoldItemId)}");
     }
 
     // Logged once per button press, never per frame — OnGUI fires on every GUI event, so the

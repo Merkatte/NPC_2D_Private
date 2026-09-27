@@ -50,23 +50,34 @@ public static class SeedPlantingTests
                     && result == SeedPlantResult.NotEnoughSeeds && !fixture.Farm.HasCrop, "Empty stock was accepted.");
                 checks += 3;
 
-                fixture.Warehouse.TryAdd(crop.SeedItemId, 2, out _);
+                Require(fixture.Warehouse.TryRefund(new Dictionary<int, int> { { crop.SeedItemId, 2 } }), "Seed fixture refund failed.");
                 fixture.Source.GetAvailableSeeds(available);
                 Require(available.Count == 1 && available[0].ID == crop.SeedItemId
                     && fixture.Warehouse.GetQuantity(crop.SeedItemId) == 2 && !fixture.Farm.HasCrop,
                     "Reading available seeds changed state or returned wrong items.");
                 int events = 0;
+                int resourceEvents = 0;
+                bool observedCommittedState = true;
                 Action observer = () =>
                 {
                     ++events;
-                    Require(fixture.Farm.CurrentDefinition == crop && fixture.Warehouse.GetQuantity(crop.SeedItemId) == 1,
-                        "Observer saw an incomplete payment/planting transaction.");
+                    observedCommittedState &= fixture.Farm.CurrentDefinition == crop
+                        && fixture.Warehouse.GetQuantity(crop.SeedItemId) == 1;
+                };
+                Action resourceObserver = () =>
+                {
+                    ++resourceEvents;
+                    observedCommittedState &= fixture.Farm.CurrentDefinition == crop
+                        && fixture.Warehouse.GetQuantity(crop.SeedItemId) == 1;
                 };
                 fixture.Farm.StateChanged += observer;
+                fixture.Warehouse.ResourcesChanged += resourceObserver;
                 Require(fixture.Source.TryPlantSeed(crop.SeedItemId, out result) && result == SeedPlantResult.Success,
                     "Valid planting failed.");
                 fixture.Farm.StateChanged -= observer;
-                Require(events == 1 && fixture.Farm.CurrentProgress == 0f && !fixture.Farm.CanSelectCrop,
+                fixture.Warehouse.ResourcesChanged -= resourceObserver;
+                Require(events == 1 && resourceEvents == 1 && observedCommittedState
+                    && fixture.Farm.CurrentProgress == 0f && !fixture.Farm.CanSelectCrop,
                     "Commit notification or zero-progress lock is incorrect.");
                 Require(!fixture.Source.TryPlantSeed(crop.SeedItemId, out result) && result == SeedPlantResult.FarmOccupied
                     && fixture.Warehouse.GetQuantity(crop.SeedItemId) == 1, "Repeat press charged a second seed.");
@@ -93,7 +104,7 @@ public static class SeedPlantingTests
         using (var second = new Fixture(catalog, items))
         {
             Set(second.Source, "_warehouse", first.Warehouse);
-            first.Warehouse.TryAdd(carrot.SeedItemId, 1, out _);
+            Require(first.Warehouse.TryRefund(new Dictionary<int, int> { { carrot.SeedItemId, 1 } }), "Shared seed fixture refund failed.");
             Require(!first.Source.TryPlantSeed(-1, out SeedPlantResult result) && result == SeedPlantResult.InvalidSeed
                 && first.Warehouse.GetQuantity(carrot.SeedItemId) == 1 && !first.Farm.HasCrop, "Invalid seed mutated state.");
             first.Source.enabled = false;
@@ -122,12 +133,12 @@ public static class SeedPlantingTests
 
         using (var fixture = new Fixture(catalog, items))
         {
-            fixture.Warehouse.TryAdd(carrot.SeedItemId, 2, out _);
-            Require(!fixture.Warehouse.TryRemove(carrot.SeedItemId, 3)
-                && !fixture.Warehouse.TryRemove(carrot.SeedItemId, 0)
-                && !fixture.Warehouse.TryRemove(carrot.SeedItemId, -1)
+            Require(fixture.Warehouse.TryRefund(new Dictionary<int, int> { { carrot.SeedItemId, 2 } }), "Seed fixture refund failed.");
+            Require(!fixture.Warehouse.TrySpend(new Dictionary<int, int> { { carrot.SeedItemId, 3 } })
+                && !fixture.Warehouse.TrySpend(new Dictionary<int, int> { { carrot.SeedItemId, 0 } })
+                && !fixture.Warehouse.TrySpend(new Dictionary<int, int> { { carrot.SeedItemId, -1 } })
                 && fixture.Warehouse.GetQuantity(carrot.SeedItemId) == 2, "Rejected removal changed stock.");
-            Require(!fixture.Warehouse.TryRemoveBatch(new Dictionary<int, int>
+            Require(!fixture.Warehouse.TrySpend(new Dictionary<int, int>
                 { { carrot.SeedItemId, 1 }, { potato.SeedItemId, 1 } })
                 && fixture.Warehouse.GetQuantity(carrot.SeedItemId) == 2, "Batch sale lost atomicity.");
             checks += 2;
@@ -158,14 +169,15 @@ public static class SeedPlantingTests
     {
         public readonly GameObject Root;
         public readonly FarmWorkSite Farm;
-        public readonly WarehouseInventory Warehouse;
+        public readonly ResourceManager Warehouse;
         public readonly FarmSeedSource Source;
 
         public Fixture(CropCatalog catalog, ItemDataContext items)
         {
             Root = new GameObject("SeedPlantingCheck") { hideFlags = HideFlags.HideAndDontSave };
             Farm = Root.AddComponent<FarmWorkSite>();
-            Warehouse = Root.AddComponent<WarehouseInventory>();
+            Warehouse = Root.AddComponent<ResourceManager>();
+            Set(Warehouse, "_itemDataContext", items);
             Source = Root.AddComponent<FarmSeedSource>();
             Set(Farm, "_randomSource", Root.AddComponent<SeededRandomSource>());
             Set(Source, "_farm", Farm);

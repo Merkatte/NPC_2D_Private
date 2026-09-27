@@ -11,4 +11,5 @@ public enum ActionType
     Harvest,
     Deposit,
     Wander,
+    Build,
 }

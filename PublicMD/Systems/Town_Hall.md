@@ -10,7 +10,7 @@ TownHallVisual은 클릭 표면과 월드 아이콘만 소유한다. TownHallPop
 
 1. Awake가 직군별 설정을 검증하고 CandidateReady, 남은 시간 0으로 runtime 상태를 생성한다. 중복/잘못된 설정은 한 번 오류를 출력하고 모집을 거부한다.
 2. TryDispatchCandidate(NPCType)가 해당 직군의 준비 상태와 활성 상태를 확인한다.
-3. NPCManager.TryReserveWorker → GoldManager.TrySpend 순으로 처리한다. 예약 실패는 골드·후보 무변경, 골드 부족은 예약 취소 후 후보 보존이다.
+3. NPCManager.TryReserveWorker → ResourceManager.TrySpend 순으로 처리한다. 예약 실패는 골드·후보 무변경, 골드 부족은 예약 취소 후 후보 보존이다.
 4. 성공한 직군만 Recruiting으로 전환하고 전체 쿨다운 값을 채운다. 낙하 및 기립 연출 중에는 해당 직군의 IsDispatching이 타이머를 막는다. 다른 직군은 계속 모집·카운트다운할 수 있다.
 5. 기존 SpawnLanding clip의 visual 하강량을 제외한 나머지만 root에 적용한다. 기립까지 기다린 뒤 CommitReservation을 호출한다. 성공 후에만 해당 직군의 카운트다운을 시작한다.
 6. 컴포넌트 또는 GameObject 비활성화 시 각 코루틴을 명시적으로 중지하고 남은 유료 예약은 착지점에서 커밋한다. 커밋 실패는 예약 취소·지원금 환급·후보 복구로 처리한다. 씬 teardown 중에는 worker를 다시 초기화하지 않는다.
@@ -54,7 +54,7 @@ WorkerReservation의 계약과 소유는 [Spawning and Pooling](Spawning_and_Poo
 
 2026-09-26 Unity CLI로 `BuilderCitizenSetup.Setup`을 실행해 세 번째 카드와 초기 준비 상태의 100골드/60초 Builder 설정을 prefab/scene에 저장했다. TownHallPopup은 비어 있지 않은 카드 목록을 사용하고 null/중복 직군을 거부한다. TownHallRecruitCard에는 건축가 이름이 등록돼 있다. 실제 모집 플레이는 사람의 확인 항목이다. [Builder 계획](../Plans/Builder_Citizen_Implementation_Plan.md) 참고.
 
-FarmerTest의 기존 TownHall 인스턴스는 NPCManager/GoldManager를 prefab override로 참조한다. TownHall.prefab과 scene 인스턴스의 `_recruitments`에는 Farmer·Guard·Builder 행이 있다. FarmerTest NPCManager에도 세 직업의 생성 entry가 있고 worker pool을 공유한다. Builder 추가 시 기존 Farmer·Guard 비용과 쿨다운은 유지했다.
+FarmerTest의 기존 TownHall 인스턴스는 NPCManager/ResourceManager를 prefab override로 참조한다. TownHall.prefab과 scene 인스턴스의 `_recruitments`에는 Farmer·Guard·Builder 행이 있다. FarmerTest NPCManager에도 세 직업의 생성 entry가 있고 worker pool을 공유한다. Builder 추가 시 기존 Farmer·Guard 비용과 쿨다운은 유지했다.
 
 TownHallPopup.prefab은 기존 목재 외곽·제목·닫기 버튼을 유지하며 상인 탭과 양피지 스타일을 재사용한다. 세 카드에는 farmer-hoe, guard-sword, builder-hammer sprite subasset을 지정한다. 카드 폭은 330, 중심 x는 -350/0/350으로 설정한다. scene의 `_recruitment`와 UIManager popup 등록은 유지한다. PointerClickRouter와 시청 클릭 collider의 layer 9 mask 연결은 이미 존재하며 레이어 이름 자체는 필수 조건이 아니다.
 
@@ -78,3 +78,7 @@ TownHallPopup.prefab은 기존 목재 외곽·제목·닫기 버튼을 유지하
 ## 문서 갱신 조건
 
 직군 설정·예약 transaction·낙하 lifecycle·UI 탭·Unity 배선이 바뀌면 갱신한다.
+
+## 공유 자원 transaction
+
+기존 _goldManager 필드의 타입은 ResourceManager이며 골드 item ID로 지출/환급한다. DeferNotifications 범위에서 후보·예약 상태까지 확정해 중복 모집 재진입을 막는다. 환급이 정수 상한 때문에 실패하면 PendingRefund와 진행 상태를 보존하고 TryRetryRefund로 재시도한다. 실패한 환급을 지급 완료로 지우거나 포화 처리하지 않는다. TownHallPopup은 기존 모집 상태·시간 표시 경로를 유지한다. 골드 잔액 HUD를 추가하지 않는다. 단일 시청 규칙은 유지하며 시청은 이번 건설 목록에 포함하지 않는다.

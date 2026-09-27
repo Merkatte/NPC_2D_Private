@@ -5,12 +5,23 @@ using UnityEngine;
 public sealed class FarmSeedSource : MonoBehaviour, IClickPopupSource
 {
     [SerializeField] private FarmWorkSite _farm;
-    [SerializeField] private WarehouseInventory _warehouse;
+    [SerializeField] private ResourceManager _warehouse;
     [SerializeField] private CropCatalog _cropCatalog;
     [SerializeField] private ItemDataContext _itemDataContext;
 
     private bool _hasValidatedConfiguration;
     private bool _isConfigured;
+
+    public ResourceManager Resources => _warehouse;
+    public void Configure(ResourceManager resources, CropCatalog catalog, ItemDataContext items)
+    {
+        _warehouse = resources;
+        _cropCatalog = catalog;
+        _itemDataContext = items;
+        _hasValidatedConfiguration = false;
+        _isConfigured = false;
+    }
+    public bool TryInitialize() => EnsureConfigured();
 
     public bool IsAvailable => isActiveAndEnabled && _farm && _farm.isActiveAndEnabled
         && _warehouse && _warehouse.isActiveAndEnabled;

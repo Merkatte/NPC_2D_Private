@@ -8,7 +8,7 @@ NPC가 목적지를 찾고, 그 장소가 제공하는 capability를 조회하�
 
 | 세부 기능 | 책임 |
 |---|---|
-| Destination registry | `BuildingType`을 위치와 destination object로 변환 |
+| Destination registry | `BuildingType`별 여러 시설의 anchor와 identity 등록 |
 | Provider registry | destination object와 `ActionType`으로 provider 조회 |
 | Interaction protocol | 지원 여부, action 위치, option 열거, request 실행, result 반환 |
 
@@ -17,9 +17,9 @@ NPC가 목적지를 찾고, 그 장소가 제공하는 capability를 조회하�
 ## 현재 실행 흐름
 
 ```text
-DestinationDB.TryGetDestinationPos(BuildingType)
+DestinationDB.TrySelectNearest(BuildingType, ActionType, origin)
 
-DestinationDB.TryGetInteractionProvider(BuildingType, ActionType)
+선택한 DestinationInfo와 IInteractionProvider를 NPCDecision에 보존
   -> destination row의 GameObject
   -> InteractableManager.TryGetInteractionProvider(GameObject, ActionType)
   -> IInteractionProvider
@@ -52,11 +52,12 @@ item을 옮기는 action:
 | 경로 | 한 줄 책임 |
 |---|---|
 | `Assets/Data/Struct/InteractionOption.cs` | utility 판단에 제공되는 interaction 후보 값 |
-| `Assets/Data/Struct/InteractionRequest.cs` | 선택된 action, option, strength와 transaction에 참여하는 cargo를 전달하는 요청 값 |
+| `Assets/Data/Struct/InteractionRequest.cs` | 선택된 action, option, strength, cargo와 선택적 reservation을 전달하는 요청 값 |
 | `Assets/Data/Struct/InteractionResult.cs` | provider 실행 결과의 actor 효과 값 |
 | `Assets/Scripts/Actor/BaseInteractionProvider.cs` | 공통 초기화·검증·dispatch template을 제공하는 provider base |
 | `Assets/Scripts/Actor/Pub.cs` | item table을 이용해 Eat·Drink option과 결과를 제공하는 facility |
 | `Assets/Scripts/Enum/BuildingType.cs` | destination registry의 안정적인 건물 key |
+| `Assets/Scripts/Interface/IInteractionReservation.cs` | plain lease의 IsValid/Dispose 최소 계약 |
 | `Assets/Scripts/Interface/IInteractionProvider.cs` | support·availability·action position·option·execute 공통 계약 |
 | `Assets/Scripts/Manager/InteractableManager.cs` | scene provider 초기화와 `(GameObject, ActionType)` registry |
 | `Assets/Scripts/System/Action/BaseBuildingAction.cs` | 실내 action의 건물 출입 표현 lifecycle |
@@ -88,12 +89,12 @@ item을 옮기는 action:
 
 ## Unity 배선
 
-`DestinationDB` row에는 `BuildingType`, 이동 위치, provider가 붙은 destination object를 연결한다. 모든 `BaseInteractionProvider`는 `InteractableManager._interactables`에 등록한다. FarmerTest의 Farm/Warehouse 배선을 유지하며 GuardPost를 추가한다. GuardTest도 GuardPost provider를 등록하고 기존 PatrolArea를 위치 기준으로 사용한다. GuardPost.CanInteract는 초소 사망·비활성화를 반영한다.
+`DestinationDB` row에는 `BuildingType`, 이동 위치, provider가 붙은 destination object를 연결한다. 기존 provider는 `InteractableManager._interactables`, 새 완공 provider는 명시적 runtime Register/Unregister로 등록한다. FarmerTest의 Farm/Warehouse 배선을 유지하며 GuardPost를 추가한다. GuardTest도 GuardPost provider를 등록하고 기존 PatrolArea를 위치 기준으로 사용한다. GuardPost.CanInteract는 초소 사망·비활성화를 반영한다.
 
 ## 알려진 제약과 TBD
 
 - `SleepAction`은 현재 provider transaction 없이 건물 위치와 시간 기반으로 동작한다.
-- destination row의 중복 key는 현재 마지막 유효 row가 dictionary 값을 덮어쓴다.
+- 같은 BuildingType의 여러 시설을 등록 순서대로 보관한다. 등록 anchor의 제곱거리 단일 순회로 가용 시설을 선택하고 동률은 등록 순서를 유지한다. 후보마다 경로 탐색하거나 작업 위치 난수를 소비하지 않는다.
 - `ActionContext.InteractionProvider`는 캐싱된 참조이므로 provider가 파괴되면 감지하지 못한다. 현재 facility provider를 파괴하는 경로가 없어 실제 위험은 없고, `WarehouseDepositPoint`처럼 backing `MonoBehaviour`를 이미 필드로 갖고 있는 경우에만 Unity null 규칙으로 재확인한다.
 
 ## 관련 문서
@@ -105,3 +106,9 @@ item을 옮기는 action:
 ## 문서 갱신 조건
 
 provider protocol, destination lookup, registry 조립, request/result shape 또는 건물 action lifecycle이 바뀌면 갱신한다.
+
+## 건설 예약과 다중 시설
+
+InteractionRequest.Reservation은 선택적 IInteractionReservation이다. 실제 scene BuildingPlot이 provider이며 ConstructionReservation은 provider를 구현하지 않는다. selector에서 받은 lease를 BuildAction이 전달하면 부지가 발급자·현재 공사·작업 슬롯을 검증한다. 구체 공사 완료 상태는 reservation/부지 domain이 소유하며 InteractionResult에 건설 payload를 추가하지 않는다.
+
+시설 선택 후 타입으로 다시 검색하지 않는다. NPCDecision의 선택된 DestinationInfo/Provider를 queue에 그대로 전달한다. Farm/Guard는 시설 확정 후 해당 provider에서 작업 위치를 구하며 장기 GuardAction은 같은 시설 안에서 다음 순찰점을 선택한다. 동적 해제는 해당 인스턴스의 등록만 제거한다. 기존 호환 조회는 첫 유효 시설을 읽는 API이며 새 selector의 identity 경로를 대신하지 않는다.

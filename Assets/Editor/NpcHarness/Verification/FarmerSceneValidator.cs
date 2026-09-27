@@ -59,10 +59,13 @@ internal static class FarmerSceneValidator
         ValidateProviders(interactables, farm, deposit, scene, checks);
         ValidateFarm(farm, scene, checks);
 
-        WarehouseInventory inventory = checks.Reference<WarehouseInventory>(deposit, "_inventorySource",
+        ResourceManager inventory = checks.Reference<ResourceManager>(deposit, "_inventorySource",
             "deposit.inventory", requireSameScene: true);
-        checks.Check("deposit.inventory-owner", deposit && inventory && inventory.gameObject == deposit.gameObject,
-            "WarehouseInventory on the registered WarehouseDepositPoint object", SceneWiringChecks.Describe(inventory));
+        ResourceManager resources = checks.RequireSingle<ResourceManager>("scene.resources");
+        checks.Check("deposit.inventory-owner", deposit && inventory && inventory == resources,
+            "scene shared ResourceManager on the registered WarehouseDepositPoint", SceneWiringChecks.Describe(inventory));
+        checks.Reference<ItemDataContext>(inventory, "_itemDataContext", "resources.items",
+            SceneWiringChecks.ReadReference(data, "_itemDataContext") as ItemDataContext);
         ValidateCatalog(data, checks);
     }
 
@@ -126,6 +129,7 @@ internal static class FarmerSceneValidator
     {
         List<string> issues = new List<string>();
         HashSet<int> keys = new HashSet<int>();
+        HashSet<(int Type, GameObject Owner)> instances = new HashSet<(int, GameObject)>();
         if (!destinations)
         {
             issues.Add("DestinationDB missing or ambiguous");
@@ -147,9 +151,10 @@ internal static class FarmerSceneValidator
                         int key = entry.FindPropertyRelative("BuildingType").intValue;
                         Transform location = entry.FindPropertyRelative("DestinationLoc").objectReferenceValue as Transform;
                         GameObject owner = entry.FindPropertyRelative("DestinationObject").objectReferenceValue as GameObject;
-                        if (!Enum.IsDefined(typeof(BuildingType), key) || !keys.Add(key))
+                        keys.Add(key);
+                        if (!Enum.IsDefined(typeof(BuildingType), key) || !instances.Add((key, owner)))
                         {
-                            issues.Add("invalid or duplicate destination " + key);
+                            issues.Add("invalid type or duplicate facility instance " + key);
                         }
                         if (!location || location.gameObject.scene != scene || !owner || owner.scene != scene)
                         {
@@ -172,7 +177,7 @@ internal static class FarmerSceneValidator
             issues.Add("Farm and Warehouse rows are required");
         }
         checks.Check("destinations.rows", issues.Count == 0,
-            "unique destination keys with scene references; Farm/Warehouse match inspected providers", Evidence(issues));
+            "unique facility instances with scene references; repeated types allowed; Farm/Warehouse match inspected providers", Evidence(issues));
     }
 
     private static void ValidateProviders(InteractableManager manager, FarmWorkSite farm,

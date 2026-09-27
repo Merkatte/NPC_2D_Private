@@ -50,7 +50,9 @@ public sealed class SeedSelectionPopup : PopBase
         if (!farmSource || !farmSource.CanPlant || !HasConfiguration())
             return false;
 
+        UnsubscribeResources();
         _source = farmSource;
+        _source.Resources.ResourcesChanged += RefreshSlots;
         ClearSelection();
         if (IsOpen)
             RefreshSlots();
@@ -75,7 +77,13 @@ public sealed class SeedSelectionPopup : PopBase
         if (_closeButton)
             _closeButton.onClick.RemoveListener(RequestClose);
         ClearSelection();
+        UnsubscribeResources();
         _source = null;
+    }
+
+    private void UnsubscribeResources()
+    {
+        if (_source && _source.Resources) _source.Resources.ResourcesChanged -= RefreshSlots;
     }
 
     private void Update()
@@ -104,6 +112,7 @@ public sealed class SeedSelectionPopup : PopBase
     protected override void OnBeforeClose()
     {
         ClearSelection();
+        UnsubscribeResources();
         _source = null;
     }
 

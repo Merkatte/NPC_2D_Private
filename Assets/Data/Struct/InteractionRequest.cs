@@ -11,6 +11,7 @@ public readonly struct InteractionRequest
     // drains from it. Null for interactions that move no items (Eat/Drink/Farming/Sleep).
     // Always a plain C# object (never a Unity object), so a plain null check is correct.
     public ICarriedInventory Cargo { get; }
+    public IInteractionReservation Reservation { get; }
 
     public bool HasOption => OptionId >= 0;
     public bool HasCargo => Cargo != null;
@@ -18,11 +19,12 @@ public readonly struct InteractionRequest
         Strength > 0f && !float.IsNaN(Strength) && !float.IsInfinity(Strength);
 
     public InteractionRequest(ActionType type, int optionId = NoOptionId, float strength = 1f,
-        ICarriedInventory cargo = null)
+        ICarriedInventory cargo = null, IInteractionReservation reservation = null)
     {
         Type = type;
         OptionId = optionId;
         Strength = strength;
         Cargo = cargo;
+        Reservation = reservation;
     }
 }

@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &486326561911067380
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6413189222709427866}
+  m_Layer: 0
+  m_Name: EntrancePoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6413189222709427866
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 486326561911067380}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -2.885, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8032994466984222010}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &889731979391159255
 GameObject:
   m_ObjectHideFlags: 0
@@ -743,6 +774,8 @@ GameObject:
   - component: {fileID: 7624489968676248884}
   - component: {fileID: 1965022778033901099}
   - component: {fileID: 9115611887044702452}
+  - component: {fileID: 8396103160889438357}
+  - component: {fileID: 641722543437416652}
   m_Layer: 7
   m_Name: Soil
   m_TagString: Untagged
@@ -764,6 +797,8 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 932144150611799353}
+  - {fileID: 6413189222709427866}
+  - {fileID: 662085947139202491}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7624489968676248884
@@ -781,7 +816,7 @@ MonoBehaviour:
   _startingDefinition: {fileID: 11400000, guid: eff732f7297c9b64fadddbd75320c624, type: 2}
   _randomSource: {fileID: 1965022778033901099}
   _workArea: {fileID: 9115611887044702452}
-  _workPositionRandomSource: {fileID: 1965022778033901099}
+  _workPositionRandomSource: {fileID: 1176520393018669884}
   _workGridColumns: 4
   _workGridRows: 2
   _workPositionJitter: 0.2
@@ -844,6 +879,41 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 6.175, y: 2.77}
   m_EdgeRadius: 0
+--- !u!114 &8396103160889438357
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5865412015043443405}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa23d435068e2e746b29412c030d2aa3, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::CompletedBuildingFacility
+  _entrance: {fileID: 6413189222709427866}
+  _provider: {fileID: 7624489968676248884}
+  _warehouse: {fileID: 0}
+  _farm: {fileID: 7624489968676248884}
+  _seedSource: {fileID: 641722543437416652}
+  _guardPost: {fileID: 0}
+  _pub: {fileID: 0}
+--- !u!114 &641722543437416652
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5865412015043443405}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aae8b199d67d47ae816da23e774212b2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::FarmSeedSource
+  _farm: {fileID: 7624489968676248884}
+  _warehouse: {fileID: 0}
+  _cropCatalog: {fileID: 11400000, guid: 438d66d42c5e491ca877e19caeceaa77, type: 2}
+  _itemDataContext: {fileID: 11400000, guid: df1cde6d9ea68634494a9967845fe8ad, type: 2}
 --- !u!1 &6340610628120795781
 GameObject:
   m_ObjectHideFlags: 0
@@ -891,6 +961,51 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CropVisualAnimator
   _animator: {fileID: 7876186448776988256}
   _spriteRenderer: {fileID: 7876186448777138024}
+--- !u!1 &6920166059465256154
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 662085947139202491}
+  - component: {fileID: 1176520393018669884}
+  m_Layer: 0
+  m_Name: WorkPositionRandom
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &662085947139202491
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6920166059465256154}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8032994466984222010}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1176520393018669884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6920166059465256154}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11f5310043904c2e910af5c48be5993c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SeededRandomSource
+  _seed: 270927
 --- !u!1 &7066064727463671150
 GameObject:
   m_ObjectHideFlags: 0

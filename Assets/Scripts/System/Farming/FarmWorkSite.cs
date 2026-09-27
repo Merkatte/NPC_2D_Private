@@ -46,6 +46,12 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
 
     public event Action StateChanged;
 
+    public void ConfigureConstruction(BoxCollider2D workArea)
+    {
+        _startingDefinition = null;
+        _workArea = workArea;
+    }
+
     public bool TryGetHoverInfo(out HoverInfo info)
     {
         if (!_currentDefinition || _currentDefinition.MaxProgress <= 0f)
@@ -64,7 +70,7 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
     }
 
     // FarmSeedSource validates catalog membership. No callbacks occur between payment and commit.
-    internal bool TryPlantCrop(FarmProductionDefinition definition, WarehouseInventory warehouse,
+    internal bool TryPlantCrop(FarmProductionDefinition definition, ResourceManager warehouse,
         out SeedPlantResult result)
     {
         result = SeedPlantResult.FarmUnavailable;
@@ -84,13 +90,23 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
             return false;
 
         result = SeedPlantResult.NotEnoughSeeds;
-        if (!warehouse.TryRemove(definition.SeedItemId, SeedsPerCycle))
-            return false;
+        using (warehouse.DeferNotifications())
+        {
+            if (!warehouse.TrySpend(new System.Collections.Generic.Dictionary<int, int> { { definition.SeedItemId, SeedsPerCycle } }))
+                return false;
 
-        SetCrop(definition);
-        result = SeedPlantResult.Success;
-        StateChanged?.Invoke();
-        return true;
+            SetCrop(definition);
+            result = SeedPlantResult.Success;
+            PublishState();
+            return true;
+        }
+    }
+
+    private void PublishState()
+    {
+        if (StateChanged == null) return;
+        foreach (Action handler in StateChanged.GetInvocationList())
+            try { handler(); } catch (Exception exception) { Debug.LogException(exception, this); }
     }
 
     private void SetCrop(FarmProductionDefinition definition)
@@ -163,7 +179,7 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
             if (_startingDefinition.IsValid)
             {
                 SetCrop(_startingDefinition);
-                StateChanged?.Invoke();
+                PublishState();
             }
             else
                 Debug.LogError($"FarmWorkSite '{name}': invalid starting definition; starting empty.", this);
@@ -182,7 +198,7 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
             : ApplyGrowingWork(request.Strength);
 
         if (succeeded)
-            StateChanged?.Invoke();
+            PublishState();
 
         return succeeded;
     }

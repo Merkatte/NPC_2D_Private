@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// The only component that knows GoldManager for the merchant feature. Scoped to merchant trades
+/// The only component that knows ResourceManager for the merchant feature. Scoped to merchant trades
 /// only — future gold-spending features (recruitment, upgrades) get their own small provider
 /// each, rather than being routed through this one. Not an IInteractionProvider: that system is
 /// for Worker NPC action-queue interactions, and a trade here is a direct player-UI transaction,
@@ -10,11 +10,11 @@ using UnityEngine;
 /// </summary>
 public sealed class MerchantTradeSite : MonoBehaviour
 {
-    [SerializeField] private WarehouseInventory _warehouse;
+    [SerializeField] private ResourceManager _warehouse;
     [SerializeField] private CropCatalog _cropCatalog;
-    [SerializeField] private GoldManager _goldManager;
     [SerializeField] private MonoBehaviour _dataManagerSource;
 
+    public ResourceManager Resources => _warehouse;
     private IDataManager _dataManager;
     private bool _isConfigured;
     private bool _hasLoggedConfigurationFailure;
@@ -23,10 +23,10 @@ public sealed class MerchantTradeSite : MonoBehaviour
     {
         _dataManager = _dataManagerSource as IDataManager;
 
-        if (!_warehouse || !_cropCatalog || !_goldManager || _dataManager == null)
+        if (!_warehouse || !_cropCatalog || _dataManager == null)
         {
             ReportConfigurationFailure(
-                "missing _warehouse/_cropCatalog/_goldManager, or _dataManagerSource does not implement IDataManager");
+                "missing _warehouse/_cropCatalog, or _dataManagerSource does not implement IDataManager");
             return;
         }
 
@@ -103,17 +103,10 @@ public sealed class MerchantTradeSite : MonoBehaviour
         if (!TryComputeTotal(quantitiesByItemId, out int total))
             return TradeResult.InvalidRequest;
 
-        // Checked before touching the warehouse: GoldManager.Add saturates at int.MaxValue instead
-        // of failing, so without this guard a sale could remove every item from the warehouse while
-        // only partially crediting the gold for it.
-        if ((long)_goldManager.CurrentGold + total > int.MaxValue)
+        if ((long)_warehouse.GetQuantity(ResourceManager.GoldItemId) + total > int.MaxValue)
             return TradeResult.InvalidRequest;
-
-        if (!_warehouse.TryRemoveBatch(quantitiesByItemId))
-            return TradeResult.OutOfStock;
-
-        _goldManager.Add(total);
-        return TradeResult.Success;
+        var credits = new Dictionary<int, int> { { ResourceManager.GoldItemId, total } };
+        return _warehouse.TryExchange(quantitiesByItemId, credits) ? TradeResult.Success : TradeResult.OutOfStock;
     }
 
     /// <summary>

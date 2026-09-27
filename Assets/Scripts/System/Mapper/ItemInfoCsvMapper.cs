@@ -4,7 +4,7 @@ using UnityEngine;
 // CSV columns: id,category,itemName,itemDescription,healthDelta,hungerDelta,thirstDelta,fatigueDelta,moodDelta,sellPrice
 public static class ItemInfoCsvMapper
 {
-    private const int ColumnCount = 10;
+    private const int ColumnCount = 12;
 
     public static Dictionary<ItemCategory, List<ItemInfo>> Map(List<string[]> rows)
     {
@@ -44,14 +44,16 @@ public static class ItemInfoCsvMapper
             !float.TryParse(row[6], out float thirstDelta) ||
             !float.TryParse(row[7], out float fatigueDelta) ||
             !float.TryParse(row[8], out float moodDelta) ||
-            !int.TryParse(row[9], out int sellPrice))
+            !int.TryParse(row[9], out int sellPrice) ||
+            !bool.TryParse(row[10], out bool usesStorage) ||
+            !bool.TryParse(row[11], out bool showInWarehouse))
         {
             Debug.LogError($"ItemInfoCsvMapper: failed to parse row '{string.Join(",", row)}'");
             return false;
         }
 
         var effect = new StatEffect(healthDelta, hungerDelta, thirstDelta, fatigueDelta, moodDelta);
-        itemInfo = new ItemInfo(id, effect, category, row[2], row[3], sellPrice);
+        itemInfo = new ItemInfo(id, effect, category, row[2], row[3], sellPrice, usesStorage, showInWarehouse);
         return true;
     }
 }

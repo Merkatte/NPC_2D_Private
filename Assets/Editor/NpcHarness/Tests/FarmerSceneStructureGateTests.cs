@@ -88,15 +88,15 @@ internal sealed class FarmerSceneStructureGateTests
         WithPreview(scene =>
         {
             WarehouseDepositPoint deposit = FindOne<WarehouseDepositPoint>(scene);
-            GameObject alternate = new GameObject("WrongWarehouseInventoryFixture");
+            GameObject alternate = new GameObject("WrongSharedResourceFixture");
             alternate.SetActive(false);
             SceneManager.MoveGameObjectToScene(alternate, scene);
-            WarehouseInventory inventory = alternate.AddComponent<WarehouseInventory>();
+            ResourceManager inventory = alternate.AddComponent<ResourceManager>();
             SetReference(deposit, "_inventorySource", inventory);
             HarnessGateResult result = Evaluate(scene);
             AssertFailure(result);
             Assert.That(result.checks.Single(check => check.id == "deposit.inventory-owner").success,
-                Is.False, "A non-null reference of the correct type must still fail when it targets another warehouse.");
+                Is.False, "A non-null reference of the correct type must still fail when it targets another shared resource manager.");
         });
     }
 
@@ -121,12 +121,38 @@ internal sealed class FarmerSceneStructureGateTests
     }
 
     [Test]
-    public void EvaluateScene_DuplicateDestinationKey_Fails()
+    public void EvaluateScene_DuplicateDestinationInstance_Fails()
     {
         WithPreview(scene =>
         {
             DuplicateFirstRow(FindOne<DestinationDB>(scene), "_destionations");
             AssertFailure(Evaluate(scene));
+        });
+    }
+
+    [Test]
+    public void EvaluateScene_SameTypeDistinctInnInstances_Pass()
+    {
+        WithPreview(scene =>
+        {
+            GameObject alternate = new GameObject("SecondInnFixture");
+            SceneManager.MoveGameObjectToScene(alternate, scene);
+            using (SerializedObject serialized = new SerializedObject(FindOne<DestinationDB>(scene)))
+            {
+                SerializedProperty rows = serialized.FindProperty("_destionations");
+                bool hasInn = false;
+                for (int index = 0; index < rows.arraySize; ++index)
+                    hasInn |= rows.GetArrayElementAtIndex(index).FindPropertyRelative("BuildingType").intValue == (int)BuildingType.Inn;
+                Assert.That(hasInn, Is.True, "Fixture needs the original Inn to exercise a repeated type.");
+                int added = rows.arraySize;
+                rows.InsertArrayElementAtIndex(added);
+                SerializedProperty row = rows.GetArrayElementAtIndex(added);
+                row.FindPropertyRelative("BuildingType").intValue = (int)BuildingType.Inn;
+                row.FindPropertyRelative("DestinationLoc").objectReferenceValue = alternate.transform;
+                row.FindPropertyRelative("DestinationObject").objectReferenceValue = alternate;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+            }
+            AssertPass(Evaluate(scene));
         });
     }
 

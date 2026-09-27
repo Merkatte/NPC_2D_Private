@@ -57,6 +57,9 @@ public class ActionPool : MonoBehaviour
     {
         switch (actionType)
         {
+            case ActionType.Build:
+                _actionDictionary[actionType].Enqueue(new BuildAction());
+                break;
             case ActionType.Move:
                 _actionDictionary[actionType].Enqueue(new MoveAction());
                 break;

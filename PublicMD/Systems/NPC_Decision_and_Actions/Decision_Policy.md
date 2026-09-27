@@ -8,7 +8,7 @@ NPC stat, 현재 위치, destination과 provider option을 비교해 하나의 s
 
 - `DestinationDecider`는 후보 생성, 안전 filtering, utility 계산, bounded look-ahead를 소유한다.
 - 긴급 욕구 여부의 정의도 decider가 소유한다. selector는 `HasCriticalNeed(stat)`으로 같은 임계 판정을 재사용하고 자체 임계값을 두지 않는다.
-- `NPCDecision`은 “한 목적지에서 한 행동”과 Work 반복 횟수를 표현한다.
+- `NPCDecision`은 선택된 DestinationInfo/Provider identity, “한 목적지에서 한 행동”과 Work 반복 횟수를 표현한다.
 - selector는 결과를 queue로 변환할 뿐 점수 공식을 다시 계산하지 않는다.
 - runtime action duration과 예측용 duration은 같은 값으로 간주하지 않는다.
 
@@ -73,3 +73,5 @@ DestinationDecider.Decide(stat, role, position, work cost)
 ## 문서 갱신 조건
 
 후보 모델, utility, look-ahead, tuning, decision shape 또는 gameplay 난수 계약이 바뀌면 갱신한다.
+
+다중 시설에서는 등록된 출입/interaction anchor의 제곱거리로 가용 시설을 선택한다. 동률은 등록 순서다. 실제 선택된 provider를 결과에 보존하며 selector에서 BuildingType으로 다시 조회하지 않는다. Farm/Guard 작업 위치 난수는 시설 선택이 확정된 뒤에만 소비한다. look-ahead와 후보 비교는 난수 상태를 변경하지 않는다.

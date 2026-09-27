@@ -8,10 +8,12 @@ public readonly struct ItemInfo
     public string ItemDescription { get; }
     public StatEffect Effect { get; }
     public int SellPrice { get; }
+    public bool UsesStorage { get; }
+    public bool ShowInWarehouse { get; }
 
 
     public ItemInfo(int id, StatEffect effect, ItemCategory category, string itemName, string itemDescription,
-        int sellPrice)
+        int sellPrice, bool usesStorage = true, bool showInWarehouse = true)
     {
         ID = id;
         Effect = effect;
@@ -19,5 +21,7 @@ public readonly struct ItemInfo
         ItemName = itemName;
         ItemDescription = itemDescription;
         SellPrice = sellPrice;
+        UsesStorage = usesStorage;
+        ShowInWarehouse = showInWarehouse;
     }
 }

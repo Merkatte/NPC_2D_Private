@@ -14,7 +14,6 @@ public class FarmerActionSelector : BaseNPCActionSelector
     private FarmingActionCost _farmingActionCostInfo;
     private StatEffect _workCost;
     private bool _hasLoggedMissingFarmProvider;
-    private bool _hasLoggedMissingDepositTarget;
 
     protected override void Start()
     {
@@ -77,27 +76,20 @@ public class FarmerActionSelector : BaseNPCActionSelector
                 if (TryBuildDepositQueue(component, stat, out Queue<IAction> depositQueue))
                     return depositQueue;
 
-                // Cargo exists but there is nowhere to take it — a real configuration problem,
-                // not a normal environment change. Warn once and park safely instead of
-                // busy-replanning every frame.
-                if (!_hasLoggedMissingDepositTarget)
-                {
-                    Debug.LogError(
-                        "FarmerActionSelector: cargo is non-empty but no usable Warehouse Deposit provider; parking Idle.");
-                    _hasLoggedMissingDepositTarget = true;
-                }
-
                 return BuildIdleQueue(component, stat);
             }
         }
 
         NPCDecision decision = _decider.Decide(stat, npcType, component.Position, _workCost);
+        if (decision.DestinationKey != BuildingType.None && !decision.HasLiveDestination)
+            return BuildIdleQueue(component, stat);
 
         IInteractionProvider farmProvider = null;
         if (decision.Intent == NPCIntent.Work)
         {
             Vector3 workPosition = decision.DestinationPos;
-            bool hasProvider = _destinationDB.TryGetInteractionProvider(decision.DestinationKey, ActionType.Farming, out farmProvider);
+            farmProvider = decision.Provider;
+            bool hasProvider = farmProvider != null;
             bool hasWorkPosition = hasProvider && farmProvider.TryGetActionPosition(
                 ActionType.Farming,
                 decision.DestinationPos,
@@ -127,7 +119,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
                     decision.DestinationKey,
                     workPosition,
                     decision.RepeatCount,
-                    decision.Request);
+                    decision.Request, decision.Destination, decision.Provider);
             }
         }
 
@@ -169,10 +161,8 @@ public class FarmerActionSelector : BaseNPCActionSelector
         if (component.Cargo.IsFull)
             return false;
 
-        if (!_destinationDB.TryGetDestinationPos(BuildingType.Farm, out Vector3 farmPos))
-            return false;
-
-        if (!_destinationDB.TryGetInteractionProvider(BuildingType.Farm, ActionType.Harvest, out var provider))
+        if (!_destinationDB.TrySelectNearest(BuildingType.Farm, ActionType.Harvest, component.Position,
+            out _, out var provider, out Vector3 farmPos))
             return false;
 
         if (!provider.TryGetActionPosition(ActionType.Harvest, farmPos, out Vector3 workPos))
@@ -197,10 +187,8 @@ public class FarmerActionSelector : BaseNPCActionSelector
     {
         queue = null;
 
-        if (!_destinationDB.TryGetDestinationPos(BuildingType.Warehouse, out Vector3 warehousePos))
-            return false;
-
-        if (!_destinationDB.TryGetInteractionProvider(BuildingType.Warehouse, ActionType.Deposit, out var provider))
+        if (!_destinationDB.TrySelectNearest(BuildingType.Warehouse, ActionType.Deposit, component.Position,
+            out _, out var provider, out Vector3 warehousePos))
             return false;
 
         if (!provider.TryGetActionPosition(ActionType.Deposit, warehousePos, out Vector3 depositPos))
@@ -250,7 +238,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
             case NPCIntent.Drink:
             {
                 ActionType actionType = decision.Request.HasValue ? decision.Request.Value.Type : ToActionType(decision.Intent);
-                _destinationDB.TryGetInteractionProvider(decision.DestinationKey, actionType, out var provider);
+                IInteractionProvider provider = decision.Provider;
                 return new ActionContext(component, stat, decision.DestinationPos, provider: provider,
                     request: decision.Request);
             }

@@ -6,6 +6,15 @@ public class DataManager : MonoBehaviour, IDataManager
 {
     [SerializeField] private CostInfo[] _costInfos;
     [SerializeField] private ItemDataContext _itemDataContext;
+    [SerializeField] private BuildingDataContext _buildingDataContext;
+
+    public IReadOnlyList<BuildingDefinition> BuildingDefinitions => _buildingDataContext
+        ? _buildingDataContext.Definitions : Array.Empty<BuildingDefinition>();
+    public bool TryGetBuildingDefinition(int buildingId, out BuildingDefinition definition)
+    {
+        definition = null;
+        return _buildingDataContext && _buildingDataContext.TryGetBuildingDefinition(buildingId, out definition);
+    }
 
     Dictionary<ActionType, CostInfo> _costInfoDict = new Dictionary<ActionType, CostInfo>();
 
@@ -14,6 +23,8 @@ public class DataManager : MonoBehaviour, IDataManager
     void Awake()
     {
         instance = this;
+        if (_buildingDataContext && !_buildingDataContext.TryInitialize(out string buildingError))
+            Debug.LogError($"DataManager: {buildingError}", this);
 
         foreach (var item in _costInfos)
         {

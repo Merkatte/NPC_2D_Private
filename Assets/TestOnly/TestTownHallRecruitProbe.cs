@@ -21,7 +21,7 @@ public class TestTownHallRecruitProbe : MonoBehaviour
 
     [SerializeField] private TownHallRecruitment _recruitment;
     [SerializeField] private NPCManager _npcManager;
-    [SerializeField] private GoldManager _goldManager;
+    [SerializeField] private ResourceManager _goldManager;
 
     [Tooltip("Optional: a separate TownHallRecruitment instance deliberately missing a required " +
         "reference (e.g. no _goldManager), used only to prove TryDispatchCandidate refuses to run " +
@@ -98,12 +98,12 @@ public class TestTownHallRecruitProbe : MonoBehaviour
             return;
         }
 
-        int goldBefore = _goldManager.CurrentGold;
+        int goldBefore = _goldManager.GetQuantity(ResourceManager.GoldItemId);
 
         RecruitResult result = _recruitment.TryDispatchCandidate(NPCType.Farmer);
 
         Check("Case 1", "calling TryDispatchCandidate while still Recruiting is rejected and gold is untouched",
-            result == RecruitResult.NotReady && _goldManager.CurrentGold == goldBefore);
+            result == RecruitResult.NotReady && _goldManager.GetQuantity(ResourceManager.GoldItemId) == goldBefore);
     }
 
     /// <summary>
@@ -120,12 +120,12 @@ public class TestTownHallRecruitProbe : MonoBehaviour
             return;
         }
 
-        int goldBefore = _goldManager.CurrentGold;
+        int goldBefore = _goldManager.GetQuantity(ResourceManager.GoldItemId);
 
         bool reserved = _npcManager.TryReserveWorker(npcType, Vector3.zero, out WorkerReservation reservation);
 
         Check("Case 2", $"NPCType.{npcType} has no creation entry, so reservation is rejected and gold is untouched",
-            !reserved && _goldManager.CurrentGold == goldBefore);
+            !reserved && _goldManager.GetQuantity(ResourceManager.GoldItemId) == goldBefore);
     }
 
     private void CaseInsufficientGoldRejected()
@@ -137,8 +137,8 @@ public class TestTownHallRecruitProbe : MonoBehaviour
             return;
         }
 
-        int goldBefore = _goldManager.CurrentGold;
-        if (goldBefore > 0 && !_goldManager.TrySpend(goldBefore))
+        int goldBefore = _goldManager.GetQuantity(ResourceManager.GoldItemId);
+        if (goldBefore > 0 && !_goldManager.TrySpend(new System.Collections.Generic.Dictionary<int, int> { { ResourceManager.GoldItemId, goldBefore } }))
         {
             Skip("Case 3", "could not drain gold to zero for this case.");
             return;
@@ -150,13 +150,13 @@ public class TestTownHallRecruitProbe : MonoBehaviour
 
             Check("Case 3", "dispatching with zero gold is rejected, leaving gold and phase untouched",
                 result == RecruitResult.NotEnoughGold &&
-                _goldManager.CurrentGold == 0 &&
+                _goldManager.GetQuantity(ResourceManager.GoldItemId) == 0 &&
                 FarmerStatus.Phase == RecruitPhase.CandidateReady);
         }
         finally
         {
             if (goldBefore > 0)
-                _goldManager.Add(goldBefore);
+                _goldManager.TryRefund(new System.Collections.Generic.Dictionary<int, int> { { ResourceManager.GoldItemId, goldBefore } });
         }
     }
 
@@ -169,12 +169,12 @@ public class TestTownHallRecruitProbe : MonoBehaviour
             return;
         }
 
-        int goldBefore = _goldManager.CurrentGold;
+        int goldBefore = _goldManager.GetQuantity(ResourceManager.GoldItemId);
 
         RecruitResult result = _misconfiguredRecruitment.TryDispatchCandidate(NPCType.Farmer);
 
         Check("Case 4", "an unconfigured TownHallRecruitment refuses to dispatch and gold is untouched",
-            result == RecruitResult.NotReady && _goldManager.CurrentGold == goldBefore);
+            result == RecruitResult.NotReady && _goldManager.GetQuantity(ResourceManager.GoldItemId) == goldBefore);
     }
 
     // ---- helpers ----

@@ -1,6 +1,6 @@
 # Project Structure
 
-> 문서 기준일: 2026-09-22
+> 문서 기준일: 2026-09-27
 > 이 문서는 전체 구조 지도와 기능 문서 라우팅만 소유한다. 구체 클래스 흐름과 Unity 배선은 `PublicMD/Systems`의 해당 문서가 소유한다.
 
 ## 1. 구조 한눈에 보기
@@ -23,15 +23,16 @@ NPCManager / WorkerPool          생성과 조립
 
 | 기능 영역 | 문서 | 읽는 경우 |
 |---|---|---|
+| 건물 건설 | [Construction](Systems/Construction/README.md) | CSV 정의, 부지·예약·공사·완공, 건설 UI |
 | 경로 탐색 | [Navigation](Systems/Navigation.md) | 노드 그리드, A*, 지형 비용, 지역 출입구 |
 | NPC 공통 runtime | [NPC Runtime](Systems/NPC_Runtime.md) | queue 소비, 공통 stat, disable/reset |
-| 건축가 시민 | [Builder](Systems/Builder.md) | 배회·생활 queue, 건축가 tuning, 망치·모집 연결 |
+| 건축가 시민 | [Builder](Systems/Builder.md) | 건설·배회·생활 queue, 건축가 작업 tuning |
 | 판단과 action | [NPC Decision and Actions](Systems/NPC_Decision_and_Actions/README.md) | utility, selector, action lifecycle, 이동, 생활 action |
 | 농사 | [Farming](Systems/Farming/README.md) | 농장 progress, 수확 transaction, 생산 definition, 씨앗 선택·작물 표현, Farming/Harvest action |
 | 전투 | [Combat](Systems/Combat/README.md) | 감지, target, 공격, Guard, Enemy |
 | 상호작용과 목적지 | [Interaction and Destinations](Systems/Interaction_and_Destinations.md) | provider, destination, 건물 action |
-| 아이템과 inventory | [Inventory and Items](Systems/Inventory_and_Items.md) | CSV, item data, 창고와 NPC 봇짐, 운반·입고 transaction, cost registry |
-| 플레이어 골드 | [Player Gold](Systems/Player_Gold.md) | 전역 골드 잔액, 획득·지출 transaction |
+| 아이템과 inventory | [Inventory and Items](Systems/Inventory_and_Items/README.md) | CSV, 공유 자원·용량, NPC 봇짐, 입고, 창고 UI |
+| 플레이어 골드 | [Player Gold](Systems/Player_Gold.md) | 공유 자원의 골드 항목으로 이동하는 안내 |
 | 상단(Merchant Caravan) | [Merchant Caravan](Systems/Merchant_Caravan.md) | 방문 phase·타이머, 클릭 가능 판정, 거래 transaction |
 | 시청(Town Hall) | [Town Hall](Systems/Town_Hall.md) | 모집 쿨다운·phase, 정착지원금 transaction, 예약 기반 NPC 스폰, 낙하 연출 |
 | NPC 표현 | [NPC Presentation](Systems/NPC_Presentation.md) | 이동 animation, Flip, 건물·도구 표현 |
@@ -41,7 +42,7 @@ NPCManager / WorkerPool          생성과 조립
 | 생성과 pooling | [Spawning and Pooling](Systems/Spawning_and_Pooling.md) | role 생성, prefab catalog, worker pool |
 | Codex 작업 하네스 | [Harness Architecture](HARNESS_ARCHITECTURE.md) | Skill 기반 오케스트레이션, 결정적 gate, 실행 증거, Reviewer 경계 |
 
-판단·action, 농사, 전투는 독립 세부 기능이 4개 이상이므로 폴더 `README.md`가 필요한 leaf 문서를 다시 선택한다. 상위 README에는 전체 파일 목록이 없다.
+판단·action, 농사, 전투, 건설, inventory는 독립 세부 기능이 4개 이상이므로 폴더 `README.md`가 필요한 leaf 문서를 다시 선택한다. 상위 README에는 전체 파일 목록이 없다.
 
 ## 3. 작업별 읽기 라우팅
 
@@ -52,6 +53,7 @@ NPCManager / WorkerPool          생성과 조립
 | selector·새 action | Selector and Queue, Action Runtime | concrete action leaf |
 | 이동 실행·동적 target·경로 추종 | [Movement](Systems/NPC_Decision_and_Actions/Movement.md) | Navigation(경로 조회 변경), Presentation, Combat Targeting |
 | 노드 그리드·A*·힙·지형 비용·지역 출입구 | [Navigation](Systems/Navigation.md) | Movement(추종 연결), Selector and Queue(요청 변경), Combat/Guard(순찰 연결) |
+| 건설·부지·완공 | Construction | Builder, Inventory and Items, Interaction, Navigation |
 | Farmer·농장·씨앗 | Farming | Decision Policy, Inventory, UI |
 | 밭 클릭·씨앗 소비·심기 | [Farming Runtime](Systems/Farming/Runtime_and_Transactions.md) | Farming Definition and Catalog, Inventory, UI(source 바인딩) |
 | 수확물 운반·창고 입고 | Inventory and Items | Farming Runtime, Selector and Queue, Interaction |
@@ -126,14 +128,14 @@ UI input -> IUIService <- domain IHoverInfoSource
 | 새 role | selector, 필요한 stat/definition, `NPCManager` creation entry |
 | 새 destination | `BuildingType`, scene `DestinationDB` row, 공통 provider registration |
 | 새 facility runtime state | 해당 domain의 scene component |
-| 새 item 운반·입고 흐름 | `ICarriedInventory` 소비 provider, `InteractionRequest.Cargo`, 실행 action, [Inventory and Items](Systems/Inventory_and_Items.md) |
+| 새 item 운반·입고 흐름 | `ICarriedInventory` 소비 provider, `InteractionRequest.Cargo`, 실행 action, [Inventory and Items](Systems/Inventory_and_Items/README.md) |
 | 새 경로 지형·지역·출입구 | [Navigation](Systems/Navigation.md)의 profile과 scene 조립; 이동 실행 변경은 [Movement](Systems/NPC_Decision_and_Actions/Movement.md) |
 | 새 gameplay 난수 | `IRandomSource`를 주입받는 domain 계산 |
 | 새 popup·hover | category enum, base view 구현, `UIManager` registry |
 | 새 prefab 형태 | `NPCPrefabType`, prefab catalog, pool/spawn 조립 |
 | 새 crop | `FarmProductionDefinition` asset, `CropCatalog` 등록, 결과 item CSV row, [Farming](Systems/Farming/README.md) |
-| 새 골드 획득·지출 지점 | `GoldManager.Add`/`TrySpend` 호출자, [Player Gold](Systems/Player_Gold.md) |
-| 새 골드 소비 domain(업그레이드 등) | 그 domain 전용의 새 작은 provider가 `GoldManager`를 직접 참조. 기존 provider(예: `MerchantTradeSite`, `TownHallRecruitment`)를 거치지 않는다 |
+| 새 골드 획득·지출 지점 | `ResourceManager.TryExchange`/`TrySpend` 호출자, [Player Gold](Systems/Player_Gold.md) |
+| 새 골드 소비 domain(업그레이드 등) | 그 domain 전용의 새 작은 provider가 `ResourceManager`를 직접 참조. 기존 provider(예: `MerchantTradeSite`, `TownHallRecruitment`)를 거치지 않는다 |
 | 새 world click 대상 | `IClickPopupSource` 구현, `Clickable` 레이어 collider, [UI](Systems/UI.md) |
 
 구체 절차와 불변 규칙은 표의 대상 기능 문서를 따른다.

@@ -51,7 +51,7 @@ ICombatTarget        -> 생존, 위치, damage
 IHoverInfoSource     -> UI가 읽을 표시 정보
 ```
 
-domain별 phase, recipe, item table, target 정책은 concrete owner가 유지한다. 플레이어 심기는 FarmSeedSource가 명시적으로 연결한 정의·창고를 FarmWorkSite에 전달하며, 농장이 검증·차감·상태 확정을 소유한다. IInventory에 임의 출고 권한을 추가하지 않고 WarehouseInventory의 전량 차감 API를 사용한다. UI는 선택한 IClickPopupSource를 전달하며 UIManager/PopBase는 농장 구체 타입을 참조하지 않는다.
+domain별 phase, recipe, item table, target 정책은 concrete owner가 유지한다. 플레이어 심기는 FarmSeedSource가 명시적으로 연결한 정의·창고를 FarmWorkSite에 전달하며, 농장이 검증·차감·상태 확정을 소유한다. IInventory에 임의 출고 권한을 추가하지 않고 ResourceManager.TrySpend를 사용한다. 동기 알림 지연 범위에서 작물 상태까지 확정한 후 ResourcesChanged를 발행한다. UI는 선택한 IClickPopupSource를 전달하며 UIManager/PopBase는 농장 구체 타입을 참조하지 않는다.
 
 request는 값만이 아니라 transaction에 참여하는 capability도 나를 수 있다. `InteractionRequest.Cargo`가 그 예로, 요청자가 자기 inventory를 실어 보내면 provider는 방향(생산이면 넣고, 수령이면 뺀다)만 결정한다. 이렇게 하면 result에 domain 전용 payload를 추가하지 않고도 외부 수락 확인 후 내부 상태를 소모하는 순서를 유지할 수 있다.
 
@@ -190,3 +190,14 @@ TilemapNavigation은 scene snapshot과 순수 A*/heap workspace를 소유한다.
 TileNavigationProfile은 공유 definition만 소유하며 actor 경로/커서는 action별 follower가 소유한다.
 WorkerNPC queue lifecycle, provider transaction, DestinationDecider 판단 책임은 유지한다.
 상세 주 소유 문서는 Systems/Navigation.md와 Systems/NPC_Decision_and_Actions/Movement.md다.
+
+## 건설과 공유 자원 (2026-09-27 구현 후보)
+
+- ResourceManager는 scene 공개 API, ResourceInventory는 실제 수량·총 용량·사용량의 유일한 소유자다. 골드도 같은 저장소에 보관하고 시설은 용량만 제공한다. 알림은 domain transaction 확정 후 발행한다.
+- BuildingPlot은 scene 부지와 ConstructionState/예약 수명을 소유한다. BuildingFactory는 완공 prefab 생성·명시적 초기화·등록을 담당한다. 실패하면 해당 시도만 정리하고 부지는 100%를 보존한다.
+- Builder selector는 공사 후보와 예약을 선택하며 BuildAction은 이동·작업·예약 반환을 소유한다. MoveAction이나 WorkerNPC에 Builder 전용 실행 규칙을 넣지 않는다.
+- IInteractionProvider는 실제 scene 시설의 계약이다. plain IInteractionReservation은 요청의 선택적 lease이며 provider를 대신하지 않는다.
+- DestinationDB는 같은 종류의 여러 시설을 등록한다. 등록된 출입 anchor의 제곱거리로 선택하고 NPCDecision에 선택한 시설/provider identity를 보존한다. Farm/Guard 작업 위치 난수는 시설 확정 후 소비한다.
+- 공유 CSV는 검증 성공 후 불변 정의로 공개한다. 생성 중인 시설은 dependency 주입 전에 활성화하지 않는다. 테스트 시작 자원/주민은 TestOnly에서 설정한다.
+
+상세 ownership은 Systems/Construction, Systems/Inventory_and_Items, Systems/Builder.md를 따른다. 현재 컴파일·배선·리뷰 결과는 PROGRESS와 승인된 상세 계획에 기록한다.
