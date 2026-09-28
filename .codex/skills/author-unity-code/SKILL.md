@@ -20,6 +20,10 @@ mandatory checks. A concise root assignment is sufficient; no new per-feature ga
 or WorkerAssignment v1 is required. All authoring and preliminary-verification rules
 below still apply, including actual compilation evidence and truthful NOT_VERIFIED.
 Return changed files, checks/evidence, deviations and unresolved items to the root.
+Apply SceneWork.md verification and evidence limits: use existing checks; do not
+write verification-only runners, eval helpers, validators or tests unless the user
+explicitly requests verification development. Return one concise message referencing
+existing logs; no separate evidence bundle or repeated hash manifest is required.
 
 The serialized v1 requirements and `verify-scope`/task-specific gate commands below
 apply only when the root explicitly selects legacy WorkerAssignment v1. Do not emit

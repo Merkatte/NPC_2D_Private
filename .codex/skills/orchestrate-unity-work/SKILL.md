@@ -7,6 +7,14 @@ description: Orchestrate bounded Unity work through separate code, graphics and 
 
 Act as the root Codex orchestrator. Preserve the user's intent and authority from the current conversation. The harness validates a candidate; it never interprets the request, chooses the implementation, directs workers, or declares the overall task complete.
 
+For ordinary work, apply `Tools/NpcHarness/SceneWork.md`'s verification and evidence
+limits: existing tools only, no new verification-only code without an explicit user
+request, one compact task record, and reuse unaffected checks. Missing bespoke
+automation is unverified coverage, not a reason to build a runner or block completion.
+Actual failures and required independent review remain mandatory. Ordinary review
+uses Git baseline/diff and raw check results; per-file hash bundles are optional.
+Do not select a pinned/extended evidence workflow unless the user requests it.
+
 ## Invariants
 
 - Only the root Codex is the orchestrator and final decision-maker.
@@ -63,7 +71,7 @@ Read [references/gate-acceptance.md](references/gate-acceptance.md) before choos
 4. Set `reviewPolicy` before implementation using [references/reviewer-orchestration.md](references/reviewer-orchestration.md): required for every C# change (including helpers), by the user/another Skill, or by structural risk. Only non-code low-risk candidates may omit independent review. Record the reason.
    For a selected pinned workflow, use `Tools/NpcHarness/ReviewEvidence.md` and pin
    the review request before implementation. Ordinary work uses common-check evidence
-   and candidate hashes with the ordinary reviewing-unity-candidate record.
+   and Git baseline/diff with the ordinary reviewing-unity-candidate record.
    Choose a few applicable review categories, not every convention sentence. Preserve
    specialized NPC planning/approval; this envelope does not replace that workflow.
 5. Set a non-negative candidate remediation budget before the first gate run. Normally use one or two attempts, choose less for risky mutations, and state the value. Zero disables remediation. Do not increase it without the user's authorization.
@@ -144,7 +152,7 @@ Provide only the original request, confirmed scope/exclusions/acceptance conditi
 Handle the returned `ReviewResult` as follows:
 
 - `Approve`: satisfies review only for the unchanged candidate with current successful common checks or selected gates; it cannot replace verification.
-- `ChangesRequested`: route evidenced blocking findings to a same-role worker within the remediation budget. Candidate edits expire affected verification and review evidence. Refresh affected ordinary common checks and hashes, or rerun complete selected gate profiles, then obtain a fresh review.
+- `ChangesRequested`: route evidenced blocking findings to a same-role worker within the remediation budget. Candidate edits expire affected verification and review evidence. Refresh affected ordinary common checks and current diff, or rerun complete selected gate profiles, then obtain a fresh review.
 - `InsufficientEvidence`: do not complete. Repair the evidence gap within current authority and rerun review; candidate changes require refreshed verification first under the chosen route.
 
 A missing, malformed, stale, self-reviewing, or contract-inconsistent ReviewResult is `InsufficientEvidence`, not approval.

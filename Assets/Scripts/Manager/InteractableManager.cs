@@ -18,16 +18,22 @@ public class InteractableManager : MonoBehaviour
 
     public bool TryGetInteractionProvider(GameObject destinationObject, ActionType actionType, out IInteractionProvider provider)
     {
+        provider = null;
+        if (!TryGetRegisteredInteractionProvider(destinationObject, actionType, out var component)
+            || !component.isActiveAndEnabled || !component.CanInteract(actionType))
+            return false;
+
+        provider = component;
+        return true;
+    }
+
+    public bool TryGetRegisteredInteractionProvider(GameObject destinationObject, ActionType actionType,
+        out BaseInteractionProvider provider)
+    {
         EnsureInitialized();
         provider = null;
-
-        if (!destinationObject)
-            return false;
-
-        if (!_providerCache.TryGetValue((destinationObject, actionType), out var component))
-            return false;
-
-        if (!component || !component.isActiveAndEnabled || !component.CanInteract(actionType))
+        if (!destinationObject
+            || !_providerCache.TryGetValue((destinationObject, actionType), out var component) || !component)
             return false;
 
         provider = component;

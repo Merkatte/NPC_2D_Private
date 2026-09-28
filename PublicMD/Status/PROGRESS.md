@@ -1,3 +1,20 @@
+# 건물 건설 두 결함 수정 완료 — 2026-09-29
+
+- 사용자가 초소 난수원 누락(F1)과 DestinationDB의 선택 정책 소유(F2) 수정을 명시 요청했다. 앞선 수정 2회 이력은 유지하고 두 항목에 대한 추가 수정 1회를 승인한 것으로 기록한다(총 한도 3회).
+- 기준 커밋 `94fd097`. 기존 미커밋 검증 정책 문서와 Packages 2개 변경을 보존한다. 범위는 시설 선택 계층·호출부, GuardPost prefab과 기존 조립 helper의 재생성 경로, 직접 관련 문서다. 기존 테스트는 API 호출 이관만 허용한다.
+- 코드 `/root/construction_fix_code`, 배선 `/root/construction_fix_assembly`로 분리한다. 신규 검증 코드는 작성하지 않는다. 기존 컴파일·관련 검사, 직접 prefab 참조 확인, 별도 읽기 전용 리뷰로 확인하며 Play/화면과 기존 판매·모집 검증 보충은 이번 수정 범위 밖이다.
+- F1: GuardPost prefab 내부 GuardPostPositionRandom/SeededRandomSource(seed 1977)를 연결했다. 기존 Setup도 신규·기존 prefab에서 해당 자식과 컴포넌트를 생성·재사용하므로 누락이 재발하지 않도록 했다. patrolArea는 기존 Factory 주입을 유지한다.
+- F2: DestinationDB는 후보·등록 provider 조회를 제공하고 DestinationDecider.TrySelectNearest가 활성/CanInteract·거리 제곱·등록 순서 동률 정책을 소유한다. utility·Farmer 물류·Guard fallback 호출을 이관하고 Builder의 기존 decider 경로를 유지했다. 기존 검사 assertion은 유지하고 API 호출 5개만 이관했다.
+- 검증: runtime/Editor .NET 빌드 오류 0(기존 참조 경고 5), Unity 컴파일 완료 및 최종 up_to_date·오류/경고 0. 기존 건설/자원 21개·씨앗 39개 통과, 씬 상태 보존. GuardPost local fileID·script GUID·부모/자식 연결을 직접 확인했고 scoped diff 검사 통과. 신규 검증 코드와 반복 해시 묶음은 작성하지 않았다.
+- 독립 `/root/construction_review`의 현재 수정 14개 파일 검토 결과 Approve, findings 없음. 초기화 의존성·Factory 주입과 선택 계층 책임·의존 방향·테스트 기대값 보존을 확인했다. 비영향 기존 리뷰 범위는 재사용했다. 추가 수정 1회 사용으로 총 3/3회이며 F1/F2 수정 범위를 수용한다.
+- 원본 로그는 `.harness-runs/building-construction-20260927/code/compile-corrective-20260929.log`, `review/corrective-unit-20260929.json`. `review/preassembly-20260929.json`은 변경 전 clean Editor 확인에만 사용했다. 실제 수정된 초소의 Factory 생성/초기화·Play/화면은 미검증이며 사람 확인으로 남긴다. 이전 리뷰의 범위 밖 문서 Minor와 판매·모집 검증 보충까지 해결했다고 주장하지 않는다. 사용자의 후속 요청으로 이번 수정과 검증 절차 간소화 지침을 함께 커밋·푸시하며 기존 Packages 변경은 제외한다.
+
+# 일반 검증 절차 간소화 — 2026-09-28
+
+- 사용자 지시에 따라 검증 전용 runner/eval helper/validator/테스트·하네스 코드 신규 작성·확장은 별도 명시 요청이 있을 때만 수행한다. 일반 구현은 기존 컴파일·검사 명령과 직접 코드/직렬화 검토를 사용한다.
+- 한 개의 짧은 작업 기록과 기존 로그를 재사용한다. 일반 작업의 파일별 해시 묶음·전체 diff 복사·중복 증거 문서는 필수가 아니며 변경 영향이 있는 검사만 재실행한다. 상세 기준은 `Tools/NpcHarness/SceneWork.md`, 역할 및 리뷰 진입점에도 반영했다.
+- 미검증 범위를 통과로 바꾸지 않는다. 실제 결함·기존 검사 실패·컴파일·독립 코드 리뷰는 유지한다. 이번 변경은 정책 문서만 대상으로 하며 아래 건설 결함의 수정이나 중단 작업 재개를 의미하지 않는다.
+
 # 건물 건설 — 2026-09-28 중단 상태 보존
 
 - 사용자 요청으로 현재 구현을 수정 없이 커밋·푸시한다. 아래 재개/초기 기록은 중간 이력이며 현재 상태는 이 절을 따른다. 구현 완료로 판정하지 않는다.

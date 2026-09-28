@@ -37,6 +37,7 @@ Transform:
   - {fileID: 279182258350965431}
   - {fileID: 369597818145014801}
   - {fileID: 6307002447427935470}
+  - {fileID: 271929000000000002}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!61 &7528670296965352347
@@ -113,7 +114,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   _patrolArea: {fileID: 0}
-  _positionRandomSource: {fileID: 0}
+  _positionRandomSource: {fileID: 271929000000000003}
   _combatTarget: {fileID: 8218666759809073498}
   _visual: {fileID: 6493165745977341529}
   _maximumHealth: 100
@@ -349,3 +350,48 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!1 &271929000000000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 271929000000000002}
+  - component: {fileID: 271929000000000003}
+  m_Layer: 0
+  m_Name: GuardPostPositionRandom
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &271929000000000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 271929000000000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1720238355858280500}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &271929000000000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 271929000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11f5310043904c2e910af5c48be5993c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SeededRandomSource
+  _seed: 1977

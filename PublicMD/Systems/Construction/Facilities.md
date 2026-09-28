@@ -22,7 +22,7 @@ BuildingFactory는 선택된 정의와 고정 부지의 배치 정보를 받아 
 
 ## 배선과 검사
 
-기존 Restaurant/Inn/Warehouse/Soil 외형과 신규 GuardPost prefab을 연결한다. scene 참조는 Factory가 주입하고 prefab에 scene object 참조를 저장하지 않는다. 목적지/provider/용량 등록은 인스턴스별이며 destroy/unregister의 반복도 안전해야 한다. 등록 실패·재시도·Missing Script/GUID/child provider·초기화 순서를 검사한다. 실제 NPC 이용과 화면은 자동 검증하지 않는다. 동적 로딩/철거 gameplay는 후속이며 이 책임을 선행 확대하지 않는다.
+기존 Restaurant/Inn/Warehouse/Soil 외형과 신규 GuardPost prefab을 연결한다. BuildingConstructionSetup은 신규·기존 GuardPost prefab 모두에 전용 GuardPostPositionRandom 자식의 SeededRandomSource(seed 1977)를 생성·재사용하고 GuardPost._positionRandomSource에 연결한다. _patrolArea는 완공 시 Factory가 부지 영역을 주입한다. scene 참조는 Factory가 주입하고 prefab에 scene object 참조를 저장하지 않는다. 목적지/provider/용량 등록은 인스턴스별이며 destroy/unregister의 반복도 안전해야 한다. 등록 실패·재시도·Missing Script/GUID/child provider·초기화 순서를 검사한다. 실제 NPC 이용과 화면은 자동 검증하지 않는다. 동적 로딩/철거 gameplay는 후속이며 이 책임을 선행 확대하지 않는다.
 
 기존 GuardTest의 scene-native 농장은 씨앗 선택 source가 없는 구성을 유지한다. 새로 생성하는 Soil prefab 농장에는 collider와 같은 오브젝트의 FarmSeedSource가 필수다. GuardTest의 기존 Storage는 같은 오브젝트를 용량 제공자로 이관하며, 기존에 없던 입고 목적지나 클릭 collider를 추가하지 않는다.
 

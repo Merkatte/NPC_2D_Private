@@ -42,25 +42,12 @@ public class DestinationDB : MonoBehaviour
         EnsureInitialized();
         return _destinationDB.TryGetValue(type, out var entries) ? entries.AsReadOnly() : Array.Empty<DestinationInfo>();
     }
-    public bool TrySelectNearest(BuildingType type, ActionType action, Vector3 origin,
-        out DestinationInfo destination, out IInteractionProvider provider, out Vector3 position)
+    public bool TryGetRegisteredInteractionProvider(DestinationInfo destination, ActionType action,
+        out BaseInteractionProvider provider)
     {
-        EnsureInitialized();
-        destination = null; provider = null; position = default;
-        if (!_destinationDB.TryGetValue(type, out var entries)) return false;
-        float bestDistance = float.PositiveInfinity;
-        foreach (DestinationInfo entry in entries)
-        {
-            if (!entry.DestinationLoc || !entry.DestinationObject || !entry.DestinationObject.activeInHierarchy) continue;
-            IInteractionProvider candidate = null;
-            if (action != ActionType.Sleep && (!_interactableManager
-                || !_interactableManager.TryGetInteractionProvider(entry.DestinationObject, action, out candidate))) continue;
-            Vector3 candidatePosition = entry.DestinationLoc.position;
-            float distance = (origin - candidatePosition).sqrMagnitude;
-            if (distance >= bestDistance) continue;
-            bestDistance = distance; destination = entry; provider = candidate; position = candidatePosition;
-        }
-        return destination != null;
+        provider = null;
+        return destination != null && _interactableManager
+            && _interactableManager.TryGetRegisteredInteractionProvider(destination.DestinationObject, action, out provider);
     }
     // Compatibility queries are read-only. Selectors use the instance-bearing nearest result.
     public bool TryGetDestinationPos(BuildingType type, out Vector3 position)

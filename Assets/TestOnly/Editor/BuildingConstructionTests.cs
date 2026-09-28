@@ -209,7 +209,7 @@ public sealed class BuildingConstructionTests
             Assert.That(fixture.Resources.GetQuantity(9), Is.EqualTo(180));
             Assert.That(fixture.Resources.GetQuantity(10), Is.EqualTo(190));
             Assert.That(destinations.GetCandidates(BuildingType.Warehouse).Count, Is.EqualTo(2));
-            Assert.That(destinations.TrySelectNearest(BuildingType.Warehouse, ActionType.Deposit, fixture.Plot.transform.position,
+            Assert.That(DestinationDecider.TrySelectNearest(destinations, BuildingType.Warehouse, ActionType.Deposit, fixture.Plot.transform.position,
                 out DestinationInfo selected, out IInteractionProvider provider, out _), Is.True);
             Assert.That(selected.DestinationObject, Is.SameAs(completed.Provider.gameObject));
             Assert.That(provider, Is.SameAs(completed.Provider));
@@ -289,23 +289,23 @@ public sealed class BuildingConstructionTests
             Assert.That(destinations.Register(second), Is.True);
             Assert.That(destinations.Register(first), Is.True);
             Assert.That(destinations.GetCandidates(BuildingType.Warehouse).Count, Is.EqualTo(2));
-            Assert.That(destinations.TrySelectNearest(BuildingType.Warehouse, ActionType.Deposit, Vector3.zero,
+            Assert.That(DestinationDecider.TrySelectNearest(destinations, BuildingType.Warehouse, ActionType.Deposit, Vector3.zero,
                 out DestinationInfo selected, out IInteractionProvider provider, out Vector3 position), Is.True);
             Assert.That(selected, Is.SameAs(first));
             Assert.That(provider, Is.SameAs(first.DestinationObject.GetComponent<WarehouseDepositPoint>()));
             Assert.That(position, Is.EqualTo(first.DestinationLoc.position));
-            Assert.That(destinations.TrySelectNearest(BuildingType.Warehouse, ActionType.Deposit, Vector3.right,
+            Assert.That(DestinationDecider.TrySelectNearest(destinations, BuildingType.Warehouse, ActionType.Deposit, Vector3.right,
                 out selected, out provider, out position), Is.True);
             Assert.That(selected, Is.SameAs(second));
             Assert.That(provider, Is.SameAs(second.DestinationObject.GetComponent<WarehouseDepositPoint>()));
             second.DestinationObject.SetActive(false);
-            Assert.That(destinations.TrySelectNearest(BuildingType.Warehouse, ActionType.Deposit, Vector3.right,
+            Assert.That(DestinationDecider.TrySelectNearest(destinations, BuildingType.Warehouse, ActionType.Deposit, Vector3.right,
                 out selected, out _, out _), Is.True);
             Assert.That(selected, Is.SameAs(first));
             destinations.Unregister(first);
             destinations.Unregister(first);
             Assert.That(destinations.GetCandidates(BuildingType.Warehouse).Count, Is.EqualTo(1));
-            Assert.That(destinations.TrySelectNearest(BuildingType.Warehouse, ActionType.Deposit, Vector3.zero,
+            Assert.That(DestinationDecider.TrySelectNearest(destinations, BuildingType.Warehouse, ActionType.Deposit, Vector3.zero,
                 out _, out _, out _), Is.False);
         }
     }

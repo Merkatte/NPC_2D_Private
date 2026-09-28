@@ -223,7 +223,7 @@ public class GuardActionSelector : BaseNPCActionSelector
     {
         IInteractionProvider provider = decision.HasLiveDestination ? decision.Provider : null;
         Vector3 guardPos = decision.DestinationPos;
-        if (provider == null && !_destinationDB.TrySelectNearest(BuildingType.GuardPost, ActionType.Guard,
+        if (provider == null && !DestinationDecider.TrySelectNearest(_destinationDB, BuildingType.GuardPost, ActionType.Guard,
             component.Position, out _, out provider, out guardPos))
             return BuildIdleQueue(component, stat);
         if (!provider.CanInteract(ActionType.Guard) || !provider.TryGetActionPosition(ActionType.Guard, guardPos, out Vector3 firstPoint))

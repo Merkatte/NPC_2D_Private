@@ -19,7 +19,7 @@ GuardAction
   -> enemy 감지 또는 need interrupt threshold에서 ReplanRequested
 ```
 
-Guard selector가 target 유지·획득 정책과 combat queue를 소유한다. 공통 perception과 attack 실행은 별도 leaf 문서가 소유한다.
+Guard selector가 target 유지·획득 정책과 combat queue를 소유한다. duty fallback의 시설 선택은 `DestinationDecider.TrySelectNearest`의 공통 가용성·거리 정책을 사용한다. 공통 perception과 attack 실행은 별도 leaf 문서가 소유한다.
 
 ## 주 소유 스크립트
 

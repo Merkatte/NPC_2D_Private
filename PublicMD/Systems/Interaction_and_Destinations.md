@@ -17,7 +17,10 @@ NPC가 목적지를 찾고, 그 장소가 제공하는 capability를 조회하�
 ## 현재 실행 흐름
 
 ```text
-DestinationDB.TrySelectNearest(BuildingType, ActionType, origin)
+DestinationDecider.TrySelectNearest(DestinationDB, BuildingType, ActionType, origin)
+  -> DestinationDB.GetCandidates(BuildingType)
+  -> DestinationDB.TryGetRegisteredInteractionProvider(destination, ActionType)
+  -> 판단 계층에서 active/CanInteract와 등록 anchor 제곱거리 비교
 
 선택한 DestinationInfo와 IInteractionProvider를 NPCDecision에 보존
   -> destination row의 GameObject
@@ -61,7 +64,7 @@ item을 옮기는 action:
 | `Assets/Scripts/Interface/IInteractionProvider.cs` | support·availability·action position·option·execute 공통 계약 |
 | `Assets/Scripts/Manager/InteractableManager.cs` | scene provider 초기화와 `(GameObject, ActionType)` registry |
 | `Assets/Scripts/System/Action/BaseBuildingAction.cs` | 실내 action의 건물 출입 표현 lifecycle |
-| `Assets/Scripts/System/Lib/DestinationDB.cs` | 건물 위치 조회와 provider registry 위임 진입점 |
+| `Assets/Scripts/System/Lib/DestinationDB.cs` | 종류별 등록 후보 제공과 identity별 provider registry 조회 위임 |
 
 ## 변경 유형별 최소 확인 범위
 
@@ -94,7 +97,7 @@ item을 옮기는 action:
 ## 알려진 제약과 TBD
 
 - `SleepAction`은 현재 provider transaction 없이 건물 위치와 시간 기반으로 동작한다.
-- 같은 BuildingType의 여러 시설을 등록 순서대로 보관한다. 등록 anchor의 제곱거리 단일 순회로 가용 시설을 선택하고 동률은 등록 순서를 유지한다. 후보마다 경로 탐색하거나 작업 위치 난수를 소비하지 않는다.
+- DestinationDB는 같은 BuildingType의 여러 시설을 등록 순서대로 보관하고 후보와 등록 provider 조회만 제공한다. DestinationDecider의 공통 선택 메서드가 가용성 필터와 등록 anchor 제곱거리 단일 순회를 소유한다. 동률은 등록 순서를 유지하며 후보마다 경로 탐색하거나 작업 위치 난수를 소비하지 않는다.
 - `ActionContext.InteractionProvider`는 캐싱된 참조이므로 provider가 파괴되면 감지하지 못한다. 현재 facility provider를 파괴하는 경로가 없어 실제 위험은 없고, `WarehouseDepositPoint`처럼 backing `MonoBehaviour`를 이미 필드로 갖고 있는 경우에만 Unity null 규칙으로 재확인한다.
 
 ## 관련 문서
@@ -111,4 +114,4 @@ provider protocol, destination lookup, registry 조립, request/result shape 또
 
 InteractionRequest.Reservation은 선택적 IInteractionReservation이다. 실제 scene BuildingPlot이 provider이며 ConstructionReservation은 provider를 구현하지 않는다. selector에서 받은 lease를 BuildAction이 전달하면 부지가 발급자·현재 공사·작업 슬롯을 검증한다. 구체 공사 완료 상태는 reservation/부지 domain이 소유하며 InteractionResult에 건설 payload를 추가하지 않는다.
 
-시설 선택 후 타입으로 다시 검색하지 않는다. NPCDecision의 선택된 DestinationInfo/Provider를 queue에 그대로 전달한다. Farm/Guard는 시설 확정 후 해당 provider에서 작업 위치를 구하며 장기 GuardAction은 같은 시설 안에서 다음 순찰점을 선택한다. 동적 해제는 해당 인스턴스의 등록만 제거한다. 기존 호환 조회는 첫 유효 시설을 읽는 API이며 새 selector의 identity 경로를 대신하지 않는다.
+시설 선택 후 타입으로 다시 검색하지 않는다. NPCDecision의 선택된 DestinationInfo/Provider를 queue에 그대로 전달한다. Farm/Guard는 시설 확정 후 해당 provider에서 작업 위치를 구하며 장기 GuardAction은 같은 시설 안에서 다음 순찰점을 선택한다. 동적 해제는 해당 인스턴스의 등록만 제거한다. 기존 호환 조회는 첫 유효 시설을 읽는 API이며 새 selector의 identity 경로를 대신하지 않는다. InteractableManager.TryGetRegisteredInteractionProvider는 살아 있는 등록 컴포넌트만 조회하고, 기존 TryGetInteractionProvider는 활성/CanInteract 검사 계약을 유지한다.

@@ -13,14 +13,20 @@ Act as an independent, read-only reviewer of one candidate change. Judge the can
 
 When root explicitly selects ordinary work without a GateResult profile, review the
 actual diff after successful common checks from Tools/NpcHarness/SceneWork.md.
-Require original request, scope/exclusions, relevant rules, current changed-file
-hashes/baseline, actual compile logs for C# and scope/reference check evidence.
+Require original request, scope/exclusions, relevant rules, Git baseline and current
+diff including relevant untracked files, actual compile results for C# and direct
+scope/reference inspection. Follow SceneWork.md verification and evidence limits:
+no mandatory per-file hash manifest or new verification code. Check actual code and
+report behavior without existing execution coverage as unverified. Missing bespoke
+automation alone does not block; actual defects, failed existing checks and missing
+mandatory compilation still do. Do not demand a runner merely to fill a review row.
 Do not fabricate GateResult or require a new validator for this route. Every C#
 change needs conventions, ownership and dependency review with concrete code and
 document locations. Inspect primary evidence; do not consume author conclusions.
 
 Return a compact ordinary record with `reviewerId`, `verdict`, `reviewedFiles`,
-`candidateHashes`, `ruleCoverage` (category/status/evidence), `findings`
+`candidateBasis` (Git baseline/diff and freshness; hashes only if already needed),
+`ruleCoverage` (category/status/evidence), `findings`
 (severity/file/evidence/recommendation) and `remainingRisks`. Verdicts are Approve,
 ChangesRequested or InsufficientEvidence. Missing/stale evidence blocks; Critical
 or Major findings block; Minor findings do not. The root waits for and validates
@@ -76,4 +82,4 @@ This skill reviews one bounded candidate after its gate. Use `reviewing-npc-work
 
 `Minor` findings are non-blocking. Do not inflate style preferences into blocking findings. Every blocking finding must include its severity, concrete evidence, affected file, and actionable recommendation.
 
-If an acceptance condition is visibly violated, mark it `Violated`, record a `Major` or `Critical` finding, and use `ChangesRequested`. If it is satisfied, mark it `Satisfied`. If it merely lacks trustworthy evidence, mark it `NotCovered` and use `InsufficientEvidence` without inventing a defect.
+If an acceptance condition is visibly violated, mark it `Violated`, record a `Major` or `Critical` finding, and use `ChangesRequested`. If it is satisfied, mark it `Satisfied`. Missing mandatory common checks or explicitly requested gate evidence means `NotCovered` and `InsufficientEvidence`. In ordinary work, behavior lacking bespoke automated coverage is instead recorded as `NotCovered` in remaining risks without blocking solely on that absence; inspect the actual code and do not invent a defect or demand verification-code development.

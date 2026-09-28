@@ -197,7 +197,7 @@ WorkerNPC queue lifecycle, provider transaction, DestinationDecider 판단 책�
 - BuildingPlot은 scene 부지와 ConstructionState/예약 수명을 소유한다. BuildingFactory는 완공 prefab 생성·명시적 초기화·등록을 담당한다. 실패하면 해당 시도만 정리하고 부지는 100%를 보존한다.
 - Builder selector는 공사 후보와 예약을 선택하며 BuildAction은 이동·작업·예약 반환을 소유한다. MoveAction이나 WorkerNPC에 Builder 전용 실행 규칙을 넣지 않는다.
 - IInteractionProvider는 실제 scene 시설의 계약이다. plain IInteractionReservation은 요청의 선택적 lease이며 provider를 대신하지 않는다.
-- DestinationDB는 같은 종류의 여러 시설을 등록한다. 등록된 출입 anchor의 제곱거리로 선택하고 NPCDecision에 선택한 시설/provider identity를 보존한다. Farm/Guard 작업 위치 난수는 시설 확정 후 소비한다.
+- DestinationDB는 같은 종류의 여러 시설을 등록하고 후보/provider 조회를 제공한다. DestinationDecider의 공통 선택 정책은 가용성을 확인하고 등록된 출입 anchor의 제곱거리로 선택한다. decider와 role selector가 이 정책을 재사용하며 NPCDecision에 선택한 시설/provider identity를 보존한다. Farm/Guard 작업 위치 난수는 시설 확정 후 소비한다.
 - 공유 CSV는 검증 성공 후 불변 정의로 공개한다. 생성 중인 시설은 dependency 주입 전에 활성화하지 않는다. 테스트 시작 자원/주민은 TestOnly에서 설정한다.
 
 상세 ownership은 Systems/Construction, Systems/Inventory_and_Items, Systems/Builder.md를 따른다. 현재 컴파일·배선·리뷰 결과는 PROGRESS와 승인된 상세 계획에 기록한다.

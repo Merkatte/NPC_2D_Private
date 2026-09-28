@@ -161,7 +161,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
         if (component.Cargo.IsFull)
             return false;
 
-        if (!_destinationDB.TrySelectNearest(BuildingType.Farm, ActionType.Harvest, component.Position,
+        if (!DestinationDecider.TrySelectNearest(_destinationDB, BuildingType.Farm, ActionType.Harvest, component.Position,
             out _, out var provider, out Vector3 farmPos))
             return false;
 
@@ -187,7 +187,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
     {
         queue = null;
 
-        if (!_destinationDB.TrySelectNearest(BuildingType.Warehouse, ActionType.Deposit, component.Position,
+        if (!DestinationDecider.TrySelectNearest(_destinationDB, BuildingType.Warehouse, ActionType.Deposit, component.Position,
             out _, out var provider, out Vector3 warehousePos))
             return false;
 

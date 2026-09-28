@@ -84,6 +84,42 @@ public class DestinationDecider
 
     private readonly StringBuilder _traceBuilder = new StringBuilder();
 
+    // Shared facility choice for utility candidates and role-specific logistics/fallbacks.
+    // Compare registered anchors only; sampling work positions here would consume gameplay RNG.
+    public static bool TrySelectNearest(DestinationDB destinations, BuildingType type, ActionType action, Vector3 origin,
+        out DestinationInfo destination, out IInteractionProvider provider, out Vector3 position)
+    {
+        destination = null;
+        provider = null;
+        position = default;
+        if (!destinations)
+            return false;
+
+        float bestDistance = float.PositiveInfinity;
+        foreach (DestinationInfo entry in destinations.GetCandidates(type))
+        {
+            if (entry == null || !entry.DestinationLoc || !entry.DestinationObject || !entry.DestinationObject.activeInHierarchy)
+                continue;
+
+            BaseInteractionProvider candidate = null;
+            if (action != ActionType.Sleep
+                && (!destinations.TryGetRegisteredInteractionProvider(entry, action, out candidate)
+                    || !candidate.isActiveAndEnabled || !candidate.CanInteract(action)))
+                continue;
+
+            Vector3 candidatePosition = entry.DestinationLoc.position;
+            float distance = (origin - candidatePosition).sqrMagnitude;
+            if (distance >= bestDistance)
+                continue;
+
+            bestDistance = distance;
+            destination = entry;
+            provider = candidate;
+            position = candidatePosition;
+        }
+        return destination != null;
+    }
+
     public DestinationDecider()
     {
         for (int i = 0; i < _levelCandidates.Length; ++i)
@@ -258,7 +294,7 @@ public class DestinationDecider
 
             AddItemCandidatesForType(candidates, key, ActionType.Eat, pos, moveSpeed, state);
             AddItemCandidatesForType(candidates, key, ActionType.Drink, pos, moveSpeed, state);
-            if (key == BuildingType.Inn && _destinationDB.TrySelectNearest(key, ActionType.Sleep, pos,
+            if (key == BuildingType.Inn && TrySelectNearest(_destinationDB, key, ActionType.Sleep, pos,
                 out var inn, out _, out Vector3 sleepPosition))
                 AddSleepCandidate(candidates, key, sleepPosition, GetTravelTime(pos, sleepPosition, moveSpeed), state, inn);
         }
@@ -267,7 +303,7 @@ public class DestinationDecider
     private void AddItemCandidatesForType(List<Candidate> candidates, BuildingType key, ActionType type,
         Vector3 origin, float moveSpeed, NeedSnapshot state)
     {
-        if (!_destinationDB.TrySelectNearest(key, type, origin, out var destination, out var provider, out Vector3 pos))
+        if (!TrySelectNearest(_destinationDB, key, type, origin, out var destination, out var provider, out Vector3 pos))
             return;
 
         float travelTime = GetTravelTime(origin, pos, moveSpeed);
@@ -349,7 +385,7 @@ public class DestinationDecider
         if (safeRepeats < _tuning.MinimumWorkBatch)
             return;
 
-        if (!_destinationDB.TrySelectNearest(BuildingType.Farm, ActionType.Farming, pos, out var destination, out var provider, out Vector3 workPos))
+        if (!TrySelectNearest(_destinationDB, BuildingType.Farm, ActionType.Farming, pos, out var destination, out var provider, out Vector3 workPos))
             return;
 
         candidates.Add(new Candidate
@@ -377,7 +413,7 @@ public class DestinationDecider
     /// </summary>
     private void AddGuardDutyCandidate(List<Candidate> candidates, NeedSnapshot state, Vector3 pos, float moveSpeed, StatEffect dutyCost)
     {
-        if (!_destinationDB.TrySelectNearest(BuildingType.GuardPost, ActionType.Guard, pos,
+        if (!TrySelectNearest(_destinationDB, BuildingType.GuardPost, ActionType.Guard, pos,
             out var destination, out var provider, out Vector3 postPos))
             return;
 

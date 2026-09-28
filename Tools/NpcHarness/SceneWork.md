@@ -36,12 +36,41 @@ blocking implementation completion solely on their absence. Never report them as
 Pass. Existing Play Mode commands remain available for explicit use; this policy
 does not delete their implementations or change GateResult schemas.
 
+## Verification and evidence limits — 2026-09-28
+
+Use existing compile/test commands and direct code/serialized-reference inspection.
+Do not create or extend verification-only runners, eval scripts, validators, tests
+or harness adapters during ordinary feature work. Verification development requires
+a separate explicit user request; a generic QA item in an older plan is not one.
+Helpers needed to implement or assemble the requested feature are distinct and
+remain subject to role ownership; do not hide verification tooling inside them.
+
+Mark coverage unavailable through existing tools as NOT_VERIFIED and hand it off
+briefly. Missing bespoke automation alone does not block completion. Actual defects,
+failed existing checks, compilation and required independent review remain blocking;
+do not relabel a failed check as unverified or relax its assertions.
+
+Maintain one compact task record with scope/baseline, checks actually run and their
+results/log locations, reviewer verdict and unresolved items. Worker messages and
+existing raw logs may be referenced directly. Do not duplicate them into assignment,
+handoff, evidence-summary and acceptance documents or copy whole diffs by default.
+Use Git diff including untracked files for review. Per-file hash manifests and
+pinned acceptance bundles are not required for ordinary work; retain hashes only
+where an actually selected isolation/promotion protocol needs them. Select extended
+evidence workflows only when the user requests them, not merely because tools exist.
+
+Reuse successful checks whose inputs remain unchanged. After a correction rerun
+only checks affected by the change and explain their scope briefly. Refresh review
+for changed code/contracts; do not repeat unrelated validation to fill a report.
+If an existing runner is blocked, diagnose with existing tools; do not start writing
+a replacement runner. Report the blocker and continue independent authorized work.
+
 ## Scope before work
 
 Record one compact `.harness-runs/<runId>/scene-work.json` (or equivalent Markdown):
 
 - objective, exact writable files, authorized deletions/overwrites, reference pattern;
-- baseline commit, current dirty paths and before hashes/copies of affected dirty files;
+- baseline commit and current dirty paths; preserve overlapping dirty content, with copies only when needed;
 - actual execution route and target Unity project/instance;
 - mandatory common checks and any explicitly selected extended checks;
 - maximum corrective attempts (normally 2), evidence/log paths.
@@ -210,7 +239,7 @@ including temporary helpers, requires an independent read-only reviewer and its
 received result for conventions, ownership and dependency direction. Non-code work
 requires review when the user, skill or structural/serialization risk calls for it.
 Wait for actual review; launch-only/author self-review is not completion. Ordinary
-review uses current common checks and candidate hashes. Existing review-evidence
+review uses current common checks and Git baseline/diff with relevant untracked files. Existing review-evidence
 commands apply only when that gate workflow was selected; no new validator is needed
 merely to record review. Play/screen exclusions above remain in force.
 

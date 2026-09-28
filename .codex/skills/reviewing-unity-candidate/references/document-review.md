@@ -9,7 +9,7 @@ project-wide report.
 
 Every C# candidate, including temporary helpers, must cover conventions, ownership
 and dependency direction. In ordinary review use the same categories with current
-common-check evidence and candidate hashes; a pinned request is not mandatory unless
+common-check evidence and current Git baseline/diff; a pinned request is not mandatory unless
 that workflow was selected. Check the actual diff and source, not a worker's claimed
 compliance. One independent reviewer covers these categories; do not spawn one per rule.
 
@@ -28,6 +28,9 @@ Expand actual violations/uncertainties only. NotApplicable requires both prior p
 in the request and an explanation. Never use it to hide missing required verification.
 Distinguish introduced defects from pre-existing debt; do not request unrelated cleanup.
 For genuine ambiguity, report NotCovered rather than inventing a rule or claiming proof.
+Under the ordinary SceneWork route, missing bespoke automated coverage belongs in
+remainingRisks and does not itself require InsufficientEvidence or new test tooling.
+Required compile/scope/reference evidence and actual defects remain subject to review.
 
 Summarize responsibilities, dependencies and remaining risk once in the compact record.
 Use "unchanged" when supported. No full-project scan, per-line compliance essay, second

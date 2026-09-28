@@ -7,6 +7,7 @@ NPC stat, 현재 위치, destination과 provider option을 비교해 하나의 s
 ## 책임 경계
 
 - `DestinationDecider`는 후보 생성, 안전 filtering, utility 계산, bounded look-ahead를 소유한다.
+- 공통 `TrySelectNearest`는 DestinationDB의 등록 후보/provider 조회를 받아 활성·CanInteract 가용성과 anchor 제곱거리를 판단한다. utility 후보, Farmer 물류와 Guard fallback이 이 정책을 재사용하며 registry는 시설 선택을 소유하지 않는다.
 - 긴급 욕구 여부의 정의도 decider가 소유한다. selector는 `HasCriticalNeed(stat)`으로 같은 임계 판정을 재사용하고 자체 임계값을 두지 않는다.
 - `NPCDecision`은 선택된 DestinationInfo/Provider identity, “한 목적지에서 한 행동”과 Work 반복 횟수를 표현한다.
 - selector는 결과를 queue로 변환할 뿐 점수 공식을 다시 계산하지 않는다.

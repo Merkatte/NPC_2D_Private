@@ -60,7 +60,7 @@ Harvest는 queue당 1회만 대여한다. 봇짐 용량 경계는 시도할 때�
 - selector 안에서 거리·욕구 utility 공식을 복제하지 않는다. 긴급 욕구 판단은 `DestinationDecider.HasCriticalNeed`를 호출해 decider의 기존 임계 규칙을 그대로 재사용한다.
 - `DestinationDecider`는 선택된 농장의 등록 입구를 기준으로 Work utility를 계산하고, 분산 위치 난수는 Work 선택 뒤 selector의 queue 구성에서만 소비한다.
 - 위치 난수를 소비하는 `TryGetActionPosition`은 실제로 queue를 만들기로 확정한 분기에서만 호출한다.
-- 물류 분기도 Farming과 동일하게 destination 조회 → provider 조회 → action 위치 조회 순서를 거치고, action에는 확정된 위치만 넘긴다.
+- 물류 분기는 `DestinationDecider.TrySelectNearest`의 공통 가용성·거리 정책으로 destination/provider를 확정한 뒤 action 위치를 조회하고, action에는 확정된 위치만 넘긴다.
 - `CanUseStat`으로 role selector와 runtime stat의 호환성을 spawn 전에 확인한다.
 - action pool factory와 `ActionType`은 함께 갱신한다.
 

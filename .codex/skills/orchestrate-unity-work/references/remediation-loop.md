@@ -5,7 +5,7 @@ Use this reference after a deterministic gate did not return `Pass`, or after a 
 The GateResult fields and complete-profile reruns below apply to selected gated
 workflows. Ordinary work retains the same budget, same-role correction and repeat-cause
 rules, but records failed common checks/findings instead of gate IDs. Bind review to
-candidate hashes; after a correction refresh affected common checks and hashes, then
+the current Git baseline/diff; after a correction refresh affected common checks, then
 obtain fresh independent review. Do not create a gate to remediate ordinary work.
 
 ## Retry Record

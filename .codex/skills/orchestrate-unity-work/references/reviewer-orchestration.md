@@ -17,7 +17,8 @@ Do not downgrade the policy after implementation merely to avoid review. Upgrade
 
 ## Lightweight evidence mode
 
-When existing relevant gates support the pinned workflow, use `Tools/NpcHarness/ReviewEvidence.md`. Pin request
+Only when the user requests extended evidence and existing relevant gates support
+the pinned workflow, use `Tools/NpcHarness/ReviewEvidence.md`. Pin request
 SHA-256 before work; snapshot inputs before gates; use one compact v2 review and the
 `accept-review` evidence gate after it. Historical/unrelated v1 reviews remain valid
 only in their original workflow and are not silently upgraded to the new envelope.
@@ -27,7 +28,9 @@ not another agent. Review only the diff and necessary adjacent dependencies/docu
 
 Always include dependency direction in code review. Ordinary work with no selected
 GateResult uses the ordinary record in reviewing-unity-candidate; do not invent a
-gate/result or build a bespoke validator merely to use accept-review.
+gate/result or build a bespoke validator merely to use accept-review. Follow
+SceneWork.md's single-record and existing-tool limits. Ordinary review uses Git
+baseline/diff, direct inspection and actual check results; hashes are optional.
 
 Unrequested responsibility moves, new layers or shared-contract changes require user
 direction before implementation. Updating current-state documentation does not authorize
@@ -62,7 +65,7 @@ Do not include implementation summaries, WorkerReports, claims of completion, th
 ## Result Intake
 
 Accept exactly one review record that follows the reviewer Skill contract. Ordinary
-review uses its ordinary record: verify reviewer identity, current candidate hashes,
+review uses its ordinary record: verify reviewer identity, current Git baseline/diff,
 reviewed files, required rule coverage, findings and verdict against common checks.
 The GateResult/run-ID fields below apply only to selected gated workflows.
 For those workflows, at minimum confirm:
@@ -94,7 +97,7 @@ After any candidate mutation:
 
 1. expire affected verification and review evidence;
 2. inspect the actual new diff and scope;
-3. refresh affected ordinary common checks and candidate hashes, or rerun complete selected gate profiles;
+3. refresh affected ordinary common checks and current diff, or rerun complete selected gate profiles;
 4. only after successful current verification, invoke an eligible read-only reviewer with a fresh primary-evidence bundle.
 
 Do not ask the reviewer to edit the candidate or confirm a fix without current successful verification under the chosen route.

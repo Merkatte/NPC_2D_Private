@@ -206,6 +206,16 @@ public static class BuildingConstructionSetup
                         Set(farm, "_workPositionRandomSource", positionRandom);
                     }
                 }
+                if (name == "GuardPost")
+                {
+                    GuardPost guardPost = root.GetComponentInChildren<GuardPost>(true);
+                    Transform randomRoot = root.transform.Find("GuardPostPositionRandom");
+                    if (!randomRoot)
+                        randomRoot = Child(root.transform, "GuardPostPositionRandom", Vector3.zero);
+                    SeededRandomSource positionRandom = GetOrAdd<SeededRandomSource>(randomRoot.gameObject);
+                    SetInt(positionRandom, "_seed", 1977);
+                    Set(guardPost, "_positionRandomSource", positionRandom);
+                }
                 if (name == "Warehouse")
                 {
                     root.layer = clickLayer;

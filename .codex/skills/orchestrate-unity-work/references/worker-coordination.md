@@ -18,7 +18,7 @@ Use native collaboration subagents: create one subagent per assignment with `spa
 - Supply relevant user requirements/approvals, role Skill, objective, required documents/reference assets, exact paths, exclusions and evidence requirements. Workers may read directly relevant dependencies under project routing.
 - Maintain a small handoff contract: class/interface/serialized field names, asset paths, import requirements, ownership and dependency readiness. The root transmits facts and artifacts between roles.
 - Reuse an agent only for the same role and related scope. A different role/unrelated scope needs a fresh context. A candidate worker never becomes its independent reviewer.
-- Shared worktrees are not filesystem isolation. Verify actual diffs and before hashes; a role prompt is not a security sandbox.
+- Shared worktrees are not filesystem isolation. Verify actual diffs and preserve prior dirty content; hashes are only required by a selected protocol, not ordinary work. A role prompt is not a security sandbox.
 
 | Role | Owns | Reports to root instead of editing |
 |---|---|---|
@@ -61,6 +61,11 @@ An assignment grants no permission beyond its stated paths and the user's existi
 Use `$author-unity-code` for C#, `$create-project-sprites` for raster art, and `$assemble-unity-objects` for ordinary bounded YAML/Editor API or selected legacy Tool work. An assignment narrows its role; it cannot grant another role's files or operations. Add/reassign the required role instead.
 
 ## WorkerReport
+
+For ordinary work, return one concise collaboration message with the fields below;
+link existing raw logs instead of creating duplicate report/evidence files. Follow
+SceneWork.md verification limits; do not assign a verification-code worker without
+an explicit user request for verification development.
 
 Require each worker to return:
 
