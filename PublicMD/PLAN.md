@@ -27,6 +27,8 @@
 
 ### 현재 우선순위
 
+2026-09-29 표현 확장 적용 완료: [공사 단계별 표현](Archive/Plans/Construction_Visual_Implementation_Plan.md). BuildingTest의 기존 부지 6개에 단계별 스프라이트와 ConstructionVisual 애니메이션을 연결했다. 컴파일·기존 검사·독립 리뷰는 통과했고 실제 Play 화면 확인은 남아 있다.
+
 2026-09-27 사용자 승인 slice: [건물 건설 구현 계획](Plans/Building_Construction_Implementation_Plan.md). [확정 컨텍스트](Plans/Building_Construction_Context.md)의 지정 부지·다섯 시설·예약/작업·공용 자원·Factory·거리 기준을 필수 계약으로 구현한다. 전용 BuildingTest와 기존 씬의 필요한 이관, 공사 스프라이트2종을 포함한다. 코드·그래픽·조립 역할 분리와 현재 후보의 독립 리뷰를 적용하고 실제 상태는 PROGRESS에 기록한다. 자동 Play/게임 화면 검증은 사용자 정책에 따라 제외한다.
 
 2026-09-26 사용자 승인 추가 slice: [건축가 시민 1차](Plans/Builder_Citizen_Implementation_Plan.md). 배회·생활 행동·대형 망치·시청 모집이 범위이며 건설/수리는 후속이다. 사용자 재개 요청에 따라 Unity CLI로 실제 씬·프리팹 배선을 적용했다. 구조·참조 검사와 독립 리뷰 결과는 PROGRESS에 기록하고, 플레이·화면은 사람의 확인 항목으로 남긴다. 전체 Phase 완료로 계산하지 않는다.

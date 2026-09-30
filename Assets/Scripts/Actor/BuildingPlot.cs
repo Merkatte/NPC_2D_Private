@@ -12,9 +12,6 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
     [SerializeField] private Transform[] _workPositions = Array.Empty<Transform>();
     [SerializeField] private BoxCollider2D _workArea;
     [SerializeField] private int[] _allowedBuildingIds = Array.Empty<int>();
-    [SerializeField] private GameObject _materialsVisual;
-    [SerializeField] private GameObject _emptyVisual;
-    [SerializeField] private GameObject _scaffoldingVisual;
     private ConstructionState _construction;
     private long _nextConstructionId;
     private bool _isChanging;
@@ -45,7 +42,6 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
         && _construction != null && _construction.Work < Definition.RequiredWork && ReservedWorkers < Definition.MaxWorkers;
     public event Action StateChanged;
 
-    private void Awake() { RefreshPresentation(); }
     public bool IsAllowed(int id) => _allowedBuildingIds.Length == 0 || Array.IndexOf(_allowedBuildingIds, id) >= 0;
     public bool TryGetClickPopup(out PopupType type)
     {
@@ -219,15 +215,8 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
         }
     }
     private void OnDisable() { EndReservations(ConstructionReservationStatus.Released); PublishState(); }
-    private void RefreshPresentation()
-    {
-        if (_emptyVisual) _emptyVisual.SetActive(State == BuildingPlotState.Empty);
-        if (_materialsVisual) _materialsVisual.SetActive(State == BuildingPlotState.UnderConstruction && !HasWorkStarted);
-        if (_scaffoldingVisual) _scaffoldingVisual.SetActive(State == BuildingPlotState.UnderConstruction && HasWorkStarted);
-    }
     private void PublishState()
     {
-        RefreshPresentation();
         if (StateChanged == null) return;
         foreach (Action handler in StateChanged.GetInvocationList())
             try { handler(); } catch (Exception exception) { Debug.LogException(exception, this); }

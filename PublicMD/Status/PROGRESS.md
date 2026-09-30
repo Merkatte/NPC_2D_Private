@@ -1,3 +1,23 @@
+# 상시 골드 HUD — 2026-09-30 구현 완료
+
+- 사용자의 상시 골드 표시·별도 HUDUI 묶음·기존 이미지 사용 요청을 적용했다. BuildingTest의 `Canvas/HUDUI/GoldHUD`에 좌측 상단 340×96 패널을 추가하고, 기존 목재 9-slice 배경과 골드 코인 sub-sprite를 재사용했다. HUDUI를 Canvas 마지막 자식에 두어 popup 위에 표시하며 기존 HoveringUI/PopupUI 상대 순서를 보존했다. 표시 Graphic과 CanvasGroup의 raycast를 껐다.
+- 변경 파일: 신규 `Assets/Scripts/UI/GoldHUD.cs`와 meta, `Assets/Prefab/UI/GoldHUD.prefab`과 meta, `Assets/Scenes/BuildingTest.unity`, `Systems/UI.md`, 이 기록. 코드 `/root/gold_hud_code`, 배선 `/root/gold_hud_assembly`, 루트 문서·검사. 기준 `592cc88`; 기존 건설·Packages 미커밋 변경을 보존했다. 이미지·importer는 수정하지 않았다.
+- ResourceManager 이벤트를 구독해 실제 골드 잔액과 천 단위 구분을 표시하고 최신 증감을 1.5초 unscaled 시간 동안 보여준다. 첫 활성화에는 현재 잔액만 표시하며 비활성화 때 구독과 타이머를 정리한다. 자원 상태·거래 규칙은 변경하지 않았다.
+- 검증: Unity 컴파일 completed 오류/경고0, 조립 후 up_to_date 오류/경고0. 현재 파일의 직접 직렬화 readback·GUID/지역 참조·씬 기준선 대비 diff·git diff --check 통과. 기존 미저장 scene 상태가 clean임을 확인한 뒤 bounded YAML 편집했다. sandbox CLI 연결 부재는 사용자 승인 외부 실행으로 확인했으며 기본 창 노출 문제가 해결됐다고 간주하지 않는다.
+- 독립 read-only `/root/gold_hud_review`: Approve, findings 없음. 컨벤션·UI 소유권·의존 방향·구독과 타이머 수명·실제 배선·변경 범위를 검토했다. ordinary common-check 경로이며 보정 한도2회 중 popup 위 표시 순서 조정1회 사용. 증거는 `.harness-runs/gold-hud-20260930/{scene-work.md,preflight.json,compile.json,final-compile.json,review.json}`.
+- Unity prefab load/Missing Script 직접 검사와 자동 Play/화면 검증은 미실행이다. 사람 확인: 초기 잔액, 판매·모집·건설·환불 증감, 재활성화, 해상도별 숫자·popup 겹침과 클릭 통과. 코드/직렬화 구현 완료와 실제 화면 확인을 구분하며 커밋하지 않았다.
+
+- 후속 확인(2026-09-30): 사용자가 골드 HUD가 정상 동작한다고 확인했다. 세부 시나리오 전체 통과로 확대 해석하지 않으며 자동 Play/화면 검사 미실행 기록은 유지한다. 사용자 요청으로 현재 저장된 골드 HUD·공사 표현·관련 문서·Pipeline 0.8.0-exp.1 패키지 변경을 함께 커밋·푸시한다.
+
+# 공사 단계별 표현 — 2026-09-29 적용 완료
+
+- 사용자의 제작·적용 요청에 따라 [승인 범위](../Archive/Plans/Construction_Visual_Implementation_Plan.md)를 적용했다. 착공/25/50/75%에 자재·하부 골조·상부 골조·가림막을 누적 표시하며 ConstructionVisual이 등장·퇴장과 tween 정리를 소유한다. BuildingPlot은 상태와 알림만 제공한다. 완공 성공만 표시를 제거하며 100% 생성 실패는 유지한다.
+- 역할: `/root/construction_visual_art` PNG, `/root/construction_visual_code` 표현 코드·기존 조립 도구, `/root/construction_visual_assembly` BuildingTest 6개 부지와 importer. 기준592cc88, 기존 Packages 변경 보존. 수정 한도2회 중 아트 정렬 재생성1회 사용, 검증 후 추가 수정0회.
+- 신규 PNG 3개와 기존 자재 이미지를 연결했다. PPU150·하단 중앙 pivot·sorting 5/6/7·공통 localY 1.0866667이며 footprint·작업점·navigation과 다른 씬/시설 prefab은 보존했다. 전용 메뉴 1회 적용 후 Unity가 추가한 줄끝 공백만 정리했다. 처음 sandbox 내부 CLI 연결 조회 실패는 권한 있는 기존 실행 경로로 해결했고 후보 결함으로 취급하지 않았다.
+- 검증: Unity completed 컴파일 오류/경고0, 최종 up_to_date 오류/경고0. 기존 비-Play 건설/자원21개와 씨앗39개 통과, sceneSetupPreserved=true. 6개 component의 local fileID/script·sprite GUID 및 importer/초기 활성 상태 대조, git diff --check 통과. 신규 검증 코드·해시 묶음·중복 결과 문서를 만들지 않았다. 원본 로그: `.harness-runs/construction-visual-20260929/{assembly,checks,compile}.json`.
+- 독립 read-only `/root/construction_visual_review`: Approve, findings 없음. 실제 tracked/untracked diff와 현재 검사 로그를 근거로 컨벤션·표현/도메인 책임·의존 방향·구독/tween 수명·씬 참조·변경 범위를 확인했다. 별도 GateResult profile 없이 ordinary common-check 경로로 수용한다.
+- 자동 Play/게임 화면 검증은 미실행이다. 사람 확인: 착공→25/50/75% 레이어 겹침과 등장 속도, 완공·취소·즉시 재착공의 전환. 구현 완료와 실행 화면 확인을 구분하며 이번 변경은 아직 커밋하지 않았다.
+
 # 건물 건설 두 결함 수정 완료 — 2026-09-29
 
 - 사용자가 초소 난수원 누락(F1)과 DestinationDB의 선택 정책 소유(F2) 수정을 명시 요청했다. 앞선 수정 2회 이력은 유지하고 두 항목에 대한 추가 수정 1회를 승인한 것으로 기록한다(총 한도 3회).

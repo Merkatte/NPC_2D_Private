@@ -19,6 +19,7 @@ public static class BuildingConstructionSetup
     private const string BuildingScene = "Assets/Scenes/BuildingTest.unity";
     private const string FarmerScene = "Assets/Scenes/FarmerTest.unity";
     private const string GuardScene = "Assets/Scenes/GuardTest.unity";
+    private const float StageVisualYOffset = 1.0866667f;
     private static readonly string[] FacilityNames = { "Warehouse", "Restaurant", "Inn", "GuardPost", "Soil" };
 
     [MenuItem("Tools/NPC/Construction/Setup")]
@@ -37,6 +38,7 @@ public static class BuildingConstructionSetup
             WriteCsv();
             ImportArt("material-pile", 300f);
             ImportArt("scaffolding", 150f);
+            ImportConstructionStages();
             Scene farmer = EditorSceneManager.OpenScene(FarmerScene, OpenSceneMode.Single);
             EnsureGuardPrefab(farmer);
             ConfigureFacilityPrefabs(All<FarmSeedSource>(farmer).First().gameObject.layer);
@@ -56,6 +58,7 @@ public static class BuildingConstructionSetup
             Scene building = EditorSceneManager.OpenScene(BuildingScene, OpenSceneMode.Single);
             MigrateScene(building, buildings, cost, true);
             CreatePlots(building, buildings);
+            foreach (BuildingPlot plot in All<BuildingPlot>(building)) ConfigureConstructionVisual(plot);
             Save(building);
             string warehousePath = PrefabRoot + "Warehouse.prefab";
             GameObject warehousePrefab = PrefabUtility.LoadPrefabContents(warehousePath);
@@ -71,6 +74,78 @@ public static class BuildingConstructionSetup
             // restoring the setup neither saves unrelated scenes nor changes their lights.
             EditorSceneManager.RestoreSceneManagerSetup(originalSetup);
         }
+    }
+
+    [MenuItem("Tools/NPC/Construction/Apply Construction Visuals")]
+    public static void ApplyConstructionVisuals()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling || EditorApplication.isUpdating)
+            throw new InvalidOperationException("Construction visuals require idle Edit Mode.");
+        if (PrefabStageUtility.GetCurrentPrefabStage() != null)
+            throw new InvalidOperationException("Close the current Prefab Stage before applying construction visuals.");
+        for (int i = 0; i < SceneManager.sceneCount; ++i)
+            if (SceneManager.GetSceneAt(i).isDirty || string.IsNullOrEmpty(SceneManager.GetSceneAt(i).path))
+                throw new InvalidOperationException("Construction visuals preserve unsaved scenes; save them before this explicit operation.");
+        SceneSetup[] originalSetup = EditorSceneManager.GetSceneManagerSetup();
+        try
+        {
+            Scene scene = EditorSceneManager.OpenScene(BuildingScene, OpenSceneMode.Single);
+            BuildingPlot[] plots = All<BuildingPlot>(scene).ToArray();
+            if (plots.Length != 6) throw new InvalidOperationException("Expected the six existing BuildingTest plots.");
+            foreach (BuildingPlot plot in plots)
+                if (!plot.transform.Find("Materials") || !plot.transform.Find("EmptyPlot")
+                    || (!plot.transform.Find("Scaffolding") && !plot.transform.Find("LowerFrame")))
+                    throw new InvalidOperationException("Missing construction visual children on " + plot.name);
+            ImportConstructionStages();
+            foreach (BuildingPlot plot in plots) ConfigureConstructionVisual(plot);
+            Save(scene);
+        }
+        finally
+        {
+            EditorSceneManager.RestoreSceneManagerSetup(originalSetup);
+        }
+    }
+
+    private static void ImportConstructionStages()
+    {
+        foreach (string stage in new[] { "lower-frame", "upper-frame", "cover" })
+            ImportArt("Stages/" + stage, 150f);
+    }
+
+    private static void ConfigureConstructionVisual(BuildingPlot plot)
+    {
+        Transform parent = plot.transform;
+        ConstructionVisual visual = GetOrAdd<ConstructionVisual>(plot.gameObject);
+        Transform materials = parent.Find("Materials");
+        Transform marker = parent.Find("EmptyPlot");
+        if (!materials || !marker) throw new InvalidOperationException("Missing plot visual children: " + plot.name);
+        SpriteRenderer materialsRenderer = materials.GetComponent<SpriteRenderer>();
+        if (!materialsRenderer || !materialsRenderer.sprite)
+            throw new InvalidOperationException("Missing existing material-pile sprite on " + plot.name);
+        Set(visual, "_plot", plot);
+        Set(visual, "_emptyVisual", marker.gameObject);
+        Set(visual, "_materials", materialsRenderer);
+        Set(visual, "_lowerFrame", ConfigureStage(parent, "LowerFrame", "lower-frame", 5));
+        Set(visual, "_upperFrame", ConfigureStage(parent, "UpperFrame", "upper-frame", 6));
+        Set(visual, "_cover", ConfigureStage(parent, "Cover", "cover", 7));
+        materials.gameObject.SetActive(false);
+        marker.gameObject.SetActive(true);
+    }
+
+    private static SpriteRenderer ConfigureStage(Transform parent, string name, string art, int sortingOrder)
+    {
+        Transform child = parent.Find(name);
+        if (!child && name == "LowerFrame") child = parent.Find("Scaffolding");
+        if (!child) child = Child(parent, name, Vector3.zero);
+        child.name = name;
+        child.localPosition = new Vector3(0f, StageVisualYOffset);
+        SpriteRenderer renderer = GetOrAdd<SpriteRenderer>(child.gameObject);
+        renderer.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Generated/Buildings/Construction/Stages/" + art + ".png");
+        if (!renderer.sprite) throw new InvalidOperationException("Missing imported construction stage: " + art);
+        renderer.sortingLayerID = 0;
+        renderer.sortingOrder = sortingOrder;
+        child.gameObject.SetActive(false);
+        return renderer;
     }
 
     private static void WriteCsv()
@@ -476,14 +551,13 @@ public static class BuildingConstructionSetup
             Set(plot, "_dataManager", data); Set(plot, "_resources", resources); Set(plot, "_factory", factory);
             Set(plot, "_registry", registry); Set(plot, "_entrance", entrance); Set(plot, "_workArea", workArea);
             SetArray(plot, "_workPositions", new[] { left, right });
-            Set(plot, "_materialsVisual", Visual(go.transform, "Materials", "material-pile"));
-            Set(plot, "_scaffoldingVisual", Visual(go.transform, "Scaffolding", "scaffolding"));
+            Visual(go.transform, "Materials", "material-pile");
             GameObject marker = Child(go.transform, "EmptyPlot", new Vector3(0, 3f)).gameObject;
             var markerRenderer = marker.AddComponent<SpriteRenderer>();
             markerRenderer.sprite = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabRoot + "Soil.prefab")
                 .GetComponentsInChildren<SpriteRenderer>(true).First(renderer => renderer.sprite).sprite;
             markerRenderer.sortingOrder = 1;
-            Set(plot, "_emptyVisual", marker);
+            ConfigureConstructionVisual(plot);
             int b = blocked.arraySize++; blocked.GetArrayElementAtIndex(b).objectReferenceValue = footprint;
             int a = areas.arraySize++; var area = areas.GetArrayElementAtIndex(a);
             area.FindPropertyRelative("_bounds").objectReferenceValue = workArea;

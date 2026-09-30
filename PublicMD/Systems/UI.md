@@ -68,6 +68,7 @@ EventSystem(InputSystemUIInputModule)
 | `Assets/Scripts/UI/TownHallRecruitCard.cs` | 시청 직군별 모집 상태 표시([Town Hall](Town_Hall.md) 주 소유) |
 | `Assets/Scripts/UI/SeedSelectionPopup.cs` | FarmSeedSource의 보유 씨앗 표시, 선택·확정 요청·실패 문구와 대상 수명 관리 |
 | `Assets/Scripts/UI/UIManager.cs` | popup·hover registry와 현재 표시 상태를 조정하는 facade |
+| `Assets/Scripts/UI/GoldHUD.cs` | 공유 골드 잔액과 최신 증감을 이벤트 기반으로 표시하는 상시 HUD |
 
 ## 변경 유형별 최소 확인 범위
 
@@ -96,6 +97,16 @@ EventSystem(InputSystemUIInputModule)
 열기·대상 전환 때 이전 선택을 지우고 목록을 읽는다. 선택은 재고를 변경하지 않고 확인 문구에 씨앗 1개 소비를 표시한다. 확정 전에 선택 ID를 비워 연속 입력을 막고 source가 현재 재고·밭 상태를 다시 검사한다. 성공은 RequestClose로 닫고 실패는 목록과 사유를 갱신한다. 닫기·비활성화에서 source와 선택을 해제하며, 대상이 파괴되거나 비활성화되면 닫는다. 종류만 받는 기존 TryShow overload는 유지하되 seed popup은 유효한 source 없이는 열리지 않는다.
 
 PointerHoverRouter/PointerClickRouter에는 world camera, IUIService 구현 source와 감지 mask가 필요하다. 현재 FarmerTest의 click mask는 전체 레이어이며 Soil의 기존 Hoverable collider를 재사용한다. Router는 NPC·농장 구체 타입을 참조하지 않는다. FarmGaugeHover에는 fill image와 camera를 연결한다.
+
+## 상시 골드 HUD
+
+`GoldHUD`는 popup/hover registry에 등록하지 않는 상시 표시 컴포넌트다. scene의 `ResourceManager`를 serialized reference로 받고 `ResourcesChanged`에서 `GetQuantity(ResourceManager.GoldItemId)`를 조회한다. 골드 저장·차감·환급 규칙은 [Shared Resources](Inventory_and_Items/Shared_Resources.md)가 소유하며 HUD는 값을 변경하지 않는다.
+
+활성화 때 현재 잔액을 천 단위 구분으로 즉시 표시하고 첫 조회에는 증감을 표시하지 않는다. 골드가 실제로 바뀐 경우만 최신 차이를 `+150`/`-100` 형식으로 표시한다. 다른 자원이나 용량 변경은 표시 타이머를 재시작하지 않는다. 증감은 기본 1.5초의 unscaled 시간 뒤 지우며 Inspector의 Change Display Duration이 0이면 표시하지 않는다. 비활성화 때 이벤트 구독·coroutine·이전 표시를 정리한다.
+
+BuildingTest의 `Canvas/HUDUI/GoldHUD`에 `Assets/Prefab/UI/GoldHUD.prefab`을 배치한다. HUDUI는 Canvas의 마지막 자식으로 두어 popup과 겹칠 때도 잔액이 보이게 한다. 기존 HoveringUI·PopupUI의 상대 순서는 유지한다. 기존 목재 패널 `ui-merchant-board-panel-9slice.png`는 Sliced 이미지, `ui-gold-coin.png`의 `ui-gold-coin_0`는 골드 아이콘으로 재사용한다. AmountText와 ChangeText는 기존 UI와 같은 Legacy Text다. 배경·아이콘·텍스트의 raycast와 HUDUI의 blocksRaycasts를 꺼 world 클릭을 가로채지 않는다.
+
+변경 시 먼저 `GoldHUD.cs`, `ResourceManager.cs`, `GoldHUD.prefab`과 BuildingTest의 HUDUI 배선을 확인한다. prefab은 scene 자원 저장소를 소유하지 않고 scene instance의 override로 ResourceManager를 연결한다.
 
 ## 문구 표시 연계
 

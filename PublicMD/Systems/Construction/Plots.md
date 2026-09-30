@@ -17,7 +17,7 @@ BuildingPlot은 씬 부지와 상태 변경 진입점, ConstructionState는 해�
 
 ## 최소 확인 범위
 
-상태/지불/환불은 Plot+State와 ResourceManager, 예약은 Reservation과 InteractionRequest 및 Builder, 조립 실패는 [Facilities](Facilities.md), 표시 연결은 [UI](UI.md)를 읽는다. Factory는 비용/진행도를 변경하지 않는다.
+상태/지불/환불은 Plot+State와 ResourceManager, 예약은 Reservation과 InteractionRequest 및 Builder, 조립 실패는 [Facilities](Facilities.md), 팝업은 [UI](UI.md), 공사 이미지·애니메이션은 [Presentation](Presentation.md)를 읽는다. Factory는 비용/진행도를 변경하지 않는다. Plot은 표시 오브젝트를 직접 제어하지 않고 StateChanged를 발행한다.
 
 ## 불변 규칙
 
