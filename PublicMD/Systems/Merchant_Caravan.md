@@ -144,7 +144,7 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 
 우상단 `Exit`의 X 이미지는 `ui-merchant-close-button.png`를 사용하는 uGUI Image다. `Exit`은 팝업 오른쪽 위를 기준으로 100×100 UI 크기로 배치한다. 씬 프리팹 인스턴스의 기존 fileID/type 연결을 보존하기 위해 원래 SpriteRenderer 컴포넌트는 비활성으로 유지하고, Image는 별도의 fileID로 추가한다.
 
-`MerchantPopup.prefab`은 1920×1080 화면의 Constant Pixel Size Canvas 기준으로 루트와 게시판 배경이 모두 1200×960이다. 서류 면과 구매·판매 내용 영역은 1020×760, 창고·판매 패널은 각각 480×680·480×560으로 배치했다. 구매 내용 영역은 서류 면 상단에 맞춘다. 커진 서류 면 주위에 목재 여백이 남도록 게시판을 넓혔고, 루트 크기도 맞춰 수량 입력창의 차단 영역이 게시판을 덮는다. Sliced Image의 `Pixels Per Unit Multiplier`로 나무 프레임의 화면상 두께를 조정하며 루트 Transform Scale은 1을 유지한다.
+`MerchantPopup.prefab`은 1920×1080 화면의 Constant Pixel Size Canvas 기준으로 루트가 1200×960, 게시판 배경이 1200×1005.8115(중심 y=22.9058)다. 서류 면과 구매·판매 내용 영역은 1020×760, 창고·판매 패널은 각각 480×680·480×560으로 배치했다. 구매 내용 영역은 서류 면 상단에 맞춘다. 커진 서류 면 주위에 목재 여백이 남도록 게시판을 넓혔고, 루트 크기도 맞춰 수량 입력창의 차단 영역이 게시판을 덮는다. Sliced Image의 `Pixels Per Unit Multiplier`로 나무 프레임의 화면상 두께를 조정하며 루트 Transform Scale은 1을 유지한다.
 
 창고·판매 슬롯 프리팹과 GridLayout 셀은 모두 118×118이며, 두 그리드는 45px 안쪽 여백과 16px 셀 간격을 사용해 480px 패널 안에 3열로 들어간다. 두 슬롯 프리팹의 배경은 `ui-merchant-item-cell-9slice.png`로 통일하고 중앙에 아이템 아이콘, 오른쪽 아래에 수량만 표시한다. 이름·단가 텍스트 오브젝트는 기존 프리팹 인스턴스 참조 보존을 위해 비활성으로 남겨 두지만 표시 코드는 더 이상 이 둘을 갱신하지 않는다. 거래 금액 계산은 `MerchantTradeSite`와 팝업의 예상 판매 금액 표시가 계속 담당한다.
 
@@ -175,3 +175,5 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 ## 공유 자원 이관
 
 MerchantTradeSite._warehouse는 scene의 공유 ResourceManager다. 별도 골드 참조는 제거한다. MerchantPopup은 ResourcesChanged를 구독해 재고를 갱신하고 닫기/disable에서 해제한다. 자원 알림은 공급 목록과 견적을 갱신하되 판매 중인 카트를 수정하지 않는다. 성공 후 카트를 비우고, OutOfStock 결과일 때 최신 재고 이내로 카트를 조정한다. 현재 이관 검증은 PROGRESS를 따른다.
+
+2026-10-01 팝업 점검: 닫기 X는 실제 게시판 우측·상단에서 각각25만큼 안쪽에 둔다. 수량창 Blocker는 확장된 게시판 전체를 덮는다. Slider의 FillRect는 Fill(200028), HandleRect는 Handle(200030)을 참조하며 Handle Slide Area는 slider 너비에 맞춰 stretch한다. 확인·취소 버튼은 수량창 하단에서78 높이에 배치해 테두리와 여백을 확보했다. 실제 입력·화면 검증은 별도다.

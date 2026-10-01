@@ -98,6 +98,14 @@ EventSystem(InputSystemUIInputModule)
 
 PointerHoverRouter/PointerClickRouter에는 world camera, IUIService 구현 source와 감지 mask가 필요하다. 현재 FarmerTest의 click mask는 전체 레이어이며 Soil의 기존 Hoverable collider를 재사용한다. Router는 NPC·농장 구체 타입을 참조하지 않는다. FarmGaugeHover에는 fill image와 camera를 연결한다.
 
+## 팝업 공통 표현
+
+상단(MerchantPopup)의 목재 외곽·제목 명패·종이 내부 패널·녹색 확정/적갈색 취소 버튼을 기준으로 재사용한다. 기능별 내용 구조와 루트 크기는 유지한다. 닫기 X는 실제 배경 우측 상단 안쪽에 두며 anchor/pivot은 (1,1), 오른쪽·위 여백은 버튼 한 변의 1/4이다. 현재 Merchant 100/25, TownHall 96/24, SeedSelection 84/21, Construction·Warehouse 56/14 UI 단위다. Merchant 배경은 루트보다 위로 확장되어 있으므로 실제 배경 상단을 기준으로 위치를 계산한다.
+
+건설·창고의 제목판과 BodyBackground는 기존 UI 이미지를 사용하는 별도 자식 Image이며 raycast를 받지 않는다. 기존 닫기 Button과 클릭 연결을 유지하고 이전 닫기 라벨을 제목판으로 옮겼다. 본문과 목록은 목재 프레임 안쪽에 배치한다. 현재 건설 5개 행과 창고 9개 항목이 들어가는 범위를 기준으로 하며 항목 수 증가 시 목록 높이·스크롤 정책을 다시 확인해야 한다.
+
+씬의 팝업 크기 override를 유지한다. 프리팹의 저장값·참조 검토는 Unity에서의 실제 표시 및 클릭 검증과 구분하며, 화면 QA는 사람의 확인 항목이다.
+
 ## 상시 골드 HUD
 
 `GoldHUD`는 popup/hover registry에 등록하지 않는 상시 표시 컴포넌트다. scene의 `ResourceManager`를 serialized reference로 받고 `ResourcesChanged`에서 `GetQuantity(ResourceManager.GoldItemId)`를 조회한다. 골드 저장·차감·환급 규칙은 [Shared Resources](Inventory_and_Items/Shared_Resources.md)가 소유하며 HUD는 값을 변경하지 않는다.
@@ -160,7 +168,7 @@ NPCGirl source/anchor/Catalog와 별도 루트 LocalizeManager 배선은 [NPC Me
   동일 source도 표시 상태를 재확인하여 닫힌 hover가 조건 회복 뒤 다시 열릴 수 있다.
   UIManager는 이미 표시 중인 같은 source를 재개방하지 않는다.
 - PointerClickRouter는 press 시점의 EventSystem raycast 중 GraphicRaycaster hit를 확인해 UI 뒤의 world 클릭을 차단한다. native 입력 순서·화면 회귀는 별도 Play 검증 대상이다.
-- concrete popup은 MerchantPopup, TownHallPopup, SeedSelectionPopup 세 종류다. 공통 UI는 source만 전달하며 씨앗 transaction은 [농장 runtime](Farming/Runtime_and_Transactions.md)이 소유한다.
+- concrete popup은 MerchantPopup, TownHallPopup, SeedSelectionPopup, ConstructionPopup, WarehousePopup 다섯 종류다. 건설 UI는 [Construction UI](Construction/UI.md), 창고 UI는 [Warehouse UI](Inventory_and_Items/Warehouse_UI.md)가 주 소유한다. 공통 UI는 source만 전달하며 씨앗 transaction은 [농장 runtime](Farming/Runtime_and_Transactions.md)이 소유한다.
 
 ## 관련 문서
 

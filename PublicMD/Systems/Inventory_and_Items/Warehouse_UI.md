@@ -18,3 +18,5 @@ WarehouseDepositPoint를 기존 PointerClickRouter/PopBase 경로로 열고 공�
 ## 배선·검증·제약
 
 WarehousePopup/ResourceQuantityRow prefab을 Canvas/PopupUI와 UIManager registry에 연결한다. 참조·구독·source 수명을 검사하고 화면은 사람이 확인한다. 별도 골드 HUD·정렬 확장·직접 물품 조작은 범위 밖이다. popup API/직렬화 필드 변경 시 갱신한다.
+
+2026-10-01 팝업 표현 정리: 700×620 루트는 유지하고 상단 스타일 제목 명패·종이 본문·우상단 X를 배치한다. 용량 문구는 제목 아래, 자원 목록은 570×406에 배치하며 현재 9개 항목(38 높이, 간격8)을 수용한다. 닫기 Button과 `_capacityText` 연결은 유지한다. 공통 닫기 기준은 [UI](../UI.md#팝업-공통-표현)를 따른다.
