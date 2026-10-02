@@ -853,6 +853,10 @@ MonoBehaviour:
   _smoothTime: 0.2
   _minBounds: {x: -17, y: -12}
   _maxBounds: {x: 22, y: 11}
+  _worldCamera: {fileID: 519420031}
+  _minOrthographicSize: 2
+  _maxOrthographicSize: 20
+  _zoomSpeed: 1
 --- !u!1001 &566960648
 PrefabInstance:
   m_ObjectHideFlags: 0

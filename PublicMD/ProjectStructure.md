@@ -38,6 +38,7 @@ NPCManager / WorkerPool          생성과 조립
 | NPC 표현 | [NPC Presentation](Systems/NPC_Presentation.md) | 이동 animation, Flip, 건물·도구 표현 |
 | NPC 생각·대사 | [NPC Messages](Systems/NPC_Messages.md) | 상태 기반 문구 선택, 지정 대사 토큰, Hover 메시지 수명 |
 | UI | [UI](Systems/UI.md) | popup, hover, gauge, pointer routing |
+| 카메라 조작 | [Camera Control](Systems/Camera_Control.md) | 테스트 씬 방향키 이동, 마우스 휠 직교 줌과 범위 설정 |
 | 문구와 지역화 | [Localization](Systems/Localization.md) | Localize CSV, 안정적인 Enum 생성, SO 조회, Text/TMP 표시 |
 | 생성과 pooling | [Spawning and Pooling](Systems/Spawning_and_Pooling.md) | role 생성, prefab catalog, worker pool |
 | Codex 작업 하네스 | [Harness Architecture](HARNESS_ARCHITECTURE.md) | Skill 기반 오케스트레이션, 결정적 gate, 실행 증거, Reviewer 경계 |
