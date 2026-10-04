@@ -45,7 +45,7 @@ Guard selector가 target 유지·획득 정책과 combat queue를 소유한다. 
 
 ## 불변 규칙
 
-- combat target은 공급·순찰보다 즉시 높은 우선순위를 가진다.
+- 태업은 전투 target 유지·획득보다 먼저 확인하고 target을 지운다. 태업이 아닐 때 combat target은 공급·순찰보다 높은 우선순위를 가진다.
 - `GuardAction`은 고정 duration으로 완료되지 않고 감지·need threshold에서 재판단한다.
 - guard duty의 decision 평가 duration은 runtime action duration이 아니다.
 - selector는 `GuardStat` 호환성과 perception 존재를 검증한다.
@@ -85,3 +85,7 @@ GuardAction은 action별 NPCPathFollower를 사용한다. 첫 이동과 다음 p
 이동 중에도 적 감지, 욕구와 provider 유효성 검사 순서는 유지한다. 복귀용 MoveAction을 앞에 붙이지 않는다.
 전투 추적은 기존 Dynamic/Direct 요청이다. Stop/Clear에서 follower 상태를 정리한다.
 경로 실패는 1초 대기 후 재판단하며 세부 계약은 Movement/Navigation 문서를 따른다.
+
+## 불만도·태업 연결
+
+GuardStatDefinition의 `_dissatisfactionSettings`는 각 GuardStat으로 복사한다. 태업이면 target 획득 전에 기존 target을 지우고 공통 생활/배회 queue를 만든다. patrol과 combat Move/Attack은 RequiresWorkAvailability=true, 생활 Move는 false다. GuardAction/AttackAction은 비용·이동·damage 이전에 검사한다. `_wanderCost`·전용 `_randomSource`·기존 `_navigation`을 연결하고 GuardTest의 Direct 시설 이동을 유지한다. 경로망이 없으면 배회는 timed Idle로 대체한다. Enemy에는 제한을 설정하지 않는다.

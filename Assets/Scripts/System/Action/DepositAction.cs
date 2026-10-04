@@ -45,7 +45,7 @@ public class DepositAction : DefaultAction
 
     public override void Tick()
     {
-        if (!_isRunning || _isPaused || IsFinished)
+        if (!_isRunning || _isPaused || IsFinished || ReplanIfWorkUnavailable())
         {
             return;
         }

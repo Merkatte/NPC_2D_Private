@@ -2,14 +2,14 @@
 
 ## 기능 목적과 현재 상태
 
-전용 건축가 시민의 건설·배회·생활 행동을 소유한다. 수리는 이번 범위에서 제외한다. 건설 변경의 현재 검증 상태는 PROGRESS를 따른다.
+전용 건축가 시민의 건설과 생활/배회 queue 선택을 소유한다. 공통 배회 실행은 [Needs Actions](NPC_Decision_and_Actions/Needs_Actions.md)가 소유한다. 수리는 이번 범위에서 제외한다. 건설 변경의 현재 검증 상태는 PROGRESS를 따른다.
 2026-09-26 Unity CLI에서 `BuilderCitizenSetup.Setup`을 실행해 FarmerTest와 공유 프리팹에 배선을 저장했다. FarmerTest에는 Builder selector와 생성 entry가 있고 시청에는 세 번째 모집 카드가 있다. 자동 Play Mode·화면 검증은 사용자 결정으로 제외하며 실제 플레이와 망치 손 위치는 사람의 확인 항목이다.
 
 ## 책임 경계와 흐름
 
 `BuilderActionSelector` → 기존 `DestinationDecider` → Eat/Drink/Sleep이면 Navigated Move + 기존 생활 action. 긴급 욕구가 해소 불가능하면 Idle로 대기한다. 그 외에는 BuildingPlotRegistry에서 신청 순서로 가용 공사를 찾아 이동 전에 예약한다. 정원이 찬 부지는 건너뛴다. 공사가 없으면 `TilemapNavigation.TryGetRandomReachablePosition`으로 배회 위치를 정하고 `WanderAction` 하나를 대여한다.
 
-`WanderAction`은 `NPCPathFollower`로 최대 5초 이동하고 1초 쉰다. 도착이 빠르면 바로 휴식한다. 이동과 휴식 중 허기·갈증·피로를 각각 0.3/초 증가시키고 완료 후 selector가 재판단한다. 경로 실패는 follower의 재판단 규칙을 따르며 Stop/Clear에서 경로·timer·context를 정리한다. 공유 SO에 actor별 상태를 쓰지 않는다.
+태업이면 건설 후보 조회·예약 전에 공통 생활/배회 queue를 선택한다. 선택된 생활 action 또는 해소 불가 긴급 욕구의 Idle, 그 외 배회를 BaseNPCActionSelector가 조립한다. Wander 실행 규칙은 [Needs Actions](NPC_Decision_and_Actions/Needs_Actions.md)를 따른다.
 
 Selector는 생활 utility를 복제하지 않는다. 시설 transaction은 기존 provider, queue 수명은 WorkerNPC, 경로 조회는 Navigation, 이동·망치 표시는 NPCComponent가 소유한다.
 
@@ -20,8 +20,6 @@ Selector는 생활 utility를 복제하지 않는다. 시설 transaction은 기�
 | `Assets/Scripts/System/Actor/BuilderActionSelector.cs` | 생활/건설/배회 queue 선택·예약·대여·실패 반환 |
 | `Assets/Scripts/System/Action/BuildAction.cs` | NPCPathFollower 이동·도착 후 작업·중단과 lease 정리 |
 | `Assets/Data/ScriptableObject/Script/BuildActionCost.cs` | CSV 작업 설정과 공통 긴급 욕구 판단 연결 |
-| `Assets/Scripts/System/Action/WanderAction.cs` | 배회 이동·휴식·욕구 변화·실행 수명 |
-| `Assets/Data/ScriptableObject/Script/WanderActionCost.cs` | 이동/휴식 시간과 욕구 증가 수치 |
 
 ## 변경 유형별 최소 확인 범위
 
@@ -48,3 +46,7 @@ BuildAction 하나가 이동과 작업을 소유한다. selector는 plot provide
 작업 진행은 도착 후 CSV 작업 속도 × 유효 작업 시간이다. 이동 중에는 진행하지 않는다. 이동/작업 중 CSV 욕구 비용을 적용하며 기존 긴급 욕구 기준으로 작업을 중단한다. MoveAction·WorkerNPC에 건축가 전용 분기를 추가하지 않는다. 완료 실패는 100%를 보존하고 추가 작업 없이 TestOnly에서 재시도한다.
 
 Builder selector의 _buildingPlots/_buildCost를 scene registry와 BuildActionCost에 연결한다. 새 BuildingTest 시작 건축가 2명은 TestOnly bootstrap이 생성한다. 건축가 개별 전문 스탯은 확장 가능성만 유지하고 현재 공유 고정 설정을 사용한다. 부지·정의·완공 책임은 [Construction](Construction/README.md)을 따른다.
+
+## 불만도·태업 연결
+
+Build context는 RequiresWorkAvailability=true다. 태업이면 Start/Tick의 공통 검사에서 이동·욕구 비용·작업 기여 이전에 재판단하며 BuildAction.Cleanup이 lease와 경로·도구 상태를 반환한다. 이미 기여한 부지 progress는 보존된다. 회복 뒤 다음 선택에서 새 예약을 얻는다.

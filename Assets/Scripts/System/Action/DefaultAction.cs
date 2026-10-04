@@ -27,6 +27,8 @@ public abstract class DefaultAction : IAction
 
     public virtual void Start()
     {
+        if (ReplanIfWorkUnavailable())
+            return;
         if (!actionContext.Component)
         {
             Fail($"{_actionType} action started without a valid NPCComponent");
@@ -39,6 +41,14 @@ public abstract class DefaultAction : IAction
 
 
     public abstract void Tick();
+
+    protected bool ReplanIfWorkUnavailable()
+    {
+        if (!actionContext.RequiresWorkAvailability || actionContext.Stat == null || !actionContext.Stat.IsOnStrike)
+            return false;
+        RequestReplan();
+        return true;
+    }
 
     public virtual void Pause()
     {

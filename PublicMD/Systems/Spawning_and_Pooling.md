@@ -102,3 +102,7 @@ Test/UI command
 ## 문서 갱신 조건
 
 role composition, prefab catalog, worker pool, spawn·despawn lifecycle 또는 prefab 배선이 바뀌면 갱신한다.
+
+## 불만도·태업 연결
+
+NPCGirl의 WorkerNPC `_dissatisfaction`은 같은 루트 NPCDissatisfaction과 연결한다. factory는 유닛마다 복사한 설정·새 상태를 만들고 WorkerNPC.Init은 연결만 한다. 예약 중 Init 전에는 미연결이라 누적하지 않는다. WorkerNPC.OnDisable과 component.OnDisable의 idempotent Unbind는 원인·잔량·참조를 정리한다. Enemy 역할은 component 초기화에서 제외한다. 자동 원인 등록은 없으며 [NPC Dissatisfaction](NPC_Dissatisfaction.md)을 따른다.

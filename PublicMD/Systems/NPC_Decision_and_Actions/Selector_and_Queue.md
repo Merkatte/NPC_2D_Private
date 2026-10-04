@@ -26,7 +26,7 @@ FarmerActionSelector.RequestNewActionQueue
   -> 모든 action Init 완료 후 queue 반환
 ```
 
-Farmer 우선순위는 긴급 욕구 > Harvest(봇짐에 여유가 있을 때만) > Deposit(봇짐이 있을 때만) > 기존 decider 결과다. Harvest를 selector 단계에서 `!Cargo.IsFull`로 먼저 게이트하기 때문에 창고가 없거나 봇짐이 가득 차도 매 프레임 replan이 반복되지 않는다.
+Farmer는 태업이면 업무 provider 조회 전에 공통 생활/배회 queue로 전환한다. 태업이 아닐 때 우선순위는 긴급 욕구 > Harvest(봇짐에 여유가 있을 때만) > Deposit(봇짐이 있을 때만) > 기존 decider 결과다. Harvest를 selector 단계에서 `!Cargo.IsFull`로 먼저 게이트하기 때문에 창고가 없거나 봇짐이 가득 차도 매 프레임 replan이 반복되지 않는다.
 
 Harvest는 queue당 1회만 대여한다. 봇짐 용량 경계는 시도할 때마다 재판단으로 처리되므로 미리 여러 개를 대여할 이득이 없다.
 
@@ -38,7 +38,7 @@ Harvest는 queue당 1회만 대여한다. 봇짐 용량 경계는 시도할 때�
 
 | 경로 | 한 줄 책임 |
 |---|---|
-| `Assets/Scripts/System/Actor/BaseNPCActionSelector.cs` | action 대여·초기화·반환과 기본 Idle queue 골격 |
+| `Assets/Scripts/System/Actor/BaseNPCActionSelector.cs` | action 대여·초기화·반환과 공통 생활/배회·Idle queue 골격 |
 | `Assets/Scripts/System/Actor/FarmerActionSelector.cs` | Farmer decision과 물류 우선순위를 이동·공급·농사·수확·입고 action queue로 변환 |
 | `Assets/Scripts/System/Lib/ActionPool.cs` | `ActionType`별 action factory와 reusable instance queue |
 
@@ -87,3 +87,7 @@ Navigation 모드의 시설 이동은 Navigated 요청, 기존 Direct 모드는 
 이동 context와 시설 interaction context를 분리하고 provider의 목적지/난수/transaction은 유지한다.
 Guard 전투 Dynamic 요청은 Direct다. 경로 서비스 미설정은 한 번 로그 후 Idle로 안전하게 재판단한다.
 세부 실행은 Movement, 씬 서비스는 Navigation 문서가 소유한다.
+
+## 불만도·태업 연결
+
+BaseNPCActionSelector.BuildLeisureQueue는 decider가 선택한 Eat/Drink/Sleep을 기존 Move+생활 action으로 조립한다. 생활 선택이 없고 HasCriticalNeed이면 timed Idle, 나머지는 navigation·WanderActionCost·명시적 IRandomSource로 도달 가능한 배회를 만든다. 경로망/비용/난수원 부재는 Idle로 안전하게 처리한다. Farmer/Guard는 `_wanderCost`, `_randomSource`와 기존 `_navigation`을 사용한다. Builder도 이 공통 조립을 재사용한다. Farming/Harvest/Deposit와 해당 이동은 RequiresWorkAvailability=true, 생활/배회는 false다. 배회 실행은 [Needs Actions](Needs_Actions.md)가 소유한다.

@@ -12,6 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d302affb8446a744f95b069bb29a2418, type: 3}
   m_Name: GuardStatDefinition
   m_EditorClassIdentifier: Assembly-CSharp::GuardStatDefinition
+  _dissatisfactionSettings:
+    _increasePerSecond: 1
+    _decreasePerSecond: 1
+    _maximum: 100
+    _strikeThreshold: 60
   _name: Guard
   _health: 100
   _healthMax: 100

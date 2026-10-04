@@ -76,3 +76,7 @@ DestinationDecider.Decide(stat, role, position, work cost)
 후보 모델, utility, look-ahead, tuning, decision shape 또는 gameplay 난수 계약이 바뀌면 갱신한다.
 
 다중 시설에서는 등록된 출입/interaction anchor의 제곱거리로 가용 시설을 선택한다. 동률은 등록 순서다. 실제 선택된 provider를 결과에 보존하며 selector에서 BuildingType으로 다시 조회하지 않는다. Farm/Guard 작업 위치 난수는 시설 선택이 확정된 뒤에만 소비한다. look-ahead와 후보 비교는 난수 상태를 변경하지 않는다.
+
+## 불만도·태업 연결
+
+NeedSnapshot은 IStatView.IsOnStrike를 복사한다. BuildCandidates는 태업이면 role activity를 생성하지 않으며 모든 look-ahead 상태에도 이 값을 유지한다. 공급 후보·긴급 need filtering·utility는 기존 규칙을 사용한다. 미래 회복을 추정해 업무 후보를 만들지 않고 실제 회복된 다음 선택에서 다시 판단한다. 불만 mutation이나 원인 조회는 decider 책임이 아니다.

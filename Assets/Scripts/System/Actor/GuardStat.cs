@@ -8,8 +8,8 @@ public class GuardStat : NPCStat, ICombatStatView
 
     public GuardStat(string name, float health, float healthMax, float moveSpeed,
         float fatigue, float hunger, float thirst, float fatigueMax, float hungerMax, float thirstMax,
-        float attackPower, float attackSpeed, float attackRange)
-        : base(name, health, healthMax, moveSpeed, fatigue, hunger, thirst, fatigueMax, hungerMax, thirstMax)
+        float attackPower, float attackSpeed, float attackRange, DissatisfactionSettings? dissatisfactionSettings = null)
+        : base(name, health, healthMax, moveSpeed, fatigue, hunger, thirst, fatigueMax, hungerMax, thirstMax, dissatisfactionSettings)
     {
         _attackPower = Mathf.Max(0.01f, attackPower);
         _attackSpeed = Mathf.Max(0.01f, attackSpeed);

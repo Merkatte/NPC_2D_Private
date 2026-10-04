@@ -1704,6 +1704,7 @@ GameObject:
   m_Component:
   - component: {fileID: 825924305}
   - component: {fileID: 825924306}
+  - component: {fileID: 825924307}
   m_Layer: 0
   m_Name: FarmerActionSelector
   m_TagString: Untagged
@@ -1744,6 +1745,21 @@ MonoBehaviour:
   _decisionTuning: {fileID: 11400000, guid: 5e868759b272f74414365fefdb2f8256, type: 2}
   _facilityMoveMode: 1
   _navigation: {fileID: 2300000092}
+  _wanderCost: {fileID: 11400000, guid: f6ebd82b58b551447b23baba2913ab35, type: 2}
+  _randomSource: {fileID: 825924307}
+--- !u!114 &825924307
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 825924304}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11f5310043904c2e910af5c48be5993c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SeededRandomSource
+  _seed: 2610031
 --- !u!1001 &866112445
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2179,6 +2195,7 @@ GameObject:
   m_Component:
   - component: {fileID: 900000015}
   - component: {fileID: 900000016}
+  - component: {fileID: 900000040}
   m_Layer: 0
   m_Name: GuardActionSelector
   m_TagString: Untagged
@@ -2219,6 +2236,21 @@ MonoBehaviour:
   _decisionTuning: {fileID: 11400000, guid: 5e868759b272f74414365fefdb2f8256, type: 2}
   _facilityMoveMode: 1
   _navigation: {fileID: 2300000092}
+  _wanderCost: {fileID: 11400000, guid: f6ebd82b58b551447b23baba2913ab35, type: 2}
+  _randomSource: {fileID: 900000040}
+--- !u!114 &900000040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900000014}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11f5310043904c2e910af5c48be5993c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SeededRandomSource
+  _seed: 2610032
 --- !u!1 &900000017
 GameObject:
   m_ObjectHideFlags: 0

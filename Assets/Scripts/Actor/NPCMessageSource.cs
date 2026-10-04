@@ -49,7 +49,7 @@ public sealed class NPCMessageSource : MonoBehaviour, IHoverInfoSource
         if (stat != null && _catalog && _randomSource && _random != null)
         {
             NPCThoughtSelector.CollectCandidates(stat, actionType, _catalog.ActionThoughts,
-                _catalog.NeedThoughts, _catalog.FallbackKey, _candidates);
+                _catalog.NeedThoughts, _catalog.FallbackKey, _candidates, _catalog.StrikeThoughts);
         }
         float duration = _catalog ? _catalog.HoldDuration : NPCThoughtCatalog.DefaultHoldDuration;
         return _state.TryGetMessage(_candidates, duration, Time.unscaledTimeAsDouble, _random, out key);

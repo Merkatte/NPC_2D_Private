@@ -7,6 +7,10 @@ public class GuardActionSelector : BaseNPCActionSelector
     [SerializeField] private NPCDecisionTuning _decisionTuning;
     [SerializeField] private MoveMode _facilityMoveMode;
     [SerializeField] private TilemapNavigation _navigation;
+    [SerializeField] private WanderActionCost _wanderCost;
+    [SerializeField] private MonoBehaviour _randomSource;
+
+    private IRandomSource _random;
 
     private bool _hasLoggedNavigationSetup;
 
@@ -17,6 +21,8 @@ public class GuardActionSelector : BaseNPCActionSelector
     // asset, so it is not per-NPC state and is safe to cache on this shared selector instance.
     private StatEffect _guardDutyCost;
     private readonly List<(ICombatTarget Target, Component Owner)> _candidateBuffer = new List<(ICombatTarget, Component)>();
+
+    private void Awake() => _random = _randomSource as IRandomSource;
 
     protected override void Start()
     {
@@ -91,13 +97,20 @@ public class GuardActionSelector : BaseNPCActionSelector
         if (_decider == null || _decisionTuning == null || _destinationDB == null || stat == null || _guardActionCostInfo == null)
         {
             Debug.LogError("GuardActionSelector is missing required setup (decider/tuning/destinationDB/stat/GuardActionCost); falling back to Idle.");
-            return BuildIdleQueue(component, stat);
+            return BuildFallbackIdleQueue(component, stat);
         }
 
         if (!(stat is GuardStat guardStat))
         {
             Debug.LogError("Guard selector requires a stat implementing GuardStat; falling back to Idle.");
-            return BuildIdleQueue(component, stat);
+            return BuildFallbackIdleQueue(component, stat);
+        }
+
+        if (stat.IsOnStrike)
+        {
+            component.CombatRuntimeState.ClearTarget();
+            return BuildLeisureQueue(_decider.Decide(stat, npcType, component.Position, _guardDutyCost), _decider,
+                component, stat, _facilityMoveMode, _navigation, _wanderCost, _randomSource ? _random : null);
         }
 
         if (TryBuildCombatQueue(component, stat, guardStat, out Queue<IAction> combatQueue))
@@ -110,7 +123,7 @@ public class GuardActionSelector : BaseNPCActionSelector
                 Debug.LogError("GuardActionSelector: Navigation mode requires a ready TilemapNavigation.", this);
                 _hasLoggedNavigationSetup = true;
             }
-            return BuildIdleQueue(component, stat);
+            return BuildFallbackIdleQueue(component, stat);
         }
 
         // The decider is now consulted on every replan, not only above the interrupt threshold,
@@ -129,7 +142,7 @@ public class GuardActionSelector : BaseNPCActionSelector
         if (_guardActionCostInfo.ShouldInterrupt(stat))
         {
             Debug.LogWarning("Guard interrupt remains active, but the decider selected no supply action; using timed Idle to avoid a replan loop.");
-            return BuildIdleQueue(component, stat);
+            return BuildFallbackIdleQueue(component, stat);
         }
 
         return BuildGuardQueue(component, stat, decision);
@@ -169,7 +182,7 @@ public class GuardActionSelector : BaseNPCActionSelector
         if (!CombatLib.IsInRange(component.Position, handle.Target.Position, guardStat.AttackRange))
         {
             float stoppingDistance = guardStat.AttackRange * _guardActionCostInfo.AttackStoppingDistanceRatio;
-            ActionContext moveContext = new ActionContext(component, stat, moveRequest: MoveRequest.Dynamic(handle, stoppingDistance));
+            ActionContext moveContext = new ActionContext(component, stat, moveRequest: MoveRequest.Dynamic(handle, stoppingDistance), requiresWorkAvailability: true);
 
             if (!TryRentAction(ActionType.Move, moveContext, rented))
             {
@@ -178,7 +191,7 @@ public class GuardActionSelector : BaseNPCActionSelector
             }
         }
 
-        ActionContext attackContext = new ActionContext(component, stat);
+        ActionContext attackContext = new ActionContext(component, stat, requiresWorkAvailability: true);
         if (!TryRentAction(ActionType.Attack, attackContext, rented))
         {
             ReturnAll(rented);
@@ -195,7 +208,7 @@ public class GuardActionSelector : BaseNPCActionSelector
 
     private Queue<IAction> BuildNeedQueue(NPCDecision decision, NPCComponent component, NPCStat stat)
     {
-        if (!decision.HasLiveDestination) return BuildIdleQueue(component, stat);
+        if (!decision.HasLiveDestination) return BuildFallbackIdleQueue(component, stat);
         List<IAction> rented = new List<IAction>();
 
         ActionContext moveContext = BuildMoveContext(decision.DestinationPos, component, stat);
@@ -225,14 +238,14 @@ public class GuardActionSelector : BaseNPCActionSelector
         Vector3 guardPos = decision.DestinationPos;
         if (provider == null && !DestinationDecider.TrySelectNearest(_destinationDB, BuildingType.GuardPost, ActionType.Guard,
             component.Position, out _, out provider, out guardPos))
-            return BuildIdleQueue(component, stat);
+            return BuildFallbackIdleQueue(component, stat);
         if (!provider.CanInteract(ActionType.Guard) || !provider.TryGetActionPosition(ActionType.Guard, guardPos, out Vector3 firstPoint))
-            return BuildIdleQueue(component, stat);
+            return BuildFallbackIdleQueue(component, stat);
 
         List<IAction> rented = new List<IAction>();
         ActionContext movement = BuildMoveContext(firstPoint, component, stat);
         ActionContext context = new ActionContext(component, stat, firstPoint, _guardActionCostInfo,
-            provider: provider, moveRequest: movement.MoveRequest, navigation: movement.Navigation);
+            provider: provider, moveRequest: movement.MoveRequest, navigation: movement.Navigation, requiresWorkAvailability: true);
         if (!TryRentAction(ActionType.Guard, context, rented))
         {
             ReturnAll(rented);
@@ -241,19 +254,6 @@ public class GuardActionSelector : BaseNPCActionSelector
         return new Queue<IAction>(rented);
     }
 
-    private Queue<IAction> BuildIdleQueue(NPCComponent component, NPCStat stat)
-    {
-        List<IAction> rented = new List<IAction>();
-        ActionContext context = new ActionContext(component, stat);
-
-        if (!TryRentAction(ActionType.Idle, context, rented))
-        {
-            ReturnAll(rented);
-            return new Queue<IAction>();
-        }
-
-        return new Queue<IAction>(rented);
-    }
 
     private ActionContext BuildMoveContext(Vector3 destination, NPCComponent component, NPCStat stat)
     {

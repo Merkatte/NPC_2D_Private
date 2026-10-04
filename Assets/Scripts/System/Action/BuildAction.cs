@@ -28,7 +28,7 @@ public sealed class BuildAction : DefaultAction
     }
     public override void Tick()
     {
-        if (!_isRunning || _isPaused || IsFinished) return;
+        if (!_isRunning || _isPaused || IsFinished || ReplanIfWorkUnavailable()) return;
         if (!actionContext.Component || !_providerOwner || !CheckReservation())
         { if (!IsFinished) RequestReplan(); return; }
         if (_cost.ShouldInterrupt(actionContext.Stat)) { RequestReplan(); return; }

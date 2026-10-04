@@ -75,3 +75,7 @@ action interface, context, result, base lifecycle 또는 cost base가 바뀌면 
 ActionContext에 선택적인 `INavigationService Navigation`이 추가됐다.
 실제 경로 상태는 context나 WorkerNPC가 아니라 MoveAction/GuardAction의 NPCPathFollower가 소유한다.
 목적지와 MoveRequest의 의미는 Movement 문서를 따른다.
+
+## 불만도·태업 연결
+
+ActionContext.RequiresWorkAvailability는 selector가 업무와 업무 이동에 설정한다(기본 false로 기존 호출 호환). DefaultAction.Start의 ReplanIfWorkUnavailable와 Move/Farming/Harvest/Deposit/Build/Guard/Attack Tick의 같은 검사는 태업이면 효과 이전에 ReplanRequested를 반환한다. 시작 시 도구·이동·예약 작업을 먼저 실행하지 않는다. 기존 Stop/Clear와 action별 종료 정리는 경로·도구·건설 lease를 반환하며 미완료 작업을 성공으로 처리하지 않는다. 확정된 생산물·cargo·공사 진행률은 보존한다. Enemy Attack과 생활 이동은 work flag를 설정하지 않는다.

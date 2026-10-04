@@ -611,6 +611,10 @@ public class TestDecisionScenarioProbe : MonoBehaviour
     /// </summary>
     private sealed class ProbeStat : IStatView
     {
+        public float CurrentDissatisfaction => 0f;
+        public float MaximumDissatisfaction => 100f;
+        public bool IsOnStrike => false;
+
         public float Health = 100f;
         public float HealthMax = 100f;
         public float MoveSpeed = 3f;

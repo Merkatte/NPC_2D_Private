@@ -121,6 +121,10 @@ Manager는 별도 루트에서 DontDestroyOnLoad를 적용하고, SO는 Inspecto
 
 ## 4. 의존 방향
 
+### 불만도·태업 연결 (2026-10-03 승인 범위)
+
+공유 stat definition은 불만도 설정을 주민별 runtime stat에 복사한다. NPCStat이 소유하는 DissatisfactionState가 원인별 누적·회복과 태업 판정을 맡고 NPCDissatisfaction은 명시적 초기화·시간 전달·원인 등록 경계를 맡는다. WorkerNPC는 초기화/해제 배관과 기존 queue lifecycle만 소유한다. selector/decider는 읽기 상태로 업무 후보를 제한하고 action은 주입된 업무 요구 조건을 실행 시작/Tick에서 확인한다. 중단은 기존 ReplanRequested/Stop/Clear 경로를 사용한다. provider transaction, NPCComponent의 이동·표현과 UI 표시 책임은 그대로다. 메시지는 읽기 view만 소비한다. 상세 구현 사실은 [NPC Dissatisfaction](Systems/NPC_Dissatisfaction.md)과 관련 leaf를 따른다.
+
 허용되는 기본 방향:
 
 ```text

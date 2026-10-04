@@ -17,6 +17,7 @@
 |---|---|
 | [Navigation](Navigation.md) | 노드 그리드, A*, 힙, 지형 비용과 지역 출입구를 소유하는 단일 기능 문서 |
 | `NPC_Runtime.md` | 단일 기능 문서 |
+| `NPC_Dissatisfaction.md` | 주민별 불만 원인·누적/회복·태업 상태와 시간 갱신 |
 | `NPC_Decision_and_Actions/` | 5개 leaf를 가진 기능 인덱스 |
 | [Construction](Construction/README.md) | 정의·부지·완공 시설·UI의 4개 leaf |
 | `Farming/` | 4개 leaf를 가진 기능 인덱스 |

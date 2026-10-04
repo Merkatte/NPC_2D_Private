@@ -56,3 +56,7 @@ Enemy의 `AttackStyle`과 preferred range는 selector의 접근 거리 정책에
 ## 문서 갱신 조건
 
 공격 timing, damage, range, attack style 또는 combat stat 계약이 바뀌면 갱신한다.
+
+## 불만도·태업 연결
+
+Guard selector의 공격 context만 RequiresWorkAvailability를 설정한다. DefaultAction.Start와 AttackAction.Tick의 공통 태업 검사가 target 사용·damage 이전에 재판단한다. 이후 Guard selector가 target을 정리한다. Enemy의 기존 false context는 같은 AttackAction을 그대로 사용한다.

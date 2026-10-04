@@ -69,10 +69,17 @@ public sealed class NPCThoughtCatalog : ScriptableObject
         new NeedThought(NeedType.Fatigue, DefaultNeedThreshold, LocalizeKey.NPC_Thought_Tired_1, LocalizeKey.NPC_Thought_Tired_2),
     };
     [SerializeField] private LocalizeKey _fallbackKey = LocalizeKey.NPC_Thought_Default;
+    [SerializeField] private LocalizeKey[] _strikeThoughts =
+    {
+        LocalizeKey.NPC_Thought_Strike_1,
+        LocalizeKey.NPC_Thought_Strike_2,
+        LocalizeKey.NPC_Thought_Strike_3,
+    };
     [SerializeField, Min(0.01f)] private float _holdDuration = DefaultHoldDuration;
 
     public IReadOnlyList<ActionThought> ActionThoughts => _actionThoughts;
     public IReadOnlyList<NeedThought> NeedThoughts => _needThoughts;
+    public IReadOnlyList<LocalizeKey> StrikeThoughts => _strikeThoughts;
     public LocalizeKey FallbackKey => _fallbackKey;
     public float HoldDuration => _holdDuration;
 

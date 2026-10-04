@@ -3,6 +3,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "GuardStatDefinition", menuName = "Scriptable Objects/NPCStatDefinition/GuardStatDefinition")]
 public class GuardStatDefinition : NPCStatDefinition
 {
+    [SerializeField] private DissatisfactionSettings _dissatisfactionSettings = DissatisfactionSettings.Default;
     [SerializeField] private string _name = "Guard";
 
     [SerializeField] private float _health = 100f;
@@ -36,6 +37,9 @@ public class GuardStatDefinition : NPCStatDefinition
             _thirstMax,
             _attackPower,
             _attackSpeed,
-            _attackRange);
+            _attackRange,
+            _dissatisfactionSettings.Validated());
     }
+
+    private void OnValidate() => _dissatisfactionSettings = _dissatisfactionSettings.Validated();
 }

@@ -23,7 +23,7 @@ public sealed class MoveAction : DefaultAction
 
     public override void Tick()
     {
-        if (!_isRunning || _isPaused || IsFinished)
+        if (!_isRunning || _isPaused || IsFinished || ReplanIfWorkUnavailable())
             return;
         _follower.Tick(Time.deltaTime);
         UpdateCompletion();

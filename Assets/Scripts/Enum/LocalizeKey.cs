@@ -29,4 +29,7 @@ public enum LocalizeKey
     NPC_Thought_Tired_1 = 1122,
     NPC_Thought_Tired_2 = 1123,
     NPC_Thought_Default = 1124,
+    NPC_Thought_Strike_1 = 1125,
+    NPC_Thought_Strike_2 = 1126,
+    NPC_Thought_Strike_3 = 1127,
 }

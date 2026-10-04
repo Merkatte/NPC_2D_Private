@@ -3,6 +3,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "DefaultStatContext", menuName = "Scriptable Objects/DefaultStatContext")]
 public class DefaultStatContext : NPCStatDefinition
 {
+    [SerializeField] private DissatisfactionSettings _dissatisfactionSettings = DissatisfactionSettings.Default;
     [SerializeField] private string _name = "something";
 
     [SerializeField] private float _health = 100f;
@@ -40,6 +41,9 @@ public class DefaultStatContext : NPCStatDefinition
             _thirst,
             _fatigueMax,
             _hungerMax,
-            _thirstMax);
+            _thirstMax,
+            _dissatisfactionSettings.Validated());
     }
+
+    private void OnValidate() => _dissatisfactionSettings = _dissatisfactionSettings.Validated();
 }

@@ -61,4 +61,59 @@ public class BaseNPCActionSelector : MonoBehaviour
         for (int i = 0; i < rented.Count; ++i)
             ReturnAction(rented[i]);
     }
+
+    protected Queue<IAction> BuildFallbackIdleQueue(NPCComponent component, NPCStat stat)
+    {
+        var rented = new List<IAction>();
+        if (!TryRentAction(ActionType.Idle, new ActionContext(component, stat), rented))
+        {
+            ReturnAll(rented);
+            return new Queue<IAction>();
+        }
+        return new Queue<IAction>(rented);
+    }
+
+    protected Queue<IAction> BuildLeisureQueue(NPCDecision decision, DestinationDecider decider,
+        NPCComponent component, NPCStat stat, MoveMode moveMode, TilemapNavigation navigation,
+        WanderActionCost wanderCost, IRandomSource random)
+    {
+        if (decision.Intent == NPCIntent.Eat || decision.Intent == NPCIntent.Drink || decision.Intent == NPCIntent.Sleep)
+        {
+            if (!decision.HasLiveDestination ||
+                (moveMode == MoveMode.Navigation && (!navigation || !navigation.IsReady)))
+                return BuildFallbackIdleQueue(component, stat);
+            ActionType type = decision.Intent == NPCIntent.Eat ? ActionType.Eat :
+                decision.Intent == NPCIntent.Drink ? ActionType.Drink : ActionType.Sleep;
+            if (type != ActionType.Sleep && decision.Provider == null)
+                return BuildFallbackIdleQueue(component, stat);
+            MoveRequest request = moveMode == MoveMode.Navigation
+                ? MoveRequest.Navigated(decision.DestinationPos) : MoveRequest.Fixed(decision.DestinationPos);
+            var movement = new ActionContext(component, stat, decision.DestinationPos,
+                moveRequest: request, navigation: navigation);
+            var interaction = new ActionContext(component, stat, decision.DestinationPos,
+                provider: decision.Provider, request: decision.Request);
+            var rented = new List<IAction>();
+            if (!TryRentAction(ActionType.Move, movement, rented) || !TryRentAction(type, interaction, rented))
+            {
+                ReturnAll(rented);
+                return BuildFallbackIdleQueue(component, stat);
+            }
+            return new Queue<IAction>(rented);
+        }
+
+        // Unresolved critical needs wait; safe leisure uses the existing bounded Wander action.
+        if (decider == null || decider.HasCriticalNeed(stat) || !navigation || !navigation.IsReady || !wanderCost || random == null ||
+            !navigation.TryGetRandomReachablePosition(component.Position, random, out Vector3 target))
+            return BuildFallbackIdleQueue(component, stat);
+
+        var context = new ActionContext(component, stat, target, wanderCost,
+            moveRequest: MoveRequest.Navigated(target), navigation: navigation);
+        var wanderActions = new List<IAction>();
+        if (!TryRentAction(ActionType.Wander, context, wanderActions))
+        {
+            ReturnAll(wanderActions);
+            return BuildFallbackIdleQueue(component, stat);
+        }
+        return new Queue<IAction>(wanderActions);
+    }
 }

@@ -12,6 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 480c038d6fdc2de48b248c2c0f046b0e, type: 3}
   m_Name: DefaultStatContext
   m_EditorClassIdentifier: Assembly-CSharp::DefaultStatContext
+  _dissatisfactionSettings:
+    _increasePerSecond: 1
+    _decreasePerSecond: 1
+    _maximum: 100
+    _strikeThreshold: 60
   _name: something
   _health: 100
   _healthMax: 100
@@ -22,5 +27,3 @@ MonoBehaviour:
   _fatigueMax: 100
   _hungerMax: 100
   _thirstMax: 100
-  _attackPower: 10
-  _attackSpeed: 10

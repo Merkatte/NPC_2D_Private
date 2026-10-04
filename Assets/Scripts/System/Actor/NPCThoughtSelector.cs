@@ -10,11 +10,19 @@ public static class NPCThoughtSelector
         IStatView stat, ActionType? actionType,
         IReadOnlyList<NPCThoughtCatalog.ActionThought> actions,
         IReadOnlyList<NPCThoughtCatalog.NeedThought> needs,
-        LocalizeKey fallback, List<LocalizeKey> results)
+        LocalizeKey fallback, List<LocalizeKey> results, IReadOnlyList<LocalizeKey> strikeThoughts = null)
     {
         if (results == null)
             throw new ArgumentNullException(nameof(results));
         results.Clear();
+
+        if (stat != null && stat.IsOnStrike)
+        {
+            AddUnique(strikeThoughts, results);
+            if (results.Count == 0)
+                results.Add(LocalizeKey.NPC_Thought_Strike_1);
+            return;
+        }
 
         // Move describes execution, not its destination or purpose.
         if (actionType.HasValue && actionType.Value != ActionType.Move && actions != null)

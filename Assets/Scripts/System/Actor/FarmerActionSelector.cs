@@ -7,6 +7,10 @@ public class FarmerActionSelector : BaseNPCActionSelector
     [SerializeField] private NPCDecisionTuning _decisionTuning;
     [SerializeField] private MoveMode _facilityMoveMode;
     [SerializeField] private TilemapNavigation _navigation;
+    [SerializeField] private WanderActionCost _wanderCost;
+    [SerializeField] private MonoBehaviour _randomSource;
+
+    private IRandomSource _random;
 
     private bool _hasLoggedNavigationSetup;
 
@@ -14,6 +18,8 @@ public class FarmerActionSelector : BaseNPCActionSelector
     private FarmingActionCost _farmingActionCostInfo;
     private StatEffect _workCost;
     private bool _hasLoggedMissingFarmProvider;
+
+    private void Awake() => _random = _randomSource as IRandomSource;
 
     protected override void Start()
     {
@@ -55,14 +61,18 @@ public class FarmerActionSelector : BaseNPCActionSelector
                 Debug.LogError("FarmerActionSelector: Navigation mode requires a ready TilemapNavigation.", this);
                 _hasLoggedNavigationSetup = true;
             }
-            return BuildIdleQueue(component, stat);
+            return BuildFallbackIdleQueue(component, stat);
         }
 
         if (_decider == null || _decisionTuning == null || stat == null)
         {
             Debug.LogError("FarmerActionSelector is missing required setup (decider/tuning/stat); falling back to Idle.");
-            return BuildIdleQueue(component, stat);
+            return BuildFallbackIdleQueue(component, stat);
         }
+
+        if (stat.IsOnStrike)
+            return BuildLeisureQueue(_decider.Decide(stat, npcType, component.Position, _workCost), _decider,
+                component, stat, _facilityMoveMode, _navigation, _wanderCost, _randomSource ? _random : null);
 
         // Logistics (deliver/harvest cargo) takes priority over ordinary Work/Eat/Drink/Sleep
         // decisions, but never over a critical need — matches the approved priority order.
@@ -76,13 +86,13 @@ public class FarmerActionSelector : BaseNPCActionSelector
                 if (TryBuildDepositQueue(component, stat, out Queue<IAction> depositQueue))
                     return depositQueue;
 
-                return BuildIdleQueue(component, stat);
+                return BuildFallbackIdleQueue(component, stat);
             }
         }
 
         NPCDecision decision = _decider.Decide(stat, npcType, component.Position, _workCost);
         if (decision.DestinationKey != BuildingType.None && !decision.HasLiveDestination)
-            return BuildIdleQueue(component, stat);
+            return BuildFallbackIdleQueue(component, stat);
 
         IInteractionProvider farmProvider = null;
         if (decision.Intent == NPCIntent.Work)
@@ -128,7 +138,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
 
         if (decision.DestinationKey != BuildingType.None)
         {
-            if (!TryRentAction(ActionType.Move, BuildMoveContext(decision.DestinationPos, component, stat), rented))
+            if (!TryRentAction(ActionType.Move, BuildMoveContext(decision.DestinationPos, component, stat, decision.Intent == NPCIntent.Work), rented))
             {
                 ReturnAll(rented);
                 return new Queue<IAction>();
@@ -170,10 +180,10 @@ public class FarmerActionSelector : BaseNPCActionSelector
 
         InteractionRequest request = new InteractionRequest(ActionType.Harvest, strength: 1f, cargo: component.Cargo);
         ActionContext context = new ActionContext(component, stat, workPos, _farmingActionCostInfo,
-            provider: provider, request: request);
+            provider: provider, request: request, requiresWorkAvailability: true);
 
         List<IAction> rented = new List<IAction>();
-        if (!TryRentAction(ActionType.Move, BuildMoveContext(workPos, component, stat), rented) || !TryRentAction(ActionType.Harvest, context, rented))
+        if (!TryRentAction(ActionType.Move, BuildMoveContext(workPos, component, stat, true), rented) || !TryRentAction(ActionType.Harvest, context, rented))
         {
             ReturnAll(rented);
             return false;
@@ -195,10 +205,10 @@ public class FarmerActionSelector : BaseNPCActionSelector
             return false;
 
         InteractionRequest request = new InteractionRequest(ActionType.Deposit, cargo: component.Cargo);
-        ActionContext context = new ActionContext(component, stat, depositPos, provider: provider, request: request);
+        ActionContext context = new ActionContext(component, stat, depositPos, provider: provider, request: request, requiresWorkAvailability: true);
 
         List<IAction> rented = new List<IAction>();
-        if (!TryRentAction(ActionType.Move, BuildMoveContext(depositPos, component, stat), rented) || !TryRentAction(ActionType.Deposit, context, rented))
+        if (!TryRentAction(ActionType.Move, BuildMoveContext(depositPos, component, stat, true), rented) || !TryRentAction(ActionType.Deposit, context, rented))
         {
             ReturnAll(rented);
             return false;
@@ -208,19 +218,6 @@ public class FarmerActionSelector : BaseNPCActionSelector
         return true;
     }
 
-    private Queue<IAction> BuildIdleQueue(NPCComponent component, NPCStat stat)
-    {
-        List<IAction> rented = new List<IAction>();
-        ActionContext context = new ActionContext(component, stat);
-
-        if (!TryRentAction(ActionType.Idle, context, rented))
-        {
-            ReturnAll(rented);
-            return new Queue<IAction>();
-        }
-
-        return new Queue<IAction>(rented);
-    }
 
     private ActionContext BuildContext(NPCDecision decision, NPCComponent component, NPCStat stat, IInteractionProvider farmProvider)
     {
@@ -231,7 +228,7 @@ public class FarmerActionSelector : BaseNPCActionSelector
                 // 1f is a seam for a future Farmer skill/proficiency system.
                 InteractionRequest request = new InteractionRequest(ActionType.Farming, strength: 1f);
                 return new ActionContext(component, stat, decision.DestinationPos, _farmingActionCostInfo,
-                    provider: farmProvider, request: request);
+                    provider: farmProvider, request: request, requiresWorkAvailability: true);
             }
 
             case NPCIntent.Eat:
@@ -251,12 +248,12 @@ public class FarmerActionSelector : BaseNPCActionSelector
         }
     }
 
-    private ActionContext BuildMoveContext(Vector3 destination, NPCComponent component, NPCStat stat)
+    private ActionContext BuildMoveContext(Vector3 destination, NPCComponent component, NPCStat stat, bool requiresWorkAvailability)
     {
         MoveRequest request = _facilityMoveMode == MoveMode.Navigation
             ? MoveRequest.Navigated(destination)
             : MoveRequest.Fixed(destination);
-        return new ActionContext(component, stat, destination, moveRequest: request, navigation: _navigation);
+        return new ActionContext(component, stat, destination, moveRequest: request, navigation: _navigation, requiresWorkAvailability: requiresWorkAvailability);
     }
 
     private static ActionType ToActionType(NPCIntent intent)

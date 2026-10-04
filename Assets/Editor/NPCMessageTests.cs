@@ -179,6 +179,10 @@ public static class NPCMessageTests
 
     private sealed class TestStat : IStatView
     {
+        public float CurrentDissatisfaction => 0f;
+        public float MaximumDissatisfaction => 100f;
+        public bool IsOnStrike => false;
+
         public float Hunger { get; set; }
         public float Thirst { get; set; }
         public float Fatigue { get; set; }

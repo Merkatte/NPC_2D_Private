@@ -42,4 +42,5 @@ MonoBehaviour:
     _threshold: 0.6
     _keys: 6204000063040000
   _fallbackKey: 1124
+  _strikeThoughts: 650400006604000067040000
   _holdDuration: 4

@@ -1,3 +1,13 @@
+# 불만도·태업 — 2026-10-03 구현 완료
+
+- 사용자 승인 [계획](../Archive/Plans/Dissatisfaction_Implementation_Plan.md)에 따라 Farmer·Builder·Guard의 원인별 누적·회복, 유닛별 설정, 태업 중단·생활·배회와 Hover 문구를 구현했다. 무주택 자동 판정/주택/업그레이드는 후속이며 현재 자동 발생 원인은 없다. 현재 구조는 [NPC Dissatisfaction](../Systems/NPC_Dissatisfaction.md)을 따른다.
+- 기준 `67026f65c9fc01433ea710978a8ac53f3242c359`, 시작 시 미커밋 변경 없음. 코드 `/root/dissatisfaction_code`, 배선 `/root/dissatisfaction_assembly`, 루트 공통 문서·조정·검증. 사용자는 이번 구현·검증 명령의 창 노출 가능성을 명시적으로 허용했다.
+- 코드: DissatisfactionSettings/State/Cause/NPCDissatisfaction을 추가하고 stat·selector·decider·업무 action·메시지에 연결했다. 시작 설정은 증가1/초·감소1/초·상한100·태업 기준60이며 조정 가능한 임시값이다. 총량이 기준 이상이면 업무를 중단하고 생활·배회하며 기준 미만으로 회복한 뒤 다음 선택에서 복귀한다. 확정된 운반물·공사 진행률을 보존하고 건설 예약은 반환한다. Enemy는 제외한다.
+- 배선: NPCGirl, FarmerTest/BuildingTest, DefaultStatContext/BuilderStatContext/GuardStatDefinition/NPCThoughtCatalog의 7개 에셋을 적용했다. 기존 navigation·배치·Builder 난수원을 유지하고 Farmer/Guard 배회 난수원과 태업 문구1125~1127을 연결했다. Unity 저장으로 DefaultStatContext의 코드에 없는 과거 _attackPower/_attackSpeed 직렬화 항목이 제거됐다. 실제 SO 저장용 helper만 코드 담당이 작성했으며 새 검증 전용 코드는 만들지 않았다.
+- 검증: runtime/Editor .NET 빌드 오류0(기존 참조 경고5), Unity 컴파일 및 최종 up_to_date 오류/경고0. 기존 지역화38·메시지22·건설/자원21·씨앗39개 통과, sceneSetupPreserved=true. 현재 diff·GUID·저장된 참조와 Unity prefab/BuildingTest readback, git diff --check를 확인했다. sandbox Unity 연결 실패 후 승인된 외부 경로로 성공했으며 창 노출 문제 해결을 의미하지 않는다.
+- 독립 read-only `/root/dissatisfaction_review`: Approve, findings 없음. 실제 tracked/untracked diff와 저장용 helper, 현재 검사 로그를 근거로 컨벤션·주 소유 문서·의존 방향·상태 수명·업무 중단·예약 정리·메시지와 참조를 검토했다. ordinary common-check 경로이며 리뷰 후 코드/에셋 수정은 없다.
+- 작업 기록 `.harness-runs/dissatisfaction-20261003/scene-work.md`, 원본 증거 `code/compile.log`, `checks/`, `assembly/`, 독립 결과 `review.json`. 완료 계획은 Archive/Plans로 이동했다. 자동 Play/화면, FarmerTest 전체 scene-load/Missing Script 검사는 미실행이다. 사람 확인: 외부 원인 등록·해제와 누적/회복, 작업 도중 태업·복귀, 생활/배회, pool 재사용, Hover/지정 대사. 구현 완료와 실제 플레이 확인을 구분하며 커밋하지 않았다.
+
 # 상시 골드 HUD — 2026-09-30 구현 완료
 
 - 사용자의 상시 골드 표시·별도 HUDUI 묶음·기존 이미지 사용 요청을 적용했다. BuildingTest의 `Canvas/HUDUI/GoldHUD`에 좌측 상단 340×96 패널을 추가하고, 기존 목재 9-slice 배경과 골드 코인 sub-sprite를 재사용했다. HUDUI를 Canvas 마지막 자식에 두어 popup 위에 표시하며 기존 HoveringUI/PopupUI 상대 순서를 보존했다. 표시 Graphic과 CanvasGroup의 raycast를 껐다.

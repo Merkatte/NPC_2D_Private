@@ -7,7 +7,7 @@
 ## 책임 경계
 
 - `WorkerNPC`: 초기화, 현재 action, 대기 queue, 결과 처리, 취소와 pool 반환을 소유한다.
-- `NPCStat`: 체력·이동 속도·욕구의 현재값을 소유한다.
+- `NPCStat`: 체력·이동 속도·욕구의 현재값과 개별 `DissatisfactionState`를 소유한다. 불만 계산은 [NPC Dissatisfaction](NPC_Dissatisfaction.md)이 소유한다.
 - stat definition: 공유 초기값에서 매번 새 runtime stat을 만든다.
 - selector는 queue를 구성하고 action은 실행한다. `WorkerNPC`는 우선순위나 도메인 규칙을 판단하지 않는다.
 - Unity 이동·애니메이션·방향 표현은 [NPC Presentation](NPC_Presentation.md)이 소유한다.
@@ -76,3 +76,7 @@ WorkerNPC.Init(role, runtime stat, selector)
 ## 문서 갱신 조건
 
 `WorkerNPC` lifecycle, 공통 stat 모델, action 결과 소비 방식이 바뀌면 이 문서를 갱신한다.
+
+## 불만도·태업 연결
+
+DefaultStatContext는 `_dissatisfactionSettings`를 새 stat에 복사하고 OnValidate/runtime 생성 경계에서 검증한다. NPCStat/GuardStat의 기존 생성자는 기본 설정으로 호환된다. IStatView는 CurrentDissatisfaction·MaximumDissatisfaction·IsOnStrike를 읽기 전용으로 제공한다. 최초 상태는 0/원인 없음이다. WorkerNPC의 `_dissatisfaction`은 Init/OnDisable 연결·해제만 하며 정책과 계산을 포함하지 않는다.

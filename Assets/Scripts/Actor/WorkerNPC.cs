@@ -4,6 +4,7 @@ using UnityEngine;
 public class WorkerNPC : MonoBehaviour
 {
     [SerializeField] private NPCComponent _component;
+    [SerializeField] private NPCDissatisfaction _dissatisfaction;
     [SerializeField] private Rigidbody2D _rigidbody;
     [SerializeField] private Collider2D[] _gameplayColliders;
 
@@ -127,6 +128,8 @@ public class WorkerNPC : MonoBehaviour
 
         _npcType = npcType;
         _stat = stat;
+        if (_dissatisfaction)
+            _dissatisfaction.Initialize(npcType, stat?.Dissatisfaction);
         _component.Init(_stat);
         _component.ApplyRoleTool(npcType);
         _selector = selector;
@@ -174,6 +177,9 @@ public class WorkerNPC : MonoBehaviour
         // disabled, e.g. pool cleanup. CompleteSpawnPresentation is idempotent, so this never
         // conflicts with NPCManager.CommitReservation/CancelReservation calling it themselves.
         CompleteSpawnPresentation();
+
+        if (_dissatisfaction)
+            _dissatisfaction.Unbind();
 
         if (!_isInitialized)
         {

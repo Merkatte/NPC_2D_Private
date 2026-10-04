@@ -2,7 +2,7 @@
 
 ## 기능 목적
 
-Eat, Drink, Sleep, Idle의 실행 규칙을 설명한다. 어떤 행동을 선택할지는 decision policy가, provider transaction은 interaction 시스템이 소유한다.
+Eat, Drink, Sleep, Idle, Wander의 실행 규칙을 설명한다. 어떤 행동을 선택할지는 decision policy가, provider transaction은 interaction 시스템이 소유한다.
 
 ## 현재 실행 흐름
 
@@ -30,6 +30,8 @@ Idle
 | `Assets/Scripts/System/Action/EatAction.cs` | Eat provider transaction과 stat effect 적용 |
 | `Assets/Scripts/System/Action/IdleAction.cs` | queue가 비거나 fallback일 때 짧은 안전 대기 |
 | `Assets/Scripts/System/Action/SleepAction.cs` | 일정 시간 뒤 fatigue를 회복하는 실내 action |
+| `Assets/Scripts/System/Action/WanderAction.cs` | 배회 이동·휴식·욕구 변화·실행 수명 |
+| `Assets/Data/ScriptableObject/Script/WanderActionCost.cs` | 이동/휴식 시간과 욕구 증가 수치 |
 
 ## 변경 유형별 최소 확인 범위
 
@@ -57,3 +59,7 @@ Idle
 ## 문서 갱신 조건
 
 생활 action의 transaction, timing, stat effect, fallback 또는 건물 표현 lifecycle이 바뀌면 갱신한다.
+
+## 불만도·태업 연결
+
+WanderAction은 주민 공통 배회 실행이다. selector가 도달 가능한 목표를 선택하면 NPCPathFollower로 최대 5초 이동하고 1초 쉰다(기존 WanderActionCost 기본값). 빠르게 도착하면 바로 휴식하며 이동·휴식의 허기/갈증/피로 비용 0.3/초를 유지한다. 경로 실패는 재판단하고 Stop/Clear는 follower·timer·context를 정리한다. 태업 중 허용되며 회복해도 이번 구간을 마친 뒤 재판단한다. 배회 실행 변경은 WanderAction/WanderActionCost와 [Movement](Movement.md)를 먼저 확인한다. 공유 SO에는 actor 상태를 쓰지 않는다.

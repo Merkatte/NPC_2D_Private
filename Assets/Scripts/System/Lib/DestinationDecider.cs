@@ -43,6 +43,7 @@ public class DestinationDecider
 
     private struct NeedSnapshot
     {
+        public bool IsOnStrike;
         public float Health;
         public float HealthMax;
         public float Fatigue;
@@ -276,7 +277,7 @@ public class DestinationDecider
             // remaining supply options are narrowed to the safest available tier.
             ApplyCriticalFilter(candidates, state, criticalMask);
         }
-        else
+        else if (!state.IsOnStrike)
         {
             AddRoleCandidate(candidates, state, pos, moveSpeed, npcType, workCost);
         }
@@ -626,6 +627,7 @@ public class DestinationDecider
     {
         return new NeedSnapshot
         {
+            IsOnStrike = stat.IsOnStrike,
             Health = stat.GetCurrentHealth,
             HealthMax = stat.GetMaxHealth,
             Fatigue = stat.GetFatigue,

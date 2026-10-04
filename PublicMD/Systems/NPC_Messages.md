@@ -99,3 +99,7 @@ CSV/enum과 `LocalizeText`는 [Localization](Localization.md)이 주 소유한�
 [UI](UI.md), [NPC Runtime](NPC_Runtime.md), [Localization](Localization.md),
 [Spawning and Pooling](Spawning_and_Pooling.md). 선택 조건, API, 초기화·pooling 수명,
 전용 난수, 배선 또는 실행 검증 상태가 바뀌면 이 문서를 갱신한다.
+
+## 불만도·태업 연결
+
+메시지 우선순위는 외부 지정 대사 > 태업 > 일반 생각이다. Catalog `_strikeThoughts`는 LocalizeKey 1125~1127의 세 문구다. NPCThoughtSelector는 IsOnStrike이면 이 후보만 제공하고 유효 후보가 없으면 첫 태업 키를 사용한다. 일반 행동·욕구와 섞지 않는다. 기존 4초 유지·연속 중복 방지·지정 대사 토큰·전용 난수 규칙을 유지한다. 태업 진입/해제 시 기존 키가 현재 후보에서 사라져 다음 조회가 즉시 갱신된다. 지정 대사 우선권은 유지한다. HUD나 자동 표시는 추가하지 않는다.

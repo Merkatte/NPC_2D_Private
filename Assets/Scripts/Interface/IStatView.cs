@@ -1,5 +1,9 @@
 public interface IStatView
 {
+    float CurrentDissatisfaction { get; }
+    float MaximumDissatisfaction { get; }
+    bool IsOnStrike { get; }
+
     //Health Info
     float GetCurrentHealth { get; }
     float GetMaxHealth { get; }

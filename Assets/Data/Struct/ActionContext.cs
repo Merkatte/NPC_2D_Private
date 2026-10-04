@@ -13,11 +13,12 @@ public readonly struct ActionContext
     public InteractionRequest? Request { get; }
     public MoveRequest? MoveRequest { get; }
     public INavigationService Navigation { get; }
+    public bool RequiresWorkAvailability { get; }
 
     public bool HasComponent => Component != null;
     public bool HasDestination => Destination.HasValue;
 
-    public ActionContext(NPCComponent component, NPCStat stat, Vector3? destination = null, DefaultActionCost cost = null, IInteractionProvider provider = null, InteractionRequest? request = null, MoveRequest? moveRequest = null, INavigationService navigation = null)
+    public ActionContext(NPCComponent component, NPCStat stat, Vector3? destination = null, DefaultActionCost cost = null, IInteractionProvider provider = null, InteractionRequest? request = null, MoveRequest? moveRequest = null, INavigationService navigation = null, bool requiresWorkAvailability = false)
     {
         Component = component;
         Stat = stat;
@@ -27,5 +28,6 @@ public readonly struct ActionContext
         Request = request;
         MoveRequest = moveRequest;
         Navigation = navigation;
+        RequiresWorkAvailability = requiresWorkAvailability;
     }
 }

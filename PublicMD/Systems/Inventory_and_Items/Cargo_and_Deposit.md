@@ -26,3 +26,7 @@ DeferNotifications 안에서 TryTransferAllTo하므로 cargo 감소까지 확정
 ## 배선·검증·제약
 
 provider와 destination을 같은 시설 identity로 연결한다. 공유재고/cargo 총량 보존·부분 수락·참조를 검사한다. 다품목 운반·persistence는 범위 밖이며 despawn 시 cargo 보존은 TBD다. 운반·입고·등록 계약 변경 시 갱신한다.
+
+## 불만도·태업 연결
+
+태업이면 Farmer selector가 Deposit/창고 업무 Move를 새로 만들지 않는다. 실행 중인 context는 RequiresWorkAvailability=true로 시작/Tick 효과 이전에 재판단한다. cargo는 기존 소유자에게 남고 회복 뒤 다음 선택에서 운반/입고한다. provider transaction에는 태업 정책을 추가하지 않는다.

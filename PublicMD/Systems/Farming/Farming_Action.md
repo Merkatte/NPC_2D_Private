@@ -80,3 +80,7 @@ Complete / Fail / RequestReplan / Stop / Clear -> working 표현 정리
 ## 문서 갱신 조건
 
 Farming/Harvest action lifecycle, NPC 비용, 결과 보고 기준 또는 working 표현 호출이 바뀌면 갱신한다.
+
+## 불만도·태업 연결
+
+Farming/Harvest 및 업무 Move는 RequiresWorkAvailability=true다. 공통 Start와 각 Tick의 검사는 작업 모션/타이머/provider transaction보다 먼저 재판단한다. Stop/Clear는 기존 작업 표현을 정리하고 확정된 작물 progress·생산물·cargo를 지우지 않는다.

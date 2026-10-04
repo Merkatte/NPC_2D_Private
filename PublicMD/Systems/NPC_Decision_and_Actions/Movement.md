@@ -38,3 +38,7 @@ Tick은 stat 속도와 Time.deltaTime으로 이번 frame 이동 예산을 계산
 Direct target 소실은 즉시 재판단한다. Stop/Clear/다음 Begin에서 경로, cursor, timer와 모든 참조를 지운다.
 WorkerNPC와 NPCComponent에 탐색 책임이나 별도 실행기를 추가하지 않는다.
 GuardAction도 자기 follower를 소유하지만 감지/욕구/시설 유효성 검사는 매 Tick 먼저 수행한다.
+
+## 불만도·태업 연결
+
+MoveAction은 RequiresWorkAvailability=true인 업무 이동/Guard 추적만 공통 시작·Tick 검사로 중단한다. 검사는 follower 이동 이전이며 ReplanRequested 후 WorkerNPC의 기존 Stop/Clear가 경로와 이동 표현을 정리한다. 생활 시설 이동과 Enemy 추적은 false로 유지된다.

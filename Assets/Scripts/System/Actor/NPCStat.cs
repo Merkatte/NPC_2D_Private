@@ -3,7 +3,8 @@ using UnityEngine;
 public class NPCStat : IStatView, IHealthState
 {
     public NPCStat(string name, float health, float healthMax, float moveSpeed,
-        float fatigue, float hunger, float thirst, float fatigueMax, float hungerMax, float thirstMax)
+        float fatigue, float hunger, float thirst, float fatigueMax, float hungerMax, float thirstMax,
+        DissatisfactionSettings? dissatisfactionSettings = null)
     {
         _name = name;
         _healthMax = Mathf.Max(0f, healthMax);
@@ -15,9 +16,15 @@ public class NPCStat : IStatView, IHealthState
         _fatigue = Mathf.Clamp(fatigue, 0f, _fatigueMax);
         _hunger = Mathf.Clamp(hunger, 0f, _hungerMax);
         _thirst = Mathf.Clamp(thirst, 0f, _thirstMax);
+        Dissatisfaction = new DissatisfactionState(dissatisfactionSettings ?? DissatisfactionSettings.Default);
     }
 
     private string _name;
+
+    public DissatisfactionState Dissatisfaction { get; }
+    public float CurrentDissatisfaction => Dissatisfaction.Current;
+    public float MaximumDissatisfaction => Dissatisfaction.Maximum;
+    public bool IsOnStrike => Dissatisfaction.IsOnStrike;
 
     private float _health;
     private float _healthMax;

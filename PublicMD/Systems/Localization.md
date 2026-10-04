@@ -51,7 +51,7 @@ LocalizeText.Start / OnEnable(두 번째부터) / SetKey
 ## 불변 규칙과 실패
 
 - 원본은 `Assets/Data/CSV/LocalizeData.csv`, 생성 소스는 `Assets/Scripts/Enum/LocalizeKey.cs`다.
-- 주민 생각 키 1101~1124와 기존 Hungry(1002)는 [NPC Messages](NPC_Messages.md)의 Catalog 기본 문구가 사용한다.
+- 주민 생각 키 1101~1127(1125~1127은 태업 문구)와 기존 Hungry(1002)는 [NPC Messages](NPC_Messages.md)의 Catalog 기본 문구가 사용한다.
   행동·욕구 조건과 지정 대사 수명은 지역화 시스템이 판단하지 않는다. 기존 생성기의 순수
   `LocalizeKeySource.TryGenerate`로 키를 갱신하며 기존 ID는 유지한다.
 - UTF-8 BOM, RFC-style quoted field의 쉼표/줄바꿈/`""`를 보존한다. 빈 중간 행도 구조 오류다.

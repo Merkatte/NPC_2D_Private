@@ -26,6 +26,7 @@ NPCManager / WorkerPool          생성과 조립
 | 건물 건설 | [Construction](Systems/Construction/README.md) | CSV 정의, 부지·예약·공사·완공, 건설 UI |
 | 경로 탐색 | [Navigation](Systems/Navigation.md) | 노드 그리드, A*, 지형 비용, 지역 출입구 |
 | NPC 공통 runtime | [NPC Runtime](Systems/NPC_Runtime.md) | queue 소비, 공통 stat, disable/reset |
+| 불만도·태업 | [NPC Dissatisfaction](Systems/NPC_Dissatisfaction.md) | 원인별 누적·회복, 유닛별 설정, 시간 갱신과 태업 상태 |
 | 건축가 시민 | [Builder](Systems/Builder.md) | 건설·배회·생활 queue, 건축가 작업 tuning |
 | 판단과 action | [NPC Decision and Actions](Systems/NPC_Decision_and_Actions/README.md) | utility, selector, action lifecycle, 이동, 생활 action |
 | 농사 | [Farming](Systems/Farming/README.md) | 농장 progress, 수확 transaction, 생산 definition, 씨앗 선택·작물 표현, Farming/Harvest action |
@@ -50,6 +51,7 @@ NPCManager / WorkerPool          생성과 조립
 | 작업 | 필수 기능 문서 | 조건부 추가 문서 |
 |---|---|---|
 | queue 처리·공통 stat | NPC Runtime | Action Runtime, Spawning |
+| 불만 원인·누적·태업 | NPC Dissatisfaction | NPC Runtime, Selector and Queue, Action Runtime, NPC Messages |
 | utility·위험·look-ahead | Decision Policy | Interaction, role 문서 |
 | selector·새 action | Selector and Queue, Action Runtime | concrete action leaf |
 | 이동 실행·동적 target·경로 추종 | [Movement](Systems/NPC_Decision_and_Actions/Movement.md) | Navigation(경로 조회 변경), Presentation, Combat Targeting |

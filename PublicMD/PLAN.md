@@ -27,6 +27,8 @@
 
 ### 현재 우선순위
 
+2026-10-03 구현 완료: [불만도·태업 1차 구현 계획](Archive/Plans/Dissatisfaction_Implementation_Plan.md). 주민별 원인 누적·회복, 네 조정 스탯, 업무 중단과 생활·배회, 태업 Hover 문구를 적용했다. 컴파일·기존 비-Play 검사·독립 리뷰를 통과했으며 실제 플레이/화면 확인은 남아 있다. 무주택 자동 판정과 주택은 후속이며 기존 주민에게 원인을 자동 부여하지 않는다. 세부 결과와 미검증은 PROGRESS에서 관리한다.
+
 2026-09-29 표현 확장 적용 완료: [공사 단계별 표현](Archive/Plans/Construction_Visual_Implementation_Plan.md). BuildingTest의 기존 부지 6개에 단계별 스프라이트와 ConstructionVisual 애니메이션을 연결했다. 컴파일·기존 검사·독립 리뷰는 통과했고 실제 Play 화면 확인은 남아 있다.
 
 2026-09-27 사용자 승인 slice: [건물 건설 구현 계획](Plans/Building_Construction_Implementation_Plan.md). [확정 컨텍스트](Plans/Building_Construction_Context.md)의 지정 부지·다섯 시설·예약/작업·공용 자원·Factory·거리 기준을 필수 계약으로 구현한다. 전용 BuildingTest와 기존 씬의 필요한 이관, 공사 스프라이트2종을 포함한다. 코드·그래픽·조립 역할 분리와 현재 후보의 독립 리뷰를 적용하고 실제 상태는 PROGRESS에 기록한다. 자동 Play/게임 화면 검증은 사용자 정책에 따라 제외한다.
