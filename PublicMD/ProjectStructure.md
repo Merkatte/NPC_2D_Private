@@ -96,7 +96,7 @@ NPCManager / WorkerPool          생성과 조립
 | `Assets/Data/Struct` | 경계 사이를 전달하는 작은 request/result/value |
 | `Assets/Data/ScriptableObject/Script` | 공유 definition, cost와 tuning 타입 |
 | `Assets/TestOnly` | production이 의존하지 않는 수동 검증 도구 |
-| `Assets/Art/Generated/Buildings` | `TownHall`, `Inn`, `Restaurant`, `Warehouse`, `GuardPost`, `MerchantCaravan`, `Farm`별 건물·밭 이미지 |
+| `Assets/Art/Generated/Buildings` | `TownHall`, `Inn`, `Restaurant`, `Warehouse`, `GuardPost`, `MerchantCaravan`, `Farm`별 건물·밭 이미지와 `House`의 1~4단계 주택 스프라이트 시트 |
 | `Assets/Art/Generated/Crops` | `Carrot`, `Potato`별 성장 단계와 아이콘, 당근 리깅 이미지는 `Carrot/Rigged` |
 | `Assets/Art/Generated/NPC` | 사람 NPC 이미지 |
 | `Assets/Art/Generated/UI`, `Assets/Art/Generated/Tiles` | UI 패널과 타일 이미지·Tile 에셋 |
