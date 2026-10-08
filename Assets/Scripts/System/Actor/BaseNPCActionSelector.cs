@@ -7,6 +7,96 @@ public class BaseNPCActionSelector : MonoBehaviour
     [SerializeField] protected DataManager dataManager;
     [SerializeField] protected ActionPool actionPool;
 
+
+    protected virtual DestinationDecider HousingDecider => null;
+    public virtual bool HasAvailableWork(NPCStat stat, NPCComponent component) => false;
+
+    public virtual float GetReassessmentSeconds(ResidentHousingState residence)
+        => residence?.LifeSettings.ReassessmentSeconds ?? float.PositiveInfinity;
+
+    public virtual bool ShouldReplan(NPCStat stat, NPCType npcType, NPCComponent component,
+        ActionType currentAction, ResidentHousingState residence)
+    {
+        if (residence == null || !residence.IsRegistered || currentAction != ActionType.HomeStay)
+            return false;
+        if (!residence.Home || !residence.Home.isActiveAndEnabled) return true;
+        if (residence.RequiresFirstHomeVisit) return false;
+        NPCDecision need = DecideHomeNeeds(stat, component);
+        return IsHousingSupply(need.Intent) || (!stat.IsOnStrike && HasAvailableWork(stat, component));
+    }
+
+    public virtual Queue<IAction> RequestNewActionQueue(NPCStat stat, NPCType npcType,
+        NPCComponent component, ResidentHousingState residence)
+    {
+        if (residence == null || !residence.IsRegistered)
+            return RequestNewActionQueue(stat, npcType, component);
+        if (residence.Home && residence.RequiresFirstHomeVisit)
+            return BuildHomeQueue(component, stat, residence);
+        bool hasWork = !stat.IsOnStrike && HasAvailableWork(stat, component);
+        if (residence.Home && !hasWork)
+        {
+            NPCDecision need = DecideHomeNeeds(stat, component);
+            if (IsHousingSupply(need.Intent))
+                return BuildHousingNeedQueue(need, component, stat, residence);
+            return BuildHomeQueue(component, stat, residence);
+        }
+        Queue<IAction> queue = RequestResidentialWorkQueue(stat, npcType, component, residence.LifeSettings);
+        if (queue != null)
+            foreach (IAction action in queue)
+                if (action is SleepAction sleep) sleep.ConfigureRecovery(residence.LifeSettings);
+        return queue;
+    }
+
+    protected virtual Queue<IAction> RequestResidentialWorkQueue(NPCStat stat, NPCType npcType,
+        NPCComponent component, HousingLifeSettings life)
+        => RequestNewActionQueue(stat, npcType, component);
+
+    private NPCDecision DecideHomeNeeds(NPCStat stat, NPCComponent component)
+        => HousingDecider != null && component
+            ? HousingDecider.DecideNeeds(stat, component.Position, allowSleep: false)
+            : NPCDecision.Idle(component ? component.Position : Vector3.zero);
+
+    private static bool IsHousingSupply(NPCIntent intent)
+        => intent == NPCIntent.Eat || intent == NPCIntent.Drink;
+
+    private Queue<IAction> BuildHousingNeedQueue(NPCDecision decision, NPCComponent component,
+        NPCStat stat, ResidentHousingState residence)
+    {
+        if (!decision.HasLiveDestination || decision.Provider == null)
+            return BuildHomeQueue(component, stat, residence);
+        var rented = new List<IAction>();
+        var movement = new ActionContext(component, stat, decision.DestinationPos,
+            moveRequest: MoveRequest.Navigated(decision.DestinationPos), navigation: residence.Navigation);
+        var interaction = new ActionContext(component, stat, decision.DestinationPos,
+            provider: decision.Provider, request: decision.Request);
+        ActionType type = decision.Intent == NPCIntent.Eat ? ActionType.Eat : ActionType.Drink;
+        if (!TryRentAction(ActionType.Move, movement, rented) || !TryRentAction(type, interaction, rented))
+        {
+            ReturnAll(rented);
+            return BuildFallbackIdleQueue(component, stat);
+        }
+        return new Queue<IAction>(rented);
+    }
+
+    private Queue<IAction> BuildHomeQueue(NPCComponent component, NPCStat stat, ResidentHousingState residence)
+    {
+        House house = residence.Home;
+        if (!house || !house.CanInteract(ActionType.HomeStay))
+            return BuildFallbackIdleQueue(component, stat);
+        IAction rental = GetAction(ActionType.HomeStay);
+        if (!(rental is HomeStayAction home))
+        {
+            if (rental != null) ReturnAction(rental);
+            return BuildFallbackIdleQueue(component, stat);
+        }
+        var context = new ActionContext(component, stat, house.EntrancePosition, provider: house,
+            moveRequest: MoveRequest.Navigated(house.EntrancePosition), navigation: residence.Navigation);
+        home.Init(context, residence);
+        var queue = new Queue<IAction>();
+        queue.Enqueue(home);
+        return queue;
+    }
+
     protected virtual void Start()
     {
         

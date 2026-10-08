@@ -6,5 +6,6 @@ public enum BuildingType
     Inn,
     Farm,
     GuardPost,
-    Warehouse
+    Warehouse,
+    House = 7
 }

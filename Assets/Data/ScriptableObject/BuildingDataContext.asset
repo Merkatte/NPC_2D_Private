@@ -32,3 +32,15 @@ MonoBehaviour:
   - _buildingId: 5
     _prefab: {fileID: 8396103160889438357, guid: e2b3aac942fcfa746a10b0341adc6b00, type: 3}
     _icon: {fileID: -3547903829400627146, guid: f5bd04dc1df771d41b7d07ce96f95752, type: 3}
+  - _buildingId: 6
+    _prefab: {fileID: 7157116538198339720, guid: 554e7f2d41b544945b548c7d42596a82, type: 3}
+    _icon: {fileID: -1572263865541940642, guid: 829a9b11eb3449b469113f926e7a37bb, type: 3}
+  - _buildingId: 7
+    _prefab: {fileID: 7157116538198339720, guid: 554e7f2d41b544945b548c7d42596a82, type: 3}
+    _icon: {fileID: -4797164880035850182, guid: 829a9b11eb3449b469113f926e7a37bb, type: 3}
+  - _buildingId: 8
+    _prefab: {fileID: 7157116538198339720, guid: 554e7f2d41b544945b548c7d42596a82, type: 3}
+    _icon: {fileID: 8974920535837656214, guid: 829a9b11eb3449b469113f926e7a37bb, type: 3}
+  - _buildingId: 9
+    _prefab: {fileID: 7157116538198339720, guid: 554e7f2d41b544945b548c7d42596a82, type: 3}
+    _icon: {fileID: 2574601015419066858, guid: 829a9b11eb3449b469113f926e7a37bb, type: 3}

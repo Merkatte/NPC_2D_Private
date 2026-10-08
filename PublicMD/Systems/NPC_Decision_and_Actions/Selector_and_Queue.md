@@ -91,3 +91,9 @@ Guard 전투 Dynamic 요청은 Direct다. 경로 서비스 미설정은 한 번 
 ## 불만도·태업 연결
 
 BaseNPCActionSelector.BuildLeisureQueue는 decider가 선택한 Eat/Drink/Sleep을 기존 Move+생활 action으로 조립한다. 생활 선택이 없고 HasCriticalNeed이면 timed Idle, 나머지는 navigation·WanderActionCost·명시적 IRandomSource로 도달 가능한 배회를 만든다. 경로망/비용/난수원 부재는 Idle로 안전하게 처리한다. Farmer/Guard는 `_wanderCost`, `_randomSource`와 기존 `_navigation`을 사용한다. Builder도 이 공통 조립을 재사용한다. Farming/Harvest/Deposit와 해당 이동은 RequiresWorkAvailability=true, 생활/배회는 false다. 배회 실행은 [Needs Actions](Needs_Actions.md)가 소유한다.
+
+## 선택적 주거 queue
+
+ResidentHousingState overload는 최초 배정 귀가를 먼저 수행하며 업무가 없으면 DecideNeeds의 Eat/Drink 또는 HomeStay를 선택한다. 기존 3인수 경로는 유지한다. role별 HasAvailableWork는 provider 가용성·cargo·건설 슬롯·경비 후보를 읽기만 하며 예약이나 위치 난수/전투 target mutation을 하지 않는다. 집에서 ShouldReplan은 생활 외출 또는 새 업무가 있을 때만 queue 전환을 요청한다. WorkerNPC는 이를 공통 주기 hook으로 호출한다.
+
+주거 work queue에는 HousingLifeSettings를 명시적으로 전달하며 공유 selector에 주민별 상태를 저장하지 않는다. 대여한 SleepAction에는 회복 설정을 연결하고 pooled Clear에서 제거한다. HomeStayAction은 ActionContext를 변경하지 않고 Init(context,residence)로 상태를 받는다. 자세한 규칙은 [Housing Life](../Housing/Life.md)를 따른다.

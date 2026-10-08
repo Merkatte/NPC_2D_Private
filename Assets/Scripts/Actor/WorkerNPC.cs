@@ -14,6 +14,10 @@ public class WorkerNPC : MonoBehaviour
     private BaseNPCActionSelector _selector;
     private Queue<IAction> _actionQueue;
     private bool _isInitialized;
+    private ResidentHousingState _residence;
+    private float _reassessmentElapsed;
+    public NPCComponent Component => _component;
+    public event System.Action<WorkerNPC> Disabled;
 
     private bool _isSpawnPresentationActive;
     private bool _wasRigidbodySimulated;
@@ -115,7 +119,12 @@ public class WorkerNPC : MonoBehaviour
     }
 
     public void Init(NPCType npcType, NPCStat stat, BaseNPCActionSelector selector)
+        => Init(npcType, stat, selector, null);
+
+    public void Init(NPCType npcType, NPCStat stat, BaseNPCActionSelector selector, ResidentHousingState residence)
     {
+        _residence = residence;
+        _reassessmentElapsed = 0f;
         if (_isInitialized)
         {
             CancelAndReturnQueue();
@@ -129,7 +138,7 @@ public class WorkerNPC : MonoBehaviour
         _npcType = npcType;
         _stat = stat;
         if (_dissatisfaction)
-            _dissatisfaction.Initialize(npcType, stat?.Dissatisfaction);
+            _dissatisfaction.Initialize(npcType, stat?.Dissatisfaction, residence);
         _component.Init(_stat);
         _component.ApplyRoleTool(npcType);
         _selector = selector;
@@ -150,6 +159,17 @@ public class WorkerNPC : MonoBehaviour
             return;
         }
 
+        _reassessmentElapsed += Time.deltaTime;
+        if (_reassessmentElapsed >= _selector.GetReassessmentSeconds(_residence))
+        {
+            _reassessmentElapsed = 0f;
+            if (_selector.ShouldReplan(_stat, _npcType, _component, _currentAction.GetMyActionType(), _residence))
+            {
+                CancelAndReturnQueue();
+                AdvanceQueue();
+                return;
+            }
+        }
         _currentAction.Tick();
 
         switch (_currentAction.Result)
@@ -187,6 +207,16 @@ public class WorkerNPC : MonoBehaviour
         }
 
         CancelAndReturnQueue();
+        if (Disabled != null)
+        {
+            foreach (System.Action<WorkerNPC> listener in Disabled.GetInvocationList())
+            {
+                try { listener(this); }
+                catch (System.Exception exception) { Debug.LogException(exception, this); }
+            }
+        }
+        _residence = null;
+        _reassessmentElapsed = 0f;
         _selector = null;
         _stat = null;
 
@@ -202,7 +232,7 @@ public class WorkerNPC : MonoBehaviour
     {
         if (_actionQueue == null || _actionQueue.Count == 0)
         {
-            _actionQueue = _selector.RequestNewActionQueue(_stat, _npcType, _component);
+            _actionQueue = _selector.RequestNewActionQueue(_stat, _npcType, _component, _residence);
 
             if (_actionQueue == null || _actionQueue.Count == 0)
             {

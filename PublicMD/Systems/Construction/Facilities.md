@@ -11,6 +11,10 @@ BuildingFactory는 선택된 정의와 고정 부지의 배치 정보를 받아 
 | Assets/Scripts/Manager/BuildingFactory.cs | 씬 의존성 조립·시설별 등록과 생성 실패 정리 |
 | Assets/Scripts/Actor/CompletedBuildingFacility.cs | prefab의 명시적 entrance/provider/시설 컴포넌트 연결과 수명 |
 
+주택 생성은 Factory의 선택적 HousingDataContext/HousingManager가 연결된 씬에서만 가능하다. CompletedBuildingFacility의 House/visual/source 참조를 검증하고 비활성 상태에서 House.TryConfigure로 주입한 뒤 입구를 정렬하고 활성화한다. House의 등록·해제는 자체 lifecycle이 소유하며 공통 DestinationDB에는 등록하지 않는다. 다른 시설 경로에는 주거 서비스 연결이 필수가 아니다.
+
+주택 업그레이드는 새 prefab을 생성하지 않는다. Factory가 다음 단계와 sprite를 검증하고 기존 facility가 sprite를 준비한 다음 House.TryApplyTier를 호출한다. false이면 sprite를 복원하며 House domain은 단계/입주를 변경하지 않는다. 성공 변경 이벤트는 새 단계와 sprite를 함께 관찰한다. 공사 비용/예약/진행은 Plot이 소유한다.
+
 ## 최소 확인 범위와 불변 규칙
 
 - 생성/수명 변경은 두 파일과 해당 시설의 주 소유 문서, DestinationDB/InteractableManager, ResourceManager를 확인한다.

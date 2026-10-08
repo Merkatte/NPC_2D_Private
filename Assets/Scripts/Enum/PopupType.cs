@@ -6,4 +6,5 @@ public enum PopupType
     SeedSelection,
     Construction,
     Warehouse,
+    House = 6,
 }

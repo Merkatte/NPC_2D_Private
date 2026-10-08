@@ -90,7 +90,7 @@ Test/UI command
 
 - 현재 `WorkerPool`은 단일 prefab만 소유하며 `NPCPrefabCatalog`와 아직 연결되지 않았다.
 - Enemy production spawn 경로는 없고 TestOnly spawner가 직접 구성한다.
-- active worker 제거와 pool 반환을 관리하는 production despawn API는 아직 없다.
+- disable 시 active worker 등록은 해제한다. production despawn 명령과 운반물 처리 정책은 아직 없다.
 
 ## 관련 문서
 
@@ -105,4 +105,8 @@ role composition, prefab catalog, worker pool, spawn·despawn lifecycle 또는 p
 
 ## 불만도·태업 연결
 
-NPCGirl의 WorkerNPC `_dissatisfaction`은 같은 루트 NPCDissatisfaction과 연결한다. factory는 유닛마다 복사한 설정·새 상태를 만들고 WorkerNPC.Init은 연결만 한다. 예약 중 Init 전에는 미연결이라 누적하지 않는다. WorkerNPC.OnDisable과 component.OnDisable의 idempotent Unbind는 원인·잔량·참조를 정리한다. Enemy 역할은 component 초기화에서 제외한다. 자동 원인 등록은 없으며 [NPC Dissatisfaction](NPC_Dissatisfaction.md)을 따른다.
+NPCGirl의 WorkerNPC `_dissatisfaction`은 같은 루트 NPCDissatisfaction과 연결한다. factory는 유닛마다 복사한 설정·새 상태를 만들고 WorkerNPC.Init은 연결만 한다. 예약 중 Init 전에는 미연결이라 누적하지 않는다. WorkerNPC.OnDisable과 component.OnDisable의 idempotent Unbind는 원인·잔량·참조를 정리한다. Enemy 역할은 component 초기화에서 제외한다. 주거 미연결 씬에는 자동 원인 등록이 없으며 [NPC Dissatisfaction](NPC_Dissatisfaction.md)을 따른다.
+
+## 주거 주민 등록
+
+NPCManager의 선택적 `_housingManager`가 활성·유효하면 커밋에서 주민별 ResidentHousingState를 만들어 worker Init에 전달한다. Residents는 읽기 전용이며 등록 순서와 입주 state를 보존한다. `_workers`와 Residents를 모두 확정한 뒤 예외를 격리한 ResidentsChanged를 발행하므로 HousingManager 배정은 첫 action 선택 전에 실행된다. 취소된 예약은 어느 목록에도 남지 않는다. WorkerNPC.Disabled는 UnregisterWorker와 연결되어 거주 점유와 목록을 해제한다. 입주·무주택 원인은 [Housing Occupancy](Housing/Occupancy.md)가 소유한다. 주거 미연결 기존 씬의 생성 경로는 유지한다.

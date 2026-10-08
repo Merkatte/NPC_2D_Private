@@ -121,6 +121,14 @@ Manager는 별도 루트에서 DontDestroyOnLoad를 적용하고, SO는 Inspecto
 
 ## 4. 의존 방향
 
+### 주택·입주 연결 (2026-10-08 승인 범위)
+
+NPCManager는 주민 등록/해제와 읽기 전용 roster를 제공하고 HousingManager는 주택 registry와 배정 요청을 조정한다. HousingAssignmentPolicy는 불만도/등록 순서와 도달 가능한 최근접 집 선택을 소유한다. House와 ResidentHousingState가 양쪽 입주 상태를 확정하며 공유 CSV 정의는 runtime 상태를 갖지 않는다.
+
+selector는 업무 존재와 생활 재판단을 소유한다. WorkerNPC의 주기 hook은 selector 결과에 따른 queue 폐기/재선택만 수행하며 HomeStayAction은 주입된 집으로 이동하고 체류를 실행한다. ActionContext는 기존 단일 provider 경로를 유지한다. 집 효과를 위해 action에서 Manager나 selector를 역참조하지 않는다.
+
+업그레이드는 BuildingPlot/ConstructionState의 공사 transaction이며 기존 House의 등록/입주를 유지한다. Factory/CompletedBuildingFacility가 sprite와 단계 적용을 연결하고 House는 검증된 단계와 효과를 소유한다. HousePopup은 source를 통해 표시와 요청만 전달한다. 구체 현재 구현과 단일 파일 ownership은 [Housing](Systems/Housing/README.md) 및 [Construction](Systems/Construction/README.md)을 따른다.
+
 ### 불만도·태업 연결 (2026-10-03 승인 범위)
 
 공유 stat definition은 불만도 설정을 주민별 runtime stat에 복사한다. NPCStat이 소유하는 DissatisfactionState가 원인별 누적·회복과 태업 판정을 맡고 NPCDissatisfaction은 명시적 초기화·시간 전달·원인 등록 경계를 맡는다. WorkerNPC는 초기화/해제 배관과 기존 queue lifecycle만 소유한다. selector/decider는 읽기 상태로 업무 후보를 제한하고 action은 주입된 업무 요구 조건을 실행 시작/Tick에서 확인한다. 중단은 기존 ReplanRequested/Stop/Clear 경로를 사용한다. provider transaction, NPCComponent의 이동·표현과 UI 표시 책임은 그대로다. 메시지는 읽기 view만 소비한다. 상세 구현 사실은 [NPC Dissatisfaction](Systems/NPC_Dissatisfaction.md)과 관련 leaf를 따른다.

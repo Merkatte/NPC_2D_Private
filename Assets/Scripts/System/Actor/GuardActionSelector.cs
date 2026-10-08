@@ -89,7 +89,22 @@ public class GuardActionSelector : BaseNPCActionSelector
         return stat is GuardStat;
     }
 
+    protected override DestinationDecider HousingDecider => _decider;
+    public override bool HasAvailableWork(NPCStat stat, NPCComponent component)
+    {
+        if (!(stat is GuardStat) || stat.IsOnStrike || !component || !_guardActionCostInfo || !_destinationDB) return false;
+        if (component.CombatRuntimeState.HasValidTarget || CombatLib.TryFindNearestTarget(component.CombatPerception,
+            component.Position, _candidateBuffer, maxRange: null, out _, out _)) return true;
+        if (_facilityMoveMode == MoveMode.Navigation && (!_navigation || !_navigation.IsReady)) return false;
+        return DestinationDecider.TrySelectNearest(_destinationDB, BuildingType.GuardPost,
+            ActionType.Guard, component.Position, out _, out _, out _);
+    }
+
     public override Queue<IAction> RequestNewActionQueue(NPCStat stat, NPCType npcType, NPCComponent component)
+        => RequestResidentialWorkQueue(stat, npcType, component, null);
+
+    protected override Queue<IAction> RequestResidentialWorkQueue(NPCStat stat, NPCType npcType,
+        NPCComponent component, HousingLifeSettings life)
     {
         if (!component)
             return new Queue<IAction>();
@@ -109,7 +124,8 @@ public class GuardActionSelector : BaseNPCActionSelector
         if (stat.IsOnStrike)
         {
             component.CombatRuntimeState.ClearTarget();
-            return BuildLeisureQueue(_decider.Decide(stat, npcType, component.Position, _guardDutyCost), _decider,
+            return BuildLeisureQueue(_decider.Decide(stat, npcType, component.Position, _guardDutyCost,
+                sleepRecoveryPerSecond: life?.InnFatigueRecoveryPerSecond ?? 0f), _decider,
                 component, stat, _facilityMoveMode, _navigation, _wanderCost, _randomSource ? _random : null);
         }
 
@@ -130,7 +146,8 @@ public class GuardActionSelector : BaseNPCActionSelector
         // so a Guard that just ate re-decides from its real stats and its real position.
         // workCost units are role-dependent: for Guard this is one duty EVALUATION slice
         // (a planning approximation), not the per-action cost that Farmer passes.
-        NPCDecision decision = _decider.Decide(stat, npcType, component.Position, _guardDutyCost);
+        NPCDecision decision = _decider.Decide(stat, npcType, component.Position, _guardDutyCost,
+                sleepRecoveryPerSecond: life?.InnFatigueRecoveryPerSecond ?? 0f);
 
         if (IsSupplyIntent(decision.Intent))
             return BuildNeedQueue(decision, component, stat);

@@ -50,11 +50,13 @@ public sealed class DissatisfactionState
         return 0f;
     }
 
-    public void Tick(float seconds)
+    public void Tick(float seconds, float recoveryBonusPerSecond = 0f)
     {
         if (float.IsNaN(seconds) || float.IsInfinity(seconds) || seconds <= 0f)
             return;
 
+        if (float.IsNaN(recoveryBonusPerSecond) || float.IsInfinity(recoveryBonusPerSecond) || recoveryBonusPerSecond < 0f)
+            recoveryBonusPerSecond = 0f;
         double recoveredTotal = 0d;
         int activeCount = 0;
         for (int i = _causes.Count - 1; i >= 0; --i)
@@ -63,7 +65,7 @@ public sealed class DissatisfactionState
             if (cause.IsActive)
                 ++activeCount;
             else
-                cause.Amount = Math.Max(0d, cause.Amount - (double)_settings.DecreasePerSecond * seconds);
+                cause.Amount = Math.Max(0d, cause.Amount - ((double)_settings.DecreasePerSecond + recoveryBonusPerSecond) * seconds);
             recoveredTotal += cause.Amount;
             if (!cause.IsActive && cause.Amount == 0d)
                 _causes.RemoveAt(i);

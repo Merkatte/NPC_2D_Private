@@ -168,7 +168,7 @@ NPCGirl source/anchor/Catalog와 별도 루트 LocalizeManager 배선은 [NPC Me
   동일 source도 표시 상태를 재확인하여 닫힌 hover가 조건 회복 뒤 다시 열릴 수 있다.
   UIManager는 이미 표시 중인 같은 source를 재개방하지 않는다.
 - PointerClickRouter는 press 시점의 EventSystem raycast 중 GraphicRaycaster hit를 확인해 UI 뒤의 world 클릭을 차단한다. native 입력 순서·화면 회귀는 별도 Play 검증 대상이다.
-- concrete popup은 MerchantPopup, TownHallPopup, SeedSelectionPopup, ConstructionPopup, WarehousePopup 다섯 종류다. 건설 UI는 [Construction UI](Construction/UI.md), 창고 UI는 [Warehouse UI](Inventory_and_Items/Warehouse_UI.md)가 주 소유한다. 공통 UI는 source만 전달하며 씨앗 transaction은 [농장 runtime](Farming/Runtime_and_Transactions.md)이 소유한다.
+- concrete popup은 MerchantPopup, TownHallPopup, SeedSelectionPopup, ConstructionPopup, WarehousePopup, HousePopup 여섯 종류다. 건설 UI는 [Construction UI](Construction/UI.md), 창고 UI는 [Warehouse UI](Inventory_and_Items/Warehouse_UI.md), 주택 UI는 [Housing UI](Housing/UI.md)가 주 소유한다. PopupType.House=6을 기존 값 뒤에 추가한다. 공통 UI는 source만 전달하며 씨앗 transaction은 [농장 runtime](Farming/Runtime_and_Transactions.md)이 소유한다.
 
 ## 관련 문서
 

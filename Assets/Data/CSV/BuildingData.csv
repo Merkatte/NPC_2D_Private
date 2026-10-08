@@ -4,3 +4,7 @@ buildingId,buildingType,displayName,requiredWork,maxWorkers,providedCapacity
 3,Inn,숙소,100,2,0
 4,GuardPost,초소,100,2,0
 5,Farm,농경지,100,2,0
+6,House,주택 1단계,100,2,0
+7,House,주택 2단계,150,2,0
+8,House,주택 3단계,200,2,0
+9,House,주택 4단계,300,2,0

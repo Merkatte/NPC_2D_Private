@@ -50,3 +50,7 @@ Builder selector의 _buildingPlots/_buildCost를 scene registry와 BuildActionCo
 ## 불만도·태업 연결
 
 Build context는 RequiresWorkAvailability=true다. 태업이면 Start/Tick의 공통 검사에서 이동·욕구 비용·작업 기여 이전에 재판단하며 BuildAction.Cleanup이 lease와 경로·도구 상태를 반환한다. 이미 기여한 부지 progress는 보존된다. 회복 뒤 다음 선택에서 새 예약을 얻는다.
+
+## 주거 연결
+
+HasAvailableWork는 navigation/cost가 준비되고 예약 가능한 부지가 있는지만 읽으며 예약하지 않는다. 실제 queue 생성도 같은 진입 조건을 사용한 뒤 기존 FIFO 예약을 수행한다. 주거가 주입되면 공사가 없을 때 귀가하고 새 공사가 생기면 selector hook으로 기존 생활/공사 판단을 다시 실행한다. 회복 속도는 명시적으로 전달한 HousingLifeSettings를 decider와 SleepAction이 함께 사용한다. [Housing Life](Housing/Life.md)를 따른다.

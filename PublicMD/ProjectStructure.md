@@ -24,6 +24,7 @@ NPCManager / WorkerPool          생성과 조립
 | 기능 영역 | 문서 | 읽는 경우 |
 |---|---|---|
 | 건물 건설 | [Construction](Systems/Construction/README.md) | CSV 정의, 부지·예약·공사·완공, 건설 UI |
+| 주택·입주 | [Housing](Systems/Housing/README.md) | 단계별 옵션, 주민 배정, 집 생활·여관 회복, 주택 UI |
 | 경로 탐색 | [Navigation](Systems/Navigation.md) | 노드 그리드, A*, 지형 비용, 지역 출입구 |
 | NPC 공통 runtime | [NPC Runtime](Systems/NPC_Runtime.md) | queue 소비, 공통 stat, disable/reset |
 | 불만도·태업 | [NPC Dissatisfaction](Systems/NPC_Dissatisfaction.md) | 원인별 누적·회복, 유닛별 설정, 시간 갱신과 태업 상태 |

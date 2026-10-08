@@ -20,6 +20,7 @@
 | `NPC_Dissatisfaction.md` | 주민별 불만 원인·누적/회복·태업 상태와 시간 갱신 |
 | `NPC_Decision_and_Actions/` | 5개 leaf를 가진 기능 인덱스 |
 | [Construction](Construction/README.md) | 정의·부지·완공 시설·UI의 4개 leaf |
+| [Housing](Housing/README.md) | 주택 정의·입주·생활·UI의 4개 leaf |
 | `Farming/` | 4개 leaf를 가진 기능 인덱스 |
 | `Combat/` | 4개 leaf를 가진 기능 인덱스 |
 | `Interaction_and_Destinations.md` | 단일 기능 문서 |

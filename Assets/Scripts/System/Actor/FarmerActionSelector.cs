@@ -49,7 +49,25 @@ public class FarmerActionSelector : BaseNPCActionSelector
         _decider = decider;
     }
 
+    protected override DestinationDecider HousingDecider => _decider;
+    public override bool HasAvailableWork(NPCStat stat, NPCComponent component)
+    {
+        if (stat == null || stat.IsOnStrike || !component || !_farmingActionCostInfo || !_destinationDB ||
+            (_facilityMoveMode == MoveMode.Navigation && (!_navigation || !_navigation.IsReady))) return false;
+        if (!component.Cargo.IsFull && DestinationDecider.TrySelectNearest(_destinationDB, BuildingType.Farm,
+            ActionType.Harvest, component.Position, out _, out _, out _)) return true;
+        if (!component.Cargo.IsEmpty)
+            return DestinationDecider.TrySelectNearest(_destinationDB, BuildingType.Warehouse,
+                ActionType.Deposit, component.Position, out _, out _, out _);
+        return DestinationDecider.TrySelectNearest(_destinationDB, BuildingType.Farm,
+            ActionType.Farming, component.Position, out _, out _, out _);
+    }
+
     public override Queue<IAction> RequestNewActionQueue(NPCStat stat, NPCType npcType, NPCComponent component)
+        => RequestResidentialWorkQueue(stat, npcType, component, null);
+
+    protected override Queue<IAction> RequestResidentialWorkQueue(NPCStat stat, NPCType npcType,
+        NPCComponent component, HousingLifeSettings life)
     {
         if (!component)
             return new Queue<IAction>();
@@ -71,7 +89,8 @@ public class FarmerActionSelector : BaseNPCActionSelector
         }
 
         if (stat.IsOnStrike)
-            return BuildLeisureQueue(_decider.Decide(stat, npcType, component.Position, _workCost), _decider,
+            return BuildLeisureQueue(_decider.Decide(stat, npcType, component.Position, _workCost,
+                sleepRecoveryPerSecond: life?.InnFatigueRecoveryPerSecond ?? 0f), _decider,
                 component, stat, _facilityMoveMode, _navigation, _wanderCost, _randomSource ? _random : null);
 
         // Logistics (deliver/harvest cargo) takes priority over ordinary Work/Eat/Drink/Sleep
@@ -90,7 +109,8 @@ public class FarmerActionSelector : BaseNPCActionSelector
             }
         }
 
-        NPCDecision decision = _decider.Decide(stat, npcType, component.Position, _workCost);
+        NPCDecision decision = _decider.Decide(stat, npcType, component.Position, _workCost,
+                sleepRecoveryPerSecond: life?.InnFatigueRecoveryPerSecond ?? 0f);
         if (decision.DestinationKey != BuildingType.None && !decision.HasLiveDestination)
             return BuildFallbackIdleQueue(component, stat);
 

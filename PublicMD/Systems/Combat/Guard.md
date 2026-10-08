@@ -89,3 +89,7 @@ GuardAction은 action별 NPCPathFollower를 사용한다. 첫 이동과 다음 p
 ## 불만도·태업 연결
 
 GuardStatDefinition의 `_dissatisfactionSettings`는 각 GuardStat으로 복사한다. 태업이면 target 획득 전에 기존 target을 지우고 공통 생활/배회 queue를 만든다. patrol과 combat Move/Attack은 RequiresWorkAvailability=true, 생활 Move는 false다. GuardAction/AttackAction은 비용·이동·damage 이전에 검사한다. `_wanderCost`·전용 `_randomSource`·기존 `_navigation`을 연결하고 GuardTest의 Direct 시설 이동을 유지한다. 경로망이 없으면 배회는 timed Idle로 대체한다. Enemy에는 제한을 설정하지 않는다.
+
+## 주거 연결
+
+HasAvailableWork는 기존 target의 유효성/감지 후보 또는 가용 GuardPost를 읽기만 한다. 감지 조회는 target을 확정하지 않고 위치 난수를 소비하지 않는다. 실제 전투 queue는 종전 우선순위와 target 확정 경로를 유지한다. 선택적 residence와 여관 회복 설정은 BaseNPCActionSelector의 주거 overload에서 전달하며 집 체류 중 새 업무가 있으면 기존 role 판단으로 돌아간다. [Housing Life](../Housing/Life.md)를 따른다.

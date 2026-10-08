@@ -64,7 +64,7 @@ WorkerNPC.Init(role, runtime stat, selector)
 
 ## 알려진 제약과 TBD
 
-- 현재 active worker 목록의 despawn·제거 lifecycle은 별도 정책이 없다. despawn 경로가 생기면 `ResetRuntimeState`가 운반 중이던 생산물을 조용히 없애므로 그 시점에 정책이 필요하다.
+- disable 시 NPCManager 목록과 주택 점유를 해제한다. production despawn 명령과 운반물 처리 정책은 아직 없다.
 - need의 장기 성장·밸런스 규칙은 아직 프로토타입 수준이다.
 
 ## 관련 문서
@@ -80,3 +80,7 @@ WorkerNPC.Init(role, runtime stat, selector)
 ## 불만도·태업 연결
 
 DefaultStatContext는 `_dissatisfactionSettings`를 새 stat에 복사하고 OnValidate/runtime 생성 경계에서 검증한다. NPCStat/GuardStat의 기존 생성자는 기본 설정으로 호환된다. IStatView는 CurrentDissatisfaction·MaximumDissatisfaction·IsOnStrike를 읽기 전용으로 제공한다. 최초 상태는 0/원인 없음이다. WorkerNPC의 `_dissatisfaction`은 Init/OnDisable 연결·해제만 하며 정책과 계산을 포함하지 않는다.
+
+## 선택적 주거 연결
+
+Init의 선택적 ResidentHousingState는 selector와 NPCDissatisfaction에 전달한다. 기존 3인수 Init은 미연결 상태다. WorkerNPC는 selector.GetReassessmentSeconds 간격마다 ShouldReplan을 호출하고 true이면 기존 queue 취소/재요청만 수행한다. 업무·귀가·욕구 정책은 selector, 이동·체류는 HomeStayAction이 소유한다. Disabled 알림은 NPCManager 등록 해제로 연결되고 구독자 예외를 격리하여 local 참조 정리를 계속한다. 자세한 실행은 [Housing Life](Housing/Life.md)를 따른다.

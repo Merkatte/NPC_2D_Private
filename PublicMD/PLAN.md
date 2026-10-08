@@ -27,6 +27,8 @@
 
 ### 현재 우선순위
 
+2026-10-08 구현 완료: [주택·입주·생활·업그레이드](Archive/Plans/Housing_Implementation_Plan.md). BuildingTest에 CSV 복수 옵션/재료, 자동 입주, 집 생활과 여관 회복, 기존 건축가 업그레이드와 주택 창을 연결했다. Unity 컴파일·기존 건설15/자원6 검사·탐색 순수1446 checks·독립 리뷰 Approve를 확인했다. 기존 다른 씬은 보존했으며 최종 밸런스와 사람 플레이/화면 확인은 남아 있다. 실제 결과는 PROGRESS에서 관리한다.
+
 2026-10-03 구현 완료: [불만도·태업 1차 구현 계획](Archive/Plans/Dissatisfaction_Implementation_Plan.md). 주민별 원인 누적·회복, 네 조정 스탯, 업무 중단과 생활·배회, 태업 Hover 문구를 적용했다. 컴파일·기존 비-Play 검사·독립 리뷰를 통과했으며 실제 플레이/화면 확인은 남아 있다. 무주택 자동 판정과 주택은 후속이며 기존 주민에게 원인을 자동 부여하지 않는다. 세부 결과와 미검증은 PROGRESS에서 관리한다.
 
 2026-09-29 표현 확장 적용 완료: [공사 단계별 표현](Archive/Plans/Construction_Visual_Implementation_Plan.md). BuildingTest의 기존 부지 6개에 단계별 스프라이트와 ConstructionVisual 애니메이션을 연결했다. 컴파일·기존 검사·독립 리뷰는 통과했고 실제 Play 화면 확인은 남아 있다.

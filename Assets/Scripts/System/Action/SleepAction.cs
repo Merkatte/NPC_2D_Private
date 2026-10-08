@@ -2,7 +2,9 @@ using UnityEngine;
 
 public sealed class SleepAction : BaseBuildingAction
 {
-    private float sleepTime = 2f; //Temp
+    private const float LegacySleepSeconds = 2f;
+    private HousingLifeSettings _lifeSettings;
+    public void ConfigureRecovery(HousingLifeSettings settings) => _lifeSettings = settings;
     private float currentRestTime = 0f;
 
     public SleepAction() : base(ActionType.Sleep)
@@ -16,6 +18,12 @@ public sealed class SleepAction : BaseBuildingAction
         {
             return;
         }
+        if (_lifeSettings != null)
+        {
+            actionContext.Stat.ChangeFatigue(-_lifeSettings.InnFatigueRecoveryPerSecond * Time.deltaTime);
+            if (actionContext.Stat.GetFatigue <= 0f) Complete();
+            return;
+        }
         currentRestTime += Time.deltaTime;
         UpdateCompletion();
     }
@@ -23,6 +31,7 @@ public sealed class SleepAction : BaseBuildingAction
     public override void Clear()
     {
         currentRestTime = 0f;
+        _lifeSettings = null;
         base.Clear();
     }
 
@@ -30,7 +39,7 @@ public sealed class SleepAction : BaseBuildingAction
     {
         var stat = actionContext.Stat;
         
-        if (currentRestTime >= sleepTime)
+        if (currentRestTime >= LegacySleepSeconds)
         {
             stat.ChangeFatigue(-stat.GetFatigue);
             Complete();

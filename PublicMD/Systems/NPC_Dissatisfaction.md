@@ -2,7 +2,7 @@
 
 ## 목적과 책임
 
-Farmer·Builder·Guard의 원인별 불만 누적·회복과 태업 판정을 소유한다. Enemy는 원인 등록·시간 갱신 대상에서 제외한다. 주택·입주·귀가·쾌적도 효과와 무주택 자동 판정은 후속이다. 현재 자동 발생 원인은 없다.
+Farmer·Builder·Guard의 원인별 불만 누적·회복과 태업 판정을 소유한다. Enemy는 원인 등록·시간 갱신 대상에서 제외한다. 주거 연결 씬의 자동 무주택 원인과 입주 효과는 Housing이 소유한다.
 
 | 주 소유 파일 | 책임 |
 |---|---|
@@ -36,3 +36,7 @@ selector는 업무 provider·건설 예약·전투 target 조회 전에 태업�
 계산 변경은 위 네 파일과 NPCStat/IStatView, 초기값은 DefaultStatContext/GuardStatDefinition 및 해당 SO, 수명은 WorkerNPC/NPCGirl과 [Spawning](Spawning_and_Pooling.md)를 읽는다. 구조·API·설정·수명·원인 ID 변경 시 이 문서를 갱신한다.
 
 현재 검사·배선·리뷰 결과는 [PROGRESS](../Status/PROGRESS.md)와 `.harness-runs/dissatisfaction-20261003/scene-work.md`를 따른다. 자동 Play/화면 검증은 하지 않으며 원인 등록·회복·업무 중단·pool 재사용·Hover는 사람의 확인 항목이다.
+
+## 주거 원인과 회복 보너스
+
+주거 연결 씬에서는 ResidentHousingState가 입주 여부에 따라 Homeless 원인을 등록/해소한다. NPCDissatisfaction.Initialize의 선택적 residence는 집의 회복 보너스를 읽는다. DissatisfactionState.Tick의 recoveryBonusPerSecond는 기존 감소 속도에 더하며 비활성 원인에만 적용한다. 외출 중에도 입주 보너스를 유지하고 활성 무주택 증가를 상쇄하지 않는다. 미연결 기존 씬에는 자동 원인을 추가하지 않는다. 상세는 [Housing](Housing/README.md)를 따른다.

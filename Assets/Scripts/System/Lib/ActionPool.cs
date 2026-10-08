@@ -57,6 +57,9 @@ public class ActionPool : MonoBehaviour
     {
         switch (actionType)
         {
+            case ActionType.HomeStay:
+                _actionDictionary[actionType].Enqueue(new HomeStayAction());
+                break;
             case ActionType.Build:
                 _actionDictionary[actionType].Enqueue(new BuildAction());
                 break;

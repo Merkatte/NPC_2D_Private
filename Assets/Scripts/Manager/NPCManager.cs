@@ -6,6 +6,13 @@ public class NPCManager : MonoBehaviour
     [SerializeField] private WorkerPool _workerPool;
     [SerializeField] private List<NPCCreationEntry> _creationEntries;
 
+    [SerializeField] private HousingManager _housingManager;
+    private readonly List<ResidentHousingState> _residents = new List<ResidentHousingState>();
+    private IReadOnlyList<ResidentHousingState> _residentView;
+    private long _nextResidentOrder;
+    public IReadOnlyList<ResidentHousingState> Residents => _residentView ?? (_residentView = _residents.AsReadOnly());
+    public event System.Action ResidentsChanged;
+
     private Dictionary<NPCType, List<WorkerNPC>> _workers;
     private Dictionary<NPCType, NPCCreationEntry> _entryLookup;
     private HashSet<WorkerNPC> _reservedWorkers;
@@ -117,12 +124,24 @@ public class NPCManager : MonoBehaviour
         }
 
         reservation.Worker.CompleteSpawnPresentation();
-        reservation.Worker.Init(reservation.NpcType, reservation.Stat, reservation.Selector);
+        ResidentHousingState residence = null;
+        if (_housingManager && _housingManager.isActiveAndEnabled && _housingManager.LifeSettings != null && reservation.NpcType != NPCType.Enemy)
+            residence = new ResidentHousingState(reservation.Worker, reservation.Stat, reservation.Worker.Component,
+                _housingManager.LifeSettings, _housingManager.Navigation, _nextResidentOrder++);
+        reservation.Worker.Init(reservation.NpcType, reservation.Stat, reservation.Selector, residence);
+        reservation.Worker.Disabled += UnregisterWorker;
+        if (residence != null)
+        {
+            _residents.Add(residence);
+            // Initialize can reset an old pooled dissatisfaction binding; establish current cause afterward.
+            residence.Stat.Dissatisfaction.TrySetCauseActive(DissatisfactionCause.Homeless, true);
+        }
 
         if (!_workers.ContainsKey(reservation.NpcType))
             _workers.Add(reservation.NpcType, new List<WorkerNPC>());
 
         _workers[reservation.NpcType].Add(reservation.Worker);
+        PublishResidentsChanged();
         return true;
     }
 
@@ -139,6 +158,33 @@ public class NPCManager : MonoBehaviour
 
         reservation.Worker.CompleteSpawnPresentation();
         _workerPool.ReleaseWorker(reservation.Worker);
+    }
+
+    public void UnregisterWorker(WorkerNPC worker)
+    {
+        if (!worker) return;
+        worker.Disabled -= UnregisterWorker;
+        foreach (var workers in _workers.Values) workers.Remove(worker);
+        for (int i = _residents.Count - 1; i >= 0; --i)
+        {
+            ResidentHousingState resident = _residents[i];
+            if (resident.Worker != worker) continue;
+            _residents.RemoveAt(i);
+            House home = resident.Home;
+            resident.Unregister();
+            if (home) home.RemoveResident(resident);
+        }
+        PublishResidentsChanged();
+    }
+
+    private void PublishResidentsChanged()
+    {
+        if (ResidentsChanged == null) return;
+        foreach (System.Action listener in ResidentsChanged.GetInvocationList())
+        {
+            try { listener(); }
+            catch (System.Exception exception) { Debug.LogException(exception, this); }
+        }
     }
 
     [System.Serializable]

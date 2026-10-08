@@ -25,7 +25,21 @@ public sealed class BuilderActionSelector : BaseNPCActionSelector
         }
     }
 
+    protected override DestinationDecider HousingDecider => _decider;
+    public override bool HasAvailableWork(NPCStat stat, NPCComponent component)
+    {
+        if (stat == null || stat.IsOnStrike || !component || !_navigation || !_navigation.IsReady ||
+            !_buildingPlots || !_buildCost || !_buildCost.IsConfigured) return false;
+        foreach (BuildingPlot plot in _buildingPlots.Plots)
+            if (plot && plot.CanReserve) return true;
+        return false;
+    }
+
     public override Queue<IAction> RequestNewActionQueue(NPCStat stat, NPCType npcType, NPCComponent component)
+        => RequestResidentialWorkQueue(stat, npcType, component, null);
+
+    protected override Queue<IAction> RequestResidentialWorkQueue(NPCStat stat, NPCType npcType,
+        NPCComponent component, HousingLifeSettings life)
     {
         if (!component || stat == null || !actionPool)
         {
@@ -38,7 +52,8 @@ public sealed class BuilderActionSelector : BaseNPCActionSelector
             return BuildFallbackIdleQueue(component, stat);
         }
 
-        NPCDecision decision = _decider.Decide(stat, NPCType.Builder, component.Position, null);
+        NPCDecision decision = _decider.Decide(stat, NPCType.Builder, component.Position, null,
+            sleepRecoveryPerSecond: life?.InnFatigueRecoveryPerSecond ?? 0f);
         if (stat.IsOnStrike || decision.Intent == NPCIntent.Eat || decision.Intent == NPCIntent.Drink || decision.Intent == NPCIntent.Sleep)
             return BuildLeisureQueue(decision, _decider, component, stat, MoveMode.Navigation,
                 _navigation, _wanderCost, _randomSource ? _random : null);
@@ -48,7 +63,7 @@ public sealed class BuilderActionSelector : BaseNPCActionSelector
             return BuildFallbackIdleQueue(component, stat);
 
         var rented = new List<IAction>();
-        if (_navigation && _navigation.IsReady && _buildingPlots && _buildCost && _buildCost.IsConfigured)
+        if (HasAvailableWork(stat, component))
         {
             var candidates = new List<BuildingPlot>();
             foreach (BuildingPlot plot in _buildingPlots.Plots)

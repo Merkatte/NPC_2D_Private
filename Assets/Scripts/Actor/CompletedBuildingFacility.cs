@@ -10,11 +10,45 @@ public sealed class CompletedBuildingFacility : MonoBehaviour
     [SerializeField] private FarmSeedSource _seedSource;
     [SerializeField] private GuardPost _guardPost;
     [SerializeField] private Pub _pub;
+    [SerializeField] private House _house;
+    [SerializeField] private SpriteRenderer _houseVisual;
+    [SerializeField] private HousePopupSource _housePopupSource;
     private DestinationDB _destinations;
     private InteractableManager _interactables;
     private DestinationInfo _registration;
     private bool _providerRegistered;
+    public House House => _house;
+    public HousePopupSource HousePopupSource => _housePopupSource;
     public Transform Entrance => _entrance;
+
+    internal bool TryConfigureHouse(HousingDataContext data, HouseTierDefinition tier,
+        HousingManager manager, Sprite sprite, out string reason)
+    {
+        reason = "House prefab requires its house, visual, popup source, entrance and tier sprite.";
+        if (!_house || !_houseVisual || !_housePopupSource || !_entrance || !sprite)
+            return false;
+        if (!_house.TryConfigure(data, tier, manager, _entrance, out reason))
+            return false;
+        _houseVisual.sprite = sprite;
+        return true;
+    }
+
+    internal bool TryApplyHouseTier(HouseTierDefinition tier, Sprite sprite, out string reason)
+    {
+        reason = "House upgrade is missing its live house, visual or sprite.";
+        if (!_house || !_houseVisual || !sprite)
+            return false;
+        Sprite previous = _houseVisual.sprite;
+        _houseVisual.sprite = sprite;
+        // Domain change notifications observe the matching presentation. A rejected
+        // tier leaves both the runtime and the visual at the previous value.
+        if (!_house.TryApplyTier(tier, out reason))
+        {
+            _houseVisual.sprite = previous;
+            return false;
+        }
+        return true;
+    }
     public BaseInteractionProvider Provider => _provider;
 
     internal bool TryConfigure(BuildingDefinition definition, ResourceManager resources, ItemDataContext items,
@@ -42,6 +76,9 @@ public sealed class CompletedBuildingFacility : MonoBehaviour
                 if (!_guardPost || _provider != _guardPost || !workArea) return false;
                 _guardPost.ConfigureConstruction(workArea);
                 break;
+            case BuildingType.House:
+                if (!_house || _house.Tier == null || _provider) return false;
+                break;
             case BuildingType.Inn:
                 if (_provider) return false;
                 break;
@@ -54,6 +91,7 @@ public sealed class CompletedBuildingFacility : MonoBehaviour
 
     internal bool TryRegister(BuildingType type, DestinationDB destinations, InteractableManager interactables)
     {
+        if (type == BuildingType.House) return _house && _house.isActiveAndEnabled;
         _destinations = destinations;
         _interactables = interactables;
         if (_provider)

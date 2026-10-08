@@ -26,4 +26,4 @@
 
 ## 배선과 검증
 
-BuildingDataContext에 세 CSV, ItemDataContext, 다섯 ID의 시설 prefab/icon을 연결한다. DataManager 초기화에서 검증한다. CSV 수치의 Inspector 복제 원본이나 Addressables는 추가하지 않는다. 오류·행/ID 진단, 불변 비용 사본, 전체 실패가 비-Play 검사 대상이다. schema나 소유 타입이 바뀌면 이 문서를 갱신한다.
+BuildingDataContext에 세 CSV, ItemDataContext, 아홉 ID의 시설 prefab/icon을 연결한다. 기존 ID1~5와 주택 단계별 ID6~9를 사용하며 주택 네 ID는 같은 prefab과 단계별 sprite를 참조한다. BuildingType.House=7을 허용하고 창고 용량과 주민 정원은 혼합하지 않는다. DataManager 초기화에서 검증한다. CSV 수치의 Inspector 복제 원본이나 Addressables는 추가하지 않는다. 오류·행/ID 진단, 불변 비용 사본, 전체 실패가 비-Play 검사 대상이다. schema나 소유 타입이 바뀌면 이 문서를 갱신한다.

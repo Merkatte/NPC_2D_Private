@@ -44,6 +44,9 @@ public class DestinationDecider
     private struct NeedSnapshot
     {
         public bool IsOnStrike;
+        public bool AllowSleep;
+        public bool IncludeRoleActivity;
+        public float SleepRecoveryPerSecond;
         public float Health;
         public float HealthMax;
         public float Fatigue;
@@ -159,12 +162,24 @@ public class DestinationDecider
         return _tuning && _tuning.HasCriticalNeed(stat);
     }
 
-    public NPCDecision Decide(IStatView stat, NPCType npcType, Vector3 npcLoc, StatEffect workCost)
+    public NPCDecision Decide(IStatView stat, NPCType npcType, Vector3 npcLoc, StatEffect workCost,
+        bool allowSleep = true, float sleepRecoveryPerSecond = 0f)
+        => DecideCore(stat, npcType, npcLoc, workCost, allowSleep, true, sleepRecoveryPerSecond);
+
+    public NPCDecision DecideNeeds(IStatView stat, Vector3 npcLoc, bool allowSleep,
+        float sleepRecoveryPerSecond = 0f)
+        => DecideCore(stat, default, npcLoc, null, allowSleep, false, sleepRecoveryPerSecond);
+
+    private NPCDecision DecideCore(IStatView stat, NPCType npcType, Vector3 npcLoc, StatEffect workCost,
+        bool allowSleep, bool includeRoleActivity, float sleepRecoveryPerSecond)
     {
         if (!_destinationDB || !_tuning || stat == null)
             return NPCDecision.Idle(npcLoc);
 
         NeedSnapshot before = ToSnapshot(stat);
+        before.AllowSleep = allowSleep;
+        before.IncludeRoleActivity = includeRoleActivity;
+        before.SleepRecoveryPerSecond = sleepRecoveryPerSecond;
         float moveSpeed = stat.GetMoveSpeed;
         int depth = Mathf.Clamp(_tuning.LookAheadDepth, 1, NPCDecisionTuning.MaxLookAheadDepth);
 
@@ -277,7 +292,7 @@ public class DestinationDecider
             // remaining supply options are narrowed to the safest available tier.
             ApplyCriticalFilter(candidates, state, criticalMask);
         }
-        else if (!state.IsOnStrike)
+        else if (state.IncludeRoleActivity && !state.IsOnStrike)
         {
             AddRoleCandidate(candidates, state, pos, moveSpeed, npcType, workCost);
         }
@@ -295,7 +310,7 @@ public class DestinationDecider
 
             AddItemCandidatesForType(candidates, key, ActionType.Eat, pos, moveSpeed, state);
             AddItemCandidatesForType(candidates, key, ActionType.Drink, pos, moveSpeed, state);
-            if (key == BuildingType.Inn && TrySelectNearest(_destinationDB, key, ActionType.Sleep, pos,
+            if (state.AllowSleep && key == BuildingType.Inn && TrySelectNearest(_destinationDB, key, ActionType.Sleep, pos,
                 out var inn, out _, out Vector3 sleepPosition))
                 AddSleepCandidate(candidates, key, sleepPosition, GetTravelTime(pos, sleepPosition, moveSpeed), state, inn);
         }
@@ -352,7 +367,8 @@ public class DestinationDecider
             OptionId = -1,
             RepeatCount = 1,
             TravelTime = travelTime,
-            ActionTime = _tuning.EstimatedSleepSeconds,
+            ActionTime = state.SleepRecoveryPerSecond > 0f
+                ? state.Fatigue / state.SleepRecoveryPerSecond : _tuning.EstimatedSleepSeconds,
             ActivityReward = 0f,
             After = ApplyEffect(state, sleepEffect),
         });

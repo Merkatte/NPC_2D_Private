@@ -12,4 +12,5 @@ public enum ActionType
     Deposit,
     Wander,
     Build,
+    HomeStay,
 }

@@ -1,3 +1,16 @@
+# 주택·입주·생활·업그레이드 — 2026-10-08 구현 완료
+
+- 사용자 승인 [계획](../Archive/Plans/Housing_Implementation_Plan.md)에 따라 BuildingTest 한정 주거 서비스를 구현했다. CSV 단계별 복수 옵션/재료, 불만도순 입주, 비업무 집 생활, 업무 피로 여관 회복, 기존 건축가 업그레이드와 주택 창을 포함한다. 예시 수치는 최종 밸런스가 아니다. 실제 데이터 편집 규칙은 [Housing/Definitions](../Systems/Housing/Definitions.md)를 따른다.
+- 기준 `659dddcbf281eefa5b1d4d7dce814cb2fc20cfd8`, 시작 dirty 없음. 코드 `/root/housing_domain`, `/root/housing_construction`; 배선 `/root/housing_assembly`; root 공통 문서/조정/검증. 코드 staging 후 순차 반영, 원본 Editor/BuildingTest 작업이며 기존 다른 씬·이미지는 유지한다.
+- 코드: HousingDataContext/CSV mapper·불변 정의, House/HousingManager/배정 정책/주민 runtime, NPCManager 등록·해제, HomeStay와 selector hook, 연결된 주민의 여관 회복/예상 시간, 불만 회복 보너스, 기존 건설의 in-place upgrade와 동적 HousePopup을 적용했다. ActionContext를 확장하거나 action에서 manager를 조회하지 않는다.
+- 배선: 새 House/HousePopup/HouseInfoRow prefab과 HousingDataContext SO, 기존 BuildingDataContext/ConstructionPopup/BuildingTest를 연결했다. 기존4단계 sprite를 그대로 사용하고 기존6부지/2Builders/초기재고를 보존했다. Unity가 기존 HUD/SeededRandomSource YAML 블록을 재정렬했지만 값과 ID는 유지했다. 다른 씬·이미지·importer·Packages·ProjectSettings는 변경하지 않았다.
+- 검증: Unity6000.3.9f1 컴파일 completed, failed=false, errors=[]; 기존 건설 EditMode15/15, 자원6/6, 기존 NavigationTests.RunPureChecks 반환1446 성공. 실제 native component properties 및 YAML/CSV/sprite GUID·fileID 참조, diff 범위와 git diff --check를 확인했다. 최종 BuildingTest 단일 active/loaded, isDirty=false다.
+- 독립 read-only `/root/housing_review`: Approve, findings 없음. 실제 diff/new files와 원본 검사 근거로 컨벤션·주 소유 문서·의존 방향·입주/행동/풀 수명·공사 transaction·배선을 검토했다. ordinary common-check 경로, 보정 한도2회 중0회 사용, 실패 검사/미해결 리뷰 없음. 리뷰 후 코드·에셋 변경은 없다.
+- CLI 최초 연결0 후 사용자 설치/Editor 상태 변경으로 Unity6000.3.9f1 port7800 ready 연결 확인. BuildingTest 미저장 변경 없음, Play 중지. 패키지 설치나 Editor 종료를 root가 수행하지 않았다.
+- 작업 기록 `.harness-runs/housing-20261008/scene-work.md`, 원본 compile-result/final-compile/construction-tests/resource-tests/navigation-checks/assembly-*.json, 실제 review.json. 완료 계획은 Archive/Plans로 이동했다. 커밋·푸시는 하지 않았다.
+- 자동 Play/화면·신규 검증 전용 코드는 실행/작성하지 않았다. 사람 QA: 입주 우선순위/만실/퇴거·최초 귀가·욕구 외출/업무 복귀·여관 완전 회복·반복 pooling·업그레이드 완료/취소/실패/재시도·팝업 스크롤/긴 이름/복수 비용 표시. 기존 검사 통과를 주택 end-to-end 플레이 통과로 해석하지 않는다.
+- 별도 사용자 요청의 [게임 구조 아티팩트](Game_Structure_Artifact_20261008.md)는 Claude가 작성했다. 주택 코드 반영 직전 baseline 조사이며 구현 인수 리뷰를 대신하지 않는다.
+
 # 불만도·태업 — 2026-10-03 구현 완료
 
 - 사용자 승인 [계획](../Archive/Plans/Dissatisfaction_Implementation_Plan.md)에 따라 Farmer·Builder·Guard의 원인별 누적·회복, 유닛별 설정, 태업 중단·생활·배회와 Hover 문구를 구현했다. 무주택 자동 판정/주택/업그레이드는 후속이며 현재 자동 발생 원인은 없다. 현재 구조는 [NPC Dissatisfaction](../Systems/NPC_Dissatisfaction.md)을 따른다.

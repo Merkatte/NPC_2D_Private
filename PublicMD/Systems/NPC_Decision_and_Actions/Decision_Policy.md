@@ -80,3 +80,7 @@ DestinationDecider.Decide(stat, role, position, work cost)
 ## 불만도·태업 연결
 
 NeedSnapshot은 IStatView.IsOnStrike를 복사한다. BuildCandidates는 태업이면 role activity를 생성하지 않으며 모든 look-ahead 상태에도 이 값을 유지한다. 공급 후보·긴급 need filtering·utility는 기존 규칙을 사용한다. 미래 회복을 추정해 업무 후보를 만들지 않고 실제 회복된 다음 선택에서 다시 판단한다. 불만 mutation이나 원인 조회는 decider 책임이 아니다.
+
+## 주거 판단 연결
+
+DecideNeeds는 같은 scorer를 사용하면서 role activity를 제외한다. allowSleep=false인 집 생활 판단은 Sleep 후보를 최초와 모든 look-ahead에서 제외한다. NeedSnapshot이 두 제한과 선택적 Sleep 회복 속도를 보존하므로 미래 단계에서도 금지 후보를 추가하지 않는다. 주거 주민의 일반 role 판단에는 여관 회복 속도를 명시적으로 전달하며 예상 시간은 현재 피로/회복 속도다. 미연결 호출은 기존 EstimatedSleepSeconds를 사용한다. decider는 주택 객체·거주 상태·queue를 소유하지 않는다.

@@ -15,6 +15,7 @@ public sealed class ConstructionPopup : PopBase
     [SerializeField] private Button _closeButton;
     [SerializeField] private CostRowBinding[] _costRows;
     [SerializeField] private ScrollRect _costScrollRect;
+    [SerializeField] private ScrollRect _choiceScrollRect;
     [SerializeField] private Color _costNormalColor = new Color(0.25f, 0.15f, 0.08f, 1f);
     [SerializeField] private Color _costShortageColor = new Color(0.75f, 0.12f, 0.08f, 1f);
     private bool _hasValidatedCostRows;
@@ -37,6 +38,7 @@ public sealed class ConstructionPopup : PopBase
         Subscribe();
         Refresh();
         ResetCostScroll();
+        ResetChoiceScroll();
         return true;
     }
     private void OnEnable()
@@ -201,6 +203,13 @@ public sealed class ConstructionPopup : PopBase
             if (row != null && (visibleDefinition == null || !visibleDefinition.Cost.ContainsKey(row.ItemId)
                 || FindCostRow(row.ItemId) != row))
                 row.Reset(_costNormalColor);
+    }
+    private void ResetChoiceScroll()
+    {
+        if (!_choiceScrollRect) return;
+        Canvas.ForceUpdateCanvases();
+        _choiceScrollRect.StopMovement();
+        _choiceScrollRect.verticalNormalizedPosition = 1f;
     }
     private void ResetCostScroll()
     {

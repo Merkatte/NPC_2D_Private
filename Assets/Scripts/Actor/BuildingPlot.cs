@@ -17,6 +17,7 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
     private bool _isChanging;
     public BuildingPlotState State { get; private set; }
     public CompletedBuildingFacility CompletedFacility { get; private set; }
+    public bool IsUpgrade => _construction != null && _construction.IsUpgrade;
     public BuildingDefinition Definition => _construction?.Definition;
     public float Progress => _construction == null ? 0f : Mathf.Clamp01(_construction.Work / _construction.Definition.RequiredWork);
     public bool HasWorkStarted => _construction != null && _construction.HasWorkStarted;
@@ -42,10 +43,46 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
         && _construction != null && _construction.Work < Definition.RequiredWork && ReservedWorkers < Definition.MaxWorkers;
     public event Action StateChanged;
 
-    public bool IsAllowed(int id) => _allowedBuildingIds.Length == 0 || Array.IndexOf(_allowedBuildingIds, id) >= 0;
+    public bool IsAllowed(int id) => (_allowedBuildingIds.Length == 0 || Array.IndexOf(_allowedBuildingIds, id) >= 0)
+        && _dataManager && _dataManager.TryGetBuildingDefinition(id, out var definition)
+        && _factory && _factory.CanStartNewConstruction(definition);
+
+    public bool TryGetNextUpgrade(out BuildingDefinition definition)
+    {
+        definition = null;
+        return CompletedFacility && _factory && _factory.TryGetNextUpgrade(CompletedFacility, out definition);
+    }
+
+    public bool TryStartUpgrade(out string reason)
+    {
+        reason = "지금은 업그레이드를 시작할 수 없습니다.";
+        if (_isChanging || State != BuildingPlotState.Completed || !isActiveAndEnabled)
+            return false;
+        if (!TryInitialize(out reason)) return false;
+        if (!TryGetNextUpgrade(out var definition) || definition.MaxWorkers > _workPositions.Length)
+        {
+            reason = "다음 단계 정의나 작업 자리를 확인할 수 없습니다.";
+            return false;
+        }
+        _isChanging = true;
+        try
+        {
+            using (_resources.DeferNotifications())
+            {
+                if (!_resources.TrySpend(definition.Cost)) { reason = "자원이 부족합니다."; return false; }
+                _construction = new ConstructionState(definition, ++_nextConstructionId,
+                    _registry.NextApplicationOrder(), true);
+                State = BuildingPlotState.UnderConstruction;
+                PublishState();
+            }
+            reason = null;
+            return true;
+        }
+        finally { _isChanging = false; }
+    }
     public bool TryGetClickPopup(out PopupType type)
     {
-        type = isActiveAndEnabled && _dataManager && _resources && State != BuildingPlotState.Completed
+        type = isActiveAndEnabled && _dataManager && _resources && State != BuildingPlotState.Completed && !IsUpgrade
             ? PopupType.Construction : PopupType.None;
         return type != PopupType.None;
     }
@@ -100,8 +137,9 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
             {
                 if (!_resources.TryRefund(GetExpectedRefund())) { reason = "환불을 완료할 수 없습니다. 공사를 유지합니다."; return false; }
                 EndReservations(ConstructionReservationStatus.Cancelled);
+                bool wasUpgrade = IsUpgrade;
                 _construction = null;
-                State = BuildingPlotState.Empty;
+                State = wasUpgrade ? BuildingPlotState.Completed : BuildingPlotState.Empty;
                 PublishState();
             }
             reason = null;
@@ -193,7 +231,12 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
     {
         using (_resources.DeferNotifications())
         {
-            bool success = _factory.TryCreate(Definition, transform, _entrance, _workArea, out var facility, out reason);
+            CompletedBuildingFacility facility = CompletedFacility;
+            bool success = IsUpgrade
+                ? _factory.TryUpgrade(CompletedFacility, Definition, out reason)
+                : _factory.TryCreate(Definition, transform, _entrance, _workArea, out facility, out reason);
+            if (success && facility && facility.HousePopupSource)
+                facility.HousePopupSource.Configure(facility.House, this);
             _construction.CompletionFailure = success ? null : reason;
             EndReservations(success ? ConstructionReservationStatus.Completed : ConstructionReservationStatus.CompletionFailed);
             if (success)
