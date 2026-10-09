@@ -10,10 +10,22 @@ public sealed class TownHallPopup : PopBase
     [SerializeField] private Button _recruitmentTab;
     [SerializeField] private TownHallRecruitCard[] _cards;
     [SerializeField] private Text _resultText;
+    [SerializeField] private ScrollRect _recruitmentScrollRect;
+    [SerializeField] private bool _fitToCanvas;
+    [SerializeField, Min(0f)] private float _screenMargin = 24f;
     private bool _isConfigured;
+    private RectTransform _popupRect;
+    private RectTransform _parentRect;
+    private RectTransform _canvasRect;
+    private Vector3 _authoredScale;
 
     private void Awake()
     {
+        _popupRect = transform as RectTransform;
+        _parentRect = transform.parent as RectTransform;
+        Canvas canvas = GetComponentInParent<Canvas>();
+        _canvasRect = canvas ? canvas.rootCanvas.transform as RectTransform : null;
+        _authoredScale = transform.localScale;
         _isConfigured = _recruitment && _townStatusPanel && _recruitmentPanel &&
             _townStatusTab && _recruitmentTab && _resultText && _cards != null && _cards.Length > 0;
         if (_isConfigured)
@@ -28,6 +40,7 @@ public sealed class TownHallPopup : PopBase
 
     private void OnEnable()
     {
+        FitToCanvas();
         if (!_isConfigured)
             return;
         _townStatusTab.onClick.AddListener(ShowTownStatus);
@@ -63,7 +76,33 @@ public sealed class TownHallPopup : PopBase
     }
 
     private void ShowTownStatus() => SelectTab(false);
-    private void ShowRecruitment() => SelectTab(true);
+    private void ShowRecruitment()
+    {
+        SelectTab(true);
+        if (!_recruitmentScrollRect) return;
+        Canvas.ForceUpdateCanvases();
+        _recruitmentScrollRect.StopMovement();
+        _recruitmentScrollRect.horizontalNormalizedPosition = 0f;
+    }
+
+    private void LateUpdate() => FitToCanvas();
+
+    private void OnValidate() => _screenMargin = Mathf.Max(0f, _screenMargin);
+
+    private void FitToCanvas()
+    {
+        if (!_fitToCanvas || !_popupRect || !_parentRect || !_canvasRect) return;
+        Vector2 size = _popupRect.rect.size;
+        Vector3 canvasSize = _parentRect.InverseTransformVector(_canvasRect.TransformVector(_canvasRect.rect.size));
+        Vector2 available = new Vector2(Mathf.Abs(canvasSize.x), Mathf.Abs(canvasSize.y)) -
+            Vector2.one * (_screenMargin * 2f);
+        float width = size.x * Mathf.Abs(_authoredScale.x);
+        float height = size.y * Mathf.Abs(_authoredScale.y);
+        if (width <= 0f || height <= 0f || available.x <= 0f || available.y <= 0f) return;
+        float scale = Mathf.Min(1f, Mathf.Min(available.x / width, available.y / height));
+        // PopBase owns anchoredPosition during entry/exit; fitting changes only scale.
+        _popupRect.localScale = new Vector3(_authoredScale.x * scale, _authoredScale.y * scale, _authoredScale.z);
+    }
 
     private void SelectTab(bool recruitment)
     {

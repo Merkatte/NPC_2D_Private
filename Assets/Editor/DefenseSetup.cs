@@ -276,6 +276,7 @@ public static class DefenseSetup
         gameOverText.fontSize = 38; gameOverText.color = Color.white;
         modal.SetActive(false); gameOver.SetActive(false);
         hud.Configure(session, waves, events, status, notificationText, next, notification, gameOver);
+        DefenseUIPolishSetup.ConfigureWaveHud(hud);
         popup.Configure(events, modal, title, body, choices, choices.Select(button => button.GetComponentInChildren<Text>()).ToArray(), close);
     }
 
@@ -504,16 +505,7 @@ public static class DefenseSetup
         archerCard.name = "ArcherCard"; Edit(archerCard, card => card.FindProperty("_npcType").intValue = (int)NPCType.Archer);
         cards.GetArrayElementAtIndex(cards.arraySize++).objectReferenceValue = archerCard;
         data.ApplyModifiedPropertiesWithoutUndo();
-        // Existing three manually placed cards become four evenly spaced cards within the same panel.
-        var allCards = new List<TownHallRecruitCard>();
-        for (int i = 0; i < cards.arraySize; ++i) allCards.Add((TownHallRecruitCard)cards.GetArrayElementAtIndex(i).objectReferenceValue);
-        float step = 275f;
-        for (int i = 0; i < allCards.Count; ++i)
-        {
-            RectTransform rect = (RectTransform)allCards[i].transform;
-            rect.localScale = Vector3.one * 0.75f;
-            rect.anchoredPosition = new Vector2((i - (allCards.Count - 1) * 0.5f) * step, rect.anchoredPosition.y);
-        }
+        DefenseUIPolishSetup.ConfigureRecruitmentLayout(popup);
     }
 
     private static void ConfigureBuildings(Scene scene, DefenseBattlefield battlefield, DefenseMaintenanceRegistry registry,

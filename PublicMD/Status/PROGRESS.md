@@ -1,3 +1,10 @@
+# 웨이브 HUD·모집창 UI 정리 — 2026-10-09
+
+- 웨이브 패널을 기존 목재·종이·녹색/올리브 버튼 이미지로 통일하고 우측 상단에 배치했다. 공유 시청 모집창을920×760으로 정리하고 가로 ScrollRect·RectMask2D·스크롤바를 추가했다. 제목·탭·닫기·결과 문구는 고정하고, 공유3개/Defense4개 카드와 기존 모집·웨이브 버튼 연결을 보존했다. 화면 Canvas 크기에 따른 축소와 모집 탭/재열기 시 첫 카드 복귀를 추가했다. 게임 규칙은 변경하지 않았다.
+- 기준9043d23의 clean 상태에서 코드 `/root/ui_polish_code`, 배선 `/root/ui_polish_assembly`, 독립 리뷰 `/root/ui_polish_review`로 진행했다. 코드와 소유 문서, TownHallPopup prefab, DefenseTest UI만 수정했다. 향후 DefenseSetup도 같은 레이아웃 함수를 사용하며 전체 씬 재생성은 실행하지 않았다. root는 공통 UI 문서의 닫기 버튼 치수 참조를72/18로 교정했다.
+- 검증: strict Unity 컴파일 오류0/경고0, 씬·공유 프리팹의 카드/스크롤/마스크/버튼/컨트롤러 참조 직접 readback, 저장 후 DefenseTest clean, git diff --check 통과. 독립 리뷰 Approve이며 공통 문서의 오래된 치수 표기 Minor1건을 교정했다. 이후 코드·에셋 변경 없음. 작업 기록 `.harness-runs/ui-polish-20261009/scene-work.md`, 컴파일 `code/compile.json`, 배선 원본 `assembly/`, 독립 결과 `review.json`.
+- 실제 화면·드래그/휠·클릭·창 크기 변경은 미검증이다. 자동 Play/스크린샷·새 검증 코드는 실행/추가하지 않았다. 좁은 화면의 웨이브 HUD 재배치는 이번 범위에 포함하지 않았다. 커밋·푸시하지 않았다.
+
 # 웨이브 시작 후 정지 후속 — 2026-10-09 잔디 통행 등록
 
 - 사용자가 농부 외 NPC가 웨이브 시작 후 멈춘다고 보고해 재조사했다. DefenseTest의 `farm-ground-tileset-02_0.asset` 잔디177칸이 이동 profile에 누락되어 y8·9 전체 폭이 통행 불가로 계산되고 마을과 북쪽 방어 구역이 분리돼 있었다. `TileNavigationProfile.asset`의 기존 Grass(비용3)에 해당 TileBase 참조 한 줄을 추가했다. 타일맵 모양·성벽 차단·다른 지형·C#은 변경하지 않았다.

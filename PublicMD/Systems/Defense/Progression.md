@@ -23,6 +23,7 @@
 | `Assets/Data/Struct/DefenseEventChoice.cs` | 선택 표시 문구와 결과 연결 ID 값 |
 | `Assets/Scripts/Manager/DefenseInitialRoster.cs` | production NPCManager 예약/커밋으로 초기 검병·궁병 추가 |
 | `Assets/Editor/DefenseSetup.cs` | 승인된 DefenseTest와 전용 설정·프리팹·UI를 생성하는 조립 도구; assembly 역할만 실행 |
+| `Assets/Editor/DefenseUIPolishSetup.cs` | 기존 시청 모집 스크롤·웨이브 표지판의 범위 제한 조립과 신규 DefenseSetup 공통 UI 배치; assembly 역할만 실행 |
 
 ## 변경 유형별 최소 확인 범위
 
@@ -68,6 +69,10 @@ DefenseSetup은 기존 BuildingTest에서 새 DefenseTest만 복사한다. 기�
 방어 주민/적은 기존 프리팹을 독립 복사한 전용 prefab이다. 기존 root·Visual/tool/cargo 하위 구조를 보존하면서 BodyPose 부모를 추가하고 기존 root animation clip의 Visual 경로만 전용 override clip에서 remap한다. 원본 prefab/controller/clip은 변경하지 않는다. 시설 prefab은 전용 inherited variant와 복사한 BuildingDataContext/HousingDataContext를 사용한다. 기존 배치 시설은 새 씬 안에서만 unpack해 영구 BuildingPlot 아래로 옮기고 기존 navigation geometry와 초기 facility 참조를 보존한다. 구체 durability/maintenance 책임은 해당 Defense leaf가 소유한다.
 
 씬 조립은 원래 열린 scene이 dirty이면 거부한다. 기존 DefenseTest가 있으면 임의 교체하지 않는다. 성공 시 소유한 새 에셋과 DefenseTest만 저장하고 새 씬을 활성으로 남긴다. 실패 시 새 씬의 미저장 메모리만 닫고 이전 scene setup을 복구하며 원래 씬은 저장하지 않는다. 조립 중 생성된 일부 새 파일은 실패 후 조사 대상으로 남기며 자동 삭제하지 않는다.
+
+`Tools/NPC/Defense/Polish Recruitment and Wave UI`는 중지·컴파일 완료·Prefab Mode 밖의 Editor에서 이미 열린 깨끗한 DefenseTest를 대상으로 TownHallPopup.prefab과 해당 scene만 저장한다. 전체 DefenseSetup은 실행하지 않는다. prefab의 기존 세 카드를 먼저 가로 스크롤 Content로 옮긴 뒤 scene-added ArcherCard를 같은 Content에 배치하며, 연결된 prefab instance와 모집·버튼 참조를 보존한다. 같은 이름의 viewport·content·scrollbar를 재사용하므로 반복 실행으로 중복 생성하지 않는다. 실패 시 저장된 변경을 임의 복구하거나 다른 scene을 저장하지 않으며 부분 변경을 조사해야 한다. 신규 DefenseSetup도 같은 두 배치 함수를 사용한다.
+
+웨이브 표지판은 우상단(-16,-16)의 620×144 목재판이며 기존 GoldHUD의 board sprite와 9-slice 배율5를 재사용한다. 580×108 양피지 위에 어두운 갈색 상태 문구와 기존 녹색/올리브 버튼 sprite를 사용하고 controller 참조는 유지한다. 다음 습격 버튼은 190×44, 소식 버튼은 350×44이며 소식 문구는 18pt 줄바꿈을 사용한다. GoldHUD와 CanvasScaler는 변경하지 않는다. 이 고정 HUD 배치는 1024 폭에서 GoldHUD와 겹치지 않는 범위이며 더 좁은 화면의 HUD 재배치는 별도다. 시청 팝업의 화면 맞춤 축소·스크롤 lifecycle은 [Town Hall](../Town_Hall.md)이 소유한다.
 
 ## 검증 범위와 미검증
 

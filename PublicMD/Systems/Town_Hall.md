@@ -29,7 +29,7 @@ TryGetRecruitment(NPCType, out RecruitmentStatus)는 값 복사만 반환한다.
 | `Assets/Scripts/Actor/TownHallRecruitment.cs` | 직군별 설정·상태·타이머·예약·지원금 transaction·낙하 lifecycle |
 | `Assets/Data/Struct/RecruitmentStatus.cs` | UI가 읽는 직군·phase·남은 시간·비용·낙하 상태 값 |
 | `Assets/Scripts/System/Actor/TownHallVisual.cs` | 클릭 표면과 집계 phase 아이콘 |
-| `Assets/Scripts/UI/TownHallPopup.cs` | 탭 선택, 상태 조회와 모집 의도 전달 |
+| `Assets/Scripts/UI/TownHallPopup.cs` | 탭 선택, 상태 조회와 모집 의도 전달, 모집 스크롤 초기화와 Canvas 맞춤 축소 |
 | `Assets/Scripts/UI/TownHallRecruitCard.cs` | 직군별 이미지·이름·비용·상태·시간·버튼 표시 |
 | `Assets/Scripts/Enum/RecruitPhase.cs` | Recruiting/CandidateReady, 기존 직렬화 값 유지 |
 | `Assets/Scripts/Enum/RecruitResult.cs` | Success/NotReady/NotEnoughGold/SpawnUnavailable/NoArcherStation |
@@ -60,7 +60,11 @@ WorkerReservation의 계약과 소유는 [Spawning and Pooling](Spawning_and_Poo
 
 FarmerTest의 기존 TownHall 인스턴스는 NPCManager/ResourceManager를 prefab override로 참조한다. TownHall.prefab과 scene 인스턴스의 `_recruitments`에는 Farmer·Guard·Builder 행이 있다. FarmerTest NPCManager에도 세 직업의 생성 entry가 있고 worker pool을 공유한다. Builder 추가 시 기존 Farmer·Guard 비용과 쿨다운은 유지했다.
 
-TownHallPopup.prefab은 기존 목재 외곽·제목·닫기 버튼을 유지하며 상인 탭과 양피지 스타일을 재사용한다. 세 카드에는 farmer-hoe, guard-sword, builder-hammer sprite subasset을 지정한다. 카드 폭은 330, 중심 x는 -350/0/350으로 설정한다. scene의 `_recruitment`와 UIManager popup 등록은 유지한다. PointerClickRouter와 시청 클릭 collider의 layer 9 mask 연결은 이미 존재하며 레이어 이름 자체는 필수 조건이 아니다.
+TownHallPopup.prefab은 기존 목재 외곽·제목·닫기 버튼과 상인 탭·양피지 스타일을 재사용한다. 세 카드에는 farmer-hoe, guard-sword, builder-hammer sprite subasset을 지정한다. scene의 `_recruitment`와 UIManager popup 등록은 유지한다. PointerClickRouter와 시청 클릭 collider의 layer 9 mask 연결은 이미 존재하며 레이어 이름 자체는 필수 조건이 아니다.
+
+2026-10-09 UI 배치는 920×760 popup, 780×480 모집 영역 안에 780×436 RectMask2D viewport와 가로 ScrollRect/scrollbar를 둔다. 카드 원본 330×550은 0.75 배율, 264 간격으로 Content 아래에 배치하며 세 카드 Content 폭은 799.5, Defense의 궁수 포함 네 카드는 1063.5다. 제목·탭·닫기·결과 문구는 스크롤 밖에 유지한다. 결과 문구는 y=-306, 높이30으로 종이 내부에 둔다.
+
+`_recruitmentScrollRect`는 이전 배선과 호환되는 선택 참조다. 모집 탭 전환과 팝업 재개방 시 관성을 멈추고 맨 왼쪽으로 되돌린다. `_fitToCanvas`를 켜면 최초 배율을 보존하며 실제 root Canvas 크기를 popup 부모 좌표계로 변환해 24 단위 여백 안에 들어가도록 축소한다. PopupUI 부모의 고정 100×100 크기는 화면 크기로 사용하지 않는다. 화면 변경은 LateUpdate에서 반영하며 PopBase의 anchoredPosition 진입·퇴장 애니메이션은 그대로 둔다. 모집 상태·타이머는 초기화하지 않는다. 기존 scene의 카드 참조와 Defense scene-added ArcherCard는 유지한다. 조립 도구와 웨이브 UI는 [Defense progression](Defense/Progression.md)이 소유한다.
 
 기존 TestTownHallRecruitProbe를 직군 지정 API로 이관했다. 현재 Farmer가 Recruiting일 때의 거부, 미등록 role 예약 실패, 준비 상태의 골드 부족, 미구성 인스턴스 거부를 확인한다. 만들 수 없는 상태는 SKIP이며 초기 대기 상태를 가정하지 않는다.
 
@@ -87,4 +91,4 @@ TownHallPopup.prefab은 기존 목재 외곽·제목·닫기 버튼을 유지하
 
 기존 _goldManager 필드의 타입은 ResourceManager이며 골드 item ID로 지출/환급한다. DeferNotifications 범위에서 후보·예약 상태까지 확정해 중복 모집 재진입을 막는다. 환급이 정수 상한 때문에 실패하면 PendingRefund와 진행 상태를 보존하고 TryRetryRefund로 재시도한다. 실패한 환급을 지급 완료로 지우거나 포화 처리하지 않는다. TownHallPopup은 기존 모집 상태·시간 표시 경로를 유지한다. 골드 잔액 HUD를 추가하지 않는다. 단일 시청 규칙은 유지하며 시청은 이번 건설 목록에 포함하지 않는다.
 
-2026-10-01 팝업 표현 점검: 닫기 버튼은 96×96, 우상단 anchor/pivot(1,1), 위치(-24,-24)로 배경 내부에 둔다. 세 모집 버튼 라벨은180×50으로 버튼 내부에 맞추고 결과 문구는 y=-330, 높이30으로 종이 패널 내부에 배치한다. 카드·모집 버튼의 serialized 연결은 유지하며 실제 화면·클릭 확인은 별도다.
+2026-10-01의 모집 버튼 라벨 180×50과 serialized 연결은 유지한다. 2026-10-09 배치에서 닫기는 72×72, 우상단 anchor/pivot(1,1), 위치(-18,-18)이다. 실제 화면·스크롤·클릭 확인은 사람의 확인 항목이며 자동 Play 검증은 수행하지 않는다.

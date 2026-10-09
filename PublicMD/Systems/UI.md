@@ -100,7 +100,7 @@ PointerHoverRouter/PointerClickRouter에는 world camera, IUIService 구현 sour
 
 ## 팝업 공통 표현
 
-상단(MerchantPopup)의 목재 외곽·제목 명패·종이 내부 패널·녹색 확정/적갈색 취소 버튼을 기준으로 재사용한다. 기능별 내용 구조와 루트 크기는 유지한다. 닫기 X는 실제 배경 우측 상단 안쪽에 두며 anchor/pivot은 (1,1), 오른쪽·위 여백은 버튼 한 변의 1/4이다. 현재 Merchant 100/25, TownHall 96/24, SeedSelection 84/21, Construction·Warehouse 56/14 UI 단위다. Merchant 배경은 루트보다 위로 확장되어 있으므로 실제 배경 상단을 기준으로 위치를 계산한다.
+상단(MerchantPopup)의 목재 외곽·제목 명패·종이 내부 패널·녹색 확정/적갈색 취소 버튼을 기준으로 재사용한다. 기능별 내용 구조와 루트 크기는 유지한다. 닫기 X는 실제 배경 우측 상단 안쪽에 두며 anchor/pivot은 (1,1), 오른쪽·위 여백은 버튼 한 변의 1/4이다. 현재 Merchant 100/25, TownHall 72/18, SeedSelection 84/21, Construction·Warehouse 56/14 UI 단위다. Merchant 배경은 루트보다 위로 확장되어 있으므로 실제 배경 상단을 기준으로 위치를 계산한다.
 
 건설·창고의 제목판과 BodyBackground는 기존 UI 이미지를 사용하는 별도 자식 Image이며 raycast를 받지 않는다. 기존 닫기 Button과 클릭 연결을 유지하고 이전 닫기 라벨을 제목판으로 옮겼다. 본문과 목록은 목재 프레임 안쪽에 배치한다. 현재 건설 5개 행과 창고 9개 항목이 들어가는 범위를 기준으로 하며 항목 수 증가 시 목록 높이·스크롤 정책을 다시 확인해야 한다.
 
