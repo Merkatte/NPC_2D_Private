@@ -28,7 +28,7 @@ public class BaseNPCActionSelector : MonoBehaviour
         if (!residence.Home || !residence.Home.isActiveAndEnabled) return true;
         if (residence.RequiresFirstHomeVisit) return false;
         NPCDecision need = DecideHomeNeeds(stat, component);
-        return IsHousingSupply(need.Intent) || (!stat.IsOnStrike && HasAvailableWork(stat, component));
+        return IsHousingSupply(need.Intent) || HasAvailableWork(stat, component);
     }
 
     public virtual Queue<IAction> RequestNewActionQueue(NPCStat stat, NPCType npcType,
@@ -40,7 +40,7 @@ public class BaseNPCActionSelector : MonoBehaviour
             return RequestNewActionQueue(stat, npcType, component);
         if (residence.Home && residence.RequiresFirstHomeVisit)
             return BuildHomeQueue(component, stat, residence);
-        bool hasWork = !stat.IsOnStrike && HasAvailableWork(stat, component);
+        bool hasWork = HasAvailableWork(stat, component);
         if (residence.Home && !hasWork)
         {
             NPCDecision need = DecideHomeNeeds(stat, component);

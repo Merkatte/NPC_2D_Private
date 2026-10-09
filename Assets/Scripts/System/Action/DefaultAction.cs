@@ -44,11 +44,14 @@ public abstract class DefaultAction : IAction
 
     protected bool ReplanIfWorkUnavailable()
     {
-        if (!actionContext.RequiresWorkAvailability || actionContext.Stat == null || !actionContext.Stat.IsOnStrike)
+        if (!actionContext.RequiresWorkAvailability || IsWorkAvailable())
             return false;
         RequestReplan();
         return true;
     }
+
+    protected virtual bool IsWorkAvailable()
+        => actionContext.Stat == null || !actionContext.Stat.IsOnStrike;
 
     public virtual void Pause()
     {

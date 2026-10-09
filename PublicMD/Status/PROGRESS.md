@@ -1,3 +1,26 @@
+# 웨이브 시작 후 정지 후속 — 2026-10-09 잔디 통행 등록
+
+- 사용자가 농부 외 NPC가 웨이브 시작 후 멈춘다고 보고해 재조사했다. DefenseTest의 `farm-ground-tileset-02_0.asset` 잔디177칸이 이동 profile에 누락되어 y8·9 전체 폭이 통행 불가로 계산되고 마을과 북쪽 방어 구역이 분리돼 있었다. `TileNavigationProfile.asset`의 기존 Grass(비용3)에 해당 TileBase 참조 한 줄을 추가했다. 타일맵 모양·성벽 차단·다른 지형·C#은 변경하지 않았다.
+- 역할: `/root/wave_stall_code` 읽기 전용 코드 추적, `/root/wave_stall_live` 배선·한정 Play, `/root/wave_stall_review` 독립 리뷰 Approve/findings 없음. 기준40246e2의 기존 표지판·행동 수정 등 모든 dirty 변경을 보존했다. root가 실제 한 줄 diff와 Unity readback을 확인했다.
+- 검증: Unity에서 Grass/통행 가능/비용3/정확한 GUID를 읽었고 기존 Navigation 검사1658개와 scoped diff check를 통과했다. C# 미변경으로 새 컴파일은 불필요했다. 수정 후 실제 Play에서 같은 건축가가 남쪽 y≈0.5에서 북쪽 y10.5로 이동하여 차단 띠를 통과했다. 웨이브1의 적은 성벽 앞에서 공격 중이었고 해당 성벽 HP268→264(2초), IsUnderAttack=true를 확인했다. 정지해 보이는 적의 이 표본은 실제 공격 상태였다.
+- 모든 역할의 전체 웨이브/전투 복구를 검증한 것은 아니다. 이전 Play 종료 시 Housing/Tilemap destroyed-reference와 inactive-Animator 로그는 별도 범위이며 이번 원인으로 단정하지 않았다. Play 종료 후 DefenseTest 단일 active/loaded·clean, 씬 저장 없음. 작업 기록 `.harness-runs/wave-stall-20261009/scene-work.md`, 원본 증거 `live/`, 독립 결과 `review.json`. 새 검사 코드·스크린샷·전역 설정 변경 없음, 보정0/2회, 커밋·푸시하지 않음.
+
+# DefenseTest NPC 행동 복구 — 2026-10-09 구현 완료
+
+- 승인된 후속 계획에 따라 Defense 전용 GuardActionCost의 허기·갈증·피로 비용을 각0.3/초로 분리하고 기존0.97 중단 기준을 보존했다. 병사 판단은 실제 배정된 DutyPosition을 사용하며 피로0 수면 후보를 제외한다. 살아 있는 적이 있으면 기존 공격 대상 우선순위 다음에 긴급 방어 복귀를 선택하고 태업·생활·최초 귀가보다 우선한다. 긴급 복귀의 반복 취소를 막고 마지막 적 제거 후 평상시 판단으로 돌아간다.
+- 건설자는 Homeless 기여분을 제외한 불만이 태업 기준 미만이면 House 신축을 수행할 수 있다. 입주 후 남은 Homeless 기여도 같은 기준으로 처리하며 실제 불만·태업 값은 유지한다. 선택 시점과 작업 도중 같은 정책을 검사하고 다른 건물·업그레이드·유지보수 제한, 긴급 욕구·도주·예약 해제와 기존 공사 진행률은 보존한다.
+- 역할: `/root/behavior_code` 코드와 소유 문서, `/root/behavior_assembly` 전용 SO·씬 참조와 제한적 Play, `/root/behavior_review` 별도 읽기 전용 리뷰. 기준40246e2; 기존 표지판·타일맵·문서 변경을 보존했다. 이 작업의 씬 delta는 보관한 시작 씬 대비 `_guardCost` GUID 한 줄이며 공유 GuardActionCost와 다른 씬은 변경하지 않았다. DefenseSetup의 향후 전용 비용 생성만 수정했고 전체 재생성은 실행하지 않았다.
+- 검증: strict Unity 컴파일 오류0/경고0, 기존 BuildingConstructionTests15/15, 새 SO 값·GUID·씬 참조 Unity readback, scoped diff 검사 통과. 전체 씬 HEAD diff의 공백8건은 이전 표지판 작업에서 보존한 baseline 블록 재배치이며 이번 변경의 공백 오류가 아니다. 독립 리뷰 Approve/findings 없음으로 컨벤션·소유권·의존 방향·수명주기·변경 범위를 확인했다. 보정0/2회, 이후 코드·에셋 수정 없음.
+- 승인된 Play를 시도했으나 Editor의 isPlaying=true/isPaused=false/timeScale1 상태에서도 frameCount2/time0.02가 진행되지 않았다. 기존 focus/GameView/autotick 확인으로 해소되지 않아 행동 PASS/FAIL을 판정하지 않았다. 자동 확인 미검증: 보급 후 동쪽 복귀, 피로0 반복 방지, 태업 중 근접/궁병 공격과 피해, 마지막 적 제거 후 생활 전환, 태업 전후 주택 완공과 다른 업무 제한. 사람 Play 확인이 남아 있다. 임시 WaveController 변경을 복원하고 Play를 종료했으며 DefenseTest 단일 active/loaded·clean 상태다. 새 테스트·검증 helper·스크린샷·runtime 저장은 없다.
+- 작업 기록 `.harness-runs/defense-behavior-20261009/scene-work.md`, 원본 증거 `code/compile.json`, `construction-tests.json`, `assembly/`, `play/`, `review.json`. 구현·정적 검증 완료와 실제 플레이 확인은 구분한다. 이번 변경은 커밋·푸시하지 않았다.
+
+# DefenseTest 빈 부지 표지판 — 2026-10-09
+
+- 밭처럼 보이던 EmptyPlot 11개를 새 망치 문양 나무 표지판으로 교체했다. 빈 부지6개는 표시하고 기존 완공 시설5개는 편집 상태에서도 숨긴다. 실제 농장 이미지는 유지하며 C#·게임 규칙은 변경하지 않았다. 이미지/배선 규격은 [Construction Presentation](../Systems/Construction/Presentation.md)에 기록했다.
+- 기준 `40246e2`, disk/Git clean이었으나 열린 씬에 미저장 편집이 있었다. live Editor에서 표지판 필드만 수정하고 DefenseTest만 저장해 기존 타일맵·루트 편집도 보존했다. 새 PNG/meta와 씬·소유 문서가 변경되었다.
+- 그래픽 `/root/plot_sign_art`, 배선 `/root/plot_sign_assembly`, 독립 리뷰 `/root/plot_sign_review` Approve/findings 없음. Unity importer와 11개 Sprite 참조·크기, 활성6/비활성5, 저장 후 clean/ready/stopped를 확인했다. 실제 diff의 타일맵 변경은 기존 미저장 내용이며, `git diff --check`의 공백8건은 baseline과 동일한 블록 재배치에서 발생하여 그대로 보존했다. raw 검사는 통과로 보고하지 않는다.
+- 작업 기록 `.harness-runs/plot-sign-20261009/scene-work.md`, 원본 생성 prompt/이미지 검사 `art/`, Unity 적용/readback/save 결과 `assembly/`. 보정0/2회, C# 미변경으로 재컴파일 없음. 자동 Play/화면·전체 Missing Script 검사는 미실행, 사람 화면/상태 전환 확인은 남아 있다. 전체 DefenseSetup 재생성 시 이 씬의 표지판 설정은 다시 적용해야 한다. 커밋·푸시는 하지 않았다.
+
 # 북쪽 성벽 방어 — 2026-10-09 구현 완료
 
 - 사용자 승인 [방어 1차 계획](../Archive/Plans/Defense_Implementation_Plan.md)을 구현했다. 구간별 성벽, 검병·궁병, 주민 도주/전투 불능, 시설 파괴·복구, 웨이브, 이벤트 알림/선택과 시청 게임오버를 새 DefenseTest로 연결했다. 신규 전투·내구도·복구·웨이브·이벤트 수치는 `Assets/Data/ScriptableObject/Defense`에서 편집한다.

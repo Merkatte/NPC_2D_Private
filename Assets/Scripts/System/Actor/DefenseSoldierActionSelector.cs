@@ -34,7 +34,9 @@ public sealed class DefenseSoldierActionSelector : BaseNPCActionSelector
         DefenseActor actor = defenseResponse ? defenseResponse.GetActor(component) : null;
         if (!actor || _decider == null || !_guardCost) return BuildFallbackIdleQueue(component, stat);
         NPCDecision decision = _decider.Decide(stat, NPCType.Guard, component.Position, _dutyCost,
-            sleepRecoveryPerSecond: life?.InnFatigueRecoveryPerSecond ?? 0f);
+            sleepRecoveryPerSecond: life?.InnFatigueRecoveryPerSecond ?? 0f,
+            guardDuty: new GuardDutyDecisionContext(actor.DutyPosition,
+                actor.CanAct && actor.IsSoldier && (actor.Role != NPCType.Archer || actor.ArcherWall)));
         if (stat.IsOnStrike || decision.Intent == NPCIntent.Eat || decision.Intent == NPCIntent.Drink || decision.Intent == NPCIntent.Sleep)
             return BuildLeisureQueue(decision, _decider, component, stat, MoveMode.Navigation, _navigation, _wanderCost, _random);
         if (_guardCost.ShouldInterrupt(stat)) return BuildFallbackIdleQueue(component, stat);

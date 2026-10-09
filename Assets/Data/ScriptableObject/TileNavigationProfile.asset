@@ -23,6 +23,7 @@ MonoBehaviour:
     _walkable: 1
     _cost: 3
     _tiles:
+    - {fileID: 11400000, guid: d4d1c1346d16e144bb83e9d5f17832bb, type: 2}
     - {fileID: 11400000, guid: 9e9abe3d288f38e47b680ca9ec8e51a2, type: 2}
     - {fileID: 11400000, guid: dbe482a66e2103442af31a079804881e, type: 2}
     - {fileID: 11400000, guid: dc8311cd3d16585459bbff9d8f02f767, type: 2}

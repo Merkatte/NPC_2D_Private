@@ -6,6 +6,7 @@ public sealed class BuildAction : DefaultAction
     private ConstructionReservation _reservation;
     private BuildActionCost _cost;
     private Component _providerOwner;
+    private BuildingPlot _plot;
     private bool _isWorking;
     public BuildAction() : base(ActionType.Build) { }
 
@@ -15,7 +16,10 @@ public sealed class BuildAction : DefaultAction
         _reservation = context.Request?.Reservation as ConstructionReservation;
         _cost = context.CostInfo as BuildActionCost;
         _providerOwner = context.InteractionProvider as Component;
+        _plot = context.InteractionProvider as BuildingPlot;
     }
+    protected override bool IsWorkAvailable()
+        => base.IsWorkAvailable() || BuilderWorkPolicy.CanWorkOn(actionContext.Stat, _plot);
     public override void Start()
     {
         base.Start();
@@ -74,6 +78,7 @@ public sealed class BuildAction : DefaultAction
         Cleanup();
         _reservation = null;
         _providerOwner = null;
+        _plot = null;
         _cost = null;
         base.Clear();
     }

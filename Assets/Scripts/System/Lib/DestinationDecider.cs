@@ -47,6 +47,7 @@ public class DestinationDecider
         public bool AllowSleep;
         public bool IncludeRoleActivity;
         public float SleepRecoveryPerSecond;
+        public GuardDutyDecisionContext? GuardDuty;
         public float Health;
         public float HealthMax;
         public float Fatigue;
@@ -163,15 +164,15 @@ public class DestinationDecider
     }
 
     public NPCDecision Decide(IStatView stat, NPCType npcType, Vector3 npcLoc, StatEffect workCost,
-        bool allowSleep = true, float sleepRecoveryPerSecond = 0f)
-        => DecideCore(stat, npcType, npcLoc, workCost, allowSleep, true, sleepRecoveryPerSecond);
+        bool allowSleep = true, float sleepRecoveryPerSecond = 0f, GuardDutyDecisionContext? guardDuty = null)
+        => DecideCore(stat, npcType, npcLoc, workCost, allowSleep, true, sleepRecoveryPerSecond, guardDuty);
 
     public NPCDecision DecideNeeds(IStatView stat, Vector3 npcLoc, bool allowSleep,
         float sleepRecoveryPerSecond = 0f)
-        => DecideCore(stat, default, npcLoc, null, allowSleep, false, sleepRecoveryPerSecond);
+        => DecideCore(stat, default, npcLoc, null, allowSleep, false, sleepRecoveryPerSecond, null);
 
     private NPCDecision DecideCore(IStatView stat, NPCType npcType, Vector3 npcLoc, StatEffect workCost,
-        bool allowSleep, bool includeRoleActivity, float sleepRecoveryPerSecond)
+        bool allowSleep, bool includeRoleActivity, float sleepRecoveryPerSecond, GuardDutyDecisionContext? guardDuty)
     {
         if (!_destinationDB || !_tuning || stat == null)
             return NPCDecision.Idle(npcLoc);
@@ -180,6 +181,7 @@ public class DestinationDecider
         before.AllowSleep = allowSleep;
         before.IncludeRoleActivity = includeRoleActivity;
         before.SleepRecoveryPerSecond = sleepRecoveryPerSecond;
+        before.GuardDuty = guardDuty;
         float moveSpeed = stat.GetMoveSpeed;
         int depth = Mathf.Clamp(_tuning.LookAheadDepth, 1, NPCDecisionTuning.MaxLookAheadDepth);
 
@@ -353,6 +355,9 @@ public class DestinationDecider
 
     private void AddSleepCandidate(List<Candidate> candidates, BuildingType key, Vector3 pos, float travelTime, NeedSnapshot state, DestinationInfo destination)
     {
+        if (state.Fatigue <= 0f)
+            return;
+
         // Mirrors SleepAction's own full-recovery calculation (stat.ChangeFatigue(-stat.GetFatigue)).
         StatEffect sleepEffect = new StatEffect(fatigueDelta: -state.Fatigue);
 
@@ -430,8 +435,17 @@ public class DestinationDecider
     /// </summary>
     private void AddGuardDutyCandidate(List<Candidate> candidates, NeedSnapshot state, Vector3 pos, float moveSpeed, StatEffect dutyCost)
     {
-        if (!TrySelectNearest(_destinationDB, BuildingType.GuardPost, ActionType.Guard, pos,
-            out var destination, out var provider, out Vector3 postPos))
+        DestinationInfo destination = null;
+        IInteractionProvider provider = null;
+        Vector3 postPos;
+        if (state.GuardDuty.HasValue)
+        {
+            if (!state.GuardDuty.Value.IsAvailable)
+                return;
+            postPos = state.GuardDuty.Value.Position;
+        }
+        else if (!TrySelectNearest(_destinationDB, BuildingType.GuardPost, ActionType.Guard, pos,
+            out destination, out provider, out postPos))
             return;
 
         float seconds = _tuning.GuardDutyEvaluationSeconds;

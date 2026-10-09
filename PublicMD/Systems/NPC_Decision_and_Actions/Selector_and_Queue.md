@@ -94,6 +94,8 @@ BaseNPCActionSelector.BuildLeisureQueue는 decider가 선택한 Eat/Drink/Sleep�
 
 ## 선택적 주거 queue
 
+업무 존재와 HomeStay 중단은 role별 HasAvailableWork의 결과를 그대로 사용한다. 태업 제한과 승인된 Builder 주택 신축 예외는 해당 역할이 판단하며 공통 selector가 별도 태업 gate로 예외를 차단하지 않는다. 최초 귀가 우선순위는 유지한다.
+
 ResidentHousingState overload는 최초 배정 귀가를 먼저 수행하며 업무가 없으면 DecideNeeds의 Eat/Drink 또는 HomeStay를 선택한다. 기존 3인수 경로는 유지한다. role별 HasAvailableWork는 provider 가용성·cargo·건설 슬롯·경비 후보를 읽기만 하며 예약이나 위치 난수/전투 target mutation을 하지 않는다. 집에서 ShouldReplan은 생활 외출 또는 새 업무가 있을 때만 queue 전환을 요청한다. WorkerNPC는 이를 공통 주기 hook으로 호출한다.
 
 주거 work queue에는 HousingLifeSettings를 명시적으로 전달하며 공유 selector에 주민별 상태를 저장하지 않는다. 대여한 SleepAction에는 회복 설정을 연결하고 pooled Clear에서 제거한다. HomeStayAction은 ActionContext를 변경하지 않고 Init(context,residence)로 상태를 받는다. 자세한 규칙은 [Housing Life](../Housing/Life.md)를 따른다.

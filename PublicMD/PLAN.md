@@ -31,6 +31,8 @@
 
 ### 현재 우선순위
 
+2026-10-09 후속 구현 완료: DefenseTest 병사 생활 왕복·방어 복귀, 피로0 수면 반복, 무주택 태업으로 주택 신축이 막히는 조건을 교정했다. SPEC의 후속 규칙을 적용하고 strict Unity 컴파일 오류/경고0, 기존 건설15/15, 독립 리뷰 Approve를 확인했다. 승인된 제한적 Play 재현은 Editor가 재생·비일시정지인데도 frameCount2에서 진행되지 않아 행동 결과 미검증으로 남겼다. 상세 검사·사람 확인 항목은 PROGRESS와 `.harness-runs/defense-behavior-20261009/scene-work.md`를 따른다.
+
 2026-10-09 구현 완료: [북쪽 성벽 방어](Archive/Plans/Defense_Implementation_Plan.md). DefenseTest에 전투·피해·복구·웨이브·이벤트를 연결했다. 임시 밸런스와 사람 플레이/화면 확인은 후속이며 기존 Phase 완료 판정과 구분한다.
 
 2026-10-08 구현 완료: [주택·입주·생활·업그레이드](Archive/Plans/Housing_Implementation_Plan.md). BuildingTest에 CSV 복수 옵션/재료, 자동 입주, 집 생활과 여관 회복, 기존 건축가 업그레이드와 주택 창을 연결했다. Unity 컴파일·기존 건설15/자원6 검사·탐색 순수1446 checks·독립 리뷰 Approve를 확인했다. 기존 다른 씬은 보존했으며 최종 밸런스와 사람 플레이/화면 확인은 남아 있다. 실제 결과는 PROGRESS에서 관리한다.

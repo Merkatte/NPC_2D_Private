@@ -43,6 +43,9 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
             CombatTargetHandle selected = component.CombatRuntimeState.TargetHandle;
             if (desired) return (actor.Role != NPCType.Archer || current != ActionType.DefenseStation) &&
                 (current != ActionType.DefenseAttack && current != ActionType.Move || !ReferenceEquals(selected.Target, desired));
+            if (_battlefield.AliveEnemyCount > 0)
+                return current != ActionType.DefenseStation || !actor.IsEmergencyDuty;
+            if (actor.IsEmergencyDuty) return true;
             return current == ActionType.DefenseAttack || (current == ActionType.Move && selected.Target != null);
         }
         bool threat = _battlefield.IsAlert && _battlefield.FindEnemy(actor.Position, actor.Settings.FleeDetectionRange, false);
@@ -60,9 +63,11 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
             CombatTarget target = SoldierTarget(actor);
             if (actor.Role == NPCType.Archer && target &&
                 ((Vector2)(actor.Position - actor.DutyPosition)).sqrMagnitude > 0.04f)
-            { queue = BuildDutyQueue(selector, actor); return true; }
+            { queue = BuildDutyQueue(selector, actor, isEmergencyDuty: true); return true; }
             if (target) { queue = BuildCombatQueue(selector, actor, target, null); return true; }
             component.CombatRuntimeState.ClearTarget();
+            if (_battlefield.AliveEnemyCount > 0)
+            { queue = BuildDutyQueue(selector, actor, isEmergencyDuty: true); return true; }
             return false;
         }
         CombatTarget threat = _battlefield.IsAlert ? _battlefield.FindEnemy(actor.Position, actor.Settings.FleeDetectionRange, false) : null;
@@ -98,14 +103,15 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
         DefenseWallSegment wall = _battlefield.FindWall(actor.Position, false, actor.Navigation);
         return wall ? BuildCombatQueue(selector, actor, wall.Target, wall) : selector.CreateDefenseIdle(actor.Component, actor.Stat);
     }
-    public Queue<IAction> BuildDutyQueue(BaseNPCActionSelector selector, DefenseActor actor, GuardActionCost cost = null)
+    public Queue<IAction> BuildDutyQueue(BaseNPCActionSelector selector, DefenseActor actor, GuardActionCost cost = null,
+        bool isEmergencyDuty = false)
     {
         actor.Component.CombatRuntimeState.ClearTarget();
         var rented = new List<IAction>();
         IAction action = selector.RentDefenseAction(ActionType.DefenseStation);
         if (action is DefenseStationAction station)
         {
-            station.Init(new ActionContext(actor.Component, actor.Stat, cost: cost), actor);
+            station.Init(new ActionContext(actor.Component, actor.Stat, cost: isEmergencyDuty ? null : cost), actor, isEmergencyDuty);
             rented.Add(station);
         }
         else if (action != null) selector.ReturnAction(action);

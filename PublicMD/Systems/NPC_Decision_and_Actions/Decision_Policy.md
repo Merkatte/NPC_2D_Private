@@ -33,6 +33,7 @@ DestinationDecider.Decide(stat, role, position, work cost)
 |---|---|
 | `Assets/Data/ScriptableObject/Script/NPCDecisionTuning.cs` | 위험·시간·보상·look-ahead의 공유 판단 tuning |
 | `Assets/Data/Struct/NPCDecision.cs` | decider가 selector에 반환하는 단일 semantic decision 값 |
+| `Assets/Data/Struct/GuardDutyDecisionContext.cs` | 호출자가 제공하는 지정 경계 위치·가용성의 읽기 전용 값 |
 | `Assets/Scripts/Enum/NPCIntent.cs` | Work·Eat·Drink·Sleep·Guard·Idle 의도 식별 |
 | `Assets/Scripts/Interface/IRandomSource.cs` | 재현 가능한 gameplay 난수 계약 |
 | `Assets/Scripts/System/Lib/DestinationDecider.cs` | 직업 중립 후보 생성과 bounded look-ahead utility 정책 |
@@ -56,7 +57,8 @@ DestinationDecider.Decide(stat, role, position, work cost)
 - 모든 후보는 같은 utility 단위에서 비교한다.
 - hard safety filter와 soft risk penalty의 의미를 섞지 않는다.
 - 미래 상태는 예측값이며 실제 stat을 미리 변경하지 않는다.
-- Guard duty 후보는 GuardPost의 등록 위치와 `ActionType.Guard` provider 가용성을 모두 요구한다. 사망하거나 구성되지 않은 초소는 후보가 되지 않으며, 후보 평가 중 순찰 난수는 소비하지 않는다.
+- Guard duty 후보는 선택적 GuardDutyDecisionContext가 있으면 명시된 위치·가용성을 사용한다. 없으면 기존 GuardPost 등록 위치와 `ActionType.Guard` provider 가용성을 모두 요구한다. 가용하지 않은 명시적 자리는 GuardPost로 대체하지 않는다. NeedSnapshot은 이 값을 모든 look-ahead에 보존하며 점수·비용 공식과 난수 소비 규칙은 바뀌지 않는다.
+- 회복할 피로가 0 이하이면 Sleep 후보를 만들지 않는다. 별도 만족 임계값은 추가하지 않는다.
 
 ## 검증 도구와 제약
 

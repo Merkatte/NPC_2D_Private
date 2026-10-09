@@ -430,6 +430,12 @@ public static class DefenseSetup
             if (costs.GetArrayElementAtIndex(i).FindPropertyRelative("actionCost").objectReferenceValue is GuardActionCost value)
                 guardCost = value;
         if (!guardCost) throw new InvalidOperationException("Defense soldier needs the existing GuardActionCost.");
+        guardCost = CopyAsset<GuardActionCost>(AssetDatabase.GetAssetPath(guardCost), "GuardActionCost.asset");
+        guardCost.HungerPerSecond = 0.3f;
+        guardCost.ThirstPerSecond = 0.3f;
+        guardCost.FatiguePerSecond = 0.3f;
+        EditorUtility.SetDirty(guardCost);
+        AssetDatabase.SaveAssetIfDirty(guardCost);
         Set(soldier, "_guardCost", guardCost);
         foreach (BaseNPCActionSelector selector in All<BaseNPCActionSelector>(scene)) Set(selector, "defenseResponse", response);
         foreach (BuilderActionSelector builder in All<BuilderActionSelector>(scene)) Set(builder, "_maintenance", maintenance);

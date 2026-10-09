@@ -25,6 +25,8 @@ SO의 `_dissatisfactionSettings` 안에 `_increasePerSecond`, `_decreasePerSecon
 
 ## 연결과 수명
 
+IsOnStrikeExcluding(cause)는 해당 원인의 활성 여부와 무관하게 잔여 기여분을 제외한 합계가 태업 기준 이상인지 읽기만 한다. 실제 합계·태업·원인 상태는 바꾸지 않는다. [Builder](Builder.md)의 주택 신축 예외가 Homeless를 제외한 판정을 사용하며 입주 뒤 감소 중인 무주택 잔량에도 같은 규칙을 적용한다.
+
 WorkerNPC의 `_dissatisfaction`은 같은 NPCGirl 루트 component다. Init의 Initialize(role,state)와 disable의 Unbind만 수행하며 불만 정책을 갖지 않는다. NPCDissatisfaction은 시설 검색·queue 선택 없이 기본 실행 순서 -100에서 Time.deltaTime을 갱신한다. 일시정지(deltaTime=0), 미초기화·Enemy·비활성 중에는 누적하지 않는다. Unbind/OnDisable은 원인·잔량·상태 참조를 지워 pool 재사용에 넘기지 않는다.
 
 외부 domain은 활성 component의 `TrySetCauseActive(DissatisfactionCause.Homeless, true/false)`를 호출한다. 실패 시 상태는 변경되지 않는다. 읽기는 IStatView의 CurrentDissatisfaction·MaximumDissatisfaction·IsOnStrike, 원인별 값은 state.GetContribution을 사용한다.

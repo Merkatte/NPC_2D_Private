@@ -50,6 +50,15 @@ public sealed class DissatisfactionState
         return 0f;
     }
 
+    public bool IsOnStrikeExcluding(DissatisfactionCause cause)
+    {
+        double total = 0d;
+        foreach (CauseState entry in _causes)
+            if (entry.Cause != cause)
+                total += entry.Amount;
+        return total >= _settings.StrikeThreshold;
+    }
+
     public void Tick(float seconds, float recoveryBonusPerSecond = 0f)
     {
         if (float.IsNaN(seconds) || float.IsInfinity(seconds) || seconds <= 0f)

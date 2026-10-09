@@ -6,14 +6,22 @@ public sealed class DefenseStationAction : DefaultAction
     private DefenseActor _actor;
     private Vector3 _destination;
     private bool _isClimbing;
+    private bool _isEmergencyDuty;
     private float _idleElapsed;
     private const float StationReassessmentSeconds = 0.5f;
     public DefenseStationAction() : base(ActionType.DefenseStation) { }
-    public void Init(ActionContext context, DefenseActor actor) { base.Init(context); _actor = actor; }
+    public void Init(ActionContext context, DefenseActor actor, bool isEmergencyDuty = false)
+    {
+        Clear();
+        base.Init(context);
+        _actor = actor;
+        _isEmergencyDuty = isEmergencyDuty;
+    }
     public override void Start()
     {
         base.Start(); if (IsFinished) return;
         if (!_actor) { Fail("Station requires its assigned actor."); return; }
+        _actor.SetEmergencyDuty(_isEmergencyDuty);
         _destination = _actor.DutyPosition;
         _isClimbing = _actor.Role == NPCType.Archer && _actor.ArcherWall &&
             ((Vector2)(_actor.Position - _actor.ArcherWall.TopPosition)).sqrMagnitude < 0.09f;
@@ -46,7 +54,17 @@ public sealed class DefenseStationAction : DefaultAction
         _idleElapsed += Time.deltaTime;
         if (_idleElapsed >= StationReassessmentSeconds) Complete();
     }
-    public override void Stop() { _follower.Clear(); base.Stop(); }
+    private void ClearEmergencyDuty()
+    {
+        if (_actor) _actor.SetEmergencyDuty(false);
+    }
+    protected override void Complete() { ClearEmergencyDuty(); base.Complete(); }
+    protected override void RequestReplan() { ClearEmergencyDuty(); base.RequestReplan(); }
+    protected override void Fail(string reason) { ClearEmergencyDuty(); base.Fail(reason); }
+    public override void Stop() { _follower.Clear(); ClearEmergencyDuty(); base.Stop(); }
     public override void Clear()
-    { _follower.Clear(); _actor = null; _destination = default; _isClimbing = false; _idleElapsed = 0f; base.Clear(); }
+    {
+        _follower.Clear(); ClearEmergencyDuty(); _actor = null; _destination = default;
+        _isClimbing = false; _isEmergencyDuty = false; _idleElapsed = 0f; base.Clear();
+    }
 }

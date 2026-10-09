@@ -13,7 +13,7 @@
 
 `BuilderActionSelector` → 기존 `DestinationDecider` → Eat/Drink/Sleep이면 Navigated Move + 기존 생활 action. 긴급 욕구가 해소 불가능하면 Idle로 대기한다. 그 외에는 BuildingPlotRegistry에서 신청 순서로 가용 공사를 찾아 이동 전에 예약한다. 정원이 찬 부지는 건너뛴다. 공사가 없으면 `TilemapNavigation.TryGetRandomReachablePosition`으로 배회 위치를 정하고 `WanderAction` 하나를 대여한다.
 
-태업이면 건설 후보 조회·예약 전에 공통 생활/배회 queue를 선택한다. 선택된 생활 action 또는 해소 불가 긴급 욕구의 Idle, 그 외 배회를 BaseNPCActionSelector가 조립한다. Wander 실행 규칙은 [Needs Actions](NPC_Decision_and_Actions/Needs_Actions.md)를 따른다.
+태업이면 기본적으로 공통 생활/배회 queue를 선택한다. 단, Homeless 기여분을 제외한 불만이 태업 기준 미만이면 House 신축(IsUpgrade=false)만 후보에 포함한다. 입주 후 회복 중인 Homeless 잔량도 제외하며 실제 태업·불만 상태는 유지한다. 업그레이드·다른 공사·유지보수에는 예외가 없다. 선택된 생활 action 또는 해소 불가 긴급 욕구의 Idle이 공사보다 우선하고, 그 외 배회를 BaseNPCActionSelector가 조립한다. Wander 실행 규칙은 [Needs Actions](NPC_Decision_and_Actions/Needs_Actions.md)를 따른다.
 
 Selector는 생활 utility를 복제하지 않는다. 시설 transaction은 기존 provider, queue 수명은 WorkerNPC, 경로 조회는 Navigation, 이동·망치 표시는 NPCComponent가 소유한다.
 
@@ -22,6 +22,7 @@ Selector는 생활 utility를 복제하지 않는다. 시설 transaction은 기�
 | 경로 | 책임 |
 |---|---|
 | `Assets/Scripts/System/Actor/BuilderActionSelector.cs` | 생활/건설/배회 queue 선택·예약·대여·실패 반환 |
+| `Assets/Scripts/System/Actor/BuilderWorkPolicy.cs` | selector와 실행 action이 공유하는 태업 중 House 신축 자격 조회 |
 | `Assets/Scripts/System/Action/BuildAction.cs` | NPCPathFollower 이동·도착 후 작업·중단과 lease 정리 |
 | `Assets/Data/ScriptableObject/Script/BuildActionCost.cs` | CSV 작업 설정과 공통 긴급 욕구 판단 연결 |
 
@@ -53,8 +54,8 @@ Builder selector의 _buildingPlots/_buildCost를 scene registry와 BuildActionCo
 
 ## 불만도·태업 연결
 
-Build context는 RequiresWorkAvailability=true다. 태업이면 Start/Tick의 공통 검사에서 이동·욕구 비용·작업 기여 이전에 재판단하며 BuildAction.Cleanup이 lease와 경로·도구 상태를 반환한다. 이미 기여한 부지 progress는 보존된다. 회복 뒤 다음 선택에서 새 예약을 얻는다.
+Build context는 RequiresWorkAvailability=true다. Start/Tick의 work predicate는 BuilderWorkPolicy를 사용해 태업 중 House 신축 자격을 현재 상태로 확인한다. 예외가 사라지면 이동·욕구 비용·작업 기여 이전에 재판단하며 BuildAction.Cleanup이 lease와 경로·도구 상태를 반환한다. 정책의 공사 자격은 CanReserve와 분리되어 자신의 예약이 마지막 슬롯이어도 실행을 계속한다. 이미 기여한 부지 progress는 보존된다. 회복 뒤 다음 선택에서 새 예약을 얻는다.
 
 ## 주거 연결
 
-HasAvailableWork는 navigation/cost가 준비되고 예약 가능한 부지가 있는지만 읽으며 예약하지 않는다. 실제 queue 생성도 같은 진입 조건을 사용한 뒤 기존 FIFO 예약을 수행한다. 주거가 주입되면 공사가 없을 때 귀가하고 새 공사가 생기면 selector hook으로 기존 생활/공사 판단을 다시 실행한다. 회복 속도는 명시적으로 전달한 HousingLifeSettings를 decider와 SleepAction이 함께 사용한다. [Housing Life](Housing/Life.md)를 따른다.
+HasAvailableWork는 navigation/cost가 준비되고 정책상 허용되며 예약 가능한 부지가 있는지만 읽으며 예약하지 않는다. 실제 queue 생성도 같은 정책으로 후보를 거른 뒤 기존 FIFO 예약을 수행한다. 주거가 주입되면 공사가 없을 때 귀가하고 새 공사가 생기면 selector hook으로 기존 생활/공사 판단을 다시 실행한다. 회복 속도는 명시적으로 전달한 HousingLifeSettings를 decider와 SleepAction이 함께 사용한다. [Housing Life](Housing/Life.md)를 따른다.

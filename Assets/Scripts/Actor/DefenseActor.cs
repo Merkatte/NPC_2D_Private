@@ -27,6 +27,7 @@ public sealed class DefenseActor : MonoBehaviour
     public bool IsSoldier => Role == NPCType.Guard || Role == NPCType.Archer;
     public bool CanAct => _stat != null && State == DefenseActorState.Active && _stat.CurrentHealth > 0f;
     public bool IsFleeing => _isFleeing;
+    public bool IsEmergencyDuty { get; private set; }
     public Vector3 Position => _worker.Component.Position;
     public Vector3 GuardPosition { get; private set; }
     public DefenseWallSegment ArcherWall => _archerSlot?.Wall;
@@ -46,6 +47,7 @@ public sealed class DefenseActor : MonoBehaviour
         if (_isRegistered && Battlefield) Battlefield.Unregister(this);
         _isRegistered = false;
         _stat = stat; Role = role; State = DefenseActorState.Active; _isFleeing = false;
+        IsEmergencyDuty = false;
         CommittedWall = null; SelectedBreach = null; CurrentMaintenance = null;
         if (!Battlefield || !_worker || !_combatTarget || !_settings)
         { Debug.LogError($"DefenseActor '{name}' requires battlefield, worker, target and settings.", this); return; }
@@ -63,6 +65,7 @@ public sealed class DefenseActor : MonoBehaviour
         _isFleeing = fleeing;
         if (fleeing) FleeStarted?.Invoke();
     }
+    public void SetEmergencyDuty(bool isEmergencyDuty) { IsEmergencyDuty = isEmergencyDuty; }
     private void Update()
     {
         if (_stat != null && State == DefenseActorState.Active && _stat.CurrentHealth <= 0f)
@@ -76,6 +79,7 @@ public sealed class DefenseActor : MonoBehaviour
         _worker.SetActionExecutionEnabled(false);
         _worker.Component.CombatRuntimeState.ClearTarget();
         SetFleeing(false);
+        IsEmergencyDuty = false;
         if (_presentation) _presentation.ShowDowned();
         Downed?.Invoke();
         if (IsEnemy)
@@ -93,6 +97,7 @@ public sealed class DefenseActor : MonoBehaviour
         _isRegistered = false;
         _archerSlot?.Dispose(); _archerSlot = null;
         _stat = null; _navigation = null; CommittedWall = null; CurrentMaintenance = null; SelectedBreach = null; _isFleeing = false;
+        IsEmergencyDuty = false;
     }
     private void OnDisable() { Unbind(); }
 }

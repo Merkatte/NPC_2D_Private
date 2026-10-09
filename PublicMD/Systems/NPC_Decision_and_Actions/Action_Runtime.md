@@ -78,6 +78,8 @@ ActionContext에 선택적인 `INavigationService Navigation`이 추가됐다.
 
 ## 불만도·태업 연결
 
+DefaultAction의 protected IsWorkAvailable 조회는 기본 태업 제한을 유지한다. BuildAction만 [Builder](../Builder.md)의 주택 신축 예외를 같은 flag 아래에서 재검사한다. 공통 lifecycle은 역할/부지 규칙을 직접 알지 않으며 다른 업무 action의 동작은 유지한다.
+
 ActionContext.RequiresWorkAvailability는 selector가 업무와 업무 이동에 설정한다(기본 false로 기존 호출 호환). DefaultAction.Start의 ReplanIfWorkUnavailable와 Move/Farming/Harvest/Deposit/Build/Guard/Attack Tick의 같은 검사는 태업이면 효과 이전에 ReplanRequested를 반환한다. 시작 시 도구·이동·예약 작업을 먼저 실행하지 않는다. 기존 Stop/Clear와 action별 종료 정리는 경로·도구·건설 lease를 반환하며 미완료 작업을 성공으로 처리하지 않는다. 확정된 생산물·cargo·공사 진행률은 보존한다. Enemy Attack과 생활 이동은 work flag를 설정하지 않는다.
 
 주거 연결은 ActionType 끝에 HomeStay를 추가하고 ActionPool factory를 등록한다. HomeStay의 별도 Init overload로 ResidentHousingState를 전달하며 ActionContext의 단일 provider 계약과 필드는 그대로 유지한다. 구체 실행은 [Housing Life](../Housing/Life.md)가 소유한다.

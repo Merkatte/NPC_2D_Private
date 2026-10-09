@@ -40,10 +40,10 @@ public sealed class BuilderActionSelector : BaseNPCActionSelector
     public override bool HasAvailableWork(NPCStat stat, NPCComponent component)
     {
         if (stat != null && !stat.IsOnStrike && _maintenance && _maintenance.FindAvailable()) return true;
-        if (stat == null || stat.IsOnStrike || !component || !_navigation || !_navigation.IsReady ||
+        if (stat == null || !component || !_navigation || !_navigation.IsReady ||
             !_buildingPlots || !_buildCost || !_buildCost.IsConfigured) return false;
         foreach (BuildingPlot plot in _buildingPlots.Plots)
-            if (plot && plot.CanReserve) return true;
+            if (plot && plot.CanReserve && BuilderWorkPolicy.CanWorkOn(stat, plot)) return true;
         return false;
     }
 
@@ -66,7 +66,8 @@ public sealed class BuilderActionSelector : BaseNPCActionSelector
 
         NPCDecision decision = _decider.Decide(stat, NPCType.Builder, component.Position, null,
             sleepRecoveryPerSecond: life?.InnFatigueRecoveryPerSecond ?? 0f);
-        if (stat.IsOnStrike || decision.Intent == NPCIntent.Eat || decision.Intent == NPCIntent.Drink || decision.Intent == NPCIntent.Sleep)
+        if ((stat.IsOnStrike && !HasAvailableWork(stat, component)) ||
+            decision.Intent == NPCIntent.Eat || decision.Intent == NPCIntent.Drink || decision.Intent == NPCIntent.Sleep)
             return BuildLeisureQueue(decision, _decider, component, stat, MoveMode.Navigation,
                 _navigation, _wanderCost, _randomSource ? _random : null);
 
@@ -75,7 +76,7 @@ public sealed class BuilderActionSelector : BaseNPCActionSelector
             return BuildFallbackIdleQueue(component, stat);
 
         var rented = new List<IAction>();
-        DefenseMaintenanceSite maintenanceSite = _maintenance ? _maintenance.FindAvailable() : null;
+        DefenseMaintenanceSite maintenanceSite = !stat.IsOnStrike && _maintenance ? _maintenance.FindAvailable() : null;
         if (maintenanceSite && maintenanceSite.TryReserve(out MaintenanceLease maintenanceLease))
         {
             DefenseActor actor = defenseResponse ? defenseResponse.GetActor(component) : null;
@@ -91,7 +92,7 @@ public sealed class BuilderActionSelector : BaseNPCActionSelector
         {
             var candidates = new List<BuildingPlot>();
             foreach (BuildingPlot plot in _buildingPlots.Plots)
-                if (plot && plot.CanReserve) candidates.Add(plot);
+                if (plot && plot.CanReserve && BuilderWorkPolicy.CanWorkOn(stat, plot)) candidates.Add(plot);
             candidates.Sort((left, right) => left.ApplicationOrder.CompareTo(right.ApplicationOrder));
             foreach (BuildingPlot plot in candidates)
             {
