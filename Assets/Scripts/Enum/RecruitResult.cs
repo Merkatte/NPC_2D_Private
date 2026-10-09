@@ -4,4 +4,5 @@ public enum RecruitResult
     NotReady,
     NotEnoughGold,
     SpawnUnavailable,
+    NoArcherStation,
 }

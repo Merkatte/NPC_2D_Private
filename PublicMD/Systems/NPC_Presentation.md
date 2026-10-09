@@ -4,6 +4,8 @@
 
 NPC의 이동, 좌우 방향, 건물 출입, 작업 도구와 Animator 표현을 gameplay 판단에서 분리해 설명한다.
 
+Defense 전용 variant의 공격/Downed 자세와 자동 도주 말풍선은 [Defense Presentation](Defense/Presentation.md)이 소유한다. NPCComponent는 기존 방향·이동·도구 API를 제공하며 피해/도주/Downed 정책을 추가하지 않는다.
+
 ## 책임 경계
 
 - `NPCComponent`는 actor-local Unity 참조와 표현 API를 소유하며, plain C# runtime state(`CombatRuntimeState`, `WorkerInventory`)를 인라인으로 들고 그 표시 요청을 실제 Unity 조작으로 옮긴다.

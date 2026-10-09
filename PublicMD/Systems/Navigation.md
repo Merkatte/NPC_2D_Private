@@ -21,6 +21,10 @@ Tilemap의 지형을 노드 그리드로 만들고 고정 목적지까지 이동
 | `Assets/Data/ScriptableObject/Script/TileNavigationProfile.cs` | TileBase별 통행 가능 여부와 정수 비용 definition |
 | `Assets/Scripts/Interface/INavigationService.cs` | 준비 상태와 waypoint 질의 계약 |
 | `Assets/Scripts/Enum/NavigationFailure.cs` | 경로 실패 원인 |
+| `Assets/Scripts/Enum/NavigationAccess.cs` | Friendly/Enemy 경로 접근 값 |
+| `Assets/Scripts/Interface/INavigationRevision.cs` | 진행 중 경로가 관찰하는 topology revision |
+| `Assets/Scripts/System/Navigation/NavigationAccessService.cs` | faction 접근을 명시 주입하는 navigation adapter |
+| `Assets/Scripts/Actor/NavigationObstacle2D.cs` | disabled geometry와 faction mask 등록 및 통행 변경 알림 |
 
 ## 변경 유형별 최소 확인 범위
 
@@ -65,7 +69,7 @@ OpenSet은 index 배열을 가진 이진 최소 힙이다. 전체 목록 정렬�
 NPCGirl prefab과 NPCComponent에는 새 참조가 없다.
 
 Awake 또는 첫 질의에서 snapshot을 만들고 disable 시 비운다. 활성화 후 첫 질의는 다시 초기화한다.
-정사각형, 회전 없는 XY Grid만 지원한다. Play 중 타일/건물 변경 반영과 NPC 회피는 이번 범위 밖이다.
+정사각형, 회전 없는 XY Grid만 지원한다. 임의 타일 변경과 NPC 회피는 이번 범위 밖이다.
 SearchCount는 실제 A* 요청 수, LocalRouteCount는 직접 경로 수다. 선택 Gizmo는 노드와 출입구를 표시한다.
 
 ## 검증
@@ -74,3 +78,9 @@ SearchCount는 실제 A* 요청 수, LocalRouteCount는 직접 경로 수다. �
 `TestOnly!!/NavigationProbe`는 지정한 두 Transform의 경로와 카운터를 확인한다.
 순수 알고리즘/host 검사와 저장 YAML 검사만으로 실제 Play Mode 행동을 검증했다고 주장하지 않는다.
 현재 실행 기록과 결과는 [PROGRESS](../Status/PROGRESS.md)에서 연결한다.
+
+## Defense의 동적 통행
+
+NavigationObstacle2D는 명시된 BoxCollider2D의 geometry를 등록하며 physics collider가 disabled여도 유효하다. SetBlocked 변경/등록/해제는 TilemapNavigation snapshot을 무효화하고 Revision을 증가시킨다. 다음 질의에서 Friendly/Enemy별 셀 비용·외부 탐색망을 다시 구성한다. 기존 TryBuildPath는 Friendly이며 NavigationAccessService가 Enemy 접근을 주입한다. 자동 친화 통로는 Enemy만 차단한다. 통로 개폐 판단은 [Defense durability](Defense/Durability_and_Maintenance.md)가 소유한다.
+
+변경 최소 범위는 위 네 신규 계약과 TilemapNavigation, NPCPathFollower, wall bounds다. 장애물은 기존 local movement area와 겹치지 않게 조립한다. 진행 중 이동은 revision을 읽고 현재 위치에서 다시 경로를 구한다.

@@ -2,8 +2,12 @@
 
 ## 기능 목적과 현재 상태
 
-전용 건축가 시민의 건설과 생활/배회 queue 선택을 소유한다. 공통 배회 실행은 [Needs Actions](NPC_Decision_and_Actions/Needs_Actions.md)가 소유한다. 수리는 이번 범위에서 제외한다. 건설 변경의 현재 검증 상태는 PROGRESS를 따른다.
+전용 건축가 시민의 건설과 생활/배회 queue 선택을 소유한다. 공통 배회 실행은 [Needs Actions](NPC_Decision_and_Actions/Needs_Actions.md)가 소유한다. 건설 변경의 현재 검증 상태는 PROGRESS를 따른다.
 2026-09-26 Unity CLI에서 `BuilderCitizenSetup.Setup`을 실행해 FarmerTest와 공유 프리팹에 배선을 저장했다. FarmerTest에는 Builder selector와 생성 entry가 있고 시청에는 세 번째 모집 카드가 있다. 자동 Play Mode·화면 검증은 사용자 결정으로 제외하며 실제 플레이와 망치 손 위치는 사람의 확인 항목이다.
+
+## Defense 유지보수
+
+선택적 `_maintenance`가 연결되면 공사보다 먼저 [Defense maintenance](Defense/Durability_and_Maintenance.md)의 가용 site를 예약해 Maintain action을 구성한다. 도주는 Base selector의 DefenseResponsePolicy가 생활/업무보다 먼저 판단한다. 태업·긴급 욕구는 기존 규칙을 유지한다. 현재 공사 중 유지보수가 생기거나 현재 Maintain보다 높은 rank가 생기면 queue를 반환하고 재선택한다. 기존 공사와 site progress는 각각 owner가 보존한다. `_maintenance` 미연결 scene의 FIFO 공사는 동일하다.
 
 ## 책임 경계와 흐름
 

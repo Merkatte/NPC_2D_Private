@@ -7,6 +7,9 @@ public class NPCManager : MonoBehaviour
     [SerializeField] private List<NPCCreationEntry> _creationEntries;
 
     [SerializeField] private HousingManager _housingManager;
+    [SerializeField] private DefenseBattlefield _defenseBattlefield;
+    public bool HasRecruitmentCapacity(NPCType type)
+        => type != NPCType.Archer || (_defenseBattlefield && _defenseBattlefield.HasArcherSlot);
     private readonly List<ResidentHousingState> _residents = new List<ResidentHousingState>();
     private IReadOnlyList<ResidentHousingState> _residentView;
     private long _nextResidentOrder;
@@ -96,13 +99,23 @@ public class NPCManager : MonoBehaviour
             return false;
         }
 
+        DefenseArcherSlotLease archerSlot = null;
+        if (npcType == NPCType.Archer && (!_defenseBattlefield || !_defenseBattlefield.TryReserveArcherSlot(out archerSlot))) return false;
         WorkerNPC worker = _workerPool.GetWorker(spawnPosition);
         if (!worker)
         {
             Debug.LogError($"WorkerPool could not provide a worker for {npcType}.");
+            archerSlot?.Dispose();
             return false;
         }
 
+        if (_defenseBattlefield)
+        {
+            DefenseActor actor = worker.DefenseActor;
+            if (!actor || (archerSlot != null && !archerSlot.TryOccupy(actor)))
+            { archerSlot?.Dispose(); _workerPool.ReleaseWorker(worker); return false; }
+            actor.BindBattlefield(_defenseBattlefield);
+        }
         worker.BeginSpawnPresentation();
         _reservedWorkers.Add(worker);
 

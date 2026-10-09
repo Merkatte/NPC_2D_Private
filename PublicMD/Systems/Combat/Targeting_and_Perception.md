@@ -79,3 +79,7 @@ NPC·Enemy prefab의 sensor child에는 trigger `CircleCollider2D`와 `Proximity
 ## 문서 갱신 조건
 
 `CombatTarget`, health adapter, sensor, perception, target validity, selection helper 또는 sticky target ownership이 바뀌면 갱신한다.
+
+## 일시적 target 불가와 재복구
+
+CombatPerception은 collider 진입 시 target/Unity owner를 한 번 캐시한다. Prune은 파괴된 owner만 제거하고 HP0/잠시 target 불가인 살아 있는 owner는 캐시에 남긴다. HasCandidate와 CopyCandidatesTo가 현재 validity를 필터링하므로 재건한 벽이 같은 trigger 안에서 다시 후보가 된다. Update에서 반복 GetComponent를 실행하지 않는다. Downed/적 제거/벽 HP 재초기화는 [Defense](../Defense/README.md)가 소유한다.

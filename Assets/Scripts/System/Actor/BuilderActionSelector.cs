@@ -10,6 +10,17 @@ public sealed class BuilderActionSelector : BaseNPCActionSelector
     [SerializeField] private MonoBehaviour _randomSource;
     [SerializeField] private BuildingPlotRegistry _buildingPlots;
     [SerializeField] private BuildActionCost _buildCost;
+    [SerializeField] private DefenseMaintenanceRegistry _maintenance;
+
+    public override bool ShouldReplan(NPCStat stat, NPCType npcType, NPCComponent component,
+        ActionType currentAction, ResidentHousingState residence)
+    {
+        if (base.ShouldReplan(stat, npcType, component, currentAction, residence)) return true;
+        if (!_maintenance || stat == null || stat.IsOnStrike || _decider == null || _decider.HasCriticalNeed(stat)) return false;
+        DefenseActor actor = defenseResponse ? defenseResponse.GetActor(component) : null;
+        if (currentAction == ActionType.Maintain) return actor && _maintenance.HasHigherPriority(actor.CurrentMaintenance);
+        return currentAction == ActionType.Build && _maintenance.FindAvailable();
+    }
 
     private DestinationDecider _decider;
     private IRandomSource _random;
@@ -28,6 +39,7 @@ public sealed class BuilderActionSelector : BaseNPCActionSelector
     protected override DestinationDecider HousingDecider => _decider;
     public override bool HasAvailableWork(NPCStat stat, NPCComponent component)
     {
+        if (stat != null && !stat.IsOnStrike && _maintenance && _maintenance.FindAvailable()) return true;
         if (stat == null || stat.IsOnStrike || !component || !_navigation || !_navigation.IsReady ||
             !_buildingPlots || !_buildCost || !_buildCost.IsConfigured) return false;
         foreach (BuildingPlot plot in _buildingPlots.Plots)
@@ -63,6 +75,18 @@ public sealed class BuilderActionSelector : BaseNPCActionSelector
             return BuildFallbackIdleQueue(component, stat);
 
         var rented = new List<IAction>();
+        DefenseMaintenanceSite maintenanceSite = _maintenance ? _maintenance.FindAvailable() : null;
+        if (maintenanceSite && maintenanceSite.TryReserve(out MaintenanceLease maintenanceLease))
+        {
+            DefenseActor actor = defenseResponse ? defenseResponse.GetActor(component) : null;
+            if (actor) actor.CurrentMaintenance = maintenanceSite;
+            var context = new ActionContext(component, stat, maintenanceLease.WorkPosition, _buildCost,
+                provider: maintenanceSite, request: new InteractionRequest(ActionType.Maintain, reservation: maintenanceLease),
+                moveRequest: MoveRequest.Navigated(maintenanceLease.WorkPosition), navigation: actor ? actor.Navigation : _navigation,
+                requiresWorkAvailability: true);
+            if (TryRentAction(ActionType.Maintain, context, rented)) return new Queue<IAction>(rented);
+            maintenanceLease.Dispose(); ReturnAll(rented); return BuildFallbackIdleQueue(component, stat);
+        }
         if (HasAvailableWork(stat, component))
         {
             var candidates = new List<BuildingPlot>();

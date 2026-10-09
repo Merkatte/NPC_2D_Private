@@ -31,6 +31,7 @@ public sealed class TownHallRecruitCard : MonoBehaviour
             case NPCType.Farmer: _nameText.text = "농부"; break;
             case NPCType.Guard: _nameText.text = "경비병"; break;
             case NPCType.Builder: _nameText.text = "건축가"; break;
+            case NPCType.Archer: _nameText.text = "궁병"; break;
             default: _nameText.text = _npcType.ToString(); break;
         }
     }

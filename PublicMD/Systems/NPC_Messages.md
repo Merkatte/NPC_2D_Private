@@ -9,6 +9,8 @@
 
 ## 현재 코드 흐름
 
+Defense의 자동 도주 대사는 별도 [Defense Presentation](Defense/Presentation.md)의 FleeStarted 구독 표시다. 기존 hover 생각/지정 메시지의 lookup·수명·localization 계약은 유지한다.
+
 ```text
 PointerHoverRouter -> IHoverInfoSource.TryGetHoverInfo
   -> NPCMessageSource.TryGetMessage

@@ -32,6 +32,7 @@ NPCManager / WorkerPool          생성과 조립
 | 판단과 action | [NPC Decision and Actions](Systems/NPC_Decision_and_Actions/README.md) | utility, selector, action lifecycle, 이동, 생활 action |
 | 농사 | [Farming](Systems/Farming/README.md) | 농장 progress, 수확 transaction, 생산 definition, 씨앗 선택·작물 표현, Farming/Harvest action |
 | 전투 | [Combat](Systems/Combat/README.md) | 감지, target, 공격, Guard, Enemy |
+| 성벽 방어 | [Defense](Systems/Defense/README.md) | 성벽·궁병·다운·도주, 시설 파괴·복구, 웨이브·이벤트·진행 정지 |
 | 상호작용과 목적지 | [Interaction and Destinations](Systems/Interaction_and_Destinations.md) | provider, destination, 건물 action |
 | 아이템과 inventory | [Inventory and Items](Systems/Inventory_and_Items/README.md) | CSV, 공유 자원·용량, NPC 봇짐, 입고, 창고 UI |
 | 플레이어 골드 | [Player Gold](Systems/Player_Gold.md) | 공유 자원의 골드 항목으로 이동하는 안내 |
@@ -65,6 +66,8 @@ NPCManager / WorkerPool          생성과 조립
 | Enemy 판단·stat | Combat/Enemy | Targeting, Attack, Spawning |
 | 감지·target lifecycle | Combat/Targeting and Perception | Guard 또는 Enemy |
 | 공격·사거리·damage | Combat/Attack Runtime | 공격 role 문서 |
+| 북쪽 성벽 방어·궁병·도주·시설 피해·복구 | [Defense](Systems/Defense/README.md) | Combat, Navigation, Builder, Construction, Town Hall |
+| 습격 웨이브·이벤트·게임 정지 | [Defense Progression](Systems/Defense/Progression.md) | Defense, Spawning and Pooling, UI |
 | destination·provider | Interaction and Destinations | Decision Policy, 소비 domain |
 | item·warehouse·CSV | Inventory and Items | 생산 또는 interaction 문서 |
 | 골드 잔액·획득·지출 | Player Gold | Merchant Caravan, Town Hall(현재 gameplay 소비·획득 지점) |
@@ -100,6 +103,7 @@ NPCManager / WorkerPool          생성과 조립
 | `Assets/Art/Generated/Buildings` | `TownHall`, `Inn`, `Restaurant`, `Warehouse`, `GuardPost`, `MerchantCaravan`, `Farm`별 건물·밭 이미지와 `House`의 1~4단계 주택 스프라이트 시트 |
 | `Assets/Art/Generated/Crops` | `Carrot`, `Potato`별 성장 단계와 아이콘, 당근 리깅 이미지는 `Carrot/Rigged` |
 | `Assets/Art/Generated/NPC` | 사람 NPC 이미지 |
+| `Assets/Art/Generated/Defense` | 성벽 상태, 건물 잔해, 궁병 활과 화살 이미지 |
 | `Assets/Art/Generated/UI`, `Assets/Art/Generated/Tiles` | UI 패널과 타일 이미지·Tile 에셋 |
 | `Assets/Editor/NpcHarness` | 제한된 원자적 Unity 편집 Tool, Job 실행기, 검증기, UI Toolkit 창과 Batch 진입점 |
 | `Tools/NpcHarness` | 자연어 해석 없이 명시적인 `verify`, `run-adapter`, `self-test`를 제공하는 cross-platform 결정적 runner |

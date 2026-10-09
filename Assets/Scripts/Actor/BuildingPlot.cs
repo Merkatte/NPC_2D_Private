@@ -12,6 +12,27 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
     [SerializeField] private Transform[] _workPositions = Array.Empty<Transform>();
     [SerializeField] private BoxCollider2D _workArea;
     [SerializeField] private int[] _allowedBuildingIds = Array.Empty<int>();
+    [SerializeField] private CompletedBuildingFacility _initialFacility;
+    private void Start()
+    {
+        if (_initialFacility && State == BuildingPlotState.Empty)
+        { CompletedFacility = _initialFacility; State = BuildingPlotState.Completed; PublishState(); }
+    }
+    public void OnFacilityDestroyed(CompletedBuildingFacility facility)
+    {
+        if (!facility || (CompletedFacility && CompletedFacility != facility)) return;
+        EndReservations(ConstructionReservationStatus.Cancelled);
+        _construction = null;
+        CompletedFacility = facility;
+        State = BuildingPlotState.Rubble;
+        PublishState();
+    }
+    public bool ClearDestroyedFacility(CompletedBuildingFacility facility)
+    {
+        if (State != BuildingPlotState.Rubble || CompletedFacility != facility) return false;
+        CompletedFacility = null; _initialFacility = null; _construction = null;
+        State = BuildingPlotState.Empty; PublishState(); return true;
+    }
     private ConstructionState _construction;
     private long _nextConstructionId;
     private bool _isChanging;
@@ -82,7 +103,7 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
     }
     public bool TryGetClickPopup(out PopupType type)
     {
-        type = isActiveAndEnabled && _dataManager && _resources && State != BuildingPlotState.Completed && !IsUpgrade
+        type = isActiveAndEnabled && _dataManager && _resources && State != BuildingPlotState.Completed && State != BuildingPlotState.Rubble && !IsUpgrade
             ? PopupType.Construction : PopupType.None;
         return type != PopupType.None;
     }

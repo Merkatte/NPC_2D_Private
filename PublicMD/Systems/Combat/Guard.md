@@ -4,6 +4,8 @@
 
 Guard의 전투 우선순위, 공급 판단, 경비 지점 순찰과 role 전용 stat·cost를 설명한다.
 
+기존 Guard selector/action은 기존 씬의 순찰·추격을 유지한다. DefenseTest의 Guard=1 검객과 Archer=5는 별도 [Defense response](../Defense/Battlefield_and_Response.md)를 사용한다. GuardPost의 optional `_defenseDurability`는 CurrentHealth/ChangeHealth를 시설 HP owner로 위임한다. 미연결 초소는 기존 자체 HP/Died 이벤트를 유지한다.
+
 ## 현재 실행 흐름
 
 ```text

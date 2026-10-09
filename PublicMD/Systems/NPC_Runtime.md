@@ -81,6 +81,12 @@ WorkerNPC.Init(role, runtime stat, selector)
 
 DefaultStatContext는 `_dissatisfactionSettings`를 새 stat에 복사하고 OnValidate/runtime 생성 경계에서 검증한다. NPCStat/GuardStat의 기존 생성자는 기본 설정으로 호환된다. IStatView는 CurrentDissatisfaction·MaximumDissatisfaction·IsOnStrike를 읽기 전용으로 제공한다. 최초 상태는 0/원인 없음이다. WorkerNPC의 `_dissatisfaction`은 Init/OnDisable 연결·해제만 하며 정책과 계산을 포함하지 않는다.
 
+## 선택적 Defense 실행 중단
+
+`_defenseActor`가 연결된 variant는 Init 시 같은 stat을 DefenseActor에 전달한다. `SetActionExecutionEnabled(false)`는 현재/대기 queue를 반환하고 NPCDissatisfaction을 suspend한다. GameObject/Component disable이나 NPCComponent.ResetRuntimeState를 호출하지 않으므로 Downed의 cargo·주거·stat은 남는다. 새 Init은 기존 pool 초기화 계약을 사용한다. HP0 및 role 정책은 [Defense](Defense/Battlefield_and_Response.md)가 소유한다.
+
+Worker Update와 AdvanceQueue는 Time.timeScale=0에서 실행하지 않는다. action Tick 중 game-over가 발생해도 다음 queue를 시작하지 않으며 외부 중단이 현재 action을 반환했는지 확인한다. 이 실행 guard는 시간이 0이어도 즉시 완료하는 action/transaction을 막는다.
+
 ## 선택적 주거 연결
 
 Init의 선택적 ResidentHousingState는 selector와 NPCDissatisfaction에 전달한다. 기존 3인수 Init은 미연결 상태다. WorkerNPC는 selector.GetReassessmentSeconds 간격마다 ShouldReplan을 호출하고 true이면 기존 queue 취소/재요청만 수행한다. 업무·귀가·욕구 정책은 selector, 이동·체류는 HomeStayAction이 소유한다. Disabled 알림은 NPCManager 등록 해제로 연결되고 구독자 예외를 격리하여 local 참조 정리를 계속한다. 자세한 실행은 [Housing Life](Housing/Life.md)를 따른다.

@@ -6,6 +6,10 @@ NPC role 생성 조립, prefab 종류 catalog, `WorkerNPC` GameObject pool의 �
 
 2026-09-26 `NPCType.Builder`를 끝에 추가했다(기존 Farmer=0, Guard=1, Cook=2, Enemy=3 유지, Builder=4). Unity CLI로 `BuilderCitizenSetup.Setup`을 실행해 FarmerTest의 Builder selector/stat 생성 entry를 저장했다. TestNPCSpawnWindow의 건축가 버튼은 이 entry를 사용하며 실제 생성·플레이 확인은 사람의 QA 항목이다. 기존 예약·커밋·반환 transaction은 변경하지 않았다.
 
+## 선택적 Defense 모집
+
+NPCType.Archer=5는 기존 값 뒤에 추가한다. NPCManager의 optional `_defenseBattlefield`가 있으면 rented worker의 DefenseActor를 명시 연결한다. Archer는 worker 대여/비용 지불 전에 빈 wall slot을 lease로 예약하고 actor에 귀속한다. 실패는 worker/비용 변경 없이 종료하고 취소/disable에서 lease를 반납한다. Downed는 disable하지 않아 자리와 주민 등록을 보존한다. HasRecruitmentCapacity는 사전 거절 판정을 제공하며 실제 원자성은 TryReserveWorker가 소유한다. [Defense response](Defense/Battlefield_and_Response.md), [Town Hall](Town_Hall.md)을 함께 확인한다.
+
 ## 세부 기능
 
 | 세부 기능 | 책임 |
@@ -89,7 +93,7 @@ Test/UI command
 ## 알려진 제약과 TBD
 
 - 현재 `WorkerPool`은 단일 prefab만 소유하며 `NPCPrefabCatalog`와 아직 연결되지 않았다.
-- Enemy production spawn 경로는 없고 TestOnly spawner가 직접 구성한다.
+- 기존 비Defense 씬의 Enemy는 TestOnly spawner가 직접 구성한다. DefenseTest의 production 웨이브 생성은 [Defense Progression](Defense/Progression.md)의 DefenseWaveController가 소유한다.
 - disable 시 active worker 등록은 해제한다. production despawn 명령과 운반물 처리 정책은 아직 없다.
 
 ## 관련 문서

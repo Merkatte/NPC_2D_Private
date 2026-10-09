@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-public sealed class TilemapNavigation : MonoBehaviour, INavigationService
+public sealed class TilemapNavigation : MonoBehaviour, INavigationService, INavigationRevision
 {
     private const float GeometryTolerance = 0.001f;
     private const int WanderCandidateAttempts = 16;
@@ -24,6 +24,22 @@ public sealed class TilemapNavigation : MonoBehaviour, INavigationService
     [SerializeField] private bool _drawNodes;
 
     private NavigationGrid _grid;
+    private NavigationGrid _enemyGrid;
+    private int[] _enemyGroundCosts;
+    private readonly List<NavigationObstacle2D> _dynamicObstacles = new List<NavigationObstacle2D>();
+    public int Revision { get; private set; }
+    public void RegisterObstacle(NavigationObstacle2D obstacle)
+    {
+        if (!obstacle || _dynamicObstacles.Contains(obstacle)) return;
+        _dynamicObstacles.Add(obstacle); InvalidateObstacles();
+    }
+    public void UnregisterObstacle(NavigationObstacle2D obstacle)
+    { if (_dynamicObstacles.Remove(obstacle)) InvalidateObstacles(); }
+    public void InvalidateObstacles()
+    {
+        _initializationAttempted = false; _hasLoggedConfigurationError = false;
+        _grid = null; _enemyGrid = null; ++Revision;
+    }
     private readonly AStarPathfinder _pathfinder = new AStarPathfinder();
     private readonly List<int> _nodePath = new List<int>();
     private readonly List<int> _walkableNodes = new List<int>();
@@ -60,6 +76,10 @@ public sealed class TilemapNavigation : MonoBehaviour, INavigationService
 
     public bool TryBuildPath(Vector3 start, Vector3 destination, List<Vector3> output,
         out NavigationFailure failure)
+        => TryBuildPath(start, destination, output, out failure, NavigationAccess.Friendly);
+
+    public bool TryBuildPath(Vector3 start, Vector3 destination, List<Vector3> output,
+        out NavigationFailure failure, NavigationAccess access)
     {
         failure = NavigationFailure.InvalidConfiguration;
         if (output == null)
@@ -67,12 +87,14 @@ public sealed class TilemapNavigation : MonoBehaviour, INavigationService
         output.Clear();
         if (!IsReady)
             return false;
-        if (!TryGetNode(start, out int startNode) || _groundCosts[startNode] == 0)
+        int[] ground = access == NavigationAccess.Enemy ? _enemyGroundCosts : _groundCosts;
+        NavigationGrid grid = access == NavigationAccess.Enemy ? _enemyGrid : _grid;
+        if (!TryGetNode(start, out int startNode) || ground[startNode] == 0)
         {
             failure = NavigationFailure.InvalidStart;
             return false;
         }
-        if (!TryGetNode(destination, out int goalNode) || _groundCosts[goalNode] == 0)
+        if (!TryGetNode(destination, out int goalNode) || ground[goalNode] == 0)
         {
             failure = NavigationFailure.InvalidDestination;
             return false;
@@ -91,7 +113,7 @@ public sealed class TilemapNavigation : MonoBehaviour, INavigationService
         int routeStart = startArea >= 0 ? _entranceNodes[startArea] : startNode;
         int routeGoal = goalArea >= 0 ? _entranceNodes[goalArea] : goalNode;
         ++SearchCount;
-        if (!_pathfinder.TryFindPath(_grid, routeStart, routeGoal, _nodePath, out _))
+        if (!_pathfinder.TryFindPath(grid, routeStart, routeGoal, _nodePath, out _))
         {
             failure = NavigationFailure.NoPath;
             return false;
@@ -204,7 +226,19 @@ public sealed class TilemapNavigation : MonoBehaviour, INavigationService
                     _groundCosts[node] = 0;
         }
 
+        _enemyGroundCosts = (int[])_groundCosts.Clone();
+        foreach (NavigationObstacle2D obstacle in _dynamicObstacles)
+        {
+            if (!obstacle || !obstacle.IsBlocked || !TryGetRectangle(obstacle.Bounds, out Rect rect)) continue;
+            for (int node = 0; node < _groundCosts.Length; ++node)
+            {
+                if (!GetCellRectangle(node).Overlaps(rect)) continue;
+                if (obstacle.Blocks(NavigationAccess.Friendly)) _groundCosts[node] = 0;
+                if (obstacle.Blocks(NavigationAccess.Enemy)) _enemyGroundCosts[node] = 0;
+            }
+        }
         var networkCosts = (int[])_groundCosts.Clone();
+        var enemyNetworkCosts = (int[])_enemyGroundCosts.Clone();
         _areaRects = new Rect[_localAreas.Length];
         _entrances = new Vector3[_localAreas.Length];
         _entranceNodes = new int[_localAreas.Length];
@@ -253,7 +287,10 @@ public sealed class TilemapNavigation : MonoBehaviour, INavigationService
                     return false;
                 }
                 if (node != entranceNode)
+                {
                     networkCosts[node] = 0;
+                    enemyNetworkCosts[node] = 0;
+                }
             }
         }
 
@@ -279,6 +316,7 @@ public sealed class TilemapNavigation : MonoBehaviour, INavigationService
                 }
             }
             _grid = candidate;
+            _enemyGrid = new NavigationGrid(_cellBounds.size.x, _cellBounds.size.y, enemyNetworkCosts);
             _walkableNodes.Clear();
             for (int node = 0; node < _groundCosts.Length; ++node)
                 if (_groundCosts[node] > 0)

@@ -82,7 +82,7 @@ public sealed class TownHallRecruitment : MonoBehaviour
 
     private void Update()
     {
-        if (!_isConfigured)
+        if (!_isConfigured || Time.timeScale <= 0f)
             return;
         foreach (RecruitmentState state in _states.Values)
         {
@@ -99,10 +99,13 @@ public sealed class TownHallRecruitment : MonoBehaviour
 
     public RecruitResult TryDispatchCandidate(NPCType npcType)
     {
+        if (Time.timeScale <= 0f) return RecruitResult.NotReady;
         if (!_isConfigured || !isActiveAndEnabled || !_states.TryGetValue(npcType, out RecruitmentState state) ||
             state.Phase != RecruitPhase.CandidateReady || state.IsDispatching)
             return RecruitResult.NotReady;
         Vector3 landingPosition = LandingPosition;
+        if (npcType == NPCType.Archer && _npcManager && !_npcManager.HasRecruitmentCapacity(npcType))
+            return RecruitResult.NoArcherStation;
         Vector3 dropStart = landingPosition + Vector3.up * _dropHeight;
         if (!_npcManager || !_goldManager || !_npcManager.TryReserveWorker(npcType, dropStart, out WorkerReservation reservation))
             return RecruitResult.SpawnUnavailable;

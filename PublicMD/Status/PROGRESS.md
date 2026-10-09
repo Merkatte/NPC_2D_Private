@@ -1,3 +1,12 @@
+# 북쪽 성벽 방어 — 2026-10-09 구현 완료
+
+- 사용자 승인 [방어 1차 계획](../Archive/Plans/Defense_Implementation_Plan.md)을 구현했다. 구간별 성벽, 검병·궁병, 주민 도주/전투 불능, 시설 파괴·복구, 웨이브, 이벤트 알림/선택과 시청 게임오버를 새 DefenseTest로 연결했다. 신규 전투·내구도·복구·웨이브·이벤트 수치는 `Assets/Data/ScriptableObject/Defense`에서 편집한다.
+- 기준 2807fb6, 시작 dirty 없음. 코드 combat_plan_research / defense_progression_code, 그래픽 defense_art, 조립 assembly_plan_research. root는 계약·공통 문서·검증·독립 리뷰를 담당한다.
+- 작업 기록 `.harness-runs/defense-20261009/scene-work.md`. 별도 역할로 작성한 코드·이미지를 순차 반영하고 DefenseTest, 9개 전용 prefab, 13개 설정 SO, 전용 animation과 UI를 조립했다. 기존 씬/공유 prefab/SO는 변경하지 않았으며 DefenseTest 단일 active/loaded, clean, Play stopped다.
+- 검증: 최종 strict Unity 컴파일 오류0/경고0(`compile-correction-1.json`의 실제 compiler 로그 포함), 기존 건설15/15·자원6/6·경로 순수1446·메시지22, diff 및 직렬화 참조 검사를 확인했다. CLI 요약에서 누락됐던 참조 비교 경고3개는 명시적 identity 비교로 교정 후 재컴파일했다. 조립 중 두 씬을 잠시 함께 열어 발생한 global light 중복 로그는 남겼으며 최종 씬에는 한 개만 있다.
+- 독립 읽기 전용 `/root/defense_independent_review`: 최초 ChangesRequested의 공격 후 무기 숨김과 오래된 문서 문구를 교정하고 재리뷰 Approve, findings 없음을 확인했다(`review-1.json`, `review-2.json`). 보정 한도2회 중1회 사용. 이후 코드·에셋 변경은 없으며 완료 기록과 계획 보관 링크만 갱신했다. 기존 검사 결과는 변경하지 않은 검사 대상에 재사용했다. 커밋·푸시는 하지 않았다.
+- 자동 Play/게임 화면 검증과 검증 전용 신규 코드는 실행·작성하지 않았다. 사람 QA 미검증: 성벽 접근/타격 중 돌파 분기, 검병 이동 중 무기·내부 지원·복귀, 궁병 붕괴 후 사격·복귀, 도주/예약/cargo, 다운 identity, 시설 파괴/용량·입주 해제/잔해 청소/재건, 통로 점유 중 폐쇄 보류, 예정 spawn이 남은 웨이브, 이벤트 정지/닫기/만료와 시청 GameOver. 기존 검사 통과를 방어 end-to-end 플레이 통과로 해석하지 않는다.
+
 # 주택·입주·생활·업그레이드 — 2026-10-08 구현 완료
 
 - 사용자 승인 [계획](../Archive/Plans/Housing_Implementation_Plan.md)에 따라 BuildingTest 한정 주거 서비스를 구현했다. CSV 단계별 복수 옵션/재료, 불만도순 입주, 비업무 집 생활, 업무 피로 여관 회복, 기존 건축가 업그레이드와 주택 창을 포함한다. 예시 수치는 최종 밸런스가 아니다. 실제 데이터 편집 규칙은 [Housing/Definitions](../Systems/Housing/Definitions.md)를 따른다.

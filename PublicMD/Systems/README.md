@@ -23,6 +23,7 @@
 | [Housing](Housing/README.md) | 주택 정의·입주·생활·UI의 4개 leaf |
 | `Farming/` | 4개 leaf를 가진 기능 인덱스 |
 | `Combat/` | 4개 leaf를 가진 기능 인덱스 |
+| [Defense](Defense/README.md) | 성벽 전투·피해와 복구·진행 및 전용 씬 연결의 기능 인덱스 |
 | `Interaction_and_Destinations.md` | 단일 기능 문서 |
 | [Inventory and Items](Inventory_and_Items/README.md) | 정의·공유 자원·운반 및 입고·창고 UI의 4개 leaf |
 | `Player_Gold.md` | 공유 자원으로 이동하는 안내 |

@@ -21,7 +21,7 @@ selector는 MoveRequest.Fixed/Dynamic/Navigated 중 하나를 명시한다.
 Fixed와 Dynamic은 Direct, Navigated는 Navigation이다. 기본 최종 정지 거리는 0.1이다.
 ActionContext는 선택적인 INavigationService만 전달한다. service locator나 action queue를 노출하지 않는다.
 MoveAction은 요청이 없으면 실패하며 암묵적인 원점 이동을 만들지 않는다.
-동적 전투 추적은 매 Tick 위치를 다시 읽는 기존 Direct 흐름이다.
+기존 Dynamic은 매 Tick 위치를 다시 읽는 Direct 흐름이다. Navigated(IMoveTarget, stoppingDistance)는 target 위치를 경로망으로 추적한다.
 
 NPCPathFollower.Begin은 이전 상태를 지우고 경로를 요청한다. 같은 지역 안에서는 navigation service가
 직접 경로를 반환하므로 seeded random 목적지를 이용한 작업/순찰에 A*가 호출되지 않는다.
@@ -42,3 +42,7 @@ GuardAction도 자기 follower를 소유하지만 감지/욕구/시설 유효성
 ## 불만도·태업 연결
 
 MoveAction은 RequiresWorkAvailability=true인 업무 이동/Guard 추적만 공통 시작·Tick 검사로 중단한다. 검사는 follower 이동 이전이며 ReplanRequested 후 WorkerNPC의 기존 Stop/Clear가 경로와 이동 표현을 정리한다. 생활 시설 이동과 Enemy 추적은 false로 유지된다.
+
+## 동적 경로와 topology
+
+NPCPathFollower는 optional INavigationRevision을 Begin에서 캐시하고 path 생성 시 revision/목표 위치를 저장한다. revision 변화, 실제 위치 이탈 또는 동적 target의 0.5유닛 이상 이동에 현재 위치에서 다시 경로를 만든다. target 소실은 재판단하며 Clear는 새 cache도 제거한다. topology는 [Navigation](../Navigation.md), Defense target 선택은 [Defense response](../Defense/Battlefield_and_Response.md)가 소유한다.

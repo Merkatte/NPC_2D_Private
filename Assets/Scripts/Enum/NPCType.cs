@@ -6,5 +6,6 @@ public enum NPCType
     Guard,
     Cook,
     Enemy,
-    Builder
+    Builder,
+    Archer = 5
 }

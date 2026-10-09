@@ -16,6 +16,10 @@ public sealed class NPCPathFollower
     private int _nextPoint;
     private float _failureElapsed;
     private bool _active;
+    private INavigationRevision _revisionSource;
+    private int _pathRevision;
+    private Vector3 _pathTarget;
+    private const float MovingTargetRepathDistance = 0.5f;
 
     public bool HasArrived { get; private set; }
     public bool RequiresReplan { get; private set; }
@@ -28,6 +32,7 @@ public sealed class NPCPathFollower
         _stat = stat;
         _request = request;
         _navigation = navigation;
+        _revisionSource = navigation as INavigationRevision;
         _active = true;
         if (!_component || _stat == null)
         {
@@ -64,7 +69,14 @@ public sealed class NPCPathFollower
             }
             // Visual bobbing changes a child, not Position. Only an external displacement
             // invalidates this route, including a direct leg inside a free movement area.
-            if (DistanceSquared(_component.Position, _expectedPosition) > PositionTolerance * PositionTolerance)
+            bool targetMoved = false;
+            if (_request.IsDynamic)
+            {
+                if (!_request.TryGetPosition(out Vector3 currentTarget)) { RequiresReplan = true; return; }
+                targetMoved = DistanceSquared(currentTarget, _pathTarget) > MovingTargetRepathDistance * MovingTargetRepathDistance;
+            }
+            if ((_revisionSource != null && _revisionSource.Revision != _pathRevision) || targetMoved ||
+                DistanceSquared(_component.Position, _expectedPosition) > PositionTolerance * PositionTolerance)
             {
                 BuildPath();
                 if (Failure != NavigationFailure.None)
@@ -117,6 +129,9 @@ public sealed class NPCPathFollower
         _component = null;
         _stat = null;
         _navigation = null;
+        _revisionSource = null;
+        _pathRevision = 0;
+        _pathTarget = default;
         _request = default;
         _expectedPosition = default;
         _nextPoint = 0;
@@ -161,6 +176,8 @@ public sealed class NPCPathFollower
             _path.Add(target);
         }
         _expectedPosition = _component.Position;
+        _pathTarget = target;
+        _pathRevision = _revisionSource?.Revision ?? 0;
         // Navigation must traverse its intermediate legs even if the final point is close.
         HasArrived = _path.Count == 1 && DistanceSquared(_expectedPosition, target) <=
             Mathf.Max(0f, _request.StoppingDistance) * Mathf.Max(0f, _request.StoppingDistance);

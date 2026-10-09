@@ -10,12 +10,13 @@ public sealed class GuardPost : BaseInteractionProvider, IHealthState
     [SerializeField] private CombatTarget _combatTarget;
     [SerializeField] private GameObject _visual;
     [SerializeField, Min(1f)] private float _maximumHealth = 100f;
+    [SerializeField] private DefenseBuildingDurability _defenseDurability;
 
     private float _currentHealth;
     private bool _healthInitialized;
 
     public event Action Died;
-    public float CurrentHealth => _currentHealth;
+    public float CurrentHealth => _defenseDurability ? _defenseDurability.CurrentHealth : _currentHealth;
 
     private void Awake()
     {
@@ -37,6 +38,8 @@ public sealed class GuardPost : BaseInteractionProvider, IHealthState
 
     public float ChangeHealth(float amount)
     {
+        if (_defenseDurability)
+            return _defenseDurability.ChangeHealth(amount);
         InitializeHealth();
         if (_currentHealth <= 0f || float.IsNaN(amount))
             return _currentHealth;
@@ -67,7 +70,7 @@ public sealed class GuardPost : BaseInteractionProvider, IHealthState
     }
 
     protected override bool CanInteractCore(ActionType type)
-        => isActiveAndEnabled && _currentHealth > 0f && _patrolArea &&
+        => isActiveAndEnabled && CurrentHealth > 0f && _patrolArea &&
            _patrolArea.gameObject.activeInHierarchy && _positionRandomSource;
 
     protected override bool TryGetActionPositionCore(ActionType type, Vector3 fallbackPosition, out Vector3 position)

@@ -11,6 +11,10 @@ public sealed class BuildingFactory : MonoBehaviour
     [SerializeField] private CropCatalog _cropCatalog;
     [SerializeField] private HousingDataContext _housingDataContext;
     [SerializeField] private HousingManager _housingManager;
+    [SerializeField] private DefenseBattlefield _defenseBattlefield;
+    [SerializeField] private DefenseMaintenanceRegistry _defenseMaintenance;
+    [SerializeField] private DefenseDurabilitySettings _defenseSettings;
+    [SerializeField] private DefenseGameSession _defenseSession;
 
     public bool CanStartNewConstruction(BuildingDefinition definition)
         => definition != null && (definition.BuildingType != BuildingType.House
@@ -65,6 +69,13 @@ public sealed class BuildingFactory : MonoBehaviour
                 return false;
             created.transform.SetParent(parent, false);
             created.transform.position += entrance.position - created.Entrance.position;
+            if (_defenseBattlefield)
+            {
+                DefenseBuildingDurability durability = created.GetComponent<DefenseBuildingDurability>();
+                if (!durability) { reason = "Defense facility prefab is missing durability."; return false; }
+                durability.Configure(_defenseBattlefield, _defenseMaintenance, _resourceManager, _defenseSettings,
+                    _defenseSession, parent.GetComponent<BuildingPlot>(), created, _destinationDB);
+            }
             created.gameObject.SetActive(true);
             if (!created.TryRegister(definition.BuildingType, _destinationDB, _interactableManager))
             { reason = "Facility registration failed."; return false; }

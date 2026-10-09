@@ -12,7 +12,7 @@ BuildingPlot은 씬 부지와 상태 변경 진입점, ConstructionState는 해�
 | Assets/Scripts/Manager/BuildingPlotRegistry.cs | 명시적으로 연결한 부지 후보와 신청 순번 |
 | Assets/Scripts/System/Construction/ConstructionState.cs | 정의/지불 사본/진행도/시작 이력/예약/완공 실패/업그레이드 구분 |
 | Assets/Scripts/System/Construction/ConstructionReservation.cs | 공사별 예약 식별과 반환 수명; provider가 아님 |
-| Assets/Scripts/Enum/BuildingPlotState.cs | Empty/UnderConstruction/Completed |
+| Assets/Scripts/Enum/BuildingPlotState.cs | Empty/UnderConstruction/Completed/Rubble |
 | Assets/Scripts/Enum/ConstructionReservationStatus.cs | 예약의 활성/종료 사유 구분 |
 
 ## 최소 확인 범위
@@ -34,10 +34,14 @@ BuildingPlot은 씬 부지와 상태 변경 진입점, ConstructionState는 해�
 
 BuildingTest의 오른쪽 테스트 지면에 3×2로 배치한다. 부지 입구는 x36.5/47.5/58.5와 y−10.5/−0.5 조합이며 원래 지형은 유지한다. footprint와 외곽 작업 영역은 각각 9×6, 9×2다. 기존 click mask에 포함된 layer7을 사용한다. TestOnly 카메라는 방향키로 이 구역까지 이동할 수 있다.
 
-예약 경쟁/과거 예약/반복 Dispose, 이동중 취소·버림 환불, 2인 합산, 생성 실패/재시도가 비-Play 위험 검사다. 실제 이동·망치·욕구 복귀는 사람 확인이며 자동 Play는 제외한다. 수리/철거는 구현 범위 밖이다. 상태/API/직렬화가 바뀌면 갱신한다.
+예약 경쟁/과거 예약/반복 Dispose, 이동중 취소·버림 환불, 2인 합산, 생성 실패/재시도가 비-Play 위험 검사다. 실제 이동·망치·욕구 복귀는 사람 확인이며 자동 Play는 제외한다. 수리/잔해 처리는 별도 Defense owner가 담당한다. 상태/API/직렬화가 바뀌면 갱신한다.
 
 ## 주택 업그레이드
 
 TryStartUpgrade는 Completed 상태의 기존 주택에 대해 다음 단계 정의를 조회하고 비용 선불, 새 공사 ID/FIFO 순번, 기존 예약/BuildAction 흐름을 사용한다. IsUpgrade 공사 동안 CompletedFacility와 입주/기존 효과는 유지한다. 완료는 Factory.TryUpgrade로 기존 객체의 단계·효과·sprite를 적용한다. 실패는 100%와 기존 주택을 보존하고 TryRetryCompletion으로 재시도한다. 취소는 환불 성공 후 예약을 종료하고 Completed로 돌아간다.
 
 IsAllowed와 Factory.CanStartNewConstruction은 빈 부지의 주택 건설을 카탈로그 1단계로 제한한다. 업그레이드 때 Plot의 Construction 클릭 source는 비활성화되고 HousePopupSource가 기존 집 창을 연다. ConstructionVisual은 기존 주택을 숨기지 않고 공사 레이어만 추가하며 취소의 Completed 복귀에서 빈 부지 표시를 켜지 않는다.
+
+## Defense 시설 파괴
+
+`_initialFacility`는 scene-native 완공 시설을 Start에서 adopt하는 선택적 참조다. OnFacilityDestroyed(expectedFacility)는 같은 시설인지 검증하고 진행 중 공사/업그레이드 예약을 환불 없이 끝낸 뒤 Rubble 상태를 발행한다. ClearDestroyedFacility만 시설 참조를 제거하고 Empty로 되돌린다. Rubble은 Construction popup/신축을 허용하지 않는다. 잔해 progress·HP·기능 중단은 [Defense durability](../Defense/Durability_and_Maintenance.md)가 소유한다.

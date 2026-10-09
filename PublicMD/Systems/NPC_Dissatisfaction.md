@@ -2,7 +2,9 @@
 
 ## 목적과 책임
 
-Farmer·Builder·Guard의 원인별 불만 누적·회복과 태업 판정을 소유한다. Enemy는 원인 등록·시간 갱신 대상에서 제외한다. 주거 연결 씬의 자동 무주택 원인과 입주 효과는 Housing이 소유한다.
+Farmer·Builder·Guard·Archer의 원인별 불만 누적·회복과 태업 판정을 소유한다. Enemy는 원인 등록·시간 갱신 대상에서 제외한다. 주거 연결 씬의 자동 무주택 원인과 입주 효과는 Housing이 소유한다.
+
+Defense Downed의 `SetSuspended`는 상태/원인을 초기화하지 않고 시간 Tick만 정지한다. WorkerNPC의 실행 중단이 이를 호출한다. 실제 disable의 Unbind와 새 Init은 기존 reset 계약을 유지한다. 치료·회복 API는 추가하지 않았다.
 
 | 주 소유 파일 | 책임 |
 |---|---|

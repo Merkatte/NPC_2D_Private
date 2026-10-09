@@ -57,6 +57,18 @@ public class ActionPool : MonoBehaviour
     {
         switch (actionType)
         {
+            case ActionType.DefenseAttack:
+                _actionDictionary[actionType].Enqueue(new DefenseAttackAction());
+                break;
+            case ActionType.DefenseStation:
+                _actionDictionary[actionType].Enqueue(new DefenseStationAction());
+                break;
+            case ActionType.Flee:
+                _actionDictionary[actionType].Enqueue(new FleeAction());
+                break;
+            case ActionType.Maintain:
+                _actionDictionary[actionType].Enqueue(new MaintenanceAction());
+                break;
             case ActionType.HomeStay:
                 _actionDictionary[actionType].Enqueue(new HomeStayAction());
                 break;

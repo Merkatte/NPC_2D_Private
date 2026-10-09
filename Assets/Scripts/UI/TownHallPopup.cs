@@ -96,6 +96,9 @@ public sealed class TownHallPopup : PopBase
             case RecruitResult.SpawnUnavailable:
                 _resultText.text = "지금은 이 직업을 모집할 수 없습니다.";
                 break;
+            case RecruitResult.NoArcherStation:
+                _resultText.text = "궁병을 배치할 빈 성벽 자리가 없습니다.";
+                break;
         }
         Refresh();
     }

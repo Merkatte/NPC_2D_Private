@@ -8,6 +8,7 @@ public readonly struct MoveRequest
 
     public float StoppingDistance { get; }
     public MoveMode Mode { get; }
+    public bool IsDynamic => _dynamicTarget != null;
 
     private MoveRequest(Vector3 fixedPosition, IMoveTarget dynamicTarget, float stoppingDistance,
         MoveMode mode = MoveMode.Direct)
@@ -26,6 +27,9 @@ public readonly struct MoveRequest
 
     public static MoveRequest Navigated(Vector3 position, float stoppingDistance = DefaultStoppingDistance) =>
         new MoveRequest(position, null, stoppingDistance, MoveMode.Navigation);
+
+    public static MoveRequest Navigated(IMoveTarget target, float stoppingDistance) =>
+        new MoveRequest(default, target, stoppingDistance, MoveMode.Navigation);
 
     public bool TryGetPosition(out Vector3 position)
     {

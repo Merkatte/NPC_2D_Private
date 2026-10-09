@@ -97,3 +97,9 @@ BaseNPCActionSelector.BuildLeisureQueue는 decider가 선택한 Eat/Drink/Sleep�
 ResidentHousingState overload는 최초 배정 귀가를 먼저 수행하며 업무가 없으면 DecideNeeds의 Eat/Drink 또는 HomeStay를 선택한다. 기존 3인수 경로는 유지한다. role별 HasAvailableWork는 provider 가용성·cargo·건설 슬롯·경비 후보를 읽기만 하며 예약이나 위치 난수/전투 target mutation을 하지 않는다. 집에서 ShouldReplan은 생활 외출 또는 새 업무가 있을 때만 queue 전환을 요청한다. WorkerNPC는 이를 공통 주기 hook으로 호출한다.
 
 주거 work queue에는 HousingLifeSettings를 명시적으로 전달하며 공유 selector에 주민별 상태를 저장하지 않는다. 대여한 SleepAction에는 회복 설정을 연결하고 pooled Clear에서 제거한다. HomeStayAction은 ActionContext를 변경하지 않고 Init(context,residence)로 상태를 받는다. 자세한 규칙은 [Housing Life](../Housing/Life.md)를 따른다.
+
+## 선택적 Defense interrupt
+
+BaseNPCActionSelector의 `defenseResponse`는 선택적 scene 참조다. 연결된 경우 주거 overload의 최초 귀가보다 긴급 queue를 먼저 요청하며 ShouldReplan도 전투/도주 정책을 먼저 읽는다. 재판단 주기는 연결된 defense 설정을 사용하고 미연결 시 기존 주거 주기를 유지한다. 역할 정책과 개별 상태는 [Defense response](../Defense/Battlefield_and_Response.md)가 소유한다.
+
+ActionPool은 기존 ActionType 값 뒤에 추가한 DefenseAttack/DefenseStation/Flee/Maintain을 생성한다. 전투/flee context는 RequiresWorkAvailability를 설정하지 않아 태업에 중단되지 않고 Maintain은 기존 업무 태업 경계를 유지한다.

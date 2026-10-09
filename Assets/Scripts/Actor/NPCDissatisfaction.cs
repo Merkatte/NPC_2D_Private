@@ -6,6 +6,9 @@ public sealed class NPCDissatisfaction : MonoBehaviour
 {
     private DissatisfactionState _state;
     private ResidentHousingState _residence;
+    private bool _isSuspended;
+
+    public void SetSuspended(bool suspended) { _isSuspended = suspended; }
 
     public void Initialize(NPCType npcType, DissatisfactionState state)
         => Initialize(npcType, state, null);
@@ -14,7 +17,7 @@ public sealed class NPCDissatisfaction : MonoBehaviour
     {
         Unbind();
         _residence = residence;
-        if (npcType == NPCType.Farmer || npcType == NPCType.Builder || npcType == NPCType.Guard)
+        if (npcType == NPCType.Farmer || npcType == NPCType.Builder || npcType == NPCType.Guard || npcType == NPCType.Archer)
             _state = state;
     }
 
@@ -23,7 +26,8 @@ public sealed class NPCDissatisfaction : MonoBehaviour
 
     private void Update()
     {
-        _state?.Tick(Time.deltaTime, _residence?.DissatisfactionRecoveryBonus ?? 0f);
+        if (!_isSuspended)
+            _state?.Tick(Time.deltaTime, _residence?.DissatisfactionRecoveryBonus ?? 0f);
     }
 
     public void Unbind()
@@ -31,6 +35,7 @@ public sealed class NPCDissatisfaction : MonoBehaviour
         _state?.Reset();
         _state = null;
         _residence = null;
+        _isSuspended = false;
     }
 
     private void OnDisable() => Unbind();

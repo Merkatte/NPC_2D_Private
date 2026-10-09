@@ -7,6 +7,17 @@ public class WorkerNPC : MonoBehaviour
     [SerializeField] private NPCDissatisfaction _dissatisfaction;
     [SerializeField] private Rigidbody2D _rigidbody;
     [SerializeField] private Collider2D[] _gameplayColliders;
+    [SerializeField] private DefenseActor _defenseActor;
+    private bool _actionExecutionEnabled = true;
+    public DefenseActor DefenseActor => _defenseActor;
+
+    public void SetActionExecutionEnabled(bool enabled)
+    {
+        if (_actionExecutionEnabled == enabled) return;
+        _actionExecutionEnabled = enabled;
+        if (_dissatisfaction) _dissatisfaction.SetSuspended(!enabled);
+        if (!enabled && _isInitialized) CancelAndReturnQueue();
+    }
 
     private IAction _currentAction;
     private NPCStat _stat;
@@ -144,11 +155,13 @@ public class WorkerNPC : MonoBehaviour
         _selector = selector;
 
         _isInitialized = true;
+        _actionExecutionEnabled = true;
+        if (_defenseActor) _defenseActor.Initialize(npcType, stat);
     }
 
     void Update()
     {
-        if (!_isInitialized)
+        if (!_isInitialized || !_actionExecutionEnabled || Time.timeScale <= 0f)
         {
             return;
         }
@@ -160,7 +173,8 @@ public class WorkerNPC : MonoBehaviour
         }
 
         _reassessmentElapsed += Time.deltaTime;
-        if (_reassessmentElapsed >= _selector.GetReassessmentSeconds(_residence))
+        float reassessment = _selector.GetReassessmentSeconds(_residence);
+        if (_reassessmentElapsed >= reassessment)
         {
             _reassessmentElapsed = 0f;
             if (_selector.ShouldReplan(_stat, _npcType, _component, _currentAction.GetMyActionType(), _residence))
@@ -171,6 +185,7 @@ public class WorkerNPC : MonoBehaviour
             }
         }
         _currentAction.Tick();
+        if (_currentAction == null || !_actionExecutionEnabled || Time.timeScale <= 0f) return;
 
         switch (_currentAction.Result)
         {
@@ -207,6 +222,7 @@ public class WorkerNPC : MonoBehaviour
         }
 
         CancelAndReturnQueue();
+        if (_defenseActor) _defenseActor.Unbind();
         if (Disabled != null)
         {
             foreach (System.Action<WorkerNPC> listener in Disabled.GetInvocationList())
@@ -230,6 +246,7 @@ public class WorkerNPC : MonoBehaviour
 
     private void AdvanceQueue()
     {
+        if (!_actionExecutionEnabled || Time.timeScale <= 0f) return;
         if (_actionQueue == null || _actionQueue.Count == 0)
         {
             _actionQueue = _selector.RequestNewActionQueue(_stat, _npcType, _component, _residence);

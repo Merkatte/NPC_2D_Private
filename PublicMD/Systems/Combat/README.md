@@ -54,7 +54,7 @@ Movement -> 동적 target 추적
 ## 알려진 제약과 TBD
 
 - NPC가 일반적으로 `ICombatTarget`이 되는 정책은 아직 확정되지 않았다.
-- Enemy production spawn 경로와 전용 animation은 아직 없다.
+- 기존 비Defense 씬은 TestOnly Enemy 생성 경로를 유지한다. DefenseTest의 production 생성은 [Defense Progression](../Defense/Progression.md)의 DefenseWaveController가 소유한다. Enemy 전용 animation은 아직 없다.
 
 ## 문서 갱신 조건
 

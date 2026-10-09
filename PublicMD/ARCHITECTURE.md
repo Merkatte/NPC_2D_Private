@@ -121,6 +121,16 @@ Manager는 별도 루트에서 DontDestroyOnLoad를 적용하고, SO는 Inspecto
 
 ## 4. 의존 방향
 
+### 북쪽 성벽 방어 연결 (2026-10-09 구현)
+
+DefenseBattlefield는 scene의 전투 대상·성벽·궁병 슬롯을 등록하고 후보를 조회한다. DefenseResponsePolicy와 selector가 전투·도주 우선순위 및 queue를 구성하며, DefenseActor가 개체별 전투 의도와 다운 상태를 보관한다. 아군 HP는 기존 NPCStat 하나가 소유한다. WorkerNPC는 실행 정지와 재판단 hook만 제공하고 역할별 표적 선택을 소유하지 않는다.
+
+이동은 주입된 faction별 navigation capability를 사용한다. 성벽의 동적 blocker 변경은 navigation revision으로 경로 추종에 전달한다. 공격 action은 선택한 target에 대한 타격·발사를 실행하고 projectile은 도착 피해만 처리한다. 표현 adapter는 무기·공격·다운 표시를 맡고 피해 판정을 소유하지 않는다.
+
+시설 durability는 기능 해제를 기존 facility/plot owner에 위임하며, maintenance provider가 수리·재건·잔해 청소의 lease와 진행도·비용 transaction을 소유한다. Builder selector가 작업 우선순위를 선택하고 maintenance action은 주입된 lease를 실행·반환한다. 신규 건설은 기존 construction 경로를 사용한다.
+
+DefenseGameSession은 scene의 pause lease와 GameOver 정지를 소유한다. Wave/Event controller는 공유 정의로부터 scene 타이머·현재 상태를 운영하고 UI는 그 조회와 명령을 소비한다. 공유 ScriptableObject에 HP·현재 웨이브·이벤트 시간을 저장하지 않는다. 초기 군사 배치와 적 웨이브는 production 생성 경로에 연결하며 기존 TestOnly 초기 자원 구성과 분리한다. 현재 파일 ownership과 배선은 [Defense](Systems/Defense/README.md)를 따른다.
+
 ### 주택·입주 연결 (2026-10-08 승인 범위)
 
 NPCManager는 주민 등록/해제와 읽기 전용 roster를 제공하고 HousingManager는 주택 registry와 배정 요청을 조정한다. HousingAssignmentPolicy는 불만도/등록 순서와 도달 가능한 최근접 집 선택을 소유한다. House와 ResidentHousingState가 양쪽 입주 상태를 확정하며 공유 CSV 정의는 runtime 상태를 갖지 않는다.
@@ -183,7 +193,7 @@ ScriptableObject definition -> creates/configures runtime object
 - production과 TestOnly assembly가 분리되지 않았다.
 - Worker pool의 active actor 제거·despawn lifecycle이 완성되지 않았다.
 - prefab catalog와 기존 단일 worker pool이 아직 하나의 생성 경로로 통합되지 않았다.
-- NPC의 일반 combat target 정책과 Enemy production spawn 경로가 미결정이다.
+- 기존 일반 combat 흐름과 별개로 DefenseTest의 target 정책·Enemy production spawn은 Defense 기능에 정의한다. 방어가 연결되지 않은 기존 씬의 흐름은 유지한다.
 - 씨앗 선택을 포함한 농장 생산 대상 변경 규칙이 미결정이다.
 
 세부 상태와 변경 위치는 각 Systems 문서의 `알려진 제약과 TBD`를 따른다.

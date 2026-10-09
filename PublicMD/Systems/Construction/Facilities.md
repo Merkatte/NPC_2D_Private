@@ -15,6 +15,10 @@ BuildingFactory는 선택된 정의와 고정 부지의 배치 정보를 받아 
 
 주택 업그레이드는 새 prefab을 생성하지 않는다. Factory가 다음 단계와 sprite를 검증하고 기존 facility가 sprite를 준비한 다음 House.TryApplyTier를 호출한다. false이면 sprite를 복원하며 House domain은 단계/입주를 변경하지 않는다. 성공 변경 이벤트는 새 단계와 sprite를 함께 관찰한다. 공사 비용/예약/진행은 Plot이 소유한다.
 
+## 선택적 Defense 주입
+
+BuildingFactory의 DefenseBattlefield/DefenseMaintenanceRegistry/DefenseDurabilitySettings/DefenseGameSession 참조가 연결되면 생성한 variant의 DefenseBuildingDurability에 resources/plot/facility/DestinationDB까지 주입한다. 기존 비활성 생성→시설 설정→입구 정렬→활성화 순서 안에서 처리한다. Defense 서비스가 없으면 기존 prefab과 경로를 유지한다. 파괴는 기존 CompletedBuildingFacility.RemoveRegistrations와 시설별 disable 수명을 사용한다. 피해/잔해 transaction은 [Defense durability](../Defense/Durability_and_Maintenance.md)가 소유한다.
+
 ## 최소 확인 범위와 불변 규칙
 
 - 생성/수명 변경은 두 파일과 해당 시설의 주 소유 문서, DestinationDB/InteractableManager, ResourceManager를 확인한다.

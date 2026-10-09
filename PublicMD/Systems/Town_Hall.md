@@ -6,6 +6,10 @@
 
 TownHallVisual은 클릭 표면과 월드 아이콘만 소유한다. TownHallPopup은 탭 선택과 모집 의도를 전달하고 TownHallRecruitCard는 읽기 전용 상태를 표시한다. UI가 타이머나 골드를 직접 변경하지 않는다.
 
+## Defense 궁수 모집
+
+Defense 전용 scene/popup은 Archer 카드를 추가한다. NPCManager의 빈 궁수 자리 확인과 실제 lease 예약은 골드 지출보다 앞서고 실패는 NoArcherStation으로 표시한다. 기존 enum 값·원본 세 직군 카드·공용 prefab은 유지한다. pause 중 TryDispatchCandidate는 NotReady이고 모집 시간도 정지한다. 자리 수명은 [Defense response](Defense/Battlefield_and_Response.md), 씬 조립은 [Defense progression](Defense/Progression.md)이 소유한다.
+
 ## 현재 실행 흐름
 
 1. Awake가 직군별 설정을 검증하고 CandidateReady, 남은 시간 0으로 runtime 상태를 생성한다. 중복/잘못된 설정은 한 번 오류를 출력하고 모집을 거부한다.
@@ -28,7 +32,7 @@ TryGetRecruitment(NPCType, out RecruitmentStatus)는 값 복사만 반환한다.
 | `Assets/Scripts/UI/TownHallPopup.cs` | 탭 선택, 상태 조회와 모집 의도 전달 |
 | `Assets/Scripts/UI/TownHallRecruitCard.cs` | 직군별 이미지·이름·비용·상태·시간·버튼 표시 |
 | `Assets/Scripts/Enum/RecruitPhase.cs` | Recruiting/CandidateReady, 기존 직렬화 값 유지 |
-| `Assets/Scripts/Enum/RecruitResult.cs` | Success/NotReady/NotEnoughGold/SpawnUnavailable |
+| `Assets/Scripts/Enum/RecruitResult.cs` | Success/NotReady/NotEnoughGold/SpawnUnavailable/NoArcherStation |
 
 WorkerReservation의 계약과 소유는 [Spawning and Pooling](Spawning_and_Pooling.md)을 따른다.
 

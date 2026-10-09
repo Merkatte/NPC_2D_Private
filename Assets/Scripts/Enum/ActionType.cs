@@ -13,4 +13,8 @@ public enum ActionType
     Wander,
     Build,
     HomeStay,
+    DefenseAttack,
+    DefenseStation,
+    Flee,
+    Maintain,
 }

@@ -1,0 +1,2145 @@
+fileFormatVersion: 2
+guid: b47b309f78a84ae479db642c00777bc6
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 509534029074366143
+    second: wall-intact_0
+  - first:
+      213: -1518631805457429519
+    second: wall-intact_1
+  - first:
+      213: 1977049288615217465
+    second: wall-intact_2
+  - first:
+      213: 3754622408475358429
+    second: wall-intact_3
+  - first:
+      213: 6136031466441738659
+    second: wall-intact_4
+  - first:
+      213: 6517053209738354394
+    second: wall-intact_5
+  - first:
+      213: 8411977026857284555
+    second: wall-intact_6
+  - first:
+      213: 7251833060959107924
+    second: wall-intact_7
+  - first:
+      213: -2238204375661932639
+    second: wall-intact_8
+  - first:
+      213: -442755274761484326
+    second: wall-intact_9
+  - first:
+      213: 1524409833854564132
+    second: wall-intact_10
+  - first:
+      213: 1950347048044656466
+    second: wall-intact_11
+  - first:
+      213: 3994145791929134122
+    second: wall-intact_12
+  - first:
+      213: -5008560473670647257
+    second: wall-intact_13
+  - first:
+      213: 6139005683971730202
+    second: wall-intact_14
+  - first:
+      213: -5095775429385548037
+    second: wall-intact_15
+  - first:
+      213: 3821374564401067050
+    second: wall-intact_16
+  - first:
+      213: 3283971914838800213
+    second: wall-intact_17
+  - first:
+      213: 228488755834140253
+    second: wall-intact_18
+  - first:
+      213: -5605793460323354483
+    second: wall-intact_19
+  - first:
+      213: 1493961953942204094
+    second: wall-intact_20
+  - first:
+      213: 6863338076802083853
+    second: wall-intact_21
+  - first:
+      213: -4162168514400343788
+    second: wall-intact_22
+  - first:
+      213: 5097027636762427315
+    second: wall-intact_23
+  - first:
+      213: -8136177606371359939
+    second: wall-intact_24
+  - first:
+      213: -7953764891646285772
+    second: wall-intact_25
+  - first:
+      213: 547532492707401311
+    second: wall-intact_26
+  - first:
+      213: -2030275131575479429
+    second: wall-intact_27
+  - first:
+      213: -6366741266718655506
+    second: wall-intact_28
+  - first:
+      213: 8633494784172012091
+    second: wall-intact_29
+  - first:
+      213: 1927826041182414451
+    second: wall-intact_30
+  - first:
+      213: -8359403926755798481
+    second: wall-intact_31
+  - first:
+      213: -2116222686633723953
+    second: wall-intact_32
+  - first:
+      213: -5112443460427611334
+    second: wall-intact_33
+  - first:
+      213: 9187191974944115055
+    second: wall-intact_34
+  - first:
+      213: -4006203341007116260
+    second: wall-intact_35
+  - first:
+      213: 5341687822599387407
+    second: wall-intact_36
+  - first:
+      213: 7202854899250828234
+    second: wall-intact_37
+  - first:
+      213: -5692643713745429665
+    second: wall-intact_38
+  - first:
+      213: -7841253095717498919
+    second: wall-intact_39
+  - first:
+      213: 2902459440456095655
+    second: wall-intact_40
+  - first:
+      213: 8276041528428188443
+    second: wall-intact_41
+  - first:
+      213: -2995732735296358991
+    second: wall-intact_42
+  - first:
+      213: -2229022508277025206
+    second: wall-intact_43
+  - first:
+      213: 4697428308900822344
+    second: wall-intact_44
+  - first:
+      213: 3965843994954015981
+    second: wall-intact_45
+  - first:
+      213: -6656905254765402183
+    second: wall-intact_46
+  - first:
+      213: 4719672689395123308
+    second: wall-intact_47
+  - first:
+      213: -7906932110683907903
+    second: wall-intact_48
+  - first:
+      213: -7681406372360618805
+    second: wall-intact_49
+  - first:
+      213: 3980386256957778098
+    second: wall-intact_50
+  - first:
+      213: 6318087575011337266
+    second: wall-intact_51
+  - first:
+      213: 4625401326214994807
+    second: wall-intact_52
+  - first:
+      213: 6165519458233249745
+    second: wall-intact_53
+  - first:
+      213: -3355173647116884700
+    second: wall-intact_54
+  - first:
+      213: 4852498193996517403
+    second: wall-intact_55
+  - first:
+      213: 7672255713062225223
+    second: wall-intact_56
+  - first:
+      213: -4049601022963949777
+    second: wall-intact_57
+  - first:
+      213: -6574360025434850694
+    second: wall-intact_58
+  - first:
+      213: 3243333123087269061
+    second: wall-intact_59
+  - first:
+      213: -9159182620378059021
+    second: wall-intact_60
+  - first:
+      213: -6147440728394252489
+    second: wall-intact_61
+  - first:
+      213: 5046621469475428721
+    second: wall-intact_62
+  - first:
+      213: -3989837699252937757
+    second: wall-intact_63
+  - first:
+      213: -4911499024171585386
+    second: wall-intact_64
+  - first:
+      213: -373636845887820830
+    second: wall-intact_65
+  - first:
+      213: 2200868570957482264
+    second: wall-intact_66
+  - first:
+      213: 6848402313128009493
+    second: wall-intact_67
+  - first:
+      213: 3593459524289071219
+    second: wall-intact_68
+  - first:
+      213: -141413912014178847
+    second: wall-intact_69
+  - first:
+      213: -6682042150680124185
+    second: wall-intact_70
+  - first:
+      213: -3798849189969624016
+    second: wall-intact_71
+  - first:
+      213: -9075657526877871914
+    second: wall-intact_72
+  - first:
+      213: 4648516062206131566
+    second: wall-intact_73
+  - first:
+      213: -4382860102067171958
+    second: wall-intact_74
+  - first:
+      213: -1084006166328391399
+    second: wall-intact_75
+  - first:
+      213: -2167168139702096744
+    second: wall-intact_76
+  - first:
+      213: -2268923694942414663
+    second: wall-intact_77
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 9
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 150
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: wall-intact_0
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 873
+        width: 117
+        height: 104
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fbe73f3ff7a321700800000000000000
+      internalID: 509534029074366143
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_1
+      rect:
+        serializedVersion: 2
+        x: 224
+        y: 943
+        width: 17
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1fb89134b6cbceae0800000000000000
+      internalID: -1518631805457429519
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_2
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 895
+        width: 41
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 93949576ad3ef6b10800000000000000
+      internalID: 1977049288615217465
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_3
+      rect:
+        serializedVersion: 2
+        x: 266
+        y: 870
+        width: 15
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dd435ea00391b1430800000000000000
+      internalID: 3754622408475358429
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_4
+      rect:
+        serializedVersion: 2
+        x: 278
+        y: 895
+        width: 9
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3a901efcb10972550800000000000000
+      internalID: 6136031466441738659
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_5
+      rect:
+        serializedVersion: 2
+        x: 286
+        y: 938
+        width: 27
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ade16cc8d59317a50800000000000000
+      internalID: 6517053209738354394
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_6
+      rect:
+        serializedVersion: 2
+        x: 342
+        y: 885
+        width: 155
+        height: 117
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bc3339099885db470800000000000000
+      internalID: 8411977026857284555
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_7
+      rect:
+        serializedVersion: 2
+        x: 494
+        y: 943
+        width: 51
+        height: 53
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 45bb6e04fbfa3a460800000000000000
+      internalID: 7251833060959107924
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_8
+      rect:
+        serializedVersion: 2
+        x: 554
+        y: 854
+        width: 149
+        height: 110
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1af02f59afc40f0e0800000000000000
+      internalID: -2238204375661932639
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_9
+      rect:
+        serializedVersion: 2
+        x: 712
+        y: 877
+        width: 151
+        height: 109
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ad749656c640bd9f0800000000000000
+      internalID: -442755274761484326
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_10
+      rect:
+        serializedVersion: 2
+        x: 870
+        y: 863
+        width: 87
+        height: 129
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 427730fcaaac72510800000000000000
+      internalID: 1524409833854564132
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_11
+      rect:
+        serializedVersion: 2
+        x: 1006
+        y: 855
+        width: 165
+        height: 147
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 257fe6b8e46011b10800000000000000
+      internalID: 1950347048044656466
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_12
+      rect:
+        serializedVersion: 2
+        x: 1230
+        y: 855
+        width: 143
+        height: 137
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a2cae059f6e0e6730800000000000000
+      internalID: 3994145791929134122
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_13
+      rect:
+        serializedVersion: 2
+        x: 1418
+        y: 911
+        width: 79
+        height: 85
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7228cc229c40e7ab0800000000000000
+      internalID: -5008560473670647257
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_14
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 17
+        width: 1512
+        height: 836
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a1b2d3bc421223550800000000000000
+      internalID: 6139005683971730202
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_15
+      rect:
+        serializedVersion: 2
+        x: 40
+        y: 63
+        width: 7
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bfe8f4cde3b2849b0800000000000000
+      internalID: -5095775429385548037
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_16
+      rect:
+        serializedVersion: 2
+        x: 76
+        y: 107
+        width: 7
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a24b6d87bef380530800000000000000
+      internalID: 3821374564401067050
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_17
+      rect:
+        serializedVersion: 2
+        x: 82
+        y: 111
+        width: 13
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 557735cae03039d20800000000000000
+      internalID: 3283971914838800213
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_18
+      rect:
+        serializedVersion: 2
+        x: 94
+        y: 71
+        width: 8
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d563aa61051cb2300800000000000000
+      internalID: 228488755834140253
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_19
+      rect:
+        serializedVersion: 2
+        x: 120
+        y: 93
+        width: 23
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d88f7317c883432b0800000000000000
+      internalID: -5605793460323354483
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_20
+      rect:
+        serializedVersion: 2
+        x: 125
+        y: 50
+        width: 14
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ebe6ca45b7e9bb410800000000000000
+      internalID: 1493961953942204094
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_21
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 97
+        width: 19
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d0c63390e997f3f50800000000000000
+      internalID: 6863338076802083853
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_22
+      rect:
+        serializedVersion: 2
+        x: 174
+        y: 47
+        width: 73
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4192adbc9c10d36c0800000000000000
+      internalID: -4162168514400343788
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_23
+      rect:
+        serializedVersion: 2
+        x: 188
+        y: 93
+        width: 11
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3bfb29361a74cb640800000000000000
+      internalID: 5097027636762427315
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_24
+      rect:
+        serializedVersion: 2
+        x: 206
+        y: 109
+        width: 21
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d334fb6039d761f80800000000000000
+      internalID: -8136177606371359939
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_25
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 93
+        width: 17
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 438237ec8fc8e9190800000000000000
+      internalID: -7953764891646285772
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_26
+      rect:
+        serializedVersion: 2
+        x: 292
+        y: 61
+        width: 24
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f5e0fc2b6e9399700800000000000000
+      internalID: 547532492707401311
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_27
+      rect:
+        serializedVersion: 2
+        x: 318
+        y: 59
+        width: 25
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b735222568303d3e0800000000000000
+      internalID: -2030275131575479429
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_28
+      rect:
+        serializedVersion: 2
+        x: 356
+        y: 89
+        width: 13
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eebf964ec8ac4a7a0800000000000000
+      internalID: -6366741266718655506
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_29
+      rect:
+        serializedVersion: 2
+        x: 358
+        y: 63
+        width: 11
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b32b2c493c550d770800000000000000
+      internalID: 8633494784172012091
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_30
+      rect:
+        serializedVersion: 2
+        x: 368
+        y: 97
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 376ec65029301ca10800000000000000
+      internalID: 1927826041182414451
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_31
+      rect:
+        serializedVersion: 2
+        x: 388
+        y: 101
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f2217bb2b6e6dfb80800000000000000
+      internalID: -8359403926755798481
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_32
+      rect:
+        serializedVersion: 2
+        x: 398
+        y: 61
+        width: 28
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc7f291cdaaa1a2e0800000000000000
+      internalID: -2116222686633723953
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_33
+      rect:
+        serializedVersion: 2
+        x: 402
+        y: 145
+        width: 11
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a3381f672c3fc09b0800000000000000
+      internalID: -5112443460427611334
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_34
+      rect:
+        serializedVersion: 2
+        x: 416
+        y: 113
+        width: 15
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f690dd5ec667f7f70800000000000000
+      internalID: 9187191974944115055
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_35
+      rect:
+        serializedVersion: 2
+        x: 422
+        y: 67
+        width: 11
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c18a941894b1768c0800000000000000
+      internalID: -4006203341007116260
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_36
+      rect:
+        serializedVersion: 2
+        x: 462
+        y: 48
+        width: 71
+        height: 47
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f09f01fe5cc712a40800000000000000
+      internalID: 5341687822599387407
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_37
+      rect:
+        serializedVersion: 2
+        x: 542
+        y: 61
+        width: 25
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ac317865e5ea5f360800000000000000
+      internalID: 7202854899250828234
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_38
+      rect:
+        serializedVersion: 2
+        x: 568
+        y: 65
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f5bd75904baaff0b0800000000000000
+      internalID: -5692643713745429665
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_39
+      rect:
+        serializedVersion: 2
+        x: 582
+        y: 57
+        width: 57
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9df83dbaad54e2390800000000000000
+      internalID: -7841253095717498919
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_40
+      rect:
+        serializedVersion: 2
+        x: 654
+        y: 59
+        width: 21
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7a75d53bb7b974820800000000000000
+      internalID: 2902459440456095655
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_41
+      rect:
+        serializedVersion: 2
+        x: 702
+        y: 127
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b13d758fbe76ad270800000000000000
+      internalID: 8276041528428188443
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_42
+      rect:
+        serializedVersion: 2
+        x: 718
+        y: 89
+        width: 36
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1b5b6a603f40d66d0800000000000000
+      internalID: -2995732735296358991
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_43
+      rect:
+        serializedVersion: 2
+        x: 742
+        y: 55
+        width: 25
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a463ccda6dbe011e0800000000000000
+      internalID: -2229022508277025206
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_44
+      rect:
+        serializedVersion: 2
+        x: 750
+        y: 143
+        width: 19
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 84db5eda82e903140800000000000000
+      internalID: 4697428308900822344
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_45
+      rect:
+        serializedVersion: 2
+        x: 782
+        y: 95
+        width: 43
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de4a9d9f912890730800000000000000
+      internalID: 3965843994954015981
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_46
+      rect:
+        serializedVersion: 2
+        x: 792
+        y: 69
+        width: 17
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9b7e64ac0fbed93a0800000000000000
+      internalID: -6656905254765402183
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_47
+      rect:
+        serializedVersion: 2
+        x: 838
+        y: 114
+        width: 13
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c64428b1e45af7140800000000000000
+      internalID: 4719672689395123308
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_48
+      rect:
+        serializedVersion: 2
+        x: 862
+        y: 65
+        width: 9
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1c85e87532fe44290800000000000000
+      internalID: -7906932110683907903
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_49
+      rect:
+        serializedVersion: 2
+        x: 868
+        y: 63
+        width: 11
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bccf5082a99266590800000000000000
+      internalID: -7681406372360618805
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_50
+      rect:
+        serializedVersion: 2
+        x: 878
+        y: 65
+        width: 15
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2b8a0d2363c2d3730800000000000000
+      internalID: 3980386256957778098
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_51
+      rect:
+        serializedVersion: 2
+        x: 904
+        y: 111
+        width: 9
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2342c50cc2b5ea750800000000000000
+      internalID: 6318087575011337266
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_52
+      rect:
+        serializedVersion: 2
+        x: 904
+        y: 95
+        width: 23
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 77b5aa0fff9b03040800000000000000
+      internalID: 4625401326214994807
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_53
+      rect:
+        serializedVersion: 2
+        x: 908
+        y: 125
+        width: 9
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1df60cbe743509550800000000000000
+      internalID: 6165519458233249745
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_54
+      rect:
+        serializedVersion: 2
+        x: 926
+        y: 55
+        width: 81
+        height: 62
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 425a8db28570071d0800000000000000
+      internalID: -3355173647116884700
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_55
+      rect:
+        serializedVersion: 2
+        x: 958
+        y: 93
+        width: 51
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b101366d569875340800000000000000
+      internalID: 4852498193996517403
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_56
+      rect:
+        serializedVersion: 2
+        x: 1022
+        y: 101
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7450903fbe3597a60800000000000000
+      internalID: 7672255713062225223
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_57
+      rect:
+        serializedVersion: 2
+        x: 1037
+        y: 71
+        width: 20
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f2fdc28435decc7c0800000000000000
+      internalID: -4049601022963949777
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_58
+      rect:
+        serializedVersion: 2
+        x: 1046
+        y: 94
+        width: 12
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a7a7d6aa36e23c4a0800000000000000
+      internalID: -6574360025434850694
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_59
+      rect:
+        serializedVersion: 2
+        x: 1070
+        y: 67
+        width: 17
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ccffd1aa42a20d20800000000000000
+      internalID: 3243333123087269061
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_60
+      rect:
+        serializedVersion: 2
+        x: 1094
+        y: 129
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3fe2f672feb04e080800000000000000
+      internalID: -9159182620378059021
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_61
+      rect:
+        serializedVersion: 2
+        x: 1096
+        y: 63
+        width: 15
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 73fba426a37efaaa0800000000000000
+      internalID: -6147440728394252489
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_62
+      rect:
+        serializedVersion: 2
+        x: 1112
+        y: 69
+        width: 7
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 17951f30d73390640800000000000000
+      internalID: 5046621469475428721
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_63
+      rect:
+        serializedVersion: 2
+        x: 1118
+        y: 67
+        width: 13
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3eb119860cf31a8c0800000000000000
+      internalID: -3989837699252937757
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_64
+      rect:
+        serializedVersion: 2
+        x: 1184
+        y: 79
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6903395e8a9d6dbb0800000000000000
+      internalID: -4911499024171585386
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_65
+      rect:
+        serializedVersion: 2
+        x: 1222
+        y: 58
+        width: 51
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2ebebdda44390daf0800000000000000
+      internalID: -373636845887820830
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_66
+      rect:
+        serializedVersion: 2
+        x: 1268
+        y: 63
+        width: 11
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8190e39fd4e0b8e10800000000000000
+      internalID: 2200868570957482264
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_67
+      rect:
+        serializedVersion: 2
+        x: 1304
+        y: 55
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 51f55f09e996a0f50800000000000000
+      internalID: 6848402313128009493
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_68
+      rect:
+        serializedVersion: 2
+        x: 1309
+        y: 55
+        width: 56
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3788efbf5688ed130800000000000000
+      internalID: 3593459524289071219
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_69
+      rect:
+        serializedVersion: 2
+        x: 1366
+        y: 63
+        width: 25
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e5b818dbc8990ef0800000000000000
+      internalID: -141413912014178847
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_70
+      rect:
+        serializedVersion: 2
+        x: 1380
+        y: 97
+        width: 25
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7e42682211e9443a0800000000000000
+      internalID: -6682042150680124185
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_71
+      rect:
+        serializedVersion: 2
+        x: 1390
+        y: 63
+        width: 27
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0348494f9c6c74bc0800000000000000
+      internalID: -3798849189969624016
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_72
+      rect:
+        serializedVersion: 2
+        x: 1400
+        y: 98
+        width: 9
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d0285f6099cc0280800000000000000
+      internalID: -9075657526877871914
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_73
+      rect:
+        serializedVersion: 2
+        x: 1408
+        y: 97
+        width: 7
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e6d7e7ccab8d28040800000000000000
+      internalID: 4648516062206131566
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_74
+      rect:
+        serializedVersion: 2
+        x: 1414
+        y: 95
+        width: 9
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a8dcd0465f3fc23c0800000000000000
+      internalID: -4382860102067171958
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_75
+      rect:
+        serializedVersion: 2
+        x: 1414
+        y: 65
+        width: 11
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 919c9a19226d4f0f0800000000000000
+      internalID: -1084006166328391399
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_76
+      rect:
+        serializedVersion: 2
+        x: 1430
+        y: 63
+        width: 29
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 89c23802f0cace1e0800000000000000
+      internalID: -2167168139702096744
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: wall-intact_77
+      rect:
+        serializedVersion: 2
+        x: 1460
+        y: 93
+        width: 35
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9b89d74bbe92380e0800000000000000
+      internalID: -2268923694942414663
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      wall-intact_0: 509534029074366143
+      wall-intact_1: -1518631805457429519
+      wall-intact_10: 1524409833854564132
+      wall-intact_11: 1950347048044656466
+      wall-intact_12: 3994145791929134122
+      wall-intact_13: -5008560473670647257
+      wall-intact_14: 6139005683971730202
+      wall-intact_15: -5095775429385548037
+      wall-intact_16: 3821374564401067050
+      wall-intact_17: 3283971914838800213
+      wall-intact_18: 228488755834140253
+      wall-intact_19: -5605793460323354483
+      wall-intact_2: 1977049288615217465
+      wall-intact_20: 1493961953942204094
+      wall-intact_21: 6863338076802083853
+      wall-intact_22: -4162168514400343788
+      wall-intact_23: 5097027636762427315
+      wall-intact_24: -8136177606371359939
+      wall-intact_25: -7953764891646285772
+      wall-intact_26: 547532492707401311
+      wall-intact_27: -2030275131575479429
+      wall-intact_28: -6366741266718655506
+      wall-intact_29: 8633494784172012091
+      wall-intact_3: 3754622408475358429
+      wall-intact_30: 1927826041182414451
+      wall-intact_31: -8359403926755798481
+      wall-intact_32: -2116222686633723953
+      wall-intact_33: -5112443460427611334
+      wall-intact_34: 9187191974944115055
+      wall-intact_35: -4006203341007116260
+      wall-intact_36: 5341687822599387407
+      wall-intact_37: 7202854899250828234
+      wall-intact_38: -5692643713745429665
+      wall-intact_39: -7841253095717498919
+      wall-intact_4: 6136031466441738659
+      wall-intact_40: 2902459440456095655
+      wall-intact_41: 8276041528428188443
+      wall-intact_42: -2995732735296358991
+      wall-intact_43: -2229022508277025206
+      wall-intact_44: 4697428308900822344
+      wall-intact_45: 3965843994954015981
+      wall-intact_46: -6656905254765402183
+      wall-intact_47: 4719672689395123308
+      wall-intact_48: -7906932110683907903
+      wall-intact_49: -7681406372360618805
+      wall-intact_5: 6517053209738354394
+      wall-intact_50: 3980386256957778098
+      wall-intact_51: 6318087575011337266
+      wall-intact_52: 4625401326214994807
+      wall-intact_53: 6165519458233249745
+      wall-intact_54: -3355173647116884700
+      wall-intact_55: 4852498193996517403
+      wall-intact_56: 7672255713062225223
+      wall-intact_57: -4049601022963949777
+      wall-intact_58: -6574360025434850694
+      wall-intact_59: 3243333123087269061
+      wall-intact_6: 8411977026857284555
+      wall-intact_60: -9159182620378059021
+      wall-intact_61: -6147440728394252489
+      wall-intact_62: 5046621469475428721
+      wall-intact_63: -3989837699252937757
+      wall-intact_64: -4911499024171585386
+      wall-intact_65: -373636845887820830
+      wall-intact_66: 2200868570957482264
+      wall-intact_67: 6848402313128009493
+      wall-intact_68: 3593459524289071219
+      wall-intact_69: -141413912014178847
+      wall-intact_7: 7251833060959107924
+      wall-intact_70: -6682042150680124185
+      wall-intact_71: -3798849189969624016
+      wall-intact_72: -9075657526877871914
+      wall-intact_73: 4648516062206131566
+      wall-intact_74: -4382860102067171958
+      wall-intact_75: -1084006166328391399
+      wall-intact_76: -2167168139702096744
+      wall-intact_77: -2268923694942414663
+      wall-intact_8: -2238204375661932639
+      wall-intact_9: -442755274761484326
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

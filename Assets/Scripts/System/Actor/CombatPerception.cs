@@ -21,7 +21,15 @@ public class CombatPerception : MonoBehaviour
     private readonly Dictionary<Collider2D, TargetEntry> _colliderToEntry = new Dictionary<Collider2D, TargetEntry>();
     private readonly List<TargetEntry> _entries = new List<TargetEntry>();
 
-    public bool HasCandidate => _entries.Count > 0;
+    public bool HasCandidate
+    {
+        get
+        {
+            foreach (TargetEntry entry in _entries)
+                if (CombatTargetHandle.IsValidPair(entry.Target, entry.Owner)) return true;
+            return false;
+        }
+    }
 
     private void OnEnable()
     {
@@ -76,7 +84,7 @@ public class CombatPerception : MonoBehaviour
         }
 
         Component owner = target as Component;
-        if (!CombatTargetHandle.IsValidPair(target, owner))
+        if (!owner)
         {
             return;
         }
@@ -122,14 +130,15 @@ public class CombatPerception : MonoBehaviour
     }
 
     /// <summary>
-    /// Drops destroyed/dead candidates. Only called from Update(), never from a read-only getter.
+    /// Drops destroyed candidates. Untargetable objects stay cached so repaired walls
+    /// can become candidates without requiring another trigger entry.
     /// </summary>
     public void Prune()
     {
         for (int i = _entries.Count - 1; i >= 0; --i)
         {
             TargetEntry entry = _entries[i];
-            if (CombatTargetHandle.IsValidPair(entry.Target, entry.Owner))
+            if (entry.Owner)
             {
                 continue;
             }
@@ -151,7 +160,8 @@ public class CombatPerception : MonoBehaviour
         buffer.Clear();
         for (int i = 0; i < _entries.Count; ++i)
         {
-            buffer.Add((_entries[i].Target, _entries[i].Owner));
+            if (CombatTargetHandle.IsValidPair(_entries[i].Target, _entries[i].Owner))
+                buffer.Add((_entries[i].Target, _entries[i].Owner));
         }
     }
 }

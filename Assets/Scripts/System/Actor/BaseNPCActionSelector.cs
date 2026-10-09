@@ -6,17 +6,23 @@ public class BaseNPCActionSelector : MonoBehaviour
 {
     [SerializeField] protected DataManager dataManager;
     [SerializeField] protected ActionPool actionPool;
+    [SerializeField] protected DefenseResponsePolicy defenseResponse;
+    internal IAction RentDefenseAction(ActionType type) => GetAction(type);
+    internal bool RentDefenseAction(ActionType type, ActionContext context, List<IAction> rented) => TryRentAction(type, context, rented);
+    internal void ReturnDefenseActions(List<IAction> rented) { ReturnAll(rented); rented.Clear(); }
+    internal Queue<IAction> CreateDefenseIdle(NPCComponent component, NPCStat stat) => BuildFallbackIdleQueue(component, stat);
 
 
     protected virtual DestinationDecider HousingDecider => null;
     public virtual bool HasAvailableWork(NPCStat stat, NPCComponent component) => false;
 
     public virtual float GetReassessmentSeconds(ResidentHousingState residence)
-        => residence?.LifeSettings.ReassessmentSeconds ?? float.PositiveInfinity;
+        => defenseResponse ? defenseResponse.ReassessmentSeconds : residence?.LifeSettings.ReassessmentSeconds ?? float.PositiveInfinity;
 
     public virtual bool ShouldReplan(NPCStat stat, NPCType npcType, NPCComponent component,
         ActionType currentAction, ResidentHousingState residence)
     {
+        if (defenseResponse && defenseResponse.ShouldReplan(component, currentAction)) return true;
         if (residence == null || !residence.IsRegistered || currentAction != ActionType.HomeStay)
             return false;
         if (!residence.Home || !residence.Home.isActiveAndEnabled) return true;
@@ -28,6 +34,8 @@ public class BaseNPCActionSelector : MonoBehaviour
     public virtual Queue<IAction> RequestNewActionQueue(NPCStat stat, NPCType npcType,
         NPCComponent component, ResidentHousingState residence)
     {
+        if (defenseResponse && defenseResponse.TryBuildQueue(this, stat, component, out Queue<IAction> emergencyQueue))
+            return emergencyQueue;
         if (residence == null || !residence.IsRegistered)
             return RequestNewActionQueue(stat, npcType, component);
         if (residence.Home && residence.RequiresFirstHomeVisit)
