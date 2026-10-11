@@ -1,3 +1,19 @@
+# 농부 욕구 회복과 Idle 반복 교정 — 2026-10-11
+
+- 사용자 후속 Play 결과: 수정 후 정상 작동을 확인했다. 이어 임시 `[FarmerIdle]` 로그 제거와 커밋·푸시를 요청했다. 아래 미검증 표기는 당시 검사 범위이며, 이번 사용자 확인을 전체 농부/경비/생활 시나리오 자동 검증으로 확대 해석하지 않는다.
+- 임시 로그 정리: Farmer의 로그 호출·메서드·fallback override와 base의 로그 전용 virtual 확장을 제거하고 Selector 문서도 정리했다. 세 파일은 기존 HEAD와 같아졌으며 실제 판단 수정과 기존 선택형 decision trace는 유지한다. 최종 dotnet 컴파일은 오류0/기존 MSB3277 경고4(1.88초, `compile-cleanup.log`), 잔여 로그/override 참조 없음과 diff-check 통과를 확인했다. 독립 리뷰 Ohm(`independent-farmer-idle-remove-log-20261011`) Approve/findings 없음. 정리 후 별도 Play는 실행하지 않았다.
+- 후속 재현: 사용자 Play 중 허기50.04248/갈증60.04249/피로50.29181·불만0·비태업, 집 배정·Farming 가능한 Soil Growing50/100을 읽기 전용으로 확인했다. 캐시된 판단 점수는 Idle102.2608 > 농사3회102.1032였다. 변화 없는 Idle 뒤에 미래 농사 보상을 포함해 매 재판단에서 작업을 미루는 추가 원인을 확인했다. `ScoreCandidates`의 `CandidateKind.Idle` 분기만 종료 상태 가치로 평가하도록 수정하고 다른 후보의 재귀·즉시 비용·할인율·안전 필터를 유지했다. 공유 농부/경비/생활 판단에 적용하며 GuardDuty는 Idle intent여도 별도 Kind이므로 기존 미래 탐색을 유지한다. Decision_Policy와 SPEC에 기록했다.
+- 후속 검증: 같은 dotnet 컴파일 성공(오류0/기존 MSB3277 경고4, 3.59초), `compile-lookahead.log`; 루트 diff/의존/직렬화 무변경과 diff-check 확인. 코드 Avicenna, 독립 리뷰 Ohm(`independent-farmer-idle-lookahead-20261011`) Approve/findings 없음. Play 제어·화면 수집·새 검사 코드는 실행/추가하지 않았으며 수정 후 실제 플레이는 미검증이다. 아래 Unity 연결 부재는 최초 수정 시점의 상태이며 이번 재현 조사는 연결된 Editor에서 수행했다.
+- 사용자가 확인한 허기95/갈증90/피로80·불만0·비태업의 `source=decision` Idle 사례에 대해 세 수정을 승인했다. DestinationDecider는 실제 Farming 가능한 밭의 부재와 욕구로 인한 최소 batch 불가를 구분한다. 욕구로 작업이 막히면 blocker를 개선하고 다른 blocker를 악화시키거나 새 긴급 욕구를 만들지 않는 공급 후보로 제한한다. 여러 번의 부분 회복을 허용하고 공급이 없으면 Idle을 유지한다. 최초 판단과 look-ahead에 같은 조건을 적용하며 최소 batch·점수·난수 규칙은 보존했다. NPCDecisionTuning의 공통 임계는 `>=`로 교정해 건축가/BuildActionCost 등 같은 조회의 경계값에도 적용한다.
+- 변경: DestinationDecider.cs, NPCDecisionTuning.cs, 주 소유 Decision_Policy.md와 승인 규칙 Game_Plan/SPEC, 이 기록. 기존 FarmerIdle 코드·문서 변경을 보존했고 추가 진단 도구는 만들지 않았다. 코드 Avicenna(`01a1294f-3471-7a60-afb5-356a3e26ebe8`), 독립 리뷰 Ohm(`01a12952-1787-7db0-bc58-b496cc426b94`): Approve, findings 없음. 루트는 실제 diff·경계 사례·책임/의존을 확인했다.
+- 검증: 기존 Assembly-CSharp.csproj의 `dotnet build --no-restore -p:UseSharedCompilation=false` 성공, 오류0/기존 참조 버전 경고4(MSB3277), git diff --check 통과. `.harness-runs/farmer-idle-recovery-20261011/{scene-work.md,compile.log}`에 기록했다. 자동 Play·스크린샷·새 테스트/검증 코드는 실행/추가하지 않았다. Unity 연결이 없어 native import와 실제 행동은 미검증이며 사용자가 단독/다수 농부의 3단계 진행·욕구 회복 후 복귀·수확을 플레이 확인한다. 커밋하지 않았다.
+
+# 농부 Idle 진단 로그 — 2026-10-11
+
+- 사용자 요청으로 별도 계획 없이 작성 중이던 fallback 로그를 완성했다. BaseNPCActionSelector의 fallback을 virtual로 열고 FarmerActionSelector에서만 `[FarmerIdle]`을 출력한다. 일반 판단의 Idle 경로도 `source=decision`으로 구분하며 fallback은 `source=fallback`이다. NPC 이름/instanceID/context·위치·체력/욕구/불만·태업·긴급 욕구·cargo 상태를 Editor/Development에서 기록한다. 게임 규칙과 queue 동작은 변경하지 않았다.
+- 변경: BaseNPCActionSelector.cs, FarmerActionSelector.cs, 주 소유 Selector_and_Queue.md 및 이 기록. 코드 Gibbs(`01a12681-beb9-70c2-85f7-9999da9355a2`), 독립 읽기 전용 리뷰 Epicurus(`01a12684-4e10-74f2-a7b8-c306e0d8dbbb`): Approve, findings 없음. 기존 미완성 사용자 로그를 요청 범위에서 완성했고 다른 변경은 없다.
+- 검증: 기존 Assembly-CSharp.csproj의 `dotnet build --no-restore` 성공, 오류 0/Unity 패키지 참조 버전 경고 4(MSB3277), git diff --check 통과. 기록/컴파일 로그: `.harness-runs/farmer-idle-log-20261011/{scene-work.md,compile.log}`. Unity 연결이 없어 import와 실제 로그 출력은 미검증이다. 자동 Play/스크린샷·새 테스트/검증 도구는 실행·추가하지 않았다. 농사 정지 원인의 수정 완료를 의미하지 않는다.
+
 # 웨이브 HUD·모집창 UI 정리 — 2026-10-09
 
 - 웨이브 패널을 기존 목재·종이·녹색/올리브 버튼 이미지로 통일하고 우측 상단에 배치했다. 공유 시청 모집창을920×760으로 정리하고 가로 ScrollRect·RectMask2D·스크롤바를 추가했다. 제목·탭·닫기·결과 문구는 고정하고, 공유3개/Defense4개 카드와 기존 모집·웨이브 버튼 연결을 보존했다. 화면 Canvas 크기에 따른 축소와 모집 탭/재열기 시 첫 카드 복귀를 추가했다. 게임 규칙은 변경하지 않았다.

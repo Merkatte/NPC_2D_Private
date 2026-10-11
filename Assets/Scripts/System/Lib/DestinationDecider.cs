@@ -12,8 +12,9 @@ using UnityEngine;
 /// the nonlinear risk curve and bounded look-ahead that replaced the one-step utility.
 ///
 /// Every candidate - supply, role activity and the Idle floor - is scored in one comparable
-/// model after hard safety filtering. There is no satisfaction/recovery exit threshold: the
-/// nonlinear risk curve alone makes further recovery worth less and less.
+/// model after hard safety filtering and recovery filtering for a need-blocked work batch.
+/// There is no separate satisfaction threshold: recovery uses the existing minimum batch
+/// and critical-need threshold, then the nonlinear risk curve prices further recovery.
 /// </summary>
 public class DestinationDecider
 {
@@ -228,8 +229,12 @@ public class DestinationDecider
         {
             Candidate c = candidates[i];
 
-            float future = EvaluateNode(c.After, c.Position, moveSpeed, npcType, workCost,
-                remainingDepth - 1, level + 1);
+            // Idle leaves the snapshot unchanged. Borrowing future activity rewards here
+            // lets a rolling horizon keep postponing that activity indefinitely.
+            float future = c.Kind == CandidateKind.Idle
+                ? TerminalValue(c.After)
+                : EvaluateNode(c.After, c.Position, moveSpeed, npcType, workCost,
+                    remainingDepth - 1, level + 1);
 
             c.Score = ComputeImmediateScore(riskBefore, c) + _tuning.FutureDiscount * future;
             candidates[i] = c;
@@ -296,7 +301,9 @@ public class DestinationDecider
         }
         else if (state.IncludeRoleActivity && !state.IsOnStrike)
         {
-            AddRoleCandidate(candidates, state, pos, moveSpeed, npcType, workCost);
+            AddRoleCandidate(candidates, state, pos, moveSpeed, npcType, workCost, out int workBlockerMask);
+            if (workBlockerMask != 0)
+                ApplyWorkRecoveryFilter(candidates, state, workBlockerMask);
         }
 
         return candidates;
@@ -380,15 +387,16 @@ public class DestinationDecider
     }
 
     private void AddRoleCandidate(List<Candidate> candidates, NeedSnapshot state, Vector3 pos, float moveSpeed,
-        NPCType npcType, StatEffect workCost)
+        NPCType npcType, StatEffect workCost, out int workBlockerMask)
     {
+        workBlockerMask = 0;
         if (workCost == null)
             return;
 
         switch (npcType)
         {
             case NPCType.Farmer:
-                AddFarmerWorkCandidate(candidates, state, pos, moveSpeed, workCost);
+                AddFarmerWorkCandidate(candidates, state, pos, moveSpeed, workCost, out workBlockerMask);
                 break;
 
             case NPCType.Guard:
@@ -401,14 +409,20 @@ public class DestinationDecider
         }
     }
 
-    private void AddFarmerWorkCandidate(List<Candidate> candidates, NeedSnapshot state, Vector3 pos, float moveSpeed, StatEffect workCost)
+    private void AddFarmerWorkCandidate(List<Candidate> candidates, NeedSnapshot state, Vector3 pos, float moveSpeed,
+        StatEffect workCost, out int workBlockerMask)
     {
-        int safeRepeats = EstimateWorkCount(state, workCost, out NeedSnapshot afterBatch);
-        if (safeRepeats < _tuning.MinimumWorkBatch)
-            return;
-
+        // Missing/empty/harvesting farms do not justify recovery for future work.
+        workBlockerMask = 0;
         if (!TrySelectNearest(_destinationDB, BuildingType.Farm, ActionType.Farming, pos, out var destination, out var provider, out Vector3 workPos))
             return;
+
+        int safeRepeats = EstimateWorkCount(state, workCost, out NeedSnapshot afterBatch);
+        if (safeRepeats < _tuning.MinimumWorkBatch)
+        {
+            workBlockerMask = BuildMinimumWorkBlockerMask(state, workCost);
+            return;
+        }
 
         candidates.Add(new Candidate
         {
@@ -471,6 +485,31 @@ public class DestinationDecider
     }
 
     // ---- Hard safety filtering ----
+
+    private void ApplyWorkRecoveryFilter(List<Candidate> candidates, NeedSnapshot state, int workBlockerMask)
+    {
+        int write = 0;
+        for (int read = 0; read < candidates.Count; ++read)
+        {
+            Candidate c = candidates[read];
+            if (c.Kind != CandidateKind.Supply
+                || !IsStrictlySafeImprovement(state, c.After, workBlockerMask)
+                || BuildCriticalMask(c.After) != 0)
+                continue;
+
+            // Partial recovery is useful even when this one action cannot unlock the batch.
+            candidates[write++] = c;
+        }
+
+        if (write == 0)
+        {
+            // No writes occurred, so the original Idle floor is still available.
+            KeepOnlyIdle(candidates);
+            return;
+        }
+
+        candidates.RemoveRange(write, candidates.Count - write);
+    }
 
     private int BuildCriticalMask(NeedSnapshot state)
     {
@@ -627,6 +666,18 @@ public class DestinationDecider
 
     // ---- Work batch simulation ----
 
+    private int BuildMinimumWorkBlockerMask(NeedSnapshot state, StatEffect workCost)
+    {
+        int mask = 0;
+        for (int i = 0; i < _tuning.MinimumWorkBatch; ++i)
+        {
+            state = ApplyEffect(state, workCost);
+            mask |= BuildCriticalMask(state);
+        }
+
+        return mask;
+    }
+
     private int EstimateWorkCount(NeedSnapshot snapshot, StatEffect workCost, out NeedSnapshot finalState)
     {
         int count = 0;
@@ -635,7 +686,7 @@ public class DestinationDecider
         while (count < _tuning.MaximumWorkBatch)
         {
             NeedSnapshot next = ApplyEffect(state, workCost);
-            if (IsAnyNeedAboveCritical(next))
+            if (IsAnyNeedCritical(next))
                 break;
 
             state = next;
@@ -646,7 +697,7 @@ public class DestinationDecider
         return count;
     }
 
-    private bool IsAnyNeedAboveCritical(NeedSnapshot s)
+    private bool IsAnyNeedCritical(NeedSnapshot s)
     {
         return BuildCriticalMask(s) != 0;
     }

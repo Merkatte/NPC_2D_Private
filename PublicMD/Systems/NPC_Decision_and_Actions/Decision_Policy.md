@@ -19,6 +19,7 @@ NPC stat, 현재 위치, destination과 provider option을 비교해 하나의 s
 DestinationDecider.Decide(stat, role, position, work cost)
   -> destination/provider에서 유효 후보 수집
   -> 위험한 후보 hard filter
+  -> 실제 Farmer 작업이 최소 batch의 욕구 비용으로 막히면 안전한 회복 후보로 제한
   -> travel + action time + risk + terminal state utility
   -> 최대 3 depth bounded look-ahead
   -> 공급 / role activity / Idle 중 하나 선택
@@ -26,6 +27,22 @@ DestinationDecider.Decide(stat, role, position, work cost)
 ```
 
 공급 후보는 provider가 제공한 item별 `InteractionOption`을 사용한다. Work는 bounded repeat batch를 반환할 수 있지만 공급 action은 한 번 실행한 뒤 실제 상태로 다시 판단한다.
+
+## Idle의 look-ahead 종료
+
+`CandidateKind.Idle`은 snapshot을 바꾸지 않으므로 해당 분기에서 look-ahead를 종료한다. Idle 뒤의 작업 보상을 예측에 포함하면 실제 재판단 때도 같은 작업을 계속 뒤로 미루는 대기 반복이 생길 수 있다. `ScoreCandidates`는 Idle의 future를 `TerminalValue(c.After)`로 계산하며, 즉시 점수와 기존 `FutureDiscount`는 그대로 적용한다. 공급·FarmerWork·GuardDuty 등 나머지 후보는 기존 재귀 평가를 유지한다.
+
+이 규칙은 공유 scorer를 사용하는 Farmer·Guard·needs-only 판단과 모든 look-ahead 단계에 적용한다. 구분 기준은 `NPCIntent.Idle`이 아니라 `CandidateKind.Idle`이므로 Idle intent로 표현되는 GuardDuty의 미래 평가는 유지된다. 안전 필터와 최소 batch 회복 필터를 통과해 남은 Idle은 계속 비교 가능한 fallback이며, 유효 후보가 없을 때의 Idle 반환도 유지한다. 업무를 강제하거나 임계값·batch 범위·점수 가중치·동률 규칙을 변경하지 않는다.
+
+## 최소 농사 batch와 회복 후보
+
+- 긴급 욕구는 정규화 값이 `CriticalNeedThreshold` **이상**일 때다. 현재 욕구 안전 필터, 작업 예측, `HasCriticalNeed`를 통한 selector 물류 판단이 `NPCDecisionTuning.IsCriticalNeed`의 같은 판정을 사용한다.
+- 현재 긴급 욕구가 있으면 기존 critical safety tier를 먼저 적용한다. 아래 최소 batch 회복 규칙은 긴급 필터를 대체하지 않는다.
+- `Farmer`이며 `IncludeRoleActivity`, 비태업, work cost가 모두 충족되고 활성 `Farming` provider가 실제로 가용할 때만 최소 batch 회복을 판단한다. 농장 없음·빈 밭·수확 phase·needs-only 판단에는 적용하지 않는다. 가용성은 기존 provider capability로 확인하며 decider가 농장 phase를 직접 소유하지 않는다.
+- `AddFarmerWorkCandidate`는 농장을 먼저 확인하고 안전 반복 횟수가 `MinimumWorkBatch` 미만이면 private out blocker mask를 반환한다. 농장 부재는 mask 0으로 구분한다. mask는 기존 `ApplyEffect`와 clamp로 최소 batch 전체를 한 단계씩 예측하며 각 단계에서 임계에 도달한 욕구의 합집합이다.
+- scoring 전에 이미 수집한 가용 공급 후보 중 blocker 욕구가 하나 이상 감소하고 다른 blocker가 악화되지 않으며 새 긴급 욕구가 생기지 않는 후보만 남긴다. 해당 후보가 있으면 Idle을 제거한다. 한 번의 회복으로 최소 batch를 바로 충족할 필요는 없으며 실제 action 후 다시 판단해 여러 회복 행동을 이어갈 수 있다.
+- 조건에 맞는 회복 공급이 없으면 Idle만 유지해 안전하지 않은 작업이나 무관한 공급 반복을 강제하지 않는다. 현재 blocker 밖의 욕구가 늘더라도 임계 미만인 경우에는 기존 utility로 비교한다.
+- 같은 `BuildCandidates`가 최초 판단과 재귀 look-ahead에 적용된다. blocker mask는 호출별 지역값이며 공유 mutable 진단 상태를 추가하지 않는다. 최소·최대 batch, 점수 가중치, 난수 소비와 결정적 동률 규칙은 유지한다.
 
 ## 주 소유 스크립트
 
