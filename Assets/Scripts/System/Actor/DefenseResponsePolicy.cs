@@ -10,11 +10,14 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
     public DefenseActor GetActor(NPCComponent component) => _battlefield ? _battlefield.FindActor(component) : null;
 
     private CombatTarget SoldierTarget(DefenseActor actor)
+        => _battlefield.FindEnemy(actor.Position, float.PositiveInfinity, false);
+
+    private static bool RequiresCombatGroundExit(DefenseActor actor, CombatTarget target)
     {
-        if (actor.Role == NPCType.Archer)
-            return _battlefield.FindEnemy(actor.Position, ((ICombatStatView)actor.Stat).AttackRange, false);
-        CombatTarget nearby = _battlefield.FindEnemy(actor.Position, actor.Settings.LocalCombatRange, false);
-        return nearby ? nearby : _battlefield.FindEnemy(actor.Position, float.PositiveInfinity, true);
+        if (!actor.RequiresArcherGroundExit) return false;
+        if (actor.IsUsingArcherAccess || !actor.ArcherWall || actor.ArcherWall.IsPassable) return true;
+        return !(actor.Stat is ICombatStatView combat) ||
+            !CombatLib.IsInRange(actor.Position, target.Position, combat.AttackRange);
     }
     public bool ShouldReplan(NPCComponent component, ActionType current)
     {
@@ -37,14 +40,13 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
         }
         if (actor.IsSoldier)
         {
+            actor.RefreshArcherWallOccupancy();
+            // Finish the authorized access leg even if the nearest enemy changes or dies.
+            if (current == ActionType.DefenseStation && actor.IsGroundExitActive) return false;
             CombatTarget desired = SoldierTarget(actor);
-            if (actor.Role == NPCType.Archer && (desired || current == ActionType.DefenseAttack) && current != ActionType.DefenseStation &&
-                ((Vector2)(actor.Position - actor.DutyPosition)).sqrMagnitude > 0.04f) return true;
             CombatTargetHandle selected = component.CombatRuntimeState.TargetHandle;
-            if (desired) return (actor.Role != NPCType.Archer || current != ActionType.DefenseStation) &&
+            if (desired) return RequiresCombatGroundExit(actor, desired) ||
                 (current != ActionType.DefenseAttack && current != ActionType.Move || !ReferenceEquals(selected.Target, desired));
-            if (_battlefield.AliveEnemyCount > 0)
-                return current != ActionType.DefenseStation || !actor.IsEmergencyDuty;
             if (actor.IsEmergencyDuty) return true;
             return current == ActionType.DefenseAttack || (current == ActionType.Move && selected.Target != null);
         }
@@ -60,14 +62,15 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
         if (actor.IsEnemy) { queue = BuildEnemyQueue(selector, actor); return true; }
         if (actor.IsSoldier)
         {
+            actor.RefreshArcherWallOccupancy();
             CombatTarget target = SoldierTarget(actor);
-            if (actor.Role == NPCType.Archer && target &&
-                ((Vector2)(actor.Position - actor.DutyPosition)).sqrMagnitude > 0.04f)
-            { queue = BuildDutyQueue(selector, actor, isEmergencyDuty: true); return true; }
+            if (target && RequiresCombatGroundExit(actor, target))
+            { queue = BuildGroundExitQueue(selector, actor); return true; }
             if (target) { queue = BuildCombatQueue(selector, actor, target, null); return true; }
+            bool wasInCombat = component.CombatRuntimeState.TargetHandle.Target != null;
             component.CombatRuntimeState.ClearTarget();
-            if (_battlefield.AliveEnemyCount > 0)
-            { queue = BuildDutyQueue(selector, actor, isEmergencyDuty: true); return true; }
+            if (actor.IsUsingArcherAccess || (wasInCombat && actor.RequiresArcherGroundExit))
+            { queue = BuildGroundExitQueue(selector, actor); return true; }
             return false;
         }
         CombatTarget threat = _battlefield.IsAlert ? _battlefield.FindEnemy(actor.Position, actor.Settings.FleeDetectionRange, false) : null;
@@ -105,13 +108,21 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
     }
     public Queue<IAction> BuildDutyQueue(BaseNPCActionSelector selector, DefenseActor actor, GuardActionCost cost = null,
         bool isEmergencyDuty = false)
+        => BuildStationQueue(selector, actor, cost, isEmergencyDuty, false);
+
+    private Queue<IAction> BuildGroundExitQueue(BaseNPCActionSelector selector, DefenseActor actor)
+        => BuildStationQueue(selector, actor, null, false, true);
+
+    private Queue<IAction> BuildStationQueue(BaseNPCActionSelector selector, DefenseActor actor, GuardActionCost cost,
+        bool isEmergencyDuty, bool isGroundExit)
     {
         actor.Component.CombatRuntimeState.ClearTarget();
         var rented = new List<IAction>();
         IAction action = selector.RentDefenseAction(ActionType.DefenseStation);
         if (action is DefenseStationAction station)
         {
-            station.Init(new ActionContext(actor.Component, actor.Stat, cost: isEmergencyDuty ? null : cost), actor, isEmergencyDuty);
+            station.Init(new ActionContext(actor.Component, actor.Stat, cost: isEmergencyDuty ? null : cost),
+                actor, isEmergencyDuty, isGroundExit);
             rented.Add(station);
         }
         else if (action != null) selector.ReturnAction(action);
@@ -132,7 +143,7 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
         var rented = new List<IAction>();
         var combat = actor.Stat as ICombatStatView;
         if (combat == null) return selector.CreateDefenseIdle(actor.Component, actor.Stat);
-        if (actor.Role != NPCType.Archer && !CombatLib.IsInRange(actor.Position, target.Position, combat.AttackRange))
+        if (!CombatLib.IsInRange(actor.Position, target.Position, combat.AttackRange))
         {
             MoveRequest request = wall ? MoveRequest.Navigated(wall.AttackPosition, 0.1f)
                 : MoveRequest.Navigated(actor.Component.CombatRuntimeState.TargetHandle, combat.AttackRange * 0.85f);
