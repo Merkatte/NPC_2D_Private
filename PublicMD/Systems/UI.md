@@ -106,6 +106,16 @@ PointerHoverRouter/PointerClickRouter에는 world camera, IUIService 구현 sour
 
 씬의 팝업 크기 override를 유지한다. 프리팹의 저장값·참조 검토는 Unity에서의 실제 표시 및 클릭 검증과 구분하며, 화면 QA는 사람의 확인 항목이다.
 
+## WarmPixel UI 부품
+
+`Assets/Art/Generated/UI/WarmPixel`은 2026-10-16 사용자가 선택한 따뜻한 픽셀 스타일의 공통 UI 이미지 9개를 보관한다. 창·판매 내역 패널·주요/보조/사각 버튼·수량 입력칸·닫기 아이콘·세로 스크롤바 배경과 손잡이로 구성된다. 문구·숫자·상품 아이콘은 이미지에 합치지 않았다.
+
+Unity에서 Sprite Single, PPU 100, Point, Clamp, mipmap off, sRGB, 비압축으로 가져왔다. pivot은 중앙이다. Border는 Left/Bottom/Right/Top 순서로 창 12/12/12/12, 명세 패널·사각 버튼·입력칸 8/8/8/8, 주요·보조 버튼 10/8/10/8, 스크롤 배경·손잡이 2/4/2/4이며 닫기 아이콘은 0이다. 닫기는 Simple, 나머지는 사용할 Image에서 Sliced로 지정한다. 기존 importer 도구가 Mesh Type 변경을 지원하지 않아 현재 저장값은 Tight이며 권장 Full Rect 적용과 실제 Canvas 늘림 표시는 미검증이다.
+
+`Assets/Prefab/UI/WarmPixelMerchantPopup.prefab`은 이 부품을 사용하는 별도 표시용 거래창이다. 상품 행은 `WarmPixelMerchantItemRow.prefab`, 판매 명세 행은 `WarmPixelMerchantSaleLine.prefab`의 nested instance로 배치한다. 왼쪽 목록은 기본 uGUI ScrollRect·RectMask2D·VerticalLayoutGroup·ContentSizeFitter와 세로 Scrollbar를 사용하며 오른쪽 명세와 판매 버튼은 목록 밖에 고정한다. 자세한 구조와 샘플값은 [Merchant Caravan](Merchant_Caravan.md)의 WarmPixel 표시용 프리팹 절을 따른다.
+
+기존 `MerchantPopup`과 다른 popup의 참조·배치는 교체하지 않는다. 새 프리팹에 거래 처리·수량 증감·탭 전환·닫기 callback이나 `UIManager` 등록은 연결하지 않았다. 원본과 부품 미리보기·import 권장값은 `output/UI/WarmPixel`에 있다.
+
 ## 상시 골드 HUD
 
 `GoldHUD`는 popup/hover registry에 등록하지 않는 상시 표시 컴포넌트다. scene의 `ResourceManager`를 serialized reference로 받고 `ResourcesChanged`에서 `GetQuantity(ResourceManager.GoldItemId)`를 조회한다. 골드 저장·차감·환급 규칙은 [Shared Resources](Inventory_and_Items/Shared_Resources.md)가 소유하며 HUD는 값을 변경하지 않는다.

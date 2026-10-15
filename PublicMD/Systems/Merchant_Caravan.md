@@ -148,6 +148,20 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 
 창고·판매 슬롯 프리팹과 GridLayout 셀은 모두 118×118이며, 두 그리드는 45px 안쪽 여백과 16px 셀 간격을 사용해 480px 패널 안에 3열로 들어간다. 두 슬롯 프리팹의 배경은 `ui-merchant-item-cell-9slice.png`로 통일하고 중앙에 아이템 아이콘, 오른쪽 아래에 수량만 표시한다. 이름·단가 텍스트 오브젝트는 기존 프리팹 인스턴스 참조 보존을 위해 비활성으로 남겨 두지만 표시 코드는 더 이상 이 둘을 갱신하지 않는다. 거래 금액 계산은 `MerchantTradeSite`와 팝업의 예상 판매 금액 표시가 계속 담당한다.
 
+## WarmPixel 표시용 프리팹
+
+2026-10-16 새 UI 조립용 프리팹 세 개를 추가했다. 기존 `MerchantPopup.prefab`과 gameplay 배선은 유지한다.
+
+| 프리팹 | 구성 |
+|---|---|
+| `Assets/Prefab/UI/WarmPixelMerchantPopup.prefab` | 1280×640 창, 상단 구매/판매 버튼, 왼쪽 상품 목록, 고정된 오른쪽 판매 명세·합계·판매 버튼 |
+| `Assets/Prefab/UI/WarmPixelMerchantItemRow.prefab` | 아이콘·품목명·보유량·단가·감소/증가 버튼·정수 InputField·행 구분선이 있는 재사용 상품 행 |
+| `Assets/Prefab/UI/WarmPixelMerchantSaleLine.prefab` | 품목×수량과 품목별 금액을 표시하는 재사용 명세 행 |
+
+전체 창의 `ProductList/ScrollView/Viewport/Content` 아래 당근·감자 행은 상품 행 프리팹의 실제 nested instance이며, `SaleSummary` 아래 두 명세도 명세 행 프리팹의 nested instance다. 상품 목록은 세로 ScrollRect와 RectMask2D로 제한하고 Content의 VerticalLayoutGroup·ContentSizeFitter가 행 추가에 맞춰 높이를 늘린다. 가로 스크롤은 끈다. 두 샘플 행이 viewport에 모두 들어가는 상태에서는 overflow가 없으며 행이 추가되어야 스크롤 범위가 생긴다.
+
+샘플 표시값은 당근 보유40/단가2G/판매10, 감자 보유24/단가3G/판매6, 판매 명세20G·18G와 합계38G다. 실제 재고나 거래 도메인에 연결된 값이 아니다. 기본 uGUI 컴포넌트만 사용하며 버튼 callback은 비워 두었다. 수량 입력과 합계 갱신·거래·선택 초기화·닫기·탭 전환은 후속 연결 대상이다. 별도 Canvas 아래에 배치해 사용하며 font는 기존 Legacy Text의 임시 기본 font다. 코드와 씬을 추가·변경하지 않았다.
+
 ## 알려진 제약과 TBD
 
 - 새 3마리(및 마차/끈)의 실제 최종 그림이 아직 붙지 않았을 수 있다(스프라이트 자체는 `Shop`/`Merchant`/`TransportBird`에 배선되어 있으나 lift height·duration·지상 착륙 좌표는 프레임 안에서 육안으로 재조정이 필요한 초기 추정값이다).
