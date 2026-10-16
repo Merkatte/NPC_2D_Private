@@ -70,6 +70,18 @@ TownHallPopup.prefab은 기존 목재 외곽·제목·닫기 버튼과 상인 �
 
 2026-09-19 작업의 실제 Play Mode(동시 모집, 60/90초 독립 카운트다운, 낙하 중 disable, 팝업 조작)는 사용자 지시로 생략하여 NOT_VERIFIED다. 컴파일·직렬화 확인은 runtime 통과를 대신하지 않는다.
 
+## WarmPixel 표시용 프리팹
+
+2026-10-16 `Assets/Prefab/UI/WarmPixelTownHallPopup.prefab`을 별도 표시용으로 추가했다. 기본 크기는 1440×900이며 왼쪽 직군 목록, 오른쪽 농부 상세·초상·능력치 자리, 하단 지원금·모집 버튼으로 나눈다. Body와 상세 영역은 stretch anchor를 사용하고 하단 모집 영역은 아래에 고정한다. 창의 RectTransform 크기를 조정할 수 있으나 작은 크기의 배치와 실제 화면은 사람 확인 대상이다.
+
+헤더는 `WarmPixelMerchantPopup`의 규격을 따른다. 높이 82, 아이콘 40×40, 제목 30pt, 제목 옆 세로 구분선 2×38, 닫기 32×32(상단 24·우측 34 여백), 하단 구분선 높이 3·좌우 12 여백이다. 탭은 상단 14·높이 54·28pt로 왼쪽 x=216부터 놓으며, 긴 시청 탭명을 위해 폭 144·간격 16(x=216/376)을 사용한다. 선택 밑줄은 높이 7, 선택·비선택 글자색과 구분선색은 상인 헤더와 맞춘다. Body의 상단 여백은 108이다.
+
+기존 `TownHallPopup.prefab`, scene 등록과 모집 코드는 변경하지 않는다. 새 프리팹은 Canvas 아래에 배치하는 화면 조립용이며 `TownHallPopup`/`TownHallRecruitCard` 컴포넌트와 버튼 callback이 없다. 직군 선택·탭·닫기·모집·실제 상태 조회는 연결되지 않았다. 농부 상세가 기본 표시되고 세 직군의 `모집 가능`과 지원금 100 G는 샘플 표시값이다. 체력·이동 속도·작업 속도·운반량은 `—` 자리이며 최종 스탯 규칙이나 데이터 연결을 확정하지 않는다.
+
+사람 이미지는 실제 NPCGirl의 `player-dotween-transparent.png` sprite subasset을 네 곳에 재사용하고, 괭이·검·망치를 직군별 별도 도구 아이콘으로 배치한다. 세 직군은 현재 같은 주민 prefab을 공유한다. 기존 시청 카드의 portrait가 가리키는 그림은 캐릭터가 아닌 도구이며, 기존 PNG와 importer는 보존한다.
+
+창·기본 패널·모집 버튼·닫기는 기존 WarmPixel 에셋을 재사용한다. 새 `Assets/Art/Generated/UI/WarmPixelTownHall/01-selection-panel.png`와 `02-portrait-panel.png`는 각각 선택 항목·상태 badge와 초상 배경이다. 두 이미지는 불투명 RGB 1254×1254, Sprite Single/Point/PPU100, mipmap·압축 없음, NPOT None, max2048, 사방 border64로 import했다. 새 고해상도 패널의 Image multiplier는 5, 기존 WarmPixel sliced sprite는 0.5다. 표시용 이미지와 배치의 실제 시각 확인은 미검증이며 자동 Play·화면 검증은 수행하지 않는다.
+
 ## 알려진 제약과 TBD
 
 - 후보 직업 추첨, 스탯 랜덤화, 명부·스탯 미리보기는 보류한다. 직군은 명시적 설정이고 기존 role stat definition을 재사용한다.
