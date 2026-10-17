@@ -41,3 +41,17 @@ ConstructionPopup prefab을 Canvas/PopupUI에 배치하고 registry에 등록한
 선택 전·닫기·비활성화·공사 진행 중과 텍스트 fallback에서는 ScrollView와 행을 숨기거나 초기화한다. 제목과 상세 텍스트는 ScrollView의 형제이므로 목록을 숨겨도 안내를 표시할 수 있다. 진행률·작업 인원·취소 시 환불 안내는 기존 상세 텍스트를 유지한다. 선택만으로 자원을 차감하지 않으며 확정·취소 API와 구독 수명은 유지한다.
 
 골드는 `ui-gold-coin_0`, 목재는 `ui-item-wood_0`, 석재는 `ui-item-stone_0`의 실제 Sprite subasset을 사용한다. 원본 이미지와 importer 설정은 유지한다. 기존270×342 오른쪽 영역 안에 제목·안내와 재료 스크롤 영역을 나눈다. 실제 Unity import·화면·클릭 검증은 별도다.
+
+## WarmPixel 표시용 프리팹
+
+2026-10-18 `Assets/Prefab/UI/WarmPixelConstructionPopup.prefab`을 별도 표시용으로 추가했다. 기본 크기는 1440×920이며 Canvas 아래에 배치한다. 왼쪽 `BuildingGallery`는 창고·식당·숙소·초소·농경지·주택 1단계를 2열×3행으로 보여준다. `GalleryScrollView/Viewport/Content`에는 ScrollRect·RectMask2D·GridLayoutGroup을 사용하며 셀 크기는 360×214, 간격은 가로18·세로16이다. 현재 Content 높이는 여섯 카드에 맞춘 674이며 항목 추가 시 높이도 조정해야 한다. 카테고리와 필터는 추가하지 않았다.
+
+헤더는 `WarmPixelMerchantPopup`·`WarmPixelTownHallPopup`의 규격을 따른다. 높이82, 아이콘40×40, 제목30pt, 제목 옆 세로 구분선2×38, 문맥 라벨 `건물 선택`28pt, 닫기32×32(상단24·우측34 여백), 하단 구분선 높이3·좌우12 여백이다. 본문은 상단108·하단30·좌우36 여백을 두고 갤러리와 상세 사이에 세로 구분선을 배치한다.
+
+오른쪽 `WarehouseDetail`에는 선택된 창고의 큰 이미지·이름·설명, 필요/보유 수량을 나란히 표시하는 `ConstructionCost`, 하단 `StartConstructionButton`을 둔다. 필요량100골드·20목재·10석재는 현재 BuildingCost CSV의 창고 비용이며, 보유량250·80·40은 샘플로 표시하고 예시임을 명시한다. 창고 선택 상태와 상세는 고정 표시다.
+
+건물 이미지는 `BuildingDataContext`의 실제 Sprite subasset을 재사용하고, 주택은 `house-tiers`의 1단계 Sprite를 사용한다. 창·버튼·닫기는 기존 WarmPixel 부품, 카드 배경은 WarmPixelTownHall의 선택/초상 패널을 사용한다. 이미지와 importer는 변경하지 않는다. 문구·숫자·아이콘은 각각 별도 uGUI 요소로 편집할 수 있다.
+
+카드의 `BuildingImage`는 332×160 영역 안에서 비율을 유지하며 가로 중앙·하단 기준으로 표시한다. anchorMin/Max는 (0.5,1), pivot은 (0.5,0), anchoredPosition은 (0,-170)으로 두어 여섯 건물의 바닥선과 이름 위 여백을 맞춘다. 오른쪽 `SelectedBuildingImage`도 pivot (0.5,0)·anchoredPosition (0,-300)을 사용하며 기존 가로 stretch와 높이300을 유지한다. uGUI Image의 비율 유지 정렬은 RectTransform pivot을 따르므로 상단 왼쪽 pivot을 사용하지 않는다. 카드 자체의 위치·크기는 GridLayoutGroup이 소유하며, Unity 저장 파일의 해당 driven 값이 0인 것과 실제 레이아웃 크기는 구분한다.
+
+기존 `ConstructionPopup.prefab`, 씬 배치, UIManager 등록과 건설 코드는 교체하지 않는다. 새 프리팹에는 `ConstructionPopup`·`ConstructionChoiceRow` 컴포넌트나 버튼 callback이 없으며, 카드 선택·닫기·건설·실제 재고 조회는 연결하지 않았다. 최종 한글 표시·화면 크기별 배치와 게임 화면은 사람 확인 항목이며 자동 Play·화면 검증은 수행하지 않는다.
