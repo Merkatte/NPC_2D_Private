@@ -69,6 +69,7 @@ EventSystem(InputSystemUIInputModule)
 | `Assets/Scripts/UI/SeedSelectionPopup.cs` | FarmSeedSource의 보유 씨앗 표시, 선택·확정 요청·실패 문구와 대상 수명 관리 |
 | `Assets/Scripts/UI/UIManager.cs` | popup·hover registry와 현재 표시 상태를 조정하는 facade |
 | `Assets/Scripts/UI/GoldHUD.cs` | 공유 골드 잔액과 최신 증감을 이벤트 기반으로 표시하는 상시 HUD |
+| `Assets/Scripts/UI/GoldNotificationHUD.cs` | 골드 변경 때 진입·잔액 보간·유지·퇴장하는 선택적 알림 HUD |
 
 ## 변경 유형별 최소 확인 범위
 
@@ -79,6 +80,7 @@ EventSystem(InputSystemUIInputModule)
 | hover 감지 | `PointerHoverRouter.cs`, source collider와 layer 배선 |
 | click 감지 | `PointerClickRouter.cs`, `IClickPopupSource.cs`, source collider와 layer 배선 |
 | 농장 gauge | `FarmGaugeHover.cs`, `HoverInfo.cs`, `Assets/Prefab/UI/FarmGauge.prefab`, [Farming](Farming/README.md) |
+| 골드 알림 HUD | `GoldNotificationHUD.cs`, `ResourceManager.cs`, [Shared Resources](Inventory_and_Items/Shared_Resources.md), `GoldNotificationHUD.prefab` |
 
 ## 불변 규칙
 
@@ -125,6 +127,16 @@ Unity에서 Sprite Single, PPU 100, Point, Clamp, mipmap off, sRGB, 비압축으
 BuildingTest의 `Canvas/HUDUI/GoldHUD`에 `Assets/Prefab/UI/GoldHUD.prefab`을 배치한다. HUDUI는 Canvas의 마지막 자식으로 두어 popup과 겹칠 때도 잔액이 보이게 한다. 기존 HoveringUI·PopupUI의 상대 순서는 유지한다. 기존 목재 패널 `ui-merchant-board-panel-9slice.png`는 Sliced 이미지, `ui-gold-coin.png`의 `ui-gold-coin_0`는 골드 아이콘으로 재사용한다. AmountText와 ChangeText는 기존 UI와 같은 Legacy Text다. 배경·아이콘·텍스트의 raycast와 HUDUI의 blocksRaycasts를 꺼 world 클릭을 가로채지 않는다.
 
 변경 시 먼저 `GoldHUD.cs`, `ResourceManager.cs`, `GoldHUD.prefab`과 BuildingTest의 HUDUI 배선을 확인한다. prefab은 scene 자원 저장소를 소유하지 않고 scene instance의 override로 ResourceManager를 연결한다.
+
+## 선택적 골드 알림 HUD
+
+`GoldNotificationHUD`는 기존 상시 `GoldHUD`와 별개의 view다. `Assets/Prefab/UI/GoldNotificationHUD.prefab`을 기존 Canvas 아래에 배치하는 계약이며 기존 씬의 HUD를 교체하거나 UIManager에 등록하지 않는다. 활성 root에 컴포넌트를 두고 별도 자식 `_panel` RectTransform, 같은 자식의 `_canvasGroup`, Legacy Text `_amountText`·`_changeText`를 연결한다. prefab의 `_resourceManager`는 비워 두며 scene override 또는 `Configure(ResourceManager)`로 주입한다. 필수 참조가 없으면 한 번 진단하고 숨김 상태를 유지하며 이후 유효한 Configure로 초기화할 수 있다.
+
+Awake에서 즉시 숨기고 첫 활성 초기화 때 실제 골드를 조용히 읽는다. `ResourcesChanged` 이후 골드 수량이 바뀐 경우만 위에서 내려온 뒤 이전 표시 잔액을 실제 잔액까지 보간하고, 잠시 유지한 뒤 위로 퇴장한다. 지출도 같은 경로로 감소하며 다른 자원·용량 알림은 무시한다. 표시 중 추가 변경은 현재 보간 값에서 새 실제 잔액으로 이어지고 유지 시간을 연장한다. 진입은 재시작하지 않으며 퇴장 중에는 현재 위치에서 반전한다. 최신 실제 변경의 차이를 부호 있는 숫자로 표시한다. 수량 보간은 double 계산 후 정수로 표시하고 완료 때 실제 int 잔액을 확정하여 큰 잔액의 반올림 손실을 피한다.
+
+기본 위치는 좌상단 anchor/pivot의 `_visibleAnchoredPosition=(16,-16)`, 위쪽 `_hiddenOffset=96`이다. `_slideDuration=0.25`, `_countDuration=0.65`, `_holdDuration=1.5`는 Inspector에서 조절하고 유효한 비음수로 보정한다. 이동·수량·유지는 모두 unscaled 시간이다. `SetContextVisible(true)`는 단일 소비 UI가 열려 있는 동안 잔액을 유지하는 명시적 계약이며 false 뒤 정상 유지/퇴장한다. 현재 popup 연계는 연결하지 않았다. 비활성화/재바인딩은 자신이 소유한 tween만 완료 callback 없이 중단하고 구독과 표시 상태를 정리한다. root를 끄지 않고 자식 위치와 alpha로 표시하며 모든 알림 Graphic과 CanvasGroup의 raycast를 차단하지 않도록 설정한다. 자원 변경 API는 호출하지 않는다.
+
+최소 방어 상태 view `DefensePhaseHUD`의 주 소유와 배선 계약은 [Defense Progression](Defense/Progression.md)을 따른다. 두 신규 prefab의 씬 연결과 사람 화면/Play 확인은 별도이며 코드만으로 검증 성공을 주장하지 않는다.
 
 ## 문구 표시 연계
 

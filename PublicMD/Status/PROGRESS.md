@@ -1,3 +1,12 @@
+# B안 분리 골드 알림·방어 HUD 프리팹 — 2026-10-19
+
+- 사용자가 선택한 B안을 별도 `GoldNotificationHUD.prefab`과 `DefensePhaseHUD.prefab`으로 추가했다. 기존 씬·GoldHUD·DefenseHUD는 교체하지 않았다. 기존 종이 패널·골드 코인·올리브 버튼 이미지를 재사용했다.
+- 골드는 초기 잔액을 조용히 읽고 실제 골드 변경 때 하강→현재 표시 값에서 새 잔액까지 보간→유지→상승한다. 연속 변경은 진입을 다시 시작하지 않으며 퇴장 중에는 현재 위치에서 반전한다. 지출 감소와 unscaled 연출을 지원하고 위치/이동·보간·유지 시간을 Inspector에서 조절한다. `SetContextVisible(bool)`는 소비 UI의 지속 표시용이며 기존 구매/건설/모집 창에는 아직 연결하지 않았다.
+- 방어는 배경판 없는 상태 문구와 작은 시작 버튼으로 구성하며 기존 session/wave 상태를 읽고 `TryStartNextWave`만 요청한다. 이벤트 알림·선택 popup·GameOver overlay는 기존 view 책임을 유지한다. 두 prefab의 외부 scene 참조는 null이며 Canvas 아래 배치 후 scene override 또는 Configure로 주입한다.
+- 변경: `Assets/Scripts/UI/GoldNotificationHUD.cs`, `DefensePhaseHUD.cs`와 meta, `Assets/Prefab/UI/GoldNotificationHUD.prefab`, `DefensePhaseHUD.prefab`과 meta, 주 소유 `Systems/UI.md`, `Systems/Defense/Progression.md`, 이 기록. 기준 `6cf305c`; 시작 시 기존 WarmPixel 주요 버튼·ConstructionPopup·DefenseTest·시안 output 변경을 보존했다. 코드 `/root/contextual_hud_code`, 조립 `/root/contextual_hud_assembly`, 루트 조정·검증·status 기록.
+- 검증: 현재 strict Unity 컴파일 completed/오류0/경고0, 두 prefab import와 의도한 custom/UI component·sprite·내부 참조 실제 readback 성공, 현재 diff·의존 방향·컨벤션·scoped whitespace 확인. 독립 읽기 전용 `/root/contextual_hud_review`는 첫 리뷰의 퇴장 시작 직후 재진입 경계 F1을 보정한 현재 후보에 Approve/findings 없음. ordinary common-check 경로, 보정1/2회. 작업 기록 `.harness-runs/contextual-hud-20261019/scene-work.md`, 실제 컴파일 `compile-after-fix.json`, 조립 `assembly/`, 리뷰 `review-1.json`·`review-2.json`.
+- 미검증: 실제 Play의 애니메이션·연속 거래·재활성화·버튼 동작·텍스트 맞춤·좁은 Canvas, 광범위 Missing Script 전체 열거. 의도한 typed component와 sprite 로딩 성공을 전체 실행 통과로 확대하지 않는다. 자동 Play/게임 화면 검사와 새 검증 전용 코드는 실행·추가하지 않았다. 씬 교체·소비창 자동 연결·커밋·푸시는 하지 않았다.
+
 # 아군 검객·궁수 적극 추적 — 2026-10-14
 
 - 승인 계획에 따라 Defense 검객·궁수가 성벽 안팎·감지 반경 제한 없이 전장의 공격 가능한 최근접 적을 2D 거리로 선택한다. 기존 0.25초 재판단과 동일 대상 이동·공격 유지, 사거리 밖에서 85% 거리까지 기존 길찾기 추적을 적용했다. 전투는 생활·태업·최초 귀가보다 우선하며 마지막 적 제거 후 기존 생활·경계 판단으로 돌아간다.

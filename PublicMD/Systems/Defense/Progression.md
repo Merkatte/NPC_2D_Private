@@ -15,6 +15,7 @@
 | `Assets/Scripts/Manager/DefenseWaveController.cs` | 정비/습격 runtime 상태, production 적 생성과 예정/생존 수 동시 완료 판정 |
 | `Assets/Scripts/Manager/DefenseEventController.cs` | 이벤트 조건 평가·유효 시간·선택·pause lease 및 결과 callback |
 | `Assets/Scripts/UI/DefenseHUD.cs` | 웨이브/적/정비 시간·알림·GameOver 표시와 조기 시작/열기 명령 |
+| `Assets/Scripts/UI/DefensePhaseHUD.cs` | 별도 최소 상태 HUD의 정비/습격·적 수 표시와 조기 시작 요청 |
 | `Assets/Scripts/UI/DefenseEventPopup.cs` | 이벤트 문구·선택지 표시, 선택/닫기 명령 |
 | `Assets/Data/ScriptableObject/Script/DefenseWaveDefinition.cs` | 편성별 적 수와 생성 간격 |
 | `Assets/Data/ScriptableObject/Script/DefenseWaveCatalog.cs` | 순서 있는 편성 목록, 마지막 편성 반복, 공통 정비 시간 |
@@ -33,7 +34,7 @@
 | 적 생성 | WaveController, WorkerNPC.Init, NPCStatDefinition.CreateRuntimeStat, DefenseActor.BindBattlefield/Initialize와 적 prefab |
 | 이벤트 추가/조건 | EventDefinition, EventCatalog, EventChoice, EventController와 이벤트 에셋 |
 | pause/GameOver | GameSession, EventController, DefenseHUD와 시청 피해 owner의 EndGame 호출 |
-| 화면 배선 | DefenseHUD/DefenseEventPopup의 Configure·serialized field, DefenseTest Canvas/방어 controller 참조 |
+| 화면 배선 | DefenseHUD/DefensePhaseHUD/DefenseEventPopup의 Configure·serialized field, DefenseTest Canvas/방어 controller 참조 |
 
 ## 현재 실행 흐름
 
@@ -61,6 +62,14 @@ GameSession 하나가 이유 문자열을 가진 정수 lease를 발급한다. �
 HUD와 Popup은 상시 활성 host에 붙이고 실제 숨기는 popup/game-over panel은 별도의 자식으로 연결한다. Popup component 자체를 panel에 붙이면 알림을 다시 받아 열 수 없으므로 금지한다. OnEnable/OnDisable은 구독과 버튼 listener를 대칭적으로 관리한다. Popup host 비활성화는 열린 popup lease를 반환한다. 두 view는 domain에 명령만 전달하고 직접 시간 배율·HP·보상·생성 수를 변경하지 않는다.
 
 배선은 기존 Canvas/EventSystem/GraphicRaycaster와 Legacy Text/Button을 재사용한다. 이벤트 panel과 GameOver panel은 전체 화면 raycast 차단 배경을 포함해 뒤의 world/다른 운영 UI 입력을 막는다. sample 두 선택에 맞는 버튼/label 배열을 연결한다. 더 많은 선택을 추가하면 배열도 함께 확장한다. 버튼 부족은 한 번 진단하고 popup을 닫아 숨겨진 선택을 확정하지 않는다.
+
+### 별도 최소 상태 HUD
+
+`DefensePhaseHUD`는 기존 `DefenseHUD`·이벤트 알림·선택 popup·GameOver overlay를 교체하지 않는 별도 view다. `Assets/Prefab/UI/DefensePhaseHUD.prefab`의 활성 root에 붙이고 `_statusText` Legacy Text와 별도 자식 `_nextWaveButton`을 연결한다. scene dependency `_session`·`_waves`는 prefab에서 비워 두고 scene override 또는 `Configure(DefenseGameSession, DefenseWaveController)`로 주입한다. 기존 씬은 이번 prefab 추가에서 교체하지 않는다.
+
+정비에는 다음 습격 번호와 남은 정수 초, 습격에는 현재 번호와 생존/생성 대기 적 수, 초기화/생성 오류/GameOver에는 짧은 상태를 표시한다. session·wave Changed 이벤트에 구독하고 남은 초·생존 수·대기 수·시작 가능 여부만 Update에서 비교하여 값이 바뀔 때 문구를 갱신한다. 매 프레임 문자열을 만들지 않는다. 버튼은 유효한 정비 때만 보이고 pause 중에는 controller의 CanStartNextWave에 따라 비활성화한다. 클릭은 TryStartNextWave만 요청하며 이벤트 선택·시간 배율·자원·적 생성 상태를 직접 변경하지 않는다. OnEnable/OnDisable과 Configure가 구독·listener를 대칭적으로 관리하며 필수 참조 누락은 한 번 진단하고 입력을 비활성화한다. 초기 누락 뒤 유효한 Configure로 회복할 수 있다.
+
+골드 변경 알림의 주 소유와 독립 prefab 계약은 [UI](../UI.md)의 선택적 골드 알림 HUD 절을 따른다. 두 view의 씬 연결과 실제 화면/Play는 별도 확인 항목이다.
 
 ## 전용 씬 조립
 
