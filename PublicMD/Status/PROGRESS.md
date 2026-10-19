@@ -1,3 +1,39 @@
+# UI 전용 헤더 도트 아이콘 생성·교체 — 2026-10-20
+
+- 사용자 요청으로 기존 주택 아이콘과 같은 계열의 건설 망치·시청 공공건물·상단 돈주머니/동전 아이콘을 각각 생성했다. 세 PNG는64×64 RGBA/실제 투명 배경이며 `Assets/Art/Generated/UI/WarmPixel/{construction-header-icon,town-hall-header-icon,merchant-header-icon}.png`에 추가했다. Single/FullRect·PPU100·Point·Clamp·mipmap off·sRGB·비압축·중앙 pivot·border0으로 가져왔다.
+- 기존 `WarmPixelConstructionPopup/Header/ConstructionIcon`, `WarmPixelTownHallPopup/Header/CityIcon`, `WarmPixelMerchantPopup/Header/GoldIcon`의 Sprite 참조를 교체했다. 변경 전 원본과 비교해 각 prefab에서 m_Sprite 한 줄씩만 변경됐으며 기존40×40 배치·오브젝트 ID·이름·Hierarchy·callback은 유지했다. 기존 주택 도트 아이콘과 원래 world/재료/골드 HUD 이미지는 보존했다.
+- 그래픽 `/root/house_ui_concept_art`: built-in imagegen 별도3회 생성과 nearest-neighbor 정규화, 소스·정확한 프롬프트·주택 포함 비교판을 `output/UI/HeaderIcons20261020/`에 보관했다. 코드 `/root/house_prefab_code`가 import/헤더 연결용 구현 helper를 작성하고 조립 `/root/house_prefab_assembly`가 실행했다. 루트는 실제 이미지·delta·증거를 확인하고 `Systems/UI.md` 및 Construction/TownHall/Merchant 소유 문서와 이 기록을 갱신했다. 기준 `b7eca48`; 기존 미커밋 상태를 보존했다.
+- 검증: 구현 helper 실제 컴파일/실행 success·diagnostics0, 실제 Sprite/importer/Rect typed readback,64×64·alpha·원본/배치PNG 바이트 일치, 기존 prefab/meta GUID·내용 보존과 whitespace 확인. 런타임 소스는 이전 성공 컴파일본과 동일하여 기존 strict 결과를 재사용했다. DefenseTest active/dirty/root9·Prefab Stage 없음 유지, 콘솔 error0/기존 경고18개 유지. 씬·런타임 코드는 수정하지 않았다.
+- 독립 읽기 전용 `/root/house_prefab_review`: Approve/findings 없음. 실제 세 prefab 원본 대비 delta·그림/importer·helper 컨벤션/의존/안전 경계와 문서 일치를 검토했다. ordinary common-check 경로, 보정0/2회. 기록 `.harness-runs/ui-header-icons-20261020/scene-work.md`, 실제 `assembly/` receipts/readback과 `review.json`.
+- 미검증: 실제 Canvas의 최종 아이콘 크기 균형·화면 표시. 자동 Play·스크린샷과 새 검증 전용 코드는 실행/추가하지 않았으며 커밋·푸시하지 않았다.
+
+# 주택 중복 배경·신규 팝업 Hierarchy 정리 — 2026-10-20
+
+- 사용자 피드백의 패널 뒤 배경은 주택 조립 루트·메인·업그레이드에 같은 창 Image를 겹쳐 둔 구조였다. `WarmPixelHousePopup.prefab`의 중복 루트 Image/남은 CanvasRenderer를 제거하고, 메인·업그레이드 패널마다 Background/Header/Body/Footer를 구분했다. 개요·효과·거주민과 다음 단계·비교·비용을 내용별로 묶고 각 효과/재료 행의 라벨·수량·구분선을 해당 행 아래에 배치했다.
+- `WarmPixelConstructionPopup`, `WarmPixelMerchantPopup`, `WarmPixelTownHallPopup`에도 별도 Background와 역할별 계층을 적용했다. 건설 상세 Overview/비용/Footer, 상단 Body/상품 목록/판매 명세의 Header·Body·Footer, 시청 HeaderDivider 등을 정리했다. 이미 의미 있는 구조가 있는 씨앗·슬롯·작은 행은 불필요하게 감싸지 않았다. 공통 원칙을 `Systems/UI.md`, 실제 경로를 각 소유 기능 문서에 반영했다.
+- 변경 범위는 위 네 prefab과 UI/Housing/Construction/TownHall/Merchant 소유 문서 및 이 기록이다. 코드 `/root/house_prefab_code`가 기존 prefab 재배치용 구현 helper를 작성하고 조립 `/root/house_prefab_assembly`가 실행했다. 런타임 코드·meta·이미지·씬은 수정하지 않았다. 기준 `b7eca48`; 직전 작업과 기존 미커밋 변경을 보존하고 변경 전 네 prefab 원본은 실행 기록의 `assembly/before/`에 보관했다.
+- 검증: 구현 helper 실제 컴파일/실행 diagnostics0·success, target-only save/import, 네 GUID·원래 GameObject/RectTransform ID와 anchor/pivot/위치/크기/scale/rotation 유지, 여섯 Background Image 속성 및 의미 있는 참조·중첩 prefab 보존을 전후 대조했다. 주택7개 참조/4개 애니메이션 배치 연결 typed readback 성공, 대상 diff/whitespace 확인. 런타임 소스는 이전 컴파일본과 동일하므로 기존 strict 컴파일 결과를 재사용했다. 원본 DefenseTest active/dirty/root9·Prefab Stage 없음 상태 유지; 씬은 저장하지 않았다. 콘솔 error0/컴파일 실패 없음이며 기존 inactive Animator 경고18개는 이 작업 전 발생분으로 남겼다.
+- 독립 읽기 전용 `/root/house_prefab_review`: Approve/findings 없음. 실제 원본 대비 YAML·배선·그룹 좌표계·렌더 순서·helper 컨벤션·의존·한정 저장과 문서 일치를 검토했다. ordinary common-check 경로, 보정0/2회. 기록 `.harness-runs/house-panel-structure-20261020/scene-work.md`, 실제 `assembly/migration-receipt.json`, typed readback과 `review.json`.
+- 미검증: 실제 Canvas의 패널 접합부/모서리 표현, 애니메이션·입력. 자동 Play·게임 화면 검사는 실행하지 않았으며 새 검증 전용 코드는 추가하지 않았다. 커밋·푸시하지 않았다.
+
+# D안 독립 주택 정보·업그레이드 표시 프리팹 — 2026-10-19
+
+- 승인된 D안을 새 `Assets/Prefab/UI/WarmPixelHousePopup.prefab`으로 만들었다. 기본1440×920에서 현재 주택 정보가 전체 폭을 사용하고, 업그레이드를 누르면 본창이940으로 줄며 뒤쪽500 영역의 비교 패널이 나타난다. 텍스트 scale은 유지하고 그림·여백·배치를 조정한다. 기본0.3초 unscaled 전환, 연속 입력 반전, 접기·닫기와 재활성화 초기화를 포함한다.
+- 전용64×64 RGBA 집 헤더 아이콘 `Assets/Art/Generated/UI/WarmPixel/house-header-icon.png`를 추가했다. Single/FullRect·PPU100·Point·Clamp·mipmap off·sRGB·비압축을 적용했다. 본문은 실제2·3단계 집 Sprite와 기존 주민·재료 Sprite를 재사용한다. 예시 입주민·보유량을 표시하며 실제 주택 바인딩·공사 실행·UIManager 등록·기존 프리팹/씬 교체는 연결하지 않았다.
+- 변경: 신규 prefab/meta, `Assets/Scripts/UI/WarmPixelHousePopup.cs`와 meta, 신규 header PNG/meta, 주 소유 `Systems/Housing/UI.md`와 이 기록. 출력 아이콘·프롬프트는 `output/UI/HouseConcept20261019/`에 있다. 기준 `b7eca48`; 기존 버튼 이미지·popup·DefenseTest·씨앗 코드/에셋·문서의 미커밋 변경을 보존했다. 코드 `/root/house_prefab_code`, 그래픽 `/root/house_ui_concept_art`, 조립 `/root/house_prefab_assembly`; 루트 조정·원본 diff/증거 확인·문서 기록.
+- 검증: strict Unity 컴파일 오류0/경고0, 코드 담당의 prefab 생성·공백 정리용 구현 helper 실제 eval_file 컴파일/실행 진단0, target-only import, 저장된7개 component 참조·4개 배치 row·Sprite·mask·버튼·크기·importer typed readback 성공. 원본 DefenseTest active/clean/root9·Prefab Stage 없음 유지, 씬은 저장하지 않았다. 새 코드·프리팹·소유 문서 whitespace 확인; Unity 생성 meta의 빈 필드 후행 공백은 수동 변경하지 않았다.
+- 독립 읽기 전용 `/root/house_prefab_review`: Approve/findings 없음. 컨벤션·주 소유·UI→Unity/DOTween 의존·tween/listener 수명·입력 차단·배선·범위와 제한된 저장 경로를 검토했다. ordinary common-check 경로, 기능 보정0/2회. 기록 `.harness-runs/house-prefab-20261019/scene-work.md`, `compile.json`, 실제 `assembly/` receipt/readback, `review.json`.
+- 미검증: 실제 Canvas/한글 줄바꿈·축소 화면·클릭/연타·접기/재열기·애니메이션 감각. 자동 Play·게임 화면 검사와 새 검증 전용 코드는 만들거나 실행하지 않았다. 초기 sandbox 연결 실패는 승인된 CLI 경로로 확인했고 JSON 인자 dry-run/확장자 거부는 실행 없이 수정한 뒤 실제 지원 경로로 성공했다. 표시용 프리팹 완료를 실제 gameplay 연결·실행 성공으로 확대하지 않으며 커밋·푸시하지 않았다.
+
+# 씨앗 선택 팝업 WarmPixel 갱신 — 2026-10-19
+
+- 기존 `SeedSelectionPopup.prefab`을 800×700 종이 창으로 갱신했다. 보유 씨앗만 아이콘·이름·수량 카드로 표시하며 세 열의 세로 스크롤 목록을 사용한다. 전체 화면 확인 모달 대신 하단에 선택 내용·씨앗 1개 소비 안내·심기 확정/취소 버튼을 배치했다. 선택 전에는 같은 위치에 안내를 표시한다. 기존 prefab GUID·67개 object ID·씨앗 아이콘·버튼 참조를 보존했다.
+- 신규 `SeedSelectionItemSlot.prefab`과 meta를 추가했다. ItemSlotView의 이름 Text는 선택적 연결이며 기존 거래·창고 슬롯은 그대로다. SeedSelectionPopup의 최소 빈 슬롯 수는 기본20을 유지하는 serialized 설정으로 바꾸고 이번 prefab에서0으로 지정했다. 심기·재고 transaction, source lifecycle과 popup category는 변경하지 않았다.
+- 변경: `Assets/Prefab/UI/SeedSelectionPopup.prefab`, `SeedSelectionItemSlot.prefab`과 meta, `Assets/Scripts/UI/SeedSelectionPopup.cs`, `ItemSlotView.cs`, 주 소유 `Systems/UI.md`, `Systems/Merchant_Caravan.md`, 이 기록. 기준 `b7eca48`; 시작 시 버튼 이미지·ConstructionPopup·GoldNotificationHUD·SeedSelectionPopup·DefenseTest의 미커밋 상태를 보존했다. 코드 `/root/seed_popup_code`, 조립 `/root/seed_popup_assembly`, 루트 조정·실제 diff/검사·문서 기록.
+- 검증: strict Unity 컴파일 오류0/경고0, 실제 prefab import 및 popup/card/scroll/grid/fitter/mask/button/sprite typed reference readback 성공, 코드·문서/신규 파일 및 이전 snapshot 대비 prefab 증분 whitespace 검사 통과. 자산 수정 전후에 코드 담당이 작성한 읽기 전용 기존 eval_file preflight로 열려 있는 prefab stage와 이미 로드된 대상 자산이 clean임을 확인했다. 씬은 저장하지 않았으며 DefenseTest는 clean 상태를 유지했다.
+- 독립 읽기 전용 `/root/seed_popup_review`: 현재 후보 Approve/findings 없음. 컨벤션·단일 문서 소유·의존 방향·기존 선택/소비 흐름·참조/레이아웃·preflight helper 무변경성을 검토했다. ordinary common-check 경로, 보정0/2회. 기록 `.harness-runs/seed-popup-refresh-20261019/scene-work.md`, 실제 `compile.json`, `assembly/`, `review.json`.
+- 미검증: 실제 Play의 화면/텍스트 맞춤, 클릭·스크롤 overflow·재오픈/선택/취소·심기 성공/실패. 자동 Play·게임 화면 검사와 새 검증 전용 코드를 추가·실행하지 않았다. Editor reload 연결 오류와 첫 eval 인자 quoting 오류는 재연결/기존 eval_file 경로로 해결했으며 실패를 통과로 해석하지 않았다. 씬·원본 이미지·importer·게임 규칙은 수정하지 않았고 커밋·푸시하지 않았다.
+
 # B안 분리 골드 알림·방어 HUD 프리팹 — 2026-10-19
 
 - 사용자가 선택한 B안을 별도 `GoldNotificationHUD.prefab`과 `DefensePhaseHUD.prefab`으로 추가했다. 기존 씬·GoldHUD·DefenseHUD는 교체하지 않았다. 기존 종이 패널·골드 코인·올리브 버튼 이미지를 재사용했다.

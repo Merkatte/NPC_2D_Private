@@ -1,0 +1,39 @@
+OPEN-DRAWER STATE PROMPT
+Use case: ui-mockup redesign.
+Create ONE polished 1536x1024 opaque game UI mockup, showing a HOUSE INFORMATION window with its UPGRADE DRAWER OPEN at the right. Not two states on one sheet. This is a static screenshot-like concept, no explanatory annotations.
+
+STYLE REFERENCES: image 1 is the approved construction popup and the STRONGEST authority for flat warm cream paper, thin stepped warm-brown outer frame, fine tan separators, moderate clear Korean typography, simple unboxed X and restrained olive-green buttons. Image 2 (House B) supplies house/resident art continuity but its permanently visible upgrade layout is being REPLACED by this current-info plus optional-drawer layout. Image 3 supplies exact house art. Image 4 is the purposeful TINY PIXEL HOUSE HEADER ICON: keep that simple low-resolution pixel icon language, not a detailed large house illustration shrunk down. No new icon asset sheet.
+
+FRAMING AND GEOMETRY: neutral LIGHT gray backdrop. Main window LEFT, approx x45..980, y72..952 (935 wide,880 tall); secondary docked drawer RIGHT approx x980..1490, y72..952 (510 wide,same height). Whole pair fully visible with margin. Main window must feel like a full independent normal-sized panel; drawer attaches beside it and does not overlay or squeeze its information. Same cream material/header baseline, subtle seam shadow or thin join. One modest collapse chevron in drawer header. Do not draw giant animation arrows. The same main window will later be shown alone without drawer, so design it as a complete contained current-building page.
+MAIN HEADER: tiny simple pixel house icon, moderate "주택", thin vertical separator, context "건물 정보", simple unboxed dark brown X near the right end of MAIN header. Thin horizontal rule underneath. The DRAWER has its own header "업그레이드" and small collapse chevron at far right. No green tier pills or status badges.
+
+MAIN PANEL CONTENT (current building ONLY):
+Title "주택 2단계". Beneath, short role description exactly "주민이 거주하며 피로를 회복하는 주택입니다." set neatly in muted brown, line-break if needed.
+A balanced illustration-plus-details layout below description: ONE blue-roof single-storey house illustration from upper-right of image3, approximately 430px wide in the left part of main body; to its right, spacious readable current information. Show "거주 2 / 2명" prominently then section "현재 효과". Under that, 3 clean aligned information rows on OPEN cream background with tiny icons, fine separators and correctly associated labels and values:
+"정원" "2명"
+"불만 회복 보너스" "+0.25/초"
+"집 체류 시 피로 회복" "5/초"
+No extra tier2 fatigue bonus. Do not apply a blanket all-effects-while-home footnote. No comparisons, arrows, next-tier art, resource costs or start-confirmation in the main panel.
+Lower section "거주민" with two restrained horizontal portrait cards/chips side by side, each a small friendly pixel resident portrait and name "주민 1" / "주민 2". Keep them much smaller than the building image, no giant full-body poster cards.
+Stable bottom-right of MAIN a medium olive action "업그레이드" with a small right chevron. This action only opens the drawer. Do not duplicate costs or "start" here. Plenty of whitespace; main is informative and visual, not a text wall.
+
+DRAWER CONTENT:
+Title "3단계". ONE compact next-house illustration, the LOWER LEFT tier3 in image3: brown tiled roof, single centered tall arched upper window with flowerbox, simple two-storey facade, centered gabled porch and door, two ground-floor side windows. NO BALCONY and NO two side dormers (those belong to tier4). Keep house illustration around 300px wide and 230px tall so the drawer has plenty of room for text/cost/button below.
+Comparison is only in drawer. A compact open table heading "효과 비교", columns "현재" then "다음". Two effect rows, readable without cramming:
+label "정원", values "2명" then "3명" (next value muted green).
+label "불만 회복 보너스", values "+0.25/초" then "+0.25/초". Put long label on its own line if needed to retain readable numeric columns. A very subtle "유지" is optional only if room. Do not show fatigue gains or invented effects.
+Then construction-style thin-lined cost table titled "업그레이드 비용", columns "필요" then "보유". Resource icons + labels on left, numeric columns right:
+coin "골드" | 200 | 450
+logs "목재" | 40 | 80
+stone "석재" | 20 | 36
+Need quantity FIRST then owned SECOND. NO chips/cards around costs. Small muted footnote "보유량은 예시입니다." if space.
+At DRAWER footer, one wide olive primary button "업그레이드 시작", clearly distinct from the main open-drawer button. Align it to drawer content margins, keep full button/frame visible.
+
+OVERALL constraints: Korean accurate, comfortable legibility, visual hierarchy matching construction image1. Flat cream, fine lines, simple pixel corners, resident cards only where useful. No full-height inner cards, chunky rounded stat boxes, heavy wood borders, giant typography, medieval clutter, app chrome, watermark, renamed/evicted/decorated/tax/comfort/HP mechanics, timers or progress. Do not produce an icon sheet or a combined before/after board. One coherent OPEN-DRAWER state.
+
+CURRENT-ONLY STATE PROMPT
+Use case: precise-object-edit / ui-mockup state change.
+Use the supplied finished House UI open-drawer mockup as the EXACT revision source. Produce a second state of the SAME design: upgrade drawer CLOSED. Output one landscape 1536x1024 opaque image, same quiet LIGHT gray background.
+Remove the ENTIRE right-hand upgrade drawer (the narrow right window headed "업그레이드", including its next-house illustration, comparison, costs, and start button). Leave only the large LEFT MAIN WINDOW. Move that MAIN window horizontally to the CENTER of the 1536x1024 canvas. CRITICAL: preserve the main window's exact width and height, around 940x910, and its original scale; do not shrink or stretch it, do not expand it to full canvas width. Simply translate the existing main window roughly 275px to the right, while keeping its vertical location and neutral backdrop. Restore a complete fine stepped brown right edge where it was attached to the drawer.
+Keep every aspect of the primary panel unchanged: same tiny pixel house icon, same header "주택 | 건물 정보", same unboxed X, same title "주택 2단계", same role-description "주민이 거주하며 피로를 회복하는 주택입니다.", exact blue-roof single-storey current house art, exact people icons and occupancy "거주 2 / 2명", section "현재 효과" with "정원 2명", "불만 회복 보너스 +0.25/초", "집 체류 시 피로 회복 5/초", same two resident cards "주민 1", "주민 2", same lower-right olive "업그레이드" button and small right chevron. Preserve all relative positions, text sizes, line spacing, fine separators, typography, flat cream material and construction-family styling. Keep full popup frame visible with generous outer gray margins.
+No extra illustration, no comparison arrows, no next-tier information, no costs, no start button, no explanation annotations, no alternate designs. Only the current-building main information panel centered on the neutral background.

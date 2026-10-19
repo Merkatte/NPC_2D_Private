@@ -55,3 +55,7 @@ ConstructionPopup prefab을 Canvas/PopupUI에 배치하고 registry에 등록한
 카드의 `BuildingImage`는 332×160 영역 안에서 비율을 유지하며 가로 중앙·하단 기준으로 표시한다. anchorMin/Max는 (0.5,1), pivot은 (0.5,0), anchoredPosition은 (0,-170)으로 두어 여섯 건물의 바닥선과 이름 위 여백을 맞춘다. 오른쪽 `SelectedBuildingImage`도 pivot (0.5,0)·anchoredPosition (0,-300)을 사용하며 기존 가로 stretch와 높이300을 유지한다. uGUI Image의 비율 유지 정렬은 RectTransform pivot을 따르므로 상단 왼쪽 pivot을 사용하지 않는다. 카드 자체의 위치·크기는 GridLayoutGroup이 소유하며, Unity 저장 파일의 해당 driven 값이 0인 것과 실제 레이아웃 크기는 구분한다.
 
 기존 `ConstructionPopup.prefab`, 씬 배치, UIManager 등록과 건설 코드는 교체하지 않는다. 새 프리팹에는 `ConstructionPopup`·`ConstructionChoiceRow` 컴포넌트나 버튼 callback이 없으며, 카드 선택·닫기·건설·실제 재고 조회는 연결하지 않았다. 최종 한글 표시·화면 크기별 배치와 게임 화면은 사람 확인 항목이며 자동 Play·화면 검증은 수행하지 않는다.
+
+표시용 프리팹 루트는 `Background`, `Header`, `Body`를 구분한다. `Body/WarehouseDetail`은 건물 그림·이름·설명을 담은 `Overview`, 기존 `ConstructionCost`, 건설 버튼을 담은 `Footer`로 나눈다. 갤러리·스크롤·비용 행의 기존 내부 구조와 화면 배치는 유지한다. 공통 계층 원칙은 [UI](../UI.md#ui-프리팹-계층-원칙)를 따른다.
+
+`Header/ConstructionIcon`은 `Assets/Art/Generated/UI/WarmPixel/construction-header-icon.png`의 전용 망치 도트 Sprite를 사용한다. 기존 헤더40×40 배치와 Image 참조 ID는 유지하며 원래 world 망치 그림은 변경하지 않는다. 공통 규격은 [헤더 전용 도트 아이콘](../UI.md#헤더-전용-도트-아이콘)을 따른다.

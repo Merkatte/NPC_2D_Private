@@ -1,0 +1,34 @@
+Use case: ui-mockup redesign / precise-object-edit.
+Redesign the HOUSE popup in reference image 2 so it belongs EXACTLY to the UI design system of reference image 1 (the approved CONSTRUCTION popup). Make ONE complete polished landscape 1536x1024 opaque mockup. Preserve house management information and the tier-2→3 scenario, but change layout and styling as specified. Do not turn it into a building catalog.
+
+REFERENCE PRIORITY:
+Image 1 is the strongest authority for header sizing, typography, cream background, fine tan rules, thin stepped dark-brown outer frame, restrained spacing, cost table format, and olive action finish. Copy its UI system with high fidelity. Image 2 is only the old house mockup whose content is being redesigned; its overly chunky title, many boxed panels, pills and cost chips are explicitly rejected. Image 3 is actual building art: upper-right blue-roof one-storey house = current tier 2; lower-left brown-roof two-storey house = next tier 3. Keep those appearances. Retain friendly small resident portraits similar to image 2.
+
+OVERALL:
+Entire panel visible with comfortable outer margin on a quiet LIGHT neutral gray backdrop, like image 1. Warm flat cream page, thin dark-brown pixel-stepped frame and subtle shadow. Calm open interior, generous whitespace, no inner full-height panels, no giant rounded cards. A single slim vertical divider splits the content into left 45%, right 55%.
+
+HEADER:
+Match image 1's exact arrangement/proportions: small house icon, MODERATE dark-brown title "주택", thin vertical tan divider, context "거주 및 확장". One thin horizontal divider beneath the header. Simple unboxed dark-brown X at top right, same size and inset as construction reference. No tier badge/pill in header, no oversized title, no bold banner, no X in a button box.
+
+CONTENT:
+Left column title "현재 주택 · 2단계" using construction reference section-title typography. Center ONE large blue-roof current house illustration on the open cream page, with no image-card border or sage background. Below, restrained occupancy line with tiny people icon "거주 2 / 2명". Below "거주민" and TWO small portrait cards side by side with small friendly pixel residents and names "주민 1", "주민 2". Keep portrait cards modest and clean, with thin tan borders; enough whitespace beneath and between sections. These two portrait cards are the only substantial inset cards in the entire popup.
+
+Right column title "다음 단계 · 3단계". Center ONE medium brown-roof two-storey next house illustration on open cream; no enclosing panel. Scale the house to occupy only upper part of the column, leaving room below for two stat rows, three resource-cost rows and button without crowding. This image contains exactly TWO main house illustrations total, one per column; no third duplicate house.
+Below next house, two compact open aligned effect rows with tiny icons and subtle thin separators:
+"정원" then "2명 → 3명"
+"불만 회복 보너스" then "+0.25/초 → +0.25/초"
+Use moderate typography matching image 1; no stat boxes, badges, green status pills, redundant headings, +1 badge or large heart tile.
+
+COST TABLE AND ACTION:
+Under effects, use the approved construction cost table from image 1, replacing the title with "업그레이드 비용". Exact layout: resource icon + label on left, column heading "필요" then column heading "보유" on right. Thin horizontal separator lines, NO boxed cost cards and NO horizontal chips. Three rows, numbers right-aligned:
+gold coin icon "골드" | 200 | 450
+wood logs icon "목재" | 40 | 80
+stone pile icon "석재" | 20 | 36
+Critical: required quantity FIRST and owned quantity SECOND; do NOT reverse to owned/required. Small footnote beneath table "보유량은 예시입니다." in muted brown, like construction reference.
+BELOW the entire table, one wide olive-green primary action button spanning nearly the right column width, same flat/subtly beveled pixel-edge finish as construction image. Cream label "3단계로 업그레이드". Button must have comfortable margins, not collide with table and not sit beside it.
+
+TYPOGRAPHY/STYLE:
+Korean rendered cleanly and accurately. Match image 1's relatively restrained type sizes/weights, high contrast warm brown, cream and muted olive. Do not carry over image 2's chunky cartoon weight or enormous header text. House art remains warm outlined pixel art, UI lines are fine and restrained. No new features, gameplay rules, timers, currencies, rename/evict/delete buttons, tabs, status banners or fake desktop chrome. No annotation essay, no watermarks, no alternate concepts, no cropped edges. One complete coherent HOUSE popup.
+
+Targeted correction (right next-tier house architecture only):
+TARGETED CORRECTION ONLY. Image 1 is the finished House UI mockup to preserve. Image 2 is the original four-house reference sheet. Replace ONLY the right-column next-tier house illustration in image 1. It mistakenly uses tier-4 architecture. The correct tier-3 architecture is LOWER LEFT in image 2: brown tiled roof, simple two-storey timber and plaster facade, ONE centered tall arched upper-floor window with flower box beneath, no upper balcony, no dormer windows, ground floor arched dark wooden center door with triangular small gabled porch and lanterns, two ground-floor arched side windows with flowers. Copy that lower-left building's facade/silhouette faithfully into the same right-column illustration area, at the same scale and ground baseline. Remove the mistaken balcony and the two side dormers; use the exact simpler tier-3 silhouette, not a recolored tier-4 building. Keep EVERYTHING else in image 1 pixel-for-pixel as far as possible: entire layout, border, header, icon, close X, left tier2 house, residents, Korean text, numeric values, two effect rows, three-row required/owned cost table, footnote, olive button, colors and spacing. Do not change UI or text, only correct the next-house architecture. Output one complete 1536x1024 opaque panel.

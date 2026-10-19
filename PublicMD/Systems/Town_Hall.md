@@ -80,6 +80,10 @@ TownHallPopup.prefab은 기존 목재 외곽·제목·닫기 버튼과 상인 �
 
 사람 이미지는 실제 NPCGirl의 `player-dotween-transparent.png` sprite subasset을 네 곳에 재사용하고, 괭이·검·망치를 직군별 별도 도구 아이콘으로 배치한다. 세 직군은 현재 같은 주민 prefab을 공유한다. 기존 시청 카드의 portrait가 가리키는 그림은 캐릭터가 아닌 도구이며, 기존 PNG와 importer는 보존한다.
 
+표시용 프리팹의 창 Image는 별도 `Background` 자식이 소유한다. 제목·탭·닫기와 `HeaderDivider`는 `Header` 아래에 두며, 기존 `Body/RoleSelector`, `Body/FarmerDetail/PortraitAndStats`, `RecruitmentBand`의 의미 있는 묶음은 유지한다. 화면 배치를 바꾸지 않고 [공통 UI 계층 원칙](UI.md#ui-프리팹-계층-원칙)을 적용한다.
+
+`Header/CityIcon`은 `Assets/Art/Generated/UI/WarmPixel/town-hall-header-icon.png`의 전용 공공건물 도트 Sprite를 사용한다. 기존40×40 헤더 배치·직군 도구·실제 시청 건물 이미지는 유지하며, importer 규격은 [헤더 전용 도트 아이콘](UI.md#헤더-전용-도트-아이콘)을 따른다.
+
 창·기본 패널·모집 버튼·닫기는 기존 WarmPixel 에셋을 재사용한다. 새 `Assets/Art/Generated/UI/WarmPixelTownHall/01-selection-panel.png`와 `02-portrait-panel.png`는 각각 선택 항목·상태 badge와 초상 배경이다. 두 이미지는 불투명 RGB 1254×1254, Sprite Single/Point/PPU100, mipmap·압축 없음, NPOT None, max2048, 사방 border64로 import했다. 새 고해상도 패널의 Image multiplier는 5, 기존 WarmPixel sliced sprite는 0.5다. 표시용 이미지와 배치의 실제 시각 확인은 미검증이며 자동 Play·화면 검증은 수행하지 않는다.
 
 ## 알려진 제약과 TBD

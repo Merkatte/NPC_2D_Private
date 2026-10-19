@@ -82,7 +82,7 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 | `Assets/Data/Struct/MerchantOffer.cs` | Popup에 전달하는 판매 가능 품목 표시 값 |
 | `Assets/Scripts/Enum/TradeResult.cs` | 거래 결과(Success/OutOfStock/InvalidRequest) |
 | `Assets/Scripts/UI/MerchantPopup.cs` | 구매/판매 탭을 가진 거래 UI. 판매 대기 카트(로컬 `Dictionary<itemId,quantity>`)와 세션 상태의 유일한 소유자 |
-| `Assets/Scripts/UI/ItemSlotView.cs` | 슬롯 한 칸의 표시 전담(중앙 아이콘·오른쪽 아래 수량). 창고 칸/판매 칸이 공유하며 이름은 드래그 고스트용 데이터로만 보관 |
+| `Assets/Scripts/UI/ItemSlotView.cs` | 슬롯 한 칸의 아이콘·수량과 선택적 이름 표시 전담. 창고 칸/판매 칸/씨앗 카드가 공유하며 item ID와 이름 데이터를 보관 |
 | `Assets/Scripts/UI/ItemSlotDragHandle.cs` | 창고 슬롯의 드래그 소스 — 카트를 모르고 고스트만 다룬다 |
 | `Assets/Scripts/UI/CartSlotRemoveHandle.cs` | 판매칸 슬롯의 클릭 제거 |
 | `Assets/Scripts/UI/SellCartDropZone.cs` | 판매칸 패널의 드롭 타깃 — 드롭 소스가 진짜 창고 슬롯인지까지 확인 후 Popup에 의도 전달 |
@@ -146,7 +146,7 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 
 `MerchantPopup.prefab`은 1920×1080 화면의 Constant Pixel Size Canvas 기준으로 루트가 1200×960, 게시판 배경이 1200×1005.8115(중심 y=22.9058)다. 서류 면과 구매·판매 내용 영역은 1020×760, 창고·판매 패널은 각각 480×680·480×560으로 배치했다. 구매 내용 영역은 서류 면 상단에 맞춘다. 커진 서류 면 주위에 목재 여백이 남도록 게시판을 넓혔고, 루트 크기도 맞춰 수량 입력창의 차단 영역이 게시판을 덮는다. Sliced Image의 `Pixels Per Unit Multiplier`로 나무 프레임의 화면상 두께를 조정하며 루트 Transform Scale은 1을 유지한다.
 
-창고·판매 슬롯 프리팹과 GridLayout 셀은 모두 118×118이며, 두 그리드는 45px 안쪽 여백과 16px 셀 간격을 사용해 480px 패널 안에 3열로 들어간다. 두 슬롯 프리팹의 배경은 `ui-merchant-item-cell-9slice.png`로 통일하고 중앙에 아이템 아이콘, 오른쪽 아래에 수량만 표시한다. 이름·단가 텍스트 오브젝트는 기존 프리팹 인스턴스 참조 보존을 위해 비활성으로 남겨 두지만 표시 코드는 더 이상 이 둘을 갱신하지 않는다. 거래 금액 계산은 `MerchantTradeSite`와 팝업의 예상 판매 금액 표시가 계속 담당한다.
+창고·판매 슬롯 프리팹과 GridLayout 셀은 모두 118×118이며, 두 그리드는 45px 안쪽 여백과 16px 셀 간격을 사용해 480px 패널 안에 3열로 들어간다. 두 슬롯 프리팹의 배경은 `ui-merchant-item-cell-9slice.png`로 통일하고 중앙에 아이템 아이콘, 오른쪽 아래에 수량만 표시한다. 이름·단가 텍스트 오브젝트는 기존 프리팹 인스턴스 참조 보존을 위해 비활성으로 남겨 둔다. `ItemSlotView._nameText`는 선택적 연결이며 기존 창고·판매 슬롯에서는 연결하지 않는다. 이름을 표시하는 씨앗 카드에서만 연결하고 `Bind`/`Clear`가 같은 이름 데이터를 표시·초기화한다. 단가 표시는 슬롯에서 갱신하지 않으며 거래 금액 계산은 `MerchantTradeSite`와 팝업의 예상 판매 금액 표시가 계속 담당한다.
 
 ## WarmPixel 표시용 프리팹
 
@@ -158,7 +158,11 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 | `Assets/Prefab/UI/WarmPixelMerchantItemRow.prefab` | 아이콘·품목명·보유량·단가·감소/증가 버튼·정수 InputField·행 구분선이 있는 재사용 상품 행 |
 | `Assets/Prefab/UI/WarmPixelMerchantSaleLine.prefab` | 품목×수량과 품목별 금액을 표시하는 재사용 명세 행 |
 
-전체 창의 `ProductList/ScrollView/Viewport/Content` 아래 당근·감자 행은 상품 행 프리팹의 실제 nested instance이며, `SaleSummary` 아래 두 명세도 명세 행 프리팹의 nested instance다. 상품 목록은 세로 ScrollRect와 RectMask2D로 제한하고 Content의 VerticalLayoutGroup·ContentSizeFitter가 행 추가에 맞춰 높이를 늘린다. 가로 스크롤은 끈다. 두 샘플 행이 viewport에 모두 들어가는 상태에서는 overflow가 없으며 행이 추가되어야 스크롤 범위가 생긴다.
+전체 창의 `Body/ProductList/ScrollView/Viewport/Content` 아래 당근·감자 행은 상품 행 프리팹의 실제 nested instance이며, `Body/SaleSummary/Body` 아래 두 명세도 명세 행 프리팹의 nested instance다. 상품 목록은 세로 ScrollRect와 RectMask2D로 제한하고 Content의 VerticalLayoutGroup·ContentSizeFitter가 행 추가에 맞춰 높이를 늘린다. 가로 스크롤은 끈다. 두 샘플 행이 viewport에 모두 들어가는 상태에서는 overflow가 없으며 행이 추가되어야 스크롤 범위가 생긴다.
+
+창의 배경은 루트의 `Background`, 제목·탭·닫기·헤더 구분선은 `Header`, 상품 목록과 판매 명세는 `Body`에 둔다. `SaleSummary`도 `Background`, `Header`, `Body`, `Footer`로 구분하고 선택 초기화·판매 버튼은 Footer에 둔다. 재사용 행·스크롤의 기존 배치·참조·nested 관계를 유지하며 [공통 UI 계층 원칙](UI.md#ui-프리팹-계층-원칙)을 따른다.
+
+`Header/GoldIcon`은 기존 이름·40×40 배치를 유지하면서 `Assets/Art/Generated/UI/WarmPixel/merchant-header-icon.png`의 돈주머니·동전 도트 Sprite를 표시한다. 재료 행과 골드 HUD에서 사용하는 원래 골드 코인 Sprite는 변경하지 않는다. 규격은 [헤더 전용 도트 아이콘](UI.md#헤더-전용-도트-아이콘)을 따른다.
 
 샘플 표시값은 당근 보유40/단가2G/판매10, 감자 보유24/단가3G/판매6, 판매 명세20G·18G와 합계38G다. 실제 재고나 거래 도메인에 연결된 값이 아니다. 기본 uGUI 컴포넌트만 사용하며 버튼 callback은 비워 두었다. 수량 입력과 합계 갱신·거래·선택 초기화·닫기·탭 전환은 후속 연결 대상이다. 별도 Canvas 아래에 배치해 사용하며 font는 기존 Legacy Text의 임시 기본 font다. 코드와 씬을 추가·변경하지 않았다.
 

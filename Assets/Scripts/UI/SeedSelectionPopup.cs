@@ -8,7 +8,6 @@ using UnityEngine.UI;
 /// </summary>
 public sealed class SeedSelectionPopup : PopBase
 {
-    private const int MinimumVisibleSlots = 20;
     private const int Columns = 5;
     private const float SlotSpacingX = 140f;
     private const float SlotSpacingY = 125f;
@@ -27,6 +26,7 @@ public sealed class SeedSelectionPopup : PopBase
 
     [SerializeField] private ItemSlotView _slotPrefab;
     [SerializeField] private RectTransform _slotParent;
+    [SerializeField, Min(0)] private int _minimumVisibleSlots = 20;
     [SerializeField] private Text _emptyStateText;
     [SerializeField] private SeedIconEntry[] _seedIcons = Array.Empty<SeedIconEntry>();
 
@@ -43,6 +43,11 @@ public sealed class SeedSelectionPopup : PopBase
     private bool _hasLoggedConfigurationFailure;
     private FarmSeedSource _source;
     private int _selectedSeedId = -1;
+
+    private void OnValidate()
+    {
+        _minimumVisibleSlots = Mathf.Max(0, _minimumVisibleSlots);
+    }
 
     internal override bool TryBindSource(IClickPopupSource source)
     {
@@ -134,7 +139,7 @@ public sealed class SeedSelectionPopup : PopBase
 
         _source.GetAvailableSeeds(_availableSeeds);
 
-        int visibleCount = Mathf.Max(MinimumVisibleSlots, _availableSeeds.Count);
+        int visibleCount = Mathf.Max(Mathf.Max(0, _minimumVisibleSlots), _availableSeeds.Count);
         for (int i = 0; i < visibleCount; ++i)
         {
             ItemSlotView slot = RentSlot(i);

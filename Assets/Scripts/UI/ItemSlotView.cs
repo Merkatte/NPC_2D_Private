@@ -2,10 +2,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Display for one inventory-style slot, shared by the warehouse grid and the sell cart grid in
-/// MerchantPopup. Knows nothing about drag, drop, or click behaviour — that lives in the sibling
+/// Display for one inventory-style slot, shared by merchant grids and seed selection cards.
+/// Knows nothing about drag, drop, or click behaviour — that lives in the sibling
 /// components (ItemSlotDragHandle / CartSlotRemoveHandle) attached only where relevant, so this
-/// class stays a pure view usable by both prefabs.
+/// class stays a pure view. An optional name label supports cards that display item names.
 /// </summary>
 public sealed class ItemSlotView : MonoBehaviour
 {
@@ -13,6 +13,7 @@ public sealed class ItemSlotView : MonoBehaviour
 
     [SerializeField] private Image _iconImage;
     [SerializeField] private Text _quantityText;
+    [SerializeField] private Text _nameText;
 
     private string _displayName = string.Empty;
 
@@ -24,6 +25,9 @@ public sealed class ItemSlotView : MonoBehaviour
     {
         ItemId = itemId;
         _displayName = displayName;
+
+        if (_nameText)
+            _nameText.text = _displayName;
 
         if (_quantityText)
             _quantityText.text = $"x{quantity}";
@@ -40,6 +44,9 @@ public sealed class ItemSlotView : MonoBehaviour
     {
         ItemId = EmptyItemId;
         _displayName = string.Empty;
+
+        if (_nameText)
+            _nameText.text = string.Empty;
 
         if (_quantityText)
             _quantityText.text = string.Empty;

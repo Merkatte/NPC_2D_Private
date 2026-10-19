@@ -1,0 +1,22 @@
+NEW INITIAL WIDE STATE — built-in imagegen edit
+Use case: precise-object-edit / ui-mockup initial state.
+Reference 1 is the approved final OPEN upgrade-drawer endpoint. Create its INITIAL CLOSED state using an important different geometry: the CURRENT BUILDING MAIN WINDOW initially occupies the ENTIRE OUTER WIDTH of reference 1's combined main+drawer. Reference2 is a prior narrow centered closed-state example and that narrow frame is EXPLICITLY WRONG for this new version; do NOT replicate reference2's frame width. Reference3 is the construction style authority.
+
+Output ONE complete 1536x1024 opaque game UI screenshot-like concept, quiet LIGHT gray backdrop. Frame bounds MUST MATCH reference1 combined full popup bounds: left x40, top y56, right x1496, bottom y968, approx1456 wide by912 tall. SAME top-left anchor and SAME full outer footprint as reference1. Single continuous wide main panel, NO drawer visible. Initial main right edge reaches x1496; later that edge retreats left to x980 to reveal reference1 drawer. This output represents ONLY the initial wide state, no motion arrows or labels.
+
+CRITICAL GEOMETRY: do not center a narrow panel! Build one WIDE continuous cream information window nearly full canvas width. Header icon/title/context preserve exact x-left alignment, glyph sizes and y position from reference1, extending header background/rule to full width. Move simple unboxed close X to far upper right at aboutx1452, y100. Remove the right drawer entirely, including its title, house, comparison, costs, sample note and start button; replace that whole region with main current-building page space. Remove old seam atx980. One fine stepped warm dark brown outer frame, same flat ivory paper, fine tan separators, restrained olive buttons, pixel icon/portrait art and same moderate typography as reference1/construction reference3.
+
+REDISTRIBUTE CURRENT MAIN INFORMATION INTO FULL WIDTH using generous art/whitespace, NEVER enlarge typography:
+Same title near upper-left "주택 2단계", and same role description "주민이 거주하며 피로를 회복하는 주택입니다." directly underneath in muted brown.
+Show exactly ONE large blue-roof one-storey tier2 house in generous LEFT half, enlarged house ART ONLY, roughly x90..740 and y285..660 with comfortable margins. Do not show any brown tier3 or next building.
+Current details occupy RIGHT half on open cream background, roughly x800..1430: occupancy "거주 2 / 2명" with small people icons; section "현재 효과"; 3 aligned fine-separated rows with tiny pixel icons and same label/number glyph sizes as reference1:
+"정원" "2명"
+"불만 회복 보너스" "+0.25/초"
+"집 체류 시 피로 회복" "5/초"
+Do not add stats or generalize when effects apply.
+Lower-left section "거주민" with same TWO modest portrait cards/chips and names "주민 1", "주민 2". Keep portrait text/icon scale similar to reference1; do not inflate residents into giant cards just to fill width.
+Stable bottom-right medium olive button labeled "업그레이드" and small right chevron, around x1080..1450, same type size/height as reference1 MAIN button. There is NO upgrade confirmation/start button in this initial state.
+Retain airy balanced layout and fine open separators. All CURRENT information retained and legible. No next-tier info, comparisons, arrows between numeric stats, costs/resources, panel2, tabs, invented status/taxes/comfort/actions, giant text, explanatory diagrams, watermark or app chrome. One full wide current-building window matching reference1's combined outer bounds.
+
+OPEN ENDPOINT REUSE
+house-popup-concept-d-upgrade.png is copied verbatim from house-popup-concept-c-upgrade.png. This is the existing approved opened endpoint, reused to preserve the same outer bounds and show the intended main right-edge retreat without moving the main top-left anchor.
