@@ -1,4 +1,4 @@
-# UI
+﻿# UI
 
 ## 기능 목적
 
@@ -70,6 +70,8 @@ EventSystem(InputSystemUIInputModule)
 | `Assets/Scripts/UI/UIManager.cs` | popup·hover registry와 현재 표시 상태를 조정하는 facade |
 | `Assets/Scripts/UI/GoldHUD.cs` | 공유 골드 잔액과 최신 증감을 이벤트 기반으로 표시하는 상시 HUD |
 | `Assets/Scripts/UI/GoldNotificationHUD.cs` | 골드 변경 때 진입·잔액 보간·유지·퇴장하는 선택적 알림 HUD |
+| `Assets/Scripts/UI/PopupCanvasFit.cs` | root Canvas 크기에 맞춘 팝업 전체 비율 축소, 위치는 PopBase 소유 |
+| `Assets/Scripts/UI/ResourceCostRowView.cs` | 주택·건설 공용 재료 아이콘·이름·필요/보유와 부족 색 표시 |
 
 ## 변경 유형별 최소 확인 범위
 
@@ -94,6 +96,12 @@ EventSystem(InputSystemUIInputModule)
 - 1:1 전용 popup-도메인 배선(예: `MerchantPopup`-`MerchantTradeSite`)은 interface로 감싸지 않는다. `IHoverInfoSource`/`IClickPopupSource`처럼 여러 구현체가 존재하거나 존재할 수 있는 진짜 다형성 상황에서만 interface를 쓴다.
 
 ## Unity 배선
+
+현재 UI 전환 대상은 DefenseTest다. PopupUI의 House/Construction/TownHall/Merchant를 신규 WarmPixel instance로 등록하며 기존 SeedSelection/Warehouse와 두 hover를 유지한다. 운영 popup은 초기 비활성, HUD는 활성이다. 다른 씬은 이번 작업에서 변경하지 않는다. 아래 FarmerTest 및 목재 UI 설명은 기존 에셋/이전 배선의 기록이다.
+
+PopupCanvasFit은 신규 네 popup과 DefenseTest의 기존 SeedSelection instance에 연결한다. 최초 localScale을 기준으로 root Canvas의 크기를 부모 좌표계로 변환하고 여백24 안에 전체가 들어오도록 축소한다. 확대나 내부 재배치는 하지 않는다. PopupUI의 100×100 크기를 화면 크기로 오인하지 않으며 위치는 PopBase, 주택 내부 너비는 WarmPixelHousePopup이 소유한다.
+
+ResourceCostRowView는 주어진 이름·아이콘·필요량·보유량만 표시한다. domain을 조회하거나 자원을 변경하지 않는다. 아이콘 누락에도 텍스트를 유지하고 실제 요구 비용일 때만 부족 색을 적용한다. 환불 표시는 요구 비용으로 취급하지 않는다.
 
 `UIManager`에는 popup·hover 배열을 등록한다. FarmerTest의 `Canvas/PopupUI/SeedSelectionPopup`은 비활성 상태로 배치되어 `PopupType.SeedSelection`으로 등록된다. 빈 Soil 클릭에서 전달된 FarmSeedSource가 해당 밭·창고·catalog를 제공하므로 popup에는 고정 창고 참조가 없다. 슬롯은 `ItemSlotView`에 씨앗 이름·수량·아이콘을 전달하며, 이름 표시는 슬롯의 선택적 `_nameText` 연결로 정한다. 심기·취소·닫기 Button을 serialized field로 연결하고 OnEnable/OnDisable에서 listener를 등록·해제한다.
 
@@ -129,9 +137,9 @@ PointerHoverRouter/PointerClickRouter에는 world camera, IUIService 구현 sour
 
 Unity에서 Sprite Single, PPU 100, Point, Clamp, mipmap off, sRGB, 비압축으로 가져왔다. pivot은 중앙이다. Border는 Left/Bottom/Right/Top 순서로 창 12/12/12/12, 명세 패널·사각 버튼·입력칸 8/8/8/8, 주요·보조 버튼 10/8/10/8, 스크롤 배경·손잡이 2/4/2/4이며 닫기 아이콘은 0이다. 닫기는 Simple, 나머지는 사용할 Image에서 Sliced로 지정한다. 기존 importer 도구가 Mesh Type 변경을 지원하지 않아 현재 저장값은 Tight이며 권장 Full Rect 적용과 실제 Canvas 늘림 표시는 미검증이다.
 
-`Assets/Prefab/UI/WarmPixelMerchantPopup.prefab`은 이 부품을 사용하는 별도 표시용 거래창이다. 상품 행은 `WarmPixelMerchantItemRow.prefab`, 판매 명세 행은 `WarmPixelMerchantSaleLine.prefab`의 nested instance로 배치한다. 왼쪽 목록은 기본 uGUI ScrollRect·RectMask2D·VerticalLayoutGroup·ContentSizeFitter와 세로 Scrollbar를 사용하며 오른쪽 명세와 판매 버튼은 목록 밖에 고정한다. 자세한 구조와 샘플값은 [Merchant Caravan](Merchant_Caravan.md)의 WarmPixel 표시용 프리팹 절을 따른다.
+`Assets/Prefab/UI/WarmPixelMerchantPopup.prefab`은 이 부품을 사용하는 별도 표시용 거래창이다. 상품 행은 `WarmPixelMerchantItemRow.prefab`, 판매 명세 행은 `WarmPixelMerchantSaleLine.prefab`의 nested instance로 배치한다. 왼쪽 목록은 기본 uGUI ScrollRect·RectMask2D·VerticalLayoutGroup·ContentSizeFitter와 세로 Scrollbar를 사용하며 오른쪽 명세와 판매 버튼은 목록 밖에 고정한다. 자세한 구조와 샘플값은 [Merchant Caravan](Merchant_Caravan.md)의 WarmPixel 프리팹 절을 따른다.
 
-기존 `MerchantPopup`과 다른 popup의 참조·배치는 교체하지 않는다. 새 프리팹에 거래 처리·수량 증감·탭 전환·닫기 callback이나 `UIManager` 등록은 연결하지 않았다. 원본과 부품 미리보기·import 권장값은 `output/UI/WarmPixel`에 있다.
+2026-10-20 DefenseTest의 신규 WarmPixel 팝업에는 실제 controller와 UIManager 등록을 연결했다. 각 기능의 현재 계약은 주 소유 문서를 따른다. 옛 prefab 파일과 다른 씬은 보존한다. 원본과 부품 미리보기·import 권장값은 `output/UI/WarmPixel`에 있다.
 
 ## 헤더 전용 도트 아이콘
 
@@ -158,13 +166,13 @@ BuildingTest의 `Canvas/HUDUI/GoldHUD`에 `Assets/Prefab/UI/GoldHUD.prefab`을 �
 
 ## 선택적 골드 알림 HUD
 
-`GoldNotificationHUD`는 기존 상시 `GoldHUD`와 별개의 view다. `Assets/Prefab/UI/GoldNotificationHUD.prefab`을 기존 Canvas 아래에 배치하는 계약이며 기존 씬의 HUD를 교체하거나 UIManager에 등록하지 않는다. 활성 root에 컴포넌트를 두고 별도 자식 `_panel` RectTransform, 같은 자식의 `_canvasGroup`, Legacy Text `_amountText`·`_changeText`를 연결한다. prefab의 `_resourceManager`는 비워 두며 scene override 또는 `Configure(ResourceManager)`로 주입한다. 필수 참조가 없으면 한 번 진단하고 숨김 상태를 유지하며 이후 유효한 Configure로 초기화할 수 있다.
+`GoldNotificationHUD`는 DefenseTest에서 기존 상시 GoldHUD instance를 대체한다. UIManager registry에는 등록하지 않는다. 활성 root에 컴포넌트를 두고 별도 자식 `_panel` RectTransform, 같은 자식의 `_canvasGroup`, Legacy Text `_amountText`·`_changeText`를 연결한다. prefab의 `_resourceManager`는 비워 두며 scene override 또는 `Configure(ResourceManager)`로 주입한다. 필수 참조가 없으면 한 번 진단하고 숨김 상태를 유지하며 이후 유효한 Configure로 초기화할 수 있다. 다른 씬과 옛 GoldHUD prefab은 보존한다.
 
 Awake에서 즉시 숨기고 첫 활성 초기화 때 실제 골드를 조용히 읽는다. `ResourcesChanged` 이후 골드 수량이 바뀐 경우만 위에서 내려온 뒤 이전 표시 잔액을 실제 잔액까지 보간하고, 잠시 유지한 뒤 위로 퇴장한다. 지출도 같은 경로로 감소하며 다른 자원·용량 알림은 무시한다. 표시 중 추가 변경은 현재 보간 값에서 새 실제 잔액으로 이어지고 유지 시간을 연장한다. 진입은 재시작하지 않으며 퇴장 중에는 현재 위치에서 반전한다. 최신 실제 변경의 차이를 부호 있는 숫자로 표시한다. 수량 보간은 double 계산 후 정수로 표시하고 완료 때 실제 int 잔액을 확정하여 큰 잔액의 반올림 손실을 피한다.
 
-기본 위치는 좌상단 anchor/pivot의 `_visibleAnchoredPosition=(16,-16)`, 위쪽 `_hiddenOffset=96`이다. `_slideDuration=0.25`, `_countDuration=0.65`, `_holdDuration=1.5`는 Inspector에서 조절하고 유효한 비음수로 보정한다. 이동·수량·유지는 모두 unscaled 시간이다. `SetContextVisible(true)`는 단일 소비 UI가 열려 있는 동안 잔액을 유지하는 명시적 계약이며 false 뒤 정상 유지/퇴장한다. 현재 popup 연계는 연결하지 않았다. 비활성화/재바인딩은 자신이 소유한 tween만 완료 callback 없이 중단하고 구독과 표시 상태를 정리한다. root를 끄지 않고 자식 위치와 alpha로 표시하며 모든 알림 Graphic과 CanvasGroup의 raycast를 차단하지 않도록 설정한다. 자원 변경 API는 호출하지 않는다.
+기본 위치는 좌상단 anchor/pivot의 `_visibleAnchoredPosition=(16,-16)`, 위쪽 `_hiddenOffset=96`이다. `_slideDuration=0.25`, `_countDuration=0.65`, `_holdDuration=1.5`는 Inspector에서 조절하고 유효한 비음수로 보정한다. 이동·수량·유지는 모두 unscaled 시간이다. `SetContextVisible(true)`는 단일 소비 UI가 열려 있는 동안 잔액을 유지하는 명시적 계약이며 false 뒤 정상 유지/퇴장한다. 현재 popup 연계는 아래 _contextPopups 계약을 따른다. 비활성화/재바인딩은 자신이 소유한 tween만 완료 callback 없이 중단하고 구독과 표시 상태를 정리한다. root를 끄지 않고 자식 위치와 alpha로 표시하며 모든 알림 Graphic과 CanvasGroup의 raycast를 차단하지 않도록 설정한다. 자원 변경 API는 호출하지 않는다.
 
-최소 방어 상태 view `DefensePhaseHUD`의 주 소유와 배선 계약은 [Defense Progression](Defense/Progression.md)을 따른다. 두 신규 prefab의 씬 연결과 사람 화면/Play 확인은 별도이며 코드만으로 검증 성공을 주장하지 않는다.
+`_contextPopups`에는 DefenseTest의 House/Construction/TownHall/Merchant 네 popup을 연결한다. Update는 활성 여부만 확인하며 하나라도 열려 있으면 SetContextVisible(true), 모두 닫히면 false로 전환한다. 자원 조회는 ResourcesChanged 경로로 유지한다. 최소 방어 상태 view DefensePhaseHUD의 주 소유와 배선 계약은 [Defense Progression](Defense/Progression.md)을 따른다. 실제 화면/Play 확인은 별도이며 코드만으로 검증 성공을 주장하지 않는다.
 
 ## 문구 표시 연계
 

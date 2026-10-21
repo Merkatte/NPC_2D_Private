@@ -29,8 +29,9 @@ TryGetRecruitment(NPCType, out RecruitmentStatus)는 값 복사만 반환한다.
 | `Assets/Scripts/Actor/TownHallRecruitment.cs` | 직군별 설정·상태·타이머·예약·지원금 transaction·낙하 lifecycle |
 | `Assets/Data/Struct/RecruitmentStatus.cs` | UI가 읽는 직군·phase·남은 시간·비용·낙하 상태 값 |
 | `Assets/Scripts/System/Actor/TownHallVisual.cs` | 클릭 표면과 집계 phase 아이콘 |
-| `Assets/Scripts/UI/TownHallPopup.cs` | 탭 선택, 상태 조회와 모집 의도 전달, 모집 스크롤 초기화와 Canvas 맞춤 축소 |
-| `Assets/Scripts/UI/TownHallRecruitCard.cs` | 직군별 이미지·이름·비용·상태·시간·버튼 표시 |
+| `Assets/Scripts/UI/TownHallPopup.cs` | 탭·직군 선택, 상태 조회와 모집 의도 전달 |
+| `Assets/Scripts/UI/TownHallRecruitCard.cs` | 선택된 직군의 공유 상세·비용·상태·시간·모집 버튼 표시 |
+| `Assets/Scripts/UI/TownHallRoleView.cs` | 명시된 직군 목록의 표시와 선택 의도 |
 | `Assets/Scripts/Enum/RecruitPhase.cs` | Recruiting/CandidateReady, 기존 직렬화 값 유지 |
 | `Assets/Scripts/Enum/RecruitResult.cs` | Success/NotReady/NotEnoughGold/SpawnUnavailable/NoArcherStation |
 
@@ -42,7 +43,7 @@ WorkerReservation의 계약과 소유는 [Spawning and Pooling](Spawning_and_Poo
 |---|---|
 | 후보·쿨다운·직군 설정 | TownHallRecruitment.cs, TownHall.prefab |
 | 예약·지출·비활성화 | TownHallRecruitment.cs, NPCManager 예약 API, Player Gold, Spawning and Pooling |
-| 탭·카드·버튼 | TownHallPopup.cs, TownHallRecruitCard.cs, TownHallPopup.prefab, UI |
+| 탭·카드·버튼 | TownHallPopup.cs, TownHallRecruitCard.cs, TownHallRoleView.cs, WarmPixelTownHallPopup.prefab, UI |
 | 시청 클릭·월드 아이콘 | TownHallVisual.cs, PointerClickRouter, FarmerTest.unity |
 
 ## 불변 규칙
@@ -54,7 +55,15 @@ WorkerReservation의 계약과 소유는 [Spawning and Pooling](Spawning_and_Poo
 - 모집 성공 후 팝업은 유지된다. 기본 탭은 모집이며 마을 상태 탭에는 정확히 `준비중입니다`를 표시한다.
 - 타이머는 Time.deltaTime을 사용하며, 팝업은 초 단위 표시가 바뀔 때만 시간 문자열을 갱신한다.
 
-## Unity 배선과 검증
+## 현재 UI 연결
+
+DefenseTest의 WarmPixelTownHallPopup은 Farmer/Guard/Builder/Archer 네 TownHallRoleView와 하나의 TownHallRecruitCard 상세를 연결한다. scene instance의 `_recruitment`는 기존 TownHallRecruitment를 참조하며 모집 규칙과 비용·타이머를 변경하지 않는다. 기본 Farmer(없으면 첫 유효 직군)를 선택하며 선택만으로 지출하지 않는다. 실제 모집 버튼만 TryDispatchCandidate를 호출한다. 성공 후 선택·창을 유지하고 실패 사유를 표시한다. 대상 수명이 끝나면 RequestClose로 닫는다.
+
+Body/RecruitmentContent는 역할 목록과 공유 상세, Body/TownStatusPanel은 준비중 안내를 소유한다. 결과 문구는 Footer에 둔다. 능력치는 `—`, 상세 정보 준비 중으로 유지한다. 작은 화면의 전체 비율 축소는 공통 PopupCanvasFit(UI.md 소유)이 담당하며 예전 `_fitToCanvas`/`_recruitmentScrollRect`는 사용하지 않는다. 다른 씬과 옛 prefab은 보존하지만 옛 배치의 runtime 호환을 구현하지 않는다.
+
+## 이전 Unity 배선과 검증 기록
+
+아래 2026-10-09까지의 카드·스크롤 설명은 보존된 옛 에셋의 기록이며 현재 DefenseTest UI 계약은 위 절을 따른다.
 
 2026-09-26 Unity CLI로 `BuilderCitizenSetup.Setup`을 실행해 세 번째 카드와 초기 준비 상태의 100골드/60초 Builder 설정을 prefab/scene에 저장했다. TownHallPopup은 비어 있지 않은 카드 목록을 사용하고 null/중복 직군을 거부한다. TownHallRecruitCard에는 건축가 이름이 등록돼 있다. 실제 모집 플레이는 사람의 확인 항목이다. [Builder 계획](../Plans/Builder_Citizen_Implementation_Plan.md) 참고.
 
@@ -70,13 +79,13 @@ TownHallPopup.prefab은 기존 목재 외곽·제목·닫기 버튼과 상인 �
 
 2026-09-19 작업의 실제 Play Mode(동시 모집, 60/90초 독립 카운트다운, 낙하 중 disable, 팝업 조작)는 사용자 지시로 생략하여 NOT_VERIFIED다. 컴파일·직렬화 확인은 runtime 통과를 대신하지 않는다.
 
-## WarmPixel 표시용 프리팹
+## WarmPixel 프리팹
 
 2026-10-16 `Assets/Prefab/UI/WarmPixelTownHallPopup.prefab`을 별도 표시용으로 추가했다. 기본 크기는 1440×900이며 왼쪽 직군 목록, 오른쪽 농부 상세·초상·능력치 자리, 하단 지원금·모집 버튼으로 나눈다. Body와 상세 영역은 stretch anchor를 사용하고 하단 모집 영역은 아래에 고정한다. 창의 RectTransform 크기를 조정할 수 있으나 작은 크기의 배치와 실제 화면은 사람 확인 대상이다.
 
 헤더는 `WarmPixelMerchantPopup`의 규격을 따른다. 높이 82, 아이콘 40×40, 제목 30pt, 제목 옆 세로 구분선 2×38, 닫기 32×32(상단 24·우측 34 여백), 하단 구분선 높이 3·좌우 12 여백이다. 탭은 상단 14·높이 54·28pt로 왼쪽 x=216부터 놓으며, 긴 시청 탭명을 위해 폭 144·간격 16(x=216/376)을 사용한다. 선택 밑줄은 높이 7, 선택·비선택 글자색과 구분선색은 상인 헤더와 맞춘다. Body의 상단 여백은 108이다.
 
-기존 `TownHallPopup.prefab`, scene 등록과 모집 코드는 변경하지 않는다. 새 프리팹은 Canvas 아래에 배치하는 화면 조립용이며 `TownHallPopup`/`TownHallRecruitCard` 컴포넌트와 버튼 callback이 없다. 직군 선택·탭·닫기·모집·실제 상태 조회는 연결되지 않았다. 농부 상세가 기본 표시되고 세 직군의 `모집 가능`과 지원금 100 G는 샘플 표시값이다. 체력·이동 속도·작업 속도·운반량은 `—` 자리이며 최종 스탯 규칙이나 데이터 연결을 확정하지 않는다.
+2026-10-20 UI 연동에서 TownHallPopup·TownHallRecruitCard·TownHallRoleView를 연결했다. 예시 모집 가능/지원금 값은 실제 RecruitmentStatus로 갱신한다. 직군 선택·탭·닫기·모집은 기존 domain API에 연결하며 체력·이동 속도·작업 속도·운반량은 `—`로 유지한다. 최종 스탯 규칙은 확정하지 않는다.
 
 사람 이미지는 실제 NPCGirl의 `player-dotween-transparent.png` sprite subasset을 네 곳에 재사용하고, 괭이·검·망치를 직군별 별도 도구 아이콘으로 배치한다. 세 직군은 현재 같은 주민 prefab을 공유한다. 기존 시청 카드의 portrait가 가리키는 그림은 캐릭터가 아닌 도구이며, 기존 PNG와 importer는 보존한다.
 

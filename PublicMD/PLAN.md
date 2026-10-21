@@ -1,4 +1,4 @@
-# Project N — Phase Plan
+﻿# Project N — Phase Plan
 
 > 문서 상태: 실행 계획 초안 0.3
 >
@@ -11,6 +11,10 @@
 > 진행 기준: 실제 코드와 `PublicMD/Status/PROGRESS.md`
 
 ## 0. 계획 원칙
+
+### 승인된 UI 전환 slice — 2026-10-20
+
+[DefenseTest 신규 UI 연동 계획](Archive/Plans/UI_Prefab_Integration_Plan.md)을 구현했다. DefenseTest의 주택·건설·시청·상인 팝업과 골드·방어 상태 HUD를 연결했고 컴파일·정적 참조 검사와 독립 리뷰 Approve를 확인했다. 기존 게임 시스템 API를 재사용하고 UI 코드·프리팹·해당 씬 참조를 중심으로 수정한다. 다른 씬은 전환하지 않으며 시청 미확정 능력치와 구매 기능은 기존 준비 중 표시를 유지한다. 실제 적용·검사 결과는 PROGRESS와 단일 작업 기록에서 관리한다.
 
 ### 승인된 방어 선행 slice — 2026-10-09
 

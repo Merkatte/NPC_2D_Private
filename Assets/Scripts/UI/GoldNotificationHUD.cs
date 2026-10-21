@@ -12,6 +12,8 @@ public sealed class GoldNotificationHUD : MonoBehaviour
     [SerializeField] private Text _amountText;
     [SerializeField] private Text _changeText;
 
+    [SerializeField] private PopBase[] _contextPopups = Array.Empty<PopBase>();
+
     [Header("Motion")]
     [SerializeField] private Vector2 _visibleAnchoredPosition = new Vector2(16f, -16f);
     [SerializeField, Min(0f)] private float _hiddenOffset = 96f;
@@ -54,6 +56,15 @@ public sealed class GoldNotificationHUD : MonoBehaviour
             Reveal();
         else if (!_hasPendingCount && _motionProgress >= 1f)
             BeginHold();
+    }
+
+    private void Update()
+    {
+        bool visible = false;
+        if (_contextPopups != null)
+            foreach (PopBase popup in _contextPopups)
+                if (popup && popup.isActiveAndEnabled) { visible = true; break; }
+        SetContextVisible(visible);
     }
 
     private void Awake() => ResetPresentation();

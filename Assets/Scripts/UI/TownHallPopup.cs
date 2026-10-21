@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,137 +9,157 @@ public sealed class TownHallPopup : PopBase
     [SerializeField] private GameObject _recruitmentPanel;
     [SerializeField] private Button _townStatusTab;
     [SerializeField] private Button _recruitmentTab;
-    [SerializeField] private TownHallRecruitCard[] _cards;
+    [SerializeField] private Button _closeButton;
+    [SerializeField] private GameObject _townStatusUnderline;
+    [SerializeField] private GameObject _recruitmentUnderline;
+    [SerializeField] private TownHallRoleView[] _roles;
+    [SerializeField] private TownHallRecruitCard _detailCard;
     [SerializeField] private Text _resultText;
-    [SerializeField] private ScrollRect _recruitmentScrollRect;
-    [SerializeField] private bool _fitToCanvas;
-    [SerializeField, Min(0f)] private float _screenMargin = 24f;
+    private TownHallRoleView _selectedRole;
     private bool _isConfigured;
-    private RectTransform _popupRect;
-    private RectTransform _parentRect;
-    private RectTransform _canvasRect;
-    private Vector3 _authoredScale;
+    private bool _hasLoggedConfigurationFailure;
+    private bool _isSessionOpen;
+    private Component _sourceOwner;
+    private IClickPopupSource _source;
 
-    private void Awake()
+    private bool EnsureConfigured()
     {
-        _popupRect = transform as RectTransform;
-        _parentRect = transform.parent as RectTransform;
-        Canvas canvas = GetComponentInParent<Canvas>();
-        _canvasRect = canvas ? canvas.rootCanvas.transform as RectTransform : null;
-        _authoredScale = transform.localScale;
-        _isConfigured = _recruitment && _townStatusPanel && _recruitmentPanel &&
-            _townStatusTab && _recruitmentTab && _resultText && _cards != null && _cards.Length > 0;
-        if (_isConfigured)
+        if (_isConfigured) return true;
+        bool valid = _recruitment && _townStatusPanel && _recruitmentPanel && _townStatusTab &&
+            _recruitmentTab && _closeButton && _detailCard && _detailCard.IsConfigured && _resultText &&
+            _roles != null && _roles.Length > 0;
+        if (valid)
         {
-            var roles = new System.Collections.Generic.HashSet<NPCType>();
-            foreach (TownHallRecruitCard card in _cards)
-                _isConfigured &= card && roles.Add(card.NpcType);
+            var roles = new HashSet<NPCType>();
+            foreach (TownHallRoleView role in _roles) valid &= role && role.IsConfigured && roles.Add(role.NpcType);
         }
-        if (!_isConfigured)
-            Debug.LogError($"TownHallPopup '{name}': missing recruitment, tabs, panels or cards, or duplicate card role.", this);
+        if (!valid && !_hasLoggedConfigurationFailure)
+        {
+            Debug.LogError($"TownHallPopup '{name}': missing _recruitment, panel, tab, detail or role reference; roles must be unique.", this);
+            _hasLoggedConfigurationFailure = true;
+        }
+        _isConfigured = valid;
+        return valid;
     }
 
     private void OnEnable()
     {
-        FitToCanvas();
-        if (!_isConfigured)
-            return;
+        if (!EnsureConfigured()) return;
         _townStatusTab.onClick.AddListener(ShowTownStatus);
         _recruitmentTab.onClick.AddListener(ShowRecruitment);
-        foreach (TownHallRecruitCard card in _cards)
-            card.RecruitRequested += HandleRecruitClick;
+        _closeButton.onClick.AddListener(RequestClose);
+        _detailCard.RecruitRequested += HandleRecruitClick;
+        foreach (TownHallRoleView role in _roles) role.Selected += SelectRole;
     }
 
     private void OnDisable()
     {
-        if (!_isConfigured)
-            return;
+        EndSession();
+        if (!_isConfigured) return;
         _townStatusTab.onClick.RemoveListener(ShowTownStatus);
         _recruitmentTab.onClick.RemoveListener(ShowRecruitment);
-        foreach (TownHallRecruitCard card in _cards)
-            if (card)
-                card.RecruitRequested -= HandleRecruitClick;
+        _closeButton.onClick.RemoveListener(RequestClose);
+        _detailCard.RecruitRequested -= HandleRecruitClick;
+        foreach (TownHallRoleView role in _roles) if (role) role.Selected -= SelectRole;
     }
 
-    protected override void OnOpened()
+    internal override bool TryBindSource(IClickPopupSource source)
     {
-        if (!_isConfigured)
-            return;
+        if (!EnsureConfigured() || !_recruitment.isActiveAndEnabled) return false;
+        _source = source;
+        _sourceOwner = source as Component;
+        if (IsOpen) StartSession();
+        return true;
+    }
+
+    protected override void OnOpened() => StartSession();
+    protected override void OnBeforeClose() => EndSession();
+
+    private void StartSession()
+    {
+        if (!EnsureConfigured()) return;
+        _isSessionOpen = true;
         _resultText.text = string.Empty;
+        _selectedRole = null;
+        foreach (TownHallRoleView role in _roles)
+        {
+            if (!_recruitment.TryGetRecruitment(role.NpcType, out _)) continue;
+            if (!_selectedRole || role.NpcType == NPCType.Farmer) _selectedRole = role;
+        }
+        if (!_selectedRole) _selectedRole = _roles[0];
+        _detailCard.BindRole(_selectedRole);
         ShowRecruitment();
         Refresh();
     }
 
+    private void EndSession()
+    {
+        _isSessionOpen = false;
+        _selectedRole = null;
+        _source = null;
+        _sourceOwner = null;
+    }
+
     private void Update()
     {
-        if (_isConfigured && _recruitmentPanel.activeSelf)
-            Refresh();
+        if (!_isSessionOpen) return;
+        if (!_recruitment || !_recruitment.isActiveAndEnabled ||
+            (_source != null && (!_sourceOwner || !_sourceOwner.gameObject.activeInHierarchy ||
+                (_sourceOwner is Behaviour behaviour && !behaviour.isActiveAndEnabled) ||
+                !_source.TryGetClickPopup(out PopupType popupType) || popupType != PopupType.TownHall)))
+        {
+            RequestClose();
+            return;
+        }
+        if (_recruitmentPanel.activeSelf) Refresh();
     }
 
     private void ShowTownStatus() => SelectTab(false);
-    private void ShowRecruitment()
-    {
-        SelectTab(true);
-        if (!_recruitmentScrollRect) return;
-        Canvas.ForceUpdateCanvases();
-        _recruitmentScrollRect.StopMovement();
-        _recruitmentScrollRect.horizontalNormalizedPosition = 0f;
-    }
-
-    private void LateUpdate() => FitToCanvas();
-
-    private void OnValidate() => _screenMargin = Mathf.Max(0f, _screenMargin);
-
-    private void FitToCanvas()
-    {
-        if (!_fitToCanvas || !_popupRect || !_parentRect || !_canvasRect) return;
-        Vector2 size = _popupRect.rect.size;
-        Vector3 canvasSize = _parentRect.InverseTransformVector(_canvasRect.TransformVector(_canvasRect.rect.size));
-        Vector2 available = new Vector2(Mathf.Abs(canvasSize.x), Mathf.Abs(canvasSize.y)) -
-            Vector2.one * (_screenMargin * 2f);
-        float width = size.x * Mathf.Abs(_authoredScale.x);
-        float height = size.y * Mathf.Abs(_authoredScale.y);
-        if (width <= 0f || height <= 0f || available.x <= 0f || available.y <= 0f) return;
-        float scale = Mathf.Min(1f, Mathf.Min(available.x / width, available.y / height));
-        // PopBase owns anchoredPosition during entry/exit; fitting changes only scale.
-        _popupRect.localScale = new Vector3(_authoredScale.x * scale, _authoredScale.y * scale, _authoredScale.z);
-    }
-
+    private void ShowRecruitment() => SelectTab(true);
     private void SelectTab(bool recruitment)
     {
         _townStatusPanel.SetActive(!recruitment);
         _recruitmentPanel.SetActive(recruitment);
         _townStatusTab.interactable = recruitment;
         _recruitmentTab.interactable = !recruitment;
+        if (_townStatusUnderline) _townStatusUnderline.SetActive(!recruitment);
+        if (_recruitmentUnderline) _recruitmentUnderline.SetActive(recruitment);
+    }
+
+    private void SelectRole(NPCType npcType)
+    {
+        foreach (TownHallRoleView role in _roles)
+        {
+            if (role.NpcType != npcType) continue;
+            _selectedRole = role;
+            _detailCard.BindRole(role);
+            Refresh();
+            return;
+        }
     }
 
     private void Refresh()
     {
-        foreach (TownHallRecruitCard card in _cards)
+        foreach (TownHallRoleView role in _roles)
         {
-            bool available = _recruitment.TryGetRecruitment(card.NpcType, out RecruitmentStatus status);
-            card.Refresh(status, available);
+            bool available = _recruitment.TryGetRecruitment(role.NpcType, out RecruitmentStatus status);
+            role.Refresh(status, available, role == _selectedRole);
+            if (role == _selectedRole) _detailCard.Refresh(status, available);
         }
     }
 
     private void HandleRecruitClick(NPCType npcType)
     {
+        if (!_isSessionOpen || !_selectedRole || npcType != _selectedRole.NpcType) return;
         RecruitResult result = _recruitment.TryDispatchCandidate(npcType);
-        switch (result)
+        _resultText.text = result switch
         {
-            case RecruitResult.Success:
-                _resultText.text = string.Empty;
-                break;
-            case RecruitResult.NotEnoughGold:
-                _resultText.text = "정착지원금이 부족합니다.";
-                break;
-            case RecruitResult.SpawnUnavailable:
-                _resultText.text = "지금은 이 직업을 모집할 수 없습니다.";
-                break;
-            case RecruitResult.NoArcherStation:
-                _resultText.text = "궁병을 배치할 빈 성벽 자리가 없습니다.";
-                break;
-        }
+            RecruitResult.Success => string.Empty,
+            RecruitResult.NotEnoughGold => "정착지원금이 부족합니다.",
+            RecruitResult.SpawnUnavailable => "지금은 이 직업을 모집할 수 없습니다.",
+            RecruitResult.NoArcherStation => "궁병을 배치할 빈 성벽 자리가 없습니다.",
+            _ => "아직 모집할 수 없습니다.",
+        };
         Refresh();
     }
 }

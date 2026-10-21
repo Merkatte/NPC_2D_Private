@@ -1,3 +1,13 @@
+﻿# DefenseTest 신규 UI 실제 연결 — 2026-10-20
+
+- 승인된 UI 전환 계획을 구현했다. 주택·건설·시청·상인 WarmPixel prefab에 기존 controller와 실제 데이터/입력을 연결하고 DefenseTest의 등록 instance를 교체했다. 주택은 현재 정보와 펼쳐지는 업그레이드 비교/공사 상태, 건설은 가변 카드·비용·진행, 시청은 네 직군과 공유 상세, 상인은 절대 수량 입력·명세·기존 거래 API를 사용한다. 미확정 시청 능력치와 구매는 준비 중 표시를 유지한다.
+- 상시 GoldHUD instance를 GoldNotificationHUD로 교체하고 네 소비 popup이 열린 동안 잔액을 유지한다. DefensePhaseHUD가 상태/습격 시작을 담당하며 기존 DefenseHUD는 이벤트·GameOver를 유지한다. 기존 SeedSelection에는 공통 화면 맞춤만 추가했고 Warehouse·hover를 보존했다. 공통 PopupCanvasFit과 비용 행 등 UI view 7개를 추가했다.
+- 변경 범위: UI runtime 16개와 신규 meta 7개, WarmPixel popup prefab 4개, DefenseTest, 주 소유 Systems/계획/기록. domain 코드·다른 씬·옛 prefab·이미지/importer는 변경하지 않았다. 사용자 승인으로 먼저 저장한 Canvas 직속 sample House 삭제(103줄)는 사용자 baseline으로 별도 보존했다.
+- Unity CLI로 상태 확인·대상 씬 저장·컴파일·외부 조립 helper 실행·typed reference readback을 수행했다. runtime strict compile 오류0/경고0, 최종 compile-repair는 up_to_date/0/0. helper 컴파일/실행 진단0, registry6종/hover2종·4goldcontext·Defense 전용 context·모집/거래/자원·화면 맞춤·모달 순서를 확인했다. 사용자 baseline 대비 비 UI 씬 블록 변경 없음. C#/문서 diff check 통과, Unity YAML은 기본 빈 값의 후행 공백만 제외해 검사했다.
+- 독립 읽기 전용 `/root/ui_integration_review`: 최초 ChangesRequested(UI-001, HUDUI 부모 CanvasGroup이 새 phase 버튼 입력을 차단), 한정 보정 후 현재 후보 Approve/findings 없음. HUDUI 두 입력 설정만 켜고 Gold 자체의 비차단 설정·DefenseUI 최상위 순서를 유지했다. 보정1/2회 사용. 역할: 코드 A/B, 조립, 별도 리뷰; 루트는 조정·실제 diff/증거·문서 담당.
+- 기록: `.harness-runs/ui-integration-20261020/scene-work.md`, `compile-runtime.json`, `compile-repair.json`, `assembly/` 실행·참조 로그. 시작 시 열린 clean GoldHUD Prefab Mode는 저장 없이 안전하게 종료했다. 최종 DefenseTest clean·Editor ready·Play stopped. 상세 계획은 `PublicMD/Archive/Plans/UI_Prefab_Integration_Plan.md`.
+- 미검증: 실제 클릭·스크롤·반복 열기·상인 수량 입력/재고 경합·주택 업그레이드 시작/취소/완료·정지 중 연출·작은 화면. 자동 Play/스크린샷과 새 검증 전용 코드는 실행·작성하지 않았다. 커밋·푸시하지 않았다.
+
 # UI 전용 헤더 도트 아이콘 생성·교체 — 2026-10-20
 
 - 사용자 요청으로 기존 주택 아이콘과 같은 계열의 건설 망치·시청 공공건물·상단 돈주머니/동전 아이콘을 각각 생성했다. 세 PNG는64×64 RGBA/실제 투명 배경이며 `Assets/Art/Generated/UI/WarmPixel/{construction-header-icon,town-hall-header-icon,merchant-header-icon}.png`에 추가했다. Single/FullRect·PPU100·Point·Clamp·mipmap off·sRGB·비압축·중앙 pivot·border0으로 가져왔다.

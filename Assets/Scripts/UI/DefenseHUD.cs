@@ -12,6 +12,8 @@ public sealed class DefenseHUD : MonoBehaviour
     [SerializeField] private Button _notificationButton;
     [SerializeField] private GameObject _gameOverPanel;
 
+    [SerializeField] private bool _showPhaseControls = true;
+
     private bool _isConfigured;
     private bool _isSubscribed;
     private int _displayRestSeconds = -1;
@@ -105,7 +107,9 @@ public sealed class DefenseHUD : MonoBehaviour
             _statusText.text = $"정비 · 다음 습격 {_waves.NextWaveNumber} · {_displayRestSeconds}초";
         else
             _statusText.text = $"습격 {_waves.WaveNumber} · 남은 적 {_displayAliveCount} · 생성 대기 {_waves.PendingSpawnCount}";
-        _nextWaveButton.interactable = _waves.CanStartNextWave;
+        _statusText.enabled = _showPhaseControls;
+        _nextWaveButton.gameObject.SetActive(_showPhaseControls);
+        _nextWaveButton.interactable = _showPhaseControls && _waves.CanStartNextWave;
         _gameOverPanel.SetActive(_session.IsGameOver);
         bool hasNotification = _events.HasNotification && !_session.IsGameOver;
         _notificationButton.gameObject.SetActive(hasNotification);

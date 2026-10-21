@@ -6,71 +6,65 @@ public sealed class TownHallRecruitCard : MonoBehaviour
 {
     [SerializeField] private NPCType _npcType;
     [SerializeField] private Image _portrait;
+    [SerializeField] private Image _toolIcon;
     [SerializeField] private Text _nameText;
+    [SerializeField] private Text _descriptionText;
     [SerializeField] private Text _costText;
     [SerializeField] private Text _statusText;
     [SerializeField] private Text _remainingText;
     [SerializeField] private Button _recruitButton;
-
-    private int _lastSeconds = -1;
-    private int _lastCost = -1;
+    private int _lastSeconds = int.MinValue;
+    private int _lastCost = int.MinValue;
     private string _lastStatus;
     public NPCType NpcType => _npcType;
+    public bool IsConfigured => _portrait && _nameText && _costText && _statusText && _remainingText && _recruitButton;
     public event Action<NPCType> RecruitRequested;
-
-    private void Awake()
-    {
-        if (!_portrait || !_nameText || !_costText || !_statusText || !_remainingText || !_recruitButton)
-        {
-            Debug.LogError($"TownHallRecruitCard '{name}': missing a view reference.", this);
-            enabled = false;
-            return;
-        }
-        switch (_npcType)
-        {
-            case NPCType.Farmer: _nameText.text = "농부"; break;
-            case NPCType.Guard: _nameText.text = "경비병"; break;
-            case NPCType.Builder: _nameText.text = "건축가"; break;
-            case NPCType.Archer: _nameText.text = "궁병"; break;
-            default: _nameText.text = _npcType.ToString(); break;
-        }
-    }
 
     private void OnEnable()
     {
-        if (_recruitButton)
-            _recruitButton.onClick.AddListener(HandleRecruitClick);
+        if (_recruitButton) _recruitButton.onClick.AddListener(HandleRecruitClick);
     }
 
     private void OnDisable()
     {
-        if (_recruitButton)
-            _recruitButton.onClick.RemoveListener(HandleRecruitClick);
+        if (_recruitButton) _recruitButton.onClick.RemoveListener(HandleRecruitClick);
     }
 
     private void HandleRecruitClick() => RecruitRequested?.Invoke(_npcType);
 
+    public void BindRole(TownHallRoleView role)
+    {
+        if (!role || !IsConfigured) return;
+        _npcType = role.NpcType;
+        _nameText.text = role.DisplayName;
+        _portrait.sprite = role.Portrait;
+        if (_toolIcon) _toolIcon.sprite = role.ToolIcon;
+        if (_descriptionText) _descriptionText.text = role.Description;
+        _lastCost = int.MinValue;
+        _lastSeconds = int.MinValue;
+        _lastStatus = null;
+    }
+
+    public static string GetStatusLabel(RecruitmentStatus status, bool available) =>
+        !available ? "모집 불가" : status.IsDispatching ? "도착 중" : status.CanRecruit ? "모집 가능" : "모집 중";
+
     public void Refresh(RecruitmentStatus status, bool available)
     {
-        if (!enabled)
-            return;
+        if (!IsConfigured) return;
         _recruitButton.interactable = available && status.CanRecruit;
-        if (_lastCost != status.SettlementCost)
+        int cost = available ? status.SettlementCost : -1;
+        if (_lastCost != cost)
         {
-            _lastCost = status.SettlementCost;
-            _costText.text = $"{_lastCost} 골드";
+            _lastCost = cost;
+            _costText.text = available ? $"{cost} G" : "—";
         }
-        string label = !available ? "모집 불가" : status.IsDispatching ? "도착 중" : status.CanRecruit ? "모집 가능" : "모집 중";
-        if (_lastStatus != label)
-        {
-            _lastStatus = label;
-            _statusText.text = label;
-        }
-        int seconds = Mathf.CeilToInt(status.CooldownRemaining);
+        string label = GetStatusLabel(status, available);
+        if (_lastStatus != label) { _lastStatus = label; _statusText.text = label; }
+        int seconds = available ? Mathf.CeilToInt(status.CooldownRemaining) : -1;
         if (_lastSeconds != seconds)
         {
             _lastSeconds = seconds;
-            _remainingText.text = $"{seconds / 60:00}:{seconds % 60:00}";
+            _remainingText.text = available ? $"{seconds / 60:00}:{seconds % 60:00}" : "—";
         }
     }
 }

@@ -3,7 +3,7 @@ using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>Presentation-only house sample with an independently revealed upgrade drawer.</summary>
+/// <summary>Owns only the house drawer layout transition; HousePopup owns input and data.</summary>
 public sealed class WarmPixelHousePopup : MonoBehaviour
 {
     private const float DefaultClosedWidth = 1440f;
@@ -34,9 +34,6 @@ public sealed class WarmPixelHousePopup : MonoBehaviour
     [SerializeField] private RectTransform _drawerViewport;
     [SerializeField] private RectTransform _drawerPanel;
     [SerializeField] private CanvasGroup _drawerGroup;
-    [SerializeField] private Button _mainUpgradeButton;
-    [SerializeField] private Button _drawerCollapseButton;
-    [SerializeField] private Button _mainCloseButton;
     [SerializeField, Min(0f)] private float _transitionDuration = DefaultTransitionDuration;
     [SerializeField, Min(1f)] private float _closedMainWidth = DefaultClosedWidth;
     [SerializeField, Min(1f)] private float _openMainWidth = DefaultOpenWidth;
@@ -47,67 +44,47 @@ public sealed class WarmPixelHousePopup : MonoBehaviour
     private bool _isDrawerOpen;
     private bool _isConfigured;
 
-    private void Awake()
+    public bool IsDrawerOpen => _isDrawerOpen;
+
+    private void Awake() => EnsureInitialized();
+
+    private bool EnsureInitialized()
     {
+        if (_isConfigured) return true;
         SanitizeSettings();
         _isConfigured = _mainPanel && _drawerViewport && _drawerPanel && _drawerGroup
-            && _mainUpgradeButton && _drawerCollapseButton && _mainCloseButton && _layoutElements != null;
+            && _layoutElements != null;
         if (_isConfigured)
         {
             foreach (LayoutElement element in _layoutElements)
                 _isConfigured &= element != null && element.IsConfigured;
         }
-        if (_isConfigured) return;
-        Debug.LogError($"{nameof(WarmPixelHousePopup)} '{name}' requires main/drawer rectangles, drawer CanvasGroup, three buttons and valid layout elements.", this);
+        if (_isConfigured) return true;
+        Debug.LogError($"{nameof(WarmPixelHousePopup)} '{name}' requires main/drawer rectangles, drawer CanvasGroup and valid layout elements.", this);
         if (_drawerGroup)
         {
             _drawerGroup.alpha = 0f;
             _drawerGroup.interactable = false;
             _drawerGroup.blocksRaycasts = false;
         }
-        enabled = false;
+        return false;
     }
 
-    private void OnEnable()
-    {
-        if (!_isConfigured) return;
-        ResetDrawer();
-        _mainUpgradeButton.onClick.AddListener(ToggleDrawer);
-        _drawerCollapseButton.onClick.AddListener(CloseDrawer);
-        _mainCloseButton.onClick.AddListener(ClosePopup);
-    }
+    private void OnEnable() => ResetDrawer();
 
-    private void OnDisable()
-    {
-        if (_mainUpgradeButton) _mainUpgradeButton.onClick.RemoveListener(ToggleDrawer);
-        if (_drawerCollapseButton) _drawerCollapseButton.onClick.RemoveListener(CloseDrawer);
-        if (_mainCloseButton) _mainCloseButton.onClick.RemoveListener(ClosePopup);
-        KillTransition();
-        if (_isConfigured) ResetDrawer();
-    }
+    private void OnDisable() => ResetDrawer();
 
     private void OnValidate() => SanitizeSettings();
 
-    private void ToggleDrawer() => SetDrawerOpen(!_isDrawerOpen);
-
-    private void CloseDrawer() => SetDrawerOpen(false);
-
-    private void ClosePopup()
+    public void SetDrawerOpen(bool isOpen, bool immediate = false)
     {
-        ResetDrawer();
-        gameObject.SetActive(false);
-    }
-
-    private void SetDrawerOpen(bool isOpen)
-    {
-        if (!_isConfigured || !isActiveAndEnabled) return;
+        if (!EnsureInitialized()) return;
         SanitizeSettings();
         KillTransition();
         _isDrawerOpen = isOpen;
         float target = isOpen ? 1f : 0f;
         float duration = _transitionDuration * Mathf.Abs(target - _progress);
-        // A reversal starts at the current progress; no transform or text scale is animated.
-        if (duration <= 0f)
+        if (immediate || !isActiveAndEnabled || duration <= 0f)
         {
             ApplyProgress(target);
             return;
@@ -123,8 +100,9 @@ public sealed class WarmPixelHousePopup : MonoBehaviour
         ApplyProgress(_isDrawerOpen ? 1f : 0f);
     }
 
-    private void ResetDrawer()
+    public void ResetDrawer()
     {
+        if (!EnsureInitialized()) return;
         KillTransition();
         _isDrawerOpen = false;
         ApplyProgress(0f);

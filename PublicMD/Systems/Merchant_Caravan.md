@@ -38,18 +38,17 @@ PointerClickRouter -> MerchantVisual.TryGetClickPopup()
   -> MerchantCaravan이 SetTradeAvailable로 설정한 bool을 그대로 반환 (Animator 상태 조회 아님)
   -> IUIService.TryShow(PopupType.Merchant) -> MerchantPopup 오픈
 
-거래(판매 탭, 드래그 앤 드롭 + 일괄 확정):
+거래(판매 탭, 상품 행 수량 입력 + 일괄 확정):
 MerchantPopup.OnOpened() -> MerchantTradeSite.GetAvailableOffers()
   -> CropCatalog.Definitions 순회, ResourceManager.GetQuantity > 0 그리고 SellPrice > 0인 것만
   -> IDataManager.TryGetItemInfo로 표시명·가격 join
-  -> 창고 슬롯 그리드로 표시(칸 하나 = 아이템 한 종류)
+  -> MerchantProductRowView로 상품·보유량·견적 표시
 
-창고 슬롯을 판매칸에 드래그:
-ItemSlotDragHandle(창고 슬롯) -> DragGhostView로 커서 추적
-  -> SellCartDropZone.OnDrop(드롭 소스가 ItemSlotDragHandle을 가진 진짜 창고 슬롯인지 확인)
-  -> MerchantPopup.CanAcceptDrop/RequestAddToCart
-  -> 남은 수량이 1개면 즉시 카트에 담김, 2개 이상이면 QuantityPromptPanel(Slider+InputField)이 열려 수량을 정함
-  -> MerchantPopup의 로컬 Dictionary<itemId, quantity>(판매 대기 카트)에 누적 — 도메인은 이 상태를 모른다
+수량 선택:
+MerchantProductRowView -> 절대 수량 InputField 또는 +/-1 입력
+  -> MerchantPopup의 Dictionary<itemId, quantity>에 선택 저장
+  -> MerchantSaleLineView와 합계는 TryGetSaleQuote 조회 결과 표시
+  -> 판매 클릭은 편집 중 수량부터 확정
 
 판매 확정(일괄):
 MerchantPopup.ConfirmSell() -> MerchantTradeSite.TryTrade(pendingSales: Dictionary<int,int>)
@@ -82,6 +81,8 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 | `Assets/Data/Struct/MerchantOffer.cs` | Popup에 전달하는 판매 가능 품목 표시 값 |
 | `Assets/Scripts/Enum/TradeResult.cs` | 거래 결과(Success/OutOfStock/InvalidRequest) |
 | `Assets/Scripts/UI/MerchantPopup.cs` | 구매/판매 탭을 가진 거래 UI. 판매 대기 카트(로컬 `Dictionary<itemId,quantity>`)와 세션 상태의 유일한 소유자 |
+| `Assets/Scripts/UI/MerchantProductRowView.cs` | 상품 표시·입력 중 문자열 보존·수량/증감 의도 전달 |
+| `Assets/Scripts/UI/MerchantSaleLineView.cs` | 판매 명세 행·견적·재고 부족 표시 |
 | `Assets/Scripts/UI/ItemSlotView.cs` | 슬롯 한 칸의 아이콘·수량과 선택적 이름 표시 전담. 창고 칸/판매 칸/씨앗 카드가 공유하며 item ID와 이름 데이터를 보관 |
 | `Assets/Scripts/UI/ItemSlotDragHandle.cs` | 창고 슬롯의 드래그 소스 — 카트를 모르고 고스트만 다룬다 |
 | `Assets/Scripts/UI/CartSlotRemoveHandle.cs` | 판매칸 슬롯의 클릭 제거 |
@@ -100,7 +101,7 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 | 새 지상 연출 | `TransportBird.cs` |
 | 거래 로직·가격·batch 검증 | `MerchantTradeSite.cs`(`TryComputeTotal`/`IsSellableItem`), [Inventory and Items](Inventory_and_Items.md)의 `IDataManager`/`ResourceManager.TryExchange` |
 | 거래 가능 판정 시점 | `MerchantCaravan.cs`의 `SetTradeAvailable` 호출 지점, `MerchantVisual.cs` |
-| 판매 UI(슬롯·카트·드래그·수량입력) | `MerchantPopup.cs`, `ItemSlotView.cs`, `ItemSlotDragHandle.cs`, `CartSlotRemoveHandle.cs`, `SellCartDropZone.cs`, `DragGhostView.cs`, `QuantityPromptPanel.cs`, [UI](UI.md) |
+| 판매 UI(상품·명세·수량입력) | MerchantPopup.cs, MerchantProductRowView.cs, MerchantSaleLineView.cs, WarmPixelMerchantPopup.prefab, [UI](UI.md) |
 | 클릭 감지 | [UI](UI.md)의 `PointerClickRouter`/`IClickPopupSource` |
 | 새 gold 소비·획득 지점 추가 | [Player Gold](Player_Gold.md) |
 
@@ -121,7 +122,17 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 - 새·상인의 현재 연출 상태(어떤 phase인지, 어떤 모션인지)를 외부에 공개하는 property는 두지 않는다. `TransportBird`의 공개 API는 명령형(`PlayFlying()` 등)뿐이고 조회형이 없다.
 - 체류 중 새의 랜덤 배회는 gameplay 결과에 영향이 없는 순수 표현이라 `IRandomSource` 주입 없이 `UnityEngine.Random`을 직접 쓴다(`CodeConvention.md` §12.1의 production gameplay 난수 규칙 예외 — 코드 주석에 이유를 남겨둔다).
 
-## Unity 배선과 검증 도구
+## 현재 DefenseTest UI 연결
+
+WarmPixelMerchantPopup instance는 기존 MerchantTradeSite를 scene override로 연결하고 PopupType.Merchant로 등록한다. MerchantPopup이 유일한 선택 상태를 소유하며 하위 행은 표시와 입력 의도만 담당한다. 수량은 절대값이고 +/-는 1이다. 확정 시 0..현재 재고로 제한하며 빈/잘못된/음수는 0, 0은 선택 제거다. 판매 클릭은 활성 편집 입력을 먼저 확정한다.
+
+ResourcesChanged는 목록·견적을 갱신하되 기존 선택을 즉시 줄이지 않는다. 부족 선택은 표시하고 실제 TryTrade가 OutOfStock을 반환했을 때만 재고로 조정한다. 성공은 선택을 비우고 InvalidRequest는 유지한다. 가격 곱셈과 실제 지불 규칙은 UI에 복제하지 않는다. 기본 판매 탭, 구매 준비중 안내, 빈 목록·0 G·결과 문구를 지원한다. 탭 왕복은 선택을 유지하고 닫기·disable·재바인딩·상인 퇴장은 세션을 정리한다.
+
+상품 목록은 기존 ScrollRect, 판매 명세는 별도 SaleLinesScroll을 사용하며 비활성 행 template을 복제한다. 신규 UI는 옛 drag/QuantityPromptPanel을 사용하지 않는다. 관련 공개 호출 계약과 옛 prefab 파일은 보존하며 다른 씬의 옛 배치 호환은 이번 범위가 아니다. PopupCanvasFit은 공통 UI 문서가 소유한다.
+
+## 이전 Unity 배선과 검증 도구 기록
+
+아래 옛 슬롯·drag·서류철 배선은 보존된 에셋의 역사적 기록이다. 현재 DefenseTest의 UI 동작은 위 절을 따른다.
 
 **2026-09-10 기준**, `FarmerTest.unity`에는 연출 검증용으로 배치해 둔 `MerchantCaravan`/`MerchantArrivalScheduler` 인스턴스가 있다. `MerchantTradeSite`/`PointerClickRouter`/`MerchantPopup`은 아직 어느 씬에도 없다 — 거래 UI 프리팹 3종(`MerchantPopup.prefab`/`MerchantItemSlot.prefab`/`MerchantCartSlot.prefab`)은 완성됐지만 씬에 배치되지 않았다. 씬 배선은 사용자가 에디터에서 직접 수행한다(미커밋 변경이 많은 `FarmerTest.unity`를 이 저장소 작업에서 스크립트로 건드리지 않기 위함).
 
@@ -148,9 +159,9 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 
 창고·판매 슬롯 프리팹과 GridLayout 셀은 모두 118×118이며, 두 그리드는 45px 안쪽 여백과 16px 셀 간격을 사용해 480px 패널 안에 3열로 들어간다. 두 슬롯 프리팹의 배경은 `ui-merchant-item-cell-9slice.png`로 통일하고 중앙에 아이템 아이콘, 오른쪽 아래에 수량만 표시한다. 이름·단가 텍스트 오브젝트는 기존 프리팹 인스턴스 참조 보존을 위해 비활성으로 남겨 둔다. `ItemSlotView._nameText`는 선택적 연결이며 기존 창고·판매 슬롯에서는 연결하지 않는다. 이름을 표시하는 씨앗 카드에서만 연결하고 `Bind`/`Clear`가 같은 이름 데이터를 표시·초기화한다. 단가 표시는 슬롯에서 갱신하지 않으며 거래 금액 계산은 `MerchantTradeSite`와 팝업의 예상 판매 금액 표시가 계속 담당한다.
 
-## WarmPixel 표시용 프리팹
+## WarmPixel 프리팹
 
-2026-10-16 새 UI 조립용 프리팹 세 개를 추가했다. 기존 `MerchantPopup.prefab`과 gameplay 배선은 유지한다.
+2026-10-16 새 UI 조립용 프리팹 세 개를 추가했고 2026-10-20 DefenseTest의 실제 UI에 연결했다. 기존 MerchantPopup.prefab 파일과 domain 코드는 유지한다.
 
 | 프리팹 | 구성 |
 |---|---|
@@ -164,7 +175,7 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 
 `Header/GoldIcon`은 기존 이름·40×40 배치를 유지하면서 `Assets/Art/Generated/UI/WarmPixel/merchant-header-icon.png`의 돈주머니·동전 도트 Sprite를 표시한다. 재료 행과 골드 HUD에서 사용하는 원래 골드 코인 Sprite는 변경하지 않는다. 규격은 [헤더 전용 도트 아이콘](UI.md#헤더-전용-도트-아이콘)을 따른다.
 
-샘플 표시값은 당근 보유40/단가2G/판매10, 감자 보유24/단가3G/판매6, 판매 명세20G·18G와 합계38G다. 실제 재고나 거래 도메인에 연결된 값이 아니다. 기본 uGUI 컴포넌트만 사용하며 버튼 callback은 비워 두었다. 수량 입력과 합계 갱신·거래·선택 초기화·닫기·탭 전환은 후속 연결 대상이다. 별도 Canvas 아래에 배치해 사용하며 font는 기존 Legacy Text의 임시 기본 font다. 코드와 씬을 추가·변경하지 않았다.
+기존 당근·감자 예시 행은 비활성 template이며 활성 목록은 실제 상품/선택에서 생성한다. 수량 입력·합계·거래·선택 초기화·닫기·탭 전환은 controller에 연결한다. 기존 Legacy Text와 전용 헤더 아이콘은 유지한다. 자동 Play/화면 검증은 수행하지 않는다.
 
 ## 알려진 제약과 TBD
 
