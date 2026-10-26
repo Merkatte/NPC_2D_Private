@@ -94,15 +94,25 @@ public sealed class DefenseBattlefield : MonoBehaviour
         }
         return target;
     }
-    public CombatTarget FindOutsideSwordsman(Vector3 from, float range)
+    public CombatTarget FindOutsideSwordsman(Vector3 from, float range, float attackRange, INavigationService navigation)
     {
         CombatTarget target = null; float best = range * range;
         foreach (DefenseActor actor in _actors)
         {
             if (!actor || actor.Role != NPCType.Guard || !actor.CanAct || IsInside(actor.Position)) continue;
+            if (!actor.Target || ((Vector2)(actor.Target.Position - from)).sqrMagnitude > best ||
+                !CanReachCombatTarget(from, actor.Target, attackRange, navigation)) continue;
             Consider(actor.Target, from, ref best, ref target);
         }
         return target;
+    }
+    public bool CanReachCombatTarget(Vector3 from, CombatTarget target, float attackRange, INavigationService navigation)
+    {
+        if (!target || !target.CanBeTargeted) return false;
+        // Existing melee rules permit a hit in range without a path to the target's cell.
+        if (CombatLib.IsInRange(from, target.Position, attackRange)) return true;
+        return navigation != null && navigation.IsReady &&
+            navigation.TryBuildPath(from, target.Position, _pathBuffer, out _) && _pathBuffer.Count > 0;
     }
     public CombatTarget FindInsideTarget(Vector3 from, INavigationService navigation)
     {

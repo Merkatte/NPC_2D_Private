@@ -42,6 +42,7 @@ public sealed class DefenseActor : MonoBehaviour
     public Vector3 GuardPosition { get; private set; }
     public DefenseWallSegment ArcherWall => _archerSlot?.Wall;
     public DefenseWallSegment CommittedWall { get; set; }
+    public CombatTarget EngagedOpponent { get; set; }
     public DefenseMaintenanceSite CurrentMaintenance { get; set; }
     public DefenseWallSegment SelectedBreach { get; set; }
     public bool PlannedInside { get; set; }
@@ -61,6 +62,7 @@ public sealed class DefenseActor : MonoBehaviour
         IsGroundExitActive = false;
         _archerAccessState = ArcherAccessState.Ground;
         CommittedWall = null; SelectedBreach = null; CurrentMaintenance = null;
+        EngagedOpponent = null; PlannedInside = false;
         if (!Battlefield || !_worker || !_combatTarget || !_settings)
         { Debug.LogError($"DefenseActor '{name}' requires battlefield, worker, target and settings.", this); return; }
         _navigation = new NavigationAccessService(Battlefield.Navigation, IsEnemy ? NavigationAccess.Enemy : NavigationAccess.Friendly);
@@ -104,6 +106,7 @@ public sealed class DefenseActor : MonoBehaviour
         _combatTarget.SetTargetable(false);
         _worker.SetActionExecutionEnabled(false);
         _worker.Component.CombatRuntimeState.ClearTarget();
+        EngagedOpponent = null;
         SetFleeing(false);
         IsEmergencyDuty = false;
         IsGroundExitActive = false;
@@ -124,6 +127,7 @@ public sealed class DefenseActor : MonoBehaviour
         _isRegistered = false;
         _archerSlot?.Dispose(); _archerSlot = null;
         _stat = null; _navigation = null; CommittedWall = null; CurrentMaintenance = null; SelectedBreach = null; _isFleeing = false;
+        EngagedOpponent = null; PlannedInside = false;
         IsEmergencyDuty = false;
         IsGroundExitActive = false;
         _archerAccessState = ArcherAccessState.Ground;

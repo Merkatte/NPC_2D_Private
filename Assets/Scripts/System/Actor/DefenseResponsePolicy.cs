@@ -25,12 +25,17 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
         if (!actor || !actor.CanAct) return false;
         if (actor.IsEnemy)
         {
+            CombatTargetHandle selected = component.CombatRuntimeState.TargetHandle;
+            // Even a destroyed Unity opponent must release the interrupted strategic intent.
+            if (!ReferenceEquals(actor.EngagedOpponent, null))
+                return !CanMaintainEnemyEngagement(actor) ||
+                    (current != ActionType.DefenseAttack && current != ActionType.Move) ||
+                    !ReferenceEquals(selected.Target, actor.EngagedOpponent);
             bool inside = _battlefield.IsInside(actor.Position);
             if (inside != actor.PlannedInside) return true;
             if (current == ActionType.Idle) return true;
-            CombatTarget soldier = _battlefield.FindOutsideSwordsman(actor.Position, actor.Settings.LocalCombatRange);
-            CombatTargetHandle selected = component.CombatRuntimeState.TargetHandle;
-            if (!_battlefield.IsInside(actor.Position) && soldier && !ReferenceEquals(selected.Target, soldier)) return true;
+            CombatTarget soldier = !inside ? FindEnemyOpponent(actor) : null;
+            if (soldier) return true;
             if (!inside && !soldier && !actor.CommittedWall && current == ActionType.Move)
             {
                 DefenseWallSegment breach = _battlefield.FindWall(actor.Position, true, actor.Navigation);
@@ -85,19 +90,40 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
         queue = new Queue<IAction>(rented);
         return true;
     }
+    private CombatTarget FindEnemyOpponent(DefenseActor actor)
+        => actor.Stat is ICombatStatView combat
+            ? _battlefield.FindOutsideSwordsman(actor.Position, actor.Settings.LocalCombatRange,
+                combat.AttackRange, actor.Navigation) : null;
+
+    private bool CanMaintainEnemyEngagement(DefenseActor actor)
+    {
+        CombatTarget opponent = actor.EngagedOpponent;
+        return opponent && actor.Stat is ICombatStatView combat &&
+            CombatLib.IsInRange(actor.Position, opponent.Position, actor.Settings.EnemyDisengageRange) &&
+            _battlefield.CanReachCombatTarget(actor.Position, opponent, combat.AttackRange, actor.Navigation);
+    }
     private Queue<IAction> BuildEnemyQueue(BaseNPCActionSelector selector, DefenseActor actor)
     {
+        if (CanMaintainEnemyEngagement(actor))
+            return BuildCombatQueue(selector, actor, actor.EngagedOpponent, null);
+        actor.EngagedOpponent = null;
+        actor.Component.CombatRuntimeState.ClearTarget();
         CombatTarget target;
         actor.PlannedInside = _battlefield.IsInside(actor.Position);
-        actor.SelectedBreach = null;
         if (actor.PlannedInside)
         {
+            actor.SelectedBreach = null;
             actor.CommittedWall = null;
             target = _battlefield.FindInsideTarget(actor.Position, actor.Navigation);
             return target ? BuildCombatQueue(selector, actor, target, null) : selector.CreateDefenseIdle(actor.Component, actor.Stat);
         }
-        target = _battlefield.FindOutsideSwordsman(actor.Position, actor.Settings.LocalCombatRange);
-        if (target) return BuildCombatQueue(selector, actor, target, null);
+        target = FindEnemyOpponent(actor);
+        if (target)
+        {
+            actor.EngagedOpponent = target;
+            return BuildCombatQueue(selector, actor, target, null);
+        }
+        actor.SelectedBreach = null;
         if (actor.CommittedWall && actor.CommittedWall.Target.CanBeTargeted)
             return BuildCombatQueue(selector, actor, actor.CommittedWall.Target, actor.CommittedWall);
         actor.CommittedWall = null;

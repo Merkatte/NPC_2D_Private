@@ -1,4 +1,12 @@
-﻿# DefenseTest 신규 UI 실제 연결 — 2026-10-20
+﻿# 적 교전 상대 유지·성벽 타겟 왕복 방지 — 2026-10-21
+
+- 사용자 승인에 따라 외부 검객과 교전을 시작한 적은 현재 상대를 유지한다. 더 가까운 검객이나 적/상대의 성벽 안팎 경계 변경만으로 동일 대상 Move/DefenseAttack을 재시작하지 않는다. 기존 획득 거리 6, 별도 해제 거리 임시 기본 9(획득보다 최소 0.1 크게 보정)를 사용한다. 전투 불능·소실·target 불가·거리 초과·사거리 밖 접근 불가 시 해제하여 현재 위치에 맞는 기존 내부 대상/성벽 commitment/돌파 판단을 재개한다. 획득과 유지가 같은 접근 조건을 사용한다.
+- 변경: DefenseResponsePolicy, DefenseActor, DefenseBattlefield, DefenseCombatSettings 및 주 소유 Defense leaf, Game_Plan/SPEC. 개체별 교전 상태는 actor에서 Initialize/Unbind/Downed 때 정리하며 공유 tuning은 settings가 소유한다. 기존 아군 추격·공통 MoveAction/follower·공격 타이밍은 변경하지 않았다. 씬·프리팹·meta 수정 없이 기존 설정 연결과 신규 필드 기본값/fallback을 사용한다.
+- 검사: `unity recompile --strict --timeout 120 --json` completed, 오류0/경고0; `git diff --check` 통과. 실제 diff 범위·변경 API 호출부·Unity 참조/GUID·lifecycle·컨벤션·책임/의존 방향을 확인했다. 초기 샌드박스 Editor 조회 접근 제한은 승인된 재실행으로 해소했다.
+- 역할: 코드 `/root/enemy_engagement_code`, 별도 읽기 전용 리뷰 `/root/enemy_engagement_review`. 현재 후보 리뷰 Approve, findings 없음. 보정 예산2회 중0회 사용. 기록과 실제 리뷰 결과: `.harness-runs/enemy-engagement-20261021/scene-work.md`, 컴파일 로그 `compile.json`.
+- 미검증: 실제 성벽 공격 중 검객 접근·경계 통과·상대 이탈/전투 불능·벽 공격 복귀 및 대규모 웨이브 경로 탐색 비용. 자동 Play/스크린샷·새 검증 전용 코드는 실행/작성하지 않았다. 최종 거리 밸런스는 TBD. 커밋·푸시하지 않았다.
+
+# DefenseTest 신규 UI 실제 연결 — 2026-10-20
 
 - 승인된 UI 전환 계획을 구현했다. 주택·건설·시청·상인 WarmPixel prefab에 기존 controller와 실제 데이터/입력을 연결하고 DefenseTest의 등록 instance를 교체했다. 주택은 현재 정보와 펼쳐지는 업그레이드 비교/공사 상태, 건설은 가변 카드·비용·진행, 시청은 네 직군과 공유 상세, 상인은 절대 수량 입력·명세·기존 거래 API를 사용한다. 미확정 시청 능력치와 구매는 준비 중 표시를 유지한다.
 - 상시 GoldHUD instance를 GoldNotificationHUD로 교체하고 네 소비 popup이 열린 동안 잔액을 유지한다. DefensePhaseHUD가 상태/습격 시작을 담당하며 기존 DefenseHUD는 이벤트·GameOver를 유지한다. 기존 SeedSelection에는 공통 화면 맞춤만 추가했고 Warehouse·hover를 보존했다. 공통 PopupCanvasFit과 비용 행 등 UI view 7개를 추가했다.

@@ -3,8 +3,11 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Scriptable Objects/Defense/Combat Settings")]
 public sealed class DefenseCombatSettings : ScriptableObject
 {
+    private const float DefaultEnemyDisengageRange = 9f;
+    private const float MinimumEngagementRangeGap = 0.1f;
     [SerializeField, Min(0.05f)] private float _reassessmentSeconds = 0.25f;
     [SerializeField, Min(0.1f)] private float _localCombatRange = 6f;
+    [SerializeField, Min(0.1f)] private float _enemyDisengageRange = DefaultEnemyDisengageRange;
     [SerializeField, Min(0.1f)] private float _fleeDetectionRange = 5f;
     [SerializeField, Min(0.1f)] private float _fleeDistance = 7f;
     [SerializeField, Range(0.05f, 0.95f)] private float _hitTimeRatio = 0.4f;
@@ -13,6 +16,8 @@ public sealed class DefenseCombatSettings : ScriptableObject
     [SerializeField] private string _fleeMessage = "으아아아악! 살려줘!";
     public float ReassessmentSeconds => Mathf.Max(0.05f, _reassessmentSeconds);
     public float LocalCombatRange => Mathf.Max(0.1f, _localCombatRange);
+    public float EnemyDisengageRange => Mathf.Max(LocalCombatRange + MinimumEngagementRangeGap,
+        _enemyDisengageRange > 0f ? _enemyDisengageRange : DefaultEnemyDisengageRange);
     public float FleeDetectionRange => Mathf.Max(0.1f, _fleeDetectionRange);
     public float FleeDistance => Mathf.Max(0.1f, _fleeDistance);
     public float HitTimeRatio => Mathf.Clamp(_hitTimeRatio, 0.05f, 0.95f);
@@ -22,6 +27,7 @@ public sealed class DefenseCombatSettings : ScriptableObject
     private void OnValidate()
     {
         _reassessmentSeconds = ReassessmentSeconds; _localCombatRange = LocalCombatRange;
+        _enemyDisengageRange = EnemyDisengageRange;
         _fleeDetectionRange = FleeDetectionRange; _fleeDistance = FleeDistance;
         _hitTimeRatio = HitTimeRatio; _projectileSpeed = ProjectileSpeed; _speechDuration = SpeechDuration;
     }
