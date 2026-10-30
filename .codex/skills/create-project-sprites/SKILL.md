@@ -5,114 +5,61 @@ description: Create or edit bounded raster sprite candidates for NPC_Work_2D usi
 
 # Create Project Sprites
 
-Act as a candidate-producing graphics worker, not as the root orchestrator or final art reviewer. Produce the requested raster artifact and evidence without wiring it into a Unity scene.
+Act as the assigned graphics worker. Produce a raster candidate, proposed import settings and evidence for root inspection. Unity import/wiring belongs to assembly; final acceptance and independent visual review remain outside the author's role.
 
-Follow `../orchestrate-unity-work/references/worker-coordination.md` for fresh role
-context, exclusive paths and handoff. Report needed code or Unity edits to root;
-an assignment does not authorize taking over those roles. Source-image inspection
-and art checks stay in scope; game-screen verification remains excluded under
-SceneWork.md unless separately requested by the user.
+## 1. Confirm the Assignment
 
-## Required Assignment
+Use the ordinary WorkerAssignment and role/handoff rules in [worker-coordination.md](../orchestrate-unity-work/references/worker-coordination.md). A concise root message is sufficient; do not require a per-image gate, assignment JSON or hash manifest for ordinary work.
 
-For ordinary project work, follow `Tools/NpcHarness/SceneWork.md`: require a bounded
-objective, exact output path, approved visual references, dimensions/transparency,
-import expectations, baseline and evidence paths. A concise root assignment is
-sufficient; no new per-image functional gate or WorkerAssignment v1 is required.
-All visual-contract, production and observable-property checks below remain mandatory.
-Return the candidate, importSpec, comparison evidence and unverified items; use the
-assembly role's Editor route for Unity import and scene placement.
+Confirm the exact output/staging path, intended use and asset family, approved references or authority to select them, dimensions/transparency, and applicable framing, frames, slicing and import requirements. Preserve baseline/prior changes and assigned ownership. Missing safe writable paths or essential requirements mean Blocked/AssignmentIncomplete; unresolved competing visual families mean Blocked/ArtDirectionAmbiguous. Report the gap rather than inventing a new art direction.
 
-The serialized v1 requirements and `verify-scope`/task-specific gate commands below
-apply only when the root explicitly selects legacy WorkerAssignment v1. Do not emit
-v1 scope evidence for the ordinary-work route.
+Follow [SceneWork.md](../../../Tools/NpcHarness/SceneWork.md)'s verification limits: use existing tools and do not create/extend verification-only runners, validators or tests without a separate explicit request. Inspecting source/output images is part of this role; automatic game-screen/Play Mode checks require a separate explicit request.
 
-Require a bounded assignment containing:
+For an explicitly selected extended workflow, follow root's protocol under [extended-workflows.md](../orchestrate-unity-work/references/extended-workflows.md). Read [legacy-workflow.md](references/legacy-workflow.md) only when root explicitly selects WorkerAssignment v1. An existing checker alone does not select that route.
 
-- `assignmentId`, `runId`, `roleSkill`, `policyVersion`, objective, intended in-game use, and asset family;
-- approved reference assets or authority to select the nearest existing family references;
-- `requiredContext`, output path, exact `writablePaths`, and explicit `forbiddenPaths`;
-- `allowedTools`, `forbiddenOperations`, root-recorded `baselineCommit`, and `baselineDirtyFiles`;
-- worker-result and log `artifactPaths` under the assigned run;
-- required dimensions, transparency, framing, animation frames, slicing, and naming when applicable;
-- expected Unity import settings or a reference `.meta` from which to derive them;
-- observable `acceptanceConditions`, `preliminaryChecks`, and `reportRequirements`.
+## 2. Establish References and Target Settings
 
-The root must serialize this assignment as WorkerAssignment v1 under
-`.harness-runs/<runId>/assignments/`, select
-`Tools/NpcHarness/SkillPolicies/create-project-sprites.json` v1, and set
-`execution.kind` to `raster-art`. The execution contract records the asset family,
-intended use, exact PNG output, approved references, paired import-reference `.meta`,
-import-spec artifact path, dimensions, alpha requirement, and frame grid. Read
-`Tools/NpcHarness/Schemas/worker-assignment.schema.json` for the assignment contract and
-`Tools/NpcHarness/Schemas/sprite-import-spec.schema.json` for the persisted import specification.
-The root records the assignment SHA-256 before delegation and supplies it separately.
-Do not edit the assignment or recompute a replacement digest.
+Read [project-art-routing.md](references/project-art-routing.md). Inspect the approved images visually and the actual same-purpose reference .meta settings. The documented families are starting points, not a global art bible; preserve differences in view, pixel scale, framing, PPU, pivot, filtering and slicing.
 
-If required assignment fields such as the exact staging filename or writable path are absent, return `status: Blocked` with `reasonCode: AssignmentIncomplete`. If several existing families conflict and the assignment does not identify the intended one, use `reasonCode: ArtDirectionAmbiguous`. Do not merge unrelated styles or declare a new global art direction.
+Use the assignment's explicit authorized values first. Use reference values only for unspecified fields. Compare the candidate and proposed importSpec against these resolved targets, not unconditional equality with the reference. Keep a short note of explicit overrides and their source in the report; do not add provenance fields to an existing serialized schema.
 
-## Establish the Visual Contract
+A requested bottom-center pivot is valid even when the reference uses a centered pivot. Contradictory requirements, unsupported settings or unresolved family choices go to root for resolution; do not silently substitute another value. Proposed settings do not authorize changing the reference asset.
 
-Read [references/project-art-routing.md](references/project-art-routing.md). Inspect the approved reference images visually and read their actual `.meta` settings. Treat the closest approved reference family as the contract; filenames or this Skill's prose do not override the assets.
+## 3. Produce the Candidate
 
-There is currently no single authoritative project-wide art bible. Preserve family-specific differences in pixel scale, filtering, pivot, PPU, slicing, and framing. Do not infer UI settings from a character, tile settings from a building, or vice versa.
+- Use the available $imagegen skill for new raster generation and image editing, following its input and transparency rules.
+- Base the prompt on approved references, intended view, silhouette, palette, material language and exact deliverable constraints.
+- Generate the smallest useful number of variants. Promote only the selected candidate into the assigned output path. Preserve other provider/run-artifact variants unless cleanup is explicitly authorized.
+- Preserve requested transparency and keep unrequested surrounding pixels, text, shadows and presentation mockups out of production sprites.
+- Write only assigned raster output and explicitly assigned source/manifest files. Do not edit C#, scenes, prefabs, SO assets, materials, animation controllers, ProjectSettings, accepting gates or fixtures.
+- Do not hand-edit Unity .meta or apply importer settings. Return importSpec for the assembly worker. Keep files in assigned staging/run paths unless writing directly under Assets is explicitly authorized; coordinate any import-triggering writes with root.
 
-Explicit assignment constraints take precedence over reference dimensions and importer values. References define the intended visual family and supply defaults only for fields the assignment leaves open. Report material conflicts instead of silently ignoring either source.
+## 4. Check the Output
 
-## Produce the Candidate
+Check the actual delivered candidate, not a previous variant or the generation prompt. Keep the following evidence distinct.
 
-- Use the available `$imagegen` Skill for new raster generation or image editing, and follow its image-input rules.
-- Base prompts on the approved references, intended camera/view, silhouette, palette, material language, transparency, and exact deliverable constraints.
-- Generate the smallest useful number of variants. Promote only the selected candidate into the assigned output path. Leave provider-generated or run-artifact variants untouched unless their cleanup is explicitly authorized.
-- Preserve transparent background requirements and keep unrelated surrounding pixels, text, shadows, or presentation mockups out of production sprites unless requested.
-- Write only assigned raster output and explicitly assigned source or manifest files. Do not modify C#, scenes, prefabs, materials, animation controllers, ScriptableObjects, ProjectSettings, or accepting gates.
-- Do not hand-edit Unity `.meta` YAML. Return an `importSpec`; Unity import and scene wiring belong to the assembly worker, scheduled by root.
-- If placing a raster directly under `Assets` is not explicitly authorized, keep it in the assigned staging or run-artifact path.
+### Measured File Properties
 
-## Verify Observable Properties
+Use existing raster-inspection tools to confirm file type, pixel dimensions, applicable frame/sheet dimensions, output filename/path and alpha-channel presence. When a transparent background is requested, also inspect actual alpha values for transparent pixels: an alpha channel with every pixel fully opaque does not satisfy that request.
 
-Check properties that can be measured deterministically:
+Some transparent pixels alone do not prove correct background removal or clean edges. Report the values/observations actually obtained and the tool used; do not substitute checkerboard appearance or a filename for alpha evidence. Content hashes are needed only by a selected protocol or explicit assignment.
 
-- file type, pixel dimensions, and alpha-channel presence;
-- expected frame or sheet dimensions;
-- transparent-edge contamination and obvious cropping;
-- output filename, path, and content hash;
-- agreement between proposed `importSpec` and the selected reference `.meta`.
+### Visual Inspection
 
-Visual style similarity remains probabilistic. Report it as review-required rather than calling it a deterministic pass.
+Open the delivered image and inspect silhouette, framing, unintended cropping, transparent-edge halos/contamination and unwanted background details. Compare style, view, palette and rendering density against the approved family.
 
-After file verification, return the candidate, import specification, and evidence to the root. Do not run the trust-boundary Scope Gate yourself. The root must run:
+Report these as visual observations/judgments, with specific concerns where present. Dimensions and alpha checks do not establish visual quality; visual similarity is not a deterministic pass. The author's inspection supports the candidate and does not replace independent visual acceptance.
 
-`./run-harness.sh verify-scope --policy Tools/NpcHarness/SkillPolicies/create-project-sprites.json --assignment <assignment-path> --assignment-sha256 <pre-delegation-hash> --run-id <runId>`
+### Import Settings Comparison
 
-The root then runs the separate task-specific acceptance and visual review. Never modify either gate to fit the candidate.
+Check proposed importSpec against explicit assigned targets for overridden fields and the inspected same-purpose reference for the remaining fields. Use the field guidance in project-art-routing.md. Do not reject an authorized override merely because it differs from the reference, or claim that proposed settings have already been applied in Unity.
 
-## Return a WorkerReport
+If a check cannot be performed with available tools, state precisely what remains NOT_VERIFIED. An observed defect or unmet required property remains a failure, not optional missing coverage. Report failures to root and follow the shared [remediation-loop.md](../orchestrate-unity-work/references/remediation-loop.md); do not start unlimited regeneration or grant this worker a separate correction budget.
 
-Return one structured report with:
+## 5. Return the Candidate and Import Handoff
 
-```json
-{
-  "assignmentId": "assignment-id",
-  "roleSkill": "create-project-sprites",
-  "status": "Candidate | Blocked | Failed",
-  "reasonCode": "None | AssignmentIncomplete | ArtDirectionAmbiguous | GenerationFailure | VerificationFailure",
-  "assignmentSha256": "root-supplied pre-delegation digest",
-  "scopeGateResultPath": "pending root verification",
-  "acceptanceGate": {
-    "manifestPath": "",
-    "profile": "",
-    "profileVersion": 1
-  },
-  "changedFiles": [],
-  "checksRun": [],
-  "evidence": [],
-  "referenceAssets": [],
-  "generationPrompt": "",
-  "importSpec": {},
-  "unresolved": [],
-  "deviations": []
-}
-```
+Use one concise ordinary WorkerReport from worker-coordination.md, referencing existing evidence. Include referenceAssets, the generation prompt used (or its existing artifact location), and importSpec needed by assembly. Separate measured results, visual observations, explicit setting overrides and unverified items in that same report.
 
-`Candidate` is an art proposal ready for deterministic file/import checks and independent visual review. It is not final acceptance.
+Do not fill unused assignment-hash or gate fields, or create duplicate evidence summaries. Persist an importSpec artifact when the actual handoff requires it; ordinary reporting alone does not require the legacy schema or another report file.
+
+Candidate means submitted for root inspection and independent visual review, never Accepted. Root verifies actual scope/evidence and arranges acceptance; the graphics worker does not execute root-owned acceptance gates or take over Unity wiring.

@@ -5,136 +5,65 @@ description: Implement a bounded Unity C# candidate according to NPC_Work_2D doc
 
 # Author Unity Code
 
-Act as a candidate-producing code worker, not as the root orchestrator. Implement only the assigned code slice and return evidence for root inspection. Never mark the overall run accepted.
+Act as a code worker. Implement only the assigned slice and submit the candidate with evidence for root inspection. Root owns acceptance and obtains independent code review; the author does neither.
 
-Follow `../orchestrate-unity-work/references/worker-coordination.md` for fresh role
-context and handoff. Code ownership includes assigned Editor/assembly/eval helpers
-outside Assets; executing them to change Unity assets belongs to assembly. Ordinary
-assignments may include helper C# paths without widening legacy v1 policies.
+## 1. Confirm the Assignment
 
-## Required Assignment
+Use the ordinary WorkerAssignment and role/handoff rules in [worker-coordination.md](../orchestrate-unity-work/references/worker-coordination.md). That document owns the common assignment and report fields. Confirm the objective, acceptance slice, exact source/document/meta ownership, baseline and prior changes, relevant context, existing checks and artifact paths before writing. A concise root message is sufficient for ordinary work.
 
-For ordinary project work, follow `Tools/NpcHarness/SceneWork.md`: require a bounded
-objective, exact source/document/meta ownership, context, baseline, evidence paths and
-mandatory checks. A concise root assignment is sufficient; no new per-feature gate
-or WorkerAssignment v1 is required. All authoring and preliminary-verification rules
-below still apply, including actual compilation evidence and truthful NOT_VERIFIED.
-Return changed files, checks/evidence, deviations and unresolved items to the root.
-Apply SceneWork.md verification and evidence limits: use existing checks; do not
-write verification-only runners, eval helpers, validators or tests unless the user
-explicitly requests verification development. Return one concise message referencing
-existing logs; no separate evidence bundle or repeated hash manifest is required.
+If safe ownership or source paths are missing, an unapproved product decision is required, or existing changes cannot be preserved, report Blocked with the concrete reason to root. Do not broaden scope or take another role's files. Unrequested responsibility moves or shared-contract changes need root/user direction; changing documentation does not authorize weakening project rules.
 
-The serialized v1 requirements and `verify-scope`/task-specific gate commands below
-apply only when the root explicitly selects legacy WorkerAssignment v1. Do not emit
-v1 scope evidence for the ordinary-work route. Scene/prefab work still belongs to
-the assembly role; keep code ownership narrow.
+Use [SceneWork.md](../../../Tools/NpcHarness/SceneWork.md) for ordinary verification limits. Do not create or extend verification-only runners, eval helpers, validators, tests or harness adapters without a separate explicit user request. Automatic Play Mode and game-screen verification, including retries and dedicated checks, also require a separate explicit request. Generic QA items in plans do not grant either authorization.
 
-Require a bounded assignment containing:
+For an explicitly selected extended workflow, follow root's selected protocol under [extended-workflows.md](../orchestrate-unity-work/references/extended-workflows.md). Read [legacy-workflow.md](references/legacy-workflow.md) only when root explicitly selects WorkerAssignment v1. Running an existing checker does not select legacy mode. Supplied assignments, review requests and snapshots remain root-owned evidence; never modify them to make the candidate pass.
 
-- a stable `assignmentId` and one concrete `objective`;
-- observable `acceptanceConditions`;
-- exact `writablePaths` and `forbiddenPaths`;
-- separate `artifactPaths` for authorized build logs or run evidence outside the candidate;
-- `baselineCommit` plus `baselineDirtyFiles`, using an explicit empty object when none overlap;
-- `requiredContext` project documents and candidate inputs;
-- preliminary checks and report requirements.
+## 2. Read the Relevant Project Context
 
-The root must serialize this assignment as WorkerAssignment v1 under
-`.harness-runs/<runId>/assignments/`, select
-`Tools/NpcHarness/SkillPolicies/author-unity-code.json` v1, and set
-`execution.kind` to `direct-code`. `execution.sourcePaths` lists every C# candidate,
-`execution.owningDocumentPaths` lists any assigned Systems documents, and
-`execution.compileRequired` must be true. Read
-`Tools/NpcHarness/Schemas/worker-assignment.schema.json` for the exact contract.
-The root records the assignment SHA-256 before delegation and supplies it separately.
-Do not edit the assignment or recompute a replacement digest.
+1. Use PublicMD/ProjectStructure.md to find the owning Systems feature.
+2. Follow each folder's README recursively until reaching the relevant leaf. Read its minimum change scope before opening additional code or Unity assets.
+3. Read PublicMD/CodeConvention.md before creating or modifying C#.
+4. Read PublicMD/Game_Plan.md and PublicMD/SPEC.md when gameplay rules or player experience change; leave unresolved rules as TBD.
+5. Read PublicMD/PLAN.md and its linked active detailed plan when beginning a planned feature or depending on that plan. Preserve specialized feature planning and approval.
+6. Read PublicMD/ARCHITECTURE.md when responsibilities, shared interfaces, dependency direction or runtime ownership cross feature boundaries.
 
-Any supplied review request and snapshot are root-owned evidence, not writable inputs.
-Do not weaken project conventions or move responsibility across layers to make this
-candidate pass. Report unrequested structural changes for root/user direction. Keep
-deviations concise (responsibility, dependency, relevant document); they are author
-reports, not a substitute for the independent reviewer or its primary evidence.
+Do not read or modify CLAUDE.md or .claude. Actual code and serialized assets establish current facts when documents are stale. Correct the owning Systems leaf within assigned document ownership; otherwise report the needed correction to root.
 
-If the assignment omits a safe writable boundary or exact source paths, requires an unapproved product decision, or conflicts with existing user changes, return `status: Blocked` with `reasonCode: AssignmentIncomplete`. Do not broaden the assignment yourself.
+## 3. Implement the Assigned Code
 
-## Route Project Context
+- Edit only assigned C#, new companion .meta files and explicitly assigned owning documents. Preserve unrelated and pre-existing changes; do not reset, reformat or clean outside the assignment.
+- Keep WorkerNPC, selector, action, provider, NPCComponent, manager, runtime-state and shared-definition responsibilities consistent with the owning Systems documents. Use their placement rules and ProjectStructure.md; do not introduce unrequested future architecture.
+- Preserve serialized enum values, field migration and existing .meta GUIDs. For new C# assets, prefer Unity import for .meta creation. If the assignment requires creating a new companion .meta without an importer, generate a unique GUID, verify it is unused and never replace an existing asset's GUID.
+- Assigned implementation/assembly helper C# may be outside Assets. Writing that logic belongs to code; executing it to mutate Unity assets belongs to assembly. Verification-only helpers still require the separate authorization above.
+- Do not edit scenes, prefabs, SO assets, materials, textures, animation assets, ProjectSettings, accepting gates or fixtures. Report cross-role needs to root for a separate assembly/graphics slice. An assignment cannot override role boundaries without an explicit user exception.
+- Coordinate imports and compilation-triggering operations with root under worker-coordination.md; do not independently mutate the same Editor while another role is using it.
 
-1. Read `PublicMD/ProjectStructure.md` and use its task table to find the owning Systems document.
-2. If that feature is folder-shaped, read its `README.md` and only the relevant leaf documents.
-3. Read the leaf's minimum change scope before opening additional code or Unity assets.
-4. Read `PublicMD/CodeConvention.md` before creating or modifying C#.
-5. Read `PublicMD/Game_Plan.md` and `PublicMD/SPEC.md` only when the assignment changes gameplay rules or player experience. Keep unresolved rules as `TBD`.
-6. Read `PublicMD/PLAN.md` when the assignment begins a planned feature or depends on an active detailed plan.
-7. Read `PublicMD/ARCHITECTURE.md` only when responsibility, a shared interface, dependency direction, or runtime ownership crosses feature boundaries.
+## 4. Check the Current Candidate
 
-Do not read or modify `CLAUDE.md` or `.claude`. Treat actual code and serialized assets as current fact when documentation is stale, and correct the owning Systems document within the assignment when authorized.
+Provide the five code evidence categories required by worker-coordination.md: compilation, conventions, ownership, dependency direction and scope. Scope them to the actual diff and necessary dependencies. Include actual command/results/logs and concrete code/document locations; reading rules or passing compilation alone does not establish structural compliance.
 
-## Author the Candidate
+Use existing relevant compile/check commands and direct code inspection. Run additional existing non-Play-Mode tests only when they address a concrete changed behavior or risk. Do not broaden into unrelated regression sweeps or rerun successful checks merely to fill a report.
 
-- Modify only assigned C# files, their new companion `.meta` files, and explicitly assigned owning documentation.
-- Preserve unrelated and pre-existing changes. Do not reset, reformat, or clean files outside the assignment.
-- Keep `WorkerNPC`, selector, action, provider, `NPCComponent`, manager, runtime state, and shared-definition ownership consistent with current project documents.
-- Place new code according to `PublicMD/ProjectStructure.md`; do not introduce future architecture that the project does not have.
-- Preserve serialized enum values, field migration, and existing `.meta` GUIDs.
-- For a new C# asset, prefer Unity import to create its `.meta`. When the assignment requires creating the companion `.meta` without an importer, generate a unique GUID, verify that it does not occur elsewhere in the repository, and never replace the GUID of an existing asset.
-- Do not edit scenes, prefabs, materials, textures, animation assets, ProjectSettings, accepting gate code or fixtures. An assignment cannot override the role boundary; report cross-role needs to the root. Only a separate explicit user exception may change that boundary.
-- Keep scene/prefab wiring in a separately scoped assembly-worker slice. That ordinary
-  slice may use bounded YAML edits under SceneWork.md without an Editor connection;
-  this does not expand this code worker's ownership or legacy v1 permissions.
-- When a required non-code change is outside the assignment, report it as unresolved instead of performing it.
+### Reuse and Invalidation
 
-## Preliminary Verification
+Follow the common freshness rules in [orchestrate-unity-work](../orchestrate-unity-work/SKILL.md). Reuse a successful result only when its actual inputs, relevant dependencies, command/configuration and relevant environment are unchanged and it covers the current candidate. Inspect raw evidence; an assertion of success is insufficient. Who executed the check is not a reason to repeat it.
 
-Provide all five evidence categories for each code change, scoped to the diff:
+- A task-report wording change alone does not invalidate compilation.
+- Changed source or compilation dependencies/configuration require the affected compile check again.
+- Changed requirements may invalidate review or check coverage even without a code change; report that impact to root.
+- If input relevance or freshness cannot be established, rerun the affected check or report its blocker. Do not assume stale evidence remains valid.
 
-- compilation: affected assembly/equivalent command, actual outcome and log;
-- conventions: applicable CodeConvention sections and changed code locations;
-- ownership: changed classes/responsibilities and their owning Systems leaves;
-- dependencies: changed references/calls, allowed direction and relevant forbidden-reference or stale-serialized-name searches;
-- scope: actual paths versus assignment/baseline, preserved prior edits and `git diff --check`.
+After a correction, refresh affected checks and reuse unaffected evidence. An explicitly selected strict protocol keeps its full-profile or snapshot rerun requirements; ordinary reuse rules do not weaken it.
 
-Use one short evidence row per category in `checksRun`/`evidence`. Reading a document
-or passing compilation alone does not prove structural compliance. Run additional
-focused non-Play-Mode tests only when meaningful; avoid implementation-mirroring
-tests. Follow SceneWork.md's automatic play/screen exclusions. Coordinate imports/
-compilation with the root. A helper compile check is code work; executing its asset
-mutations is assembly work. The root checks actual evidence and obtains an independent
-review; the author cannot review its own candidate.
+Normal compiler output under Library, Temp or assigned temporary directories is verification output, not permission to edit unrelated sources. Keep persisted logs within assigned artifact paths and generated output out of Git.
 
-Normal compiler output under `Library`, `Temp`, or an assignment-authorized temporary directory is verification output, not a candidate change. Persisted logs and reports must stay within `artifactPaths`. Do not add generated build output to Git or treat it as permission to alter unrelated source files.
+Record unavailable behavior coverage as NOT_VERIFIED; compilation does not prove wiring or runtime behavior. Missing bespoke automation alone does not block a candidate. Missing required compilation, failed existing checks and actual defects remain blockers; do not relabel them as optional unverified coverage.
 
-Compilation does not prove scene wiring or runtime behavior. Record `NOT_VERIFIED` for checks that require Unity Editor, Play Mode, external authority, or another worker.
+For failures or review-requested corrections, follow [remediation-loop.md](../orchestrate-unity-work/references/remediation-loop.md) under root coordination. Corrections consume the existing task-wide budget, not a new allowance for this worker. Report the failure before further corrective revisions so root can bound/account for them. Stop at the shared limit or repeated cause; do not weaken checks or write a replacement runner for an infrastructure blocker.
 
-After preliminary verification, return the candidate and evidence to the root. Do not run the trust-boundary Scope Gate yourself. For selected legacy v1 only, the root must run:
+## 5. Return the Candidate
 
-`./run-harness.sh verify-scope --policy Tools/NpcHarness/SkillPolicies/author-unity-code.json --assignment <assignment-path> --assignment-sha256 <pre-delegation-hash> --run-id <runId>`
+Return one concise ordinary WorkerReport under worker-coordination.md, referencing existing raw logs and the five code evidence categories. Identify reused results and why they still cover the candidate, plus deviations and unresolved items. Use the common status/reason fields; report verification failure or blockage truthfully.
 
-The root then runs the assignment's separate task-specific acceptance gate. Never modify either gate to fit the candidate.
+Do not fill unused assignment-hash, scope-gate or acceptance-profile fields for ordinary work, or create duplicate report/evidence files. Selected legacy reporting is defined only in legacy-workflow.md.
 
-## Return a WorkerReport
-
-Return one structured report with:
-
-```json
-{
-  "assignmentId": "assignment-id",
-  "roleSkill": "author-unity-code",
-  "status": "Candidate | Blocked | Failed",
-  "reasonCode": "None | AssignmentIncomplete | ScopeConflict | UnapprovedDecision | VerificationFailure",
-  "assignmentSha256": "root-supplied pre-delegation digest",
-  "scopeGateResultPath": "pending root verification",
-  "acceptanceGate": {
-    "manifestPath": "",
-    "profile": "",
-    "profileVersion": 1
-  },
-  "changedFiles": [],
-  "checksRun": [],
-  "evidence": [],
-  "unresolved": [],
-  "deviations": []
-}
-```
-
-`Candidate` means the code slice is ready for root inspection and deterministic gating. It never means `Accepted`. Do not review your own candidate or modify the accepting gate.
+Candidate means submitted for root inspection, not Accepted. Every C# change, including helpers, still requires an independent read-only reviewer and its received result before overall completion. Do not review your own work or run root-owned acceptance; root decides which current checks can be reused and passes primary evidence to the reviewer.

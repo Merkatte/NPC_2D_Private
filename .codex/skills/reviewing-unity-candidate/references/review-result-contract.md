@@ -1,10 +1,12 @@
 # ReviewResult Contract
 
+Use this contract only for an explicitly selected gated workflow. Ordinary common-check review uses the record in [SKILL.md](../SKILL.md); it does not require this JSON envelope.
+
 ## Version selection
 
 A pinned review request plus candidate snapshot selects compact v2, whose exact fields
-and consistency rules are in `Tools/NpcHarness/ReviewEvidence.md`. Do not emit both
-formats or append a narrative report. Use the v1 format below only for legacy callers
+and consistency rules are in [ReviewEvidence.md](../../../../Tools/NpcHarness/ReviewEvidence.md). Do not emit both
+formats or append a narrative report. Use the v1 format below only for selected-gate legacy callers
 without that envelope; v1 does not satisfy `accept-review`.
 
 Return a single JSON object. Keep field names and enum values exact so the orchestrator can consume the result without interpreting prose.

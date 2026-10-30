@@ -5,81 +5,66 @@ description: Independently review one bounded Unity candidate against scope, rul
 
 # Reviewing Unity Candidate
 
-Act as an independent, read-only reviewer of one candidate change. Judge the candidate from primary evidence, not from the implementer's confidence or conclusion.
+Independently review one bounded candidate from primary evidence. Root owns reviewer selection, correction routing and completion under [reviewer-orchestration.md](../orchestrate-unity-work/references/reviewer-orchestration.md); this skill owns review judgment and its result.
 
-## Required Input
-
-### Ordinary common-check review
-
-When root explicitly selects ordinary work without a GateResult profile, review the
-actual diff after successful common checks from Tools/NpcHarness/SceneWork.md.
-Require original request, scope/exclusions, relevant rules, Git baseline and current
-diff including relevant untracked files, actual compile results for C# and direct
-scope/reference inspection. Follow SceneWork.md verification and evidence limits:
-no mandatory per-file hash manifest or new verification code. Check actual code and
-report behavior without existing execution coverage as unverified. Missing bespoke
-automation alone does not block; actual defects, failed existing checks and missing
-mandatory compilation still do. Do not demand a runner merely to fill a review row.
-Do not fabricate GateResult or require a new validator for this route. Every C#
-change needs conventions, ownership and dependency review with concrete code and
-document locations. Inspect primary evidence; do not consume author conclusions.
-
-Return a compact ordinary record with `reviewerId`, `verdict`, `reviewedFiles`,
-`candidateBasis` (Git baseline/diff and freshness; hashes only if already needed),
-`ruleCoverage` (category/status/evidence), `findings`
-(severity/file/evidence/recommendation) and `remainingRisks`. Verdicts are Approve,
-ChangesRequested or InsufficientEvidence. Missing/stale evidence blocks; Critical
-or Major findings block; Minor findings do not. The root waits for and validates
-this record. Do not write files or fix the candidate. Preserve all boundaries below;
-GateResult-specific requirements below apply only to selected gate workflows.
-
-### Selected gate workflow
-
-Require all of the following:
-
-- the user's original request;
-- the confirmed scope, exclusions, and acceptance conditions;
-- the relevant project documents;
-- the actual candidate diff, including relevant untracked files;
-- the passing `GateResult` for this exact candidate and its essential raw logs.
-
-Do not request or accept the implementer's conclusion as review evidence. If a required input is absent, unreadable, internally inconsistent, or stale relative to the diff, return `InsufficientEvidence` without guessing.
-
-For a selected gate workflow, read [references/review-result-contract.md](references/review-result-contract.md) before emitting a result. For ordinary review use the record above and [references/document-review.md](references/document-review.md).
-
-When supplied a pinned review request and snapshot, use the compact v2 record in
-`Tools/NpcHarness/ReviewEvidence.md` and read
-[references/document-review.md](references/document-review.md). This is the same
-independent review, not an additional review pass. Never create, weaken, or repin its
-request/snapshot. Return only one compact record; the root persists it.
+Use the ordinary review below unless root explicitly selected a strict gate or pinned evidence workflow. Only then read [selected-gate-review.md](references/selected-gate-review.md). Running an existing checker does not itself select a strict result format.
 
 ## Boundaries
 
-- Remain read-only. Do not edit code, assets, scenes, project settings, documentation, the gate, or the candidate.
-- Use read-only inspection commands. If a focused diagnostic needs output, write it only to a temporary location outside the repository and remove no user data.
-- Do not remediate findings, expand scope, contact the implementer for a conclusion, or direct another agent to modify the candidate.
-- Preserve the deterministic result as independent evidence. Never rewrite, weaken, override, or substitute for its status.
-- A passing gate proves only its declared checks. You may still request changes for an evidenced scope, integration, maintainability, or Unity risk outside those checks, but must not call the deterministic gate failed.
-- A non-passing, malformed, mismatched, or stale gate yields `InsufficientEvidence`; reviewer opinion cannot rescue it.
+- Remain read-only and independent of every implementation/remediation worker for this candidate. Do not edit code, assets, settings, documents, tests, gates or evidence.
+- Do not perform fixes, direct implementation agents, become a correction worker, or seek the implementer's conclusions. Use the original request and primary artifacts, not WorkerReports, author reasoning, suggested findings or an expected verdict.
+- Use read-only inspection. If a focused diagnostic needs output, use a temporary location outside the repository and remove no user data. Do not run project-mutating commands as a reviewer.
+- Follow [SceneWork.md](../../../Tools/NpcHarness/SceneWork.md): no new or expanded verification-only code without a separate explicit request, and no automatic Play Mode/game-screen checks or retries without a separate explicit request. Report needed actions to root; this read-only role does not acquire implementation authority.
+- Preserve raw check outcomes. Review cannot turn a failed check into success, and compilation alone does not establish runtime behavior or architecture compliance.
 
-This skill reviews one bounded candidate after its gate. Use `reviewing-npc-work-code` instead for a broad NPC/worker architecture or convention audit, especially when the requested deliverable is `PublicMD/Status/Code_Evaluation_Result.md`. This skill never updates that report.
+Use reviewing-npc-work-code for a repository-wide NPC/worker audit. This skill does not expand a candidate review into that audit or update PublicMD/Status/Code_Evaluation_Result.md.
 
-## Review Method
+## 1. Establish the Ordinary Review Basis
 
-1. Establish the candidate boundary from the confirmed scope and actual diff. Flag unauthorized paths, omitted relevant untracked files, and unrelated mutations.
-2. Confirm the gate run ID, profile/version, changed files, timestamps, checks, exit/log agreement, and artifacts apply to the current candidate. Prefer a candidate digest when supplied; otherwise corroborate that the worktree has not changed since the gate and disclose the weaker freshness evidence. Record the gate's `Pass` unchanged.
-3. Trace every acceptance condition to either deterministic gate evidence or direct review evidence. Missing coverage is not an implicit pass.
-4. Inspect only relevant documents, changed files, and direct dependency or serialized wiring surfaces needed to test a concrete concern.
-5. Review Unity-specific risks proportionately: lifecycle and state restoration, serialization/GUID stability, scene or prefab wiring, Editor/runtime boundaries, compile/platform compatibility, failure handling, and false-positive tests.
-6. Report only evidence-backed findings. Prefer a precise function, serialized object, diff hunk, log entry, or gate check over generalized advice.
-7. Emit exactly one `ReviewResult` using the referenced contract. Do not append an informal second verdict.
+Require:
 
-## Decision Rules
+- original request and approved scope, exclusions and acceptance conditions;
+- relevant project rules and owning documents;
+- Git baseline and actual current diff, including relevant untracked files and pre-existing-change context;
+- current successful required common checks, including actual compile command/result/log for C# and applicable scope/reference evidence;
+- evidence that those check inputs, dependencies and relevant configuration/environment still match the candidate.
 
-- `Approve`: evidence is sufficient and there are no `Critical` or `Major` findings.
-- `ChangesRequested`: at least one evidence-backed `Critical` or `Major` finding exists.
-- `InsufficientEvidence`: a required input or trustworthy passing gate for the exact candidate is missing, invalid, inconsistent, or stale.
+Inspect the actual files and raw results. Reuse successful evidence when it covers the unchanged relevant inputs; do not repeat a check merely because a worker ran it. Ordinary review does not require a GateResult, run ID, per-file hash manifest or accept-review.
 
-`Minor` findings are non-blocking. Do not inflate style preferences into blocking findings. Every blocking finding must include its severity, concrete evidence, affected file, and actionable recommendation.
+If reviewer independence or a required input cannot be established, or required checks are missing, failed, unreadable, inconsistent or stale, return InsufficientEvidence with the specific gap. Do not assume a changed source was compiled by an earlier run. Root repairs evidence or routes corrections; the reviewer does not launch an open-ended verification loop.
 
-If an acceptance condition is visibly violated, mark it `Violated`, record a `Major` or `Critical` finding, and use `ChangesRequested`. If it is satisfied, mark it `Satisfied`. Missing mandatory common checks or explicitly requested gate evidence means `NotCovered` and `InsufficientEvidence`. In ordinary work, behavior lacking bespoke automated coverage is instead recorded as `NotCovered` in remaining risks without blocking solely on that absence; inspect the actual code and do not invent a defect or demand verification-code development.
+## 2. Inspect the Changed Scope
+
+Read [document-review.md](references/document-review.md) for project routing and code-review categories.
+
+1. Compare actual changes with approved paths and baseline. Identify unauthorized changes and omitted relevant files; preserve the distinction between prior user work and this candidate.
+2. Check each approved acceptance condition using current check evidence or direct source/serialized inspection. State what the evidence establishes; do not claim runtime execution from a code read.
+3. Cover conventions, ownership and dependency direction for every C# change, including helpers. Inspect directly affected callers, dependencies and serialized references only as needed for a concrete concern.
+4. Assess affected Unity risks such as lifecycle/state restoration, pooling, transactions, serialization/GUID stability, Editor/runtime boundaries and failure paths. Do not scan every subsystem or request an unrelated regression sweep.
+5. Report evidence-backed findings with a code location, serialized object, diff hunk, log or relevant rule. One reviewer covers the applicable categories; do not create additional category reviewers.
+
+A current compile result does not erase an evidenced behavior or ownership defect. Conversely, lack of bespoke automated coverage alone is not evidence of a defect. After a correction, review the current diff and affected reasoning against refreshed required checks, reusing still-current unaffected evidence.
+
+## 3. Decide and Return One Ordinary Record
+
+After the required-input check above:
+
+- **Approve:** required review coverage is sufficient and there are no Critical/Major findings.
+- **ChangesRequested:** at least one evidenced Critical/Major defect violates the approved scope, acceptance or applicable project rules.
+- **InsufficientEvidence:** a material required condition or review category cannot be assessed from available evidence. Identify what is missing rather than inventing a defect.
+
+Critical includes likely data loss, permission/security breaches, broken builds/loading or serialized-state corruption. Major includes evidenced acceptance/scope violations, likely runtime/Editor defects or broken required integration. Minor covers localized clarity/maintainability issues without demonstrated acceptance failure; it does not block approval. Do not promote preferences or unrelated old debt into blockers.
+
+Keep optional unexecuted behavior checks in remainingRisks as NOT_VERIFIED/NotCovered. This includes excluded automatic play/screen QA and absent bespoke automation. Their absence alone does not prevent Approve when required checks and direct review are sufficient. Missing mandatory compilation or a real acceptance violation cannot be moved into that non-blocking category.
+
+Return one compact ordinary record with the existing fields:
+
+- reviewerId, verdict and reviewedFiles (only files actually inspected);
+- candidateBasis: Git baseline/current diff and the check evidence/freshness actually verified;
+- ruleCoverage: category/status/evidence for required categories and confirmed acceptance conditions, grouped when the same evidence applies;
+- findings: severity/file/evidence/recommendation, with a concrete impact and smallest corrective direction for each defect;
+- remainingRisks: unverified behavior and relevant uncertainties; summarize responsibility/dependency changes once here or in the corresponding coverage rows.
+
+Use Satisfied for demonstrated coverage and Violated for an evidenced violation with a matching blocking finding. Use NotCovered for missing required coverage and InsufficientEvidence, unless another established blocking defect already warrants ChangesRequested. Optional automation gaps belong in remainingRisks. NotApplicable requires root's prior permission and an explanation; never use it to omit mandatory C# categories.
+
+Return the record to root without writing files or appending a second verdict/essay. Root waits for the result, persists it if needed, and decides completion. Approval applies only to the reviewed candidate with current required checks.

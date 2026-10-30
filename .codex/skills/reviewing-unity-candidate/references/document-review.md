@@ -1,37 +1,29 @@
-# Document-based review without a full audit
+# Document-Based Candidate Review
 
-Use the categories selected in the pinned request. Route via ProjectStructure to only
-the owning Systems leaves and directly affected dependencies. CodeConvention supplies
-general C# rules; ARCHITECTURE supplies cross-feature responsibility/dependency rules.
-The domain audit categories in `../../reviewing-npc-work-code/references/review-workflow.md`
-are a checklist reference, not an instruction to run another review or overwrite its
-project-wide report.
+Use the categories and acceptance conditions in root's approved scope. A pinned request is needed only for a selected pinned workflow. Route through PublicMD/ProjectStructure.md and each folder README to the owning Systems leaf; read its minimum scope and only directly affected dependencies.
 
-Every C# candidate, including temporary helpers, must cover conventions, ownership
-and dependency direction. In ordinary review use the same categories with current
-common-check evidence and current Git baseline/diff; a pinned request is not mandatory unless
-that workflow was selected. Check the actual diff and source, not a worker's claimed
-compliance. One independent reviewer covers these categories; do not spawn one per rule.
+CodeConvention supplies C# rules; ARCHITECTURE supplies cross-feature responsibility/dependency rules when applicable. Do not read CLAUDE.md or .claude. Check actual source and serialized state, not the author's claimed compliance.
 
-- Conventions: changed declarations, local-style precedence, serialization and naming.
-- Ownership: changed classes remain within documented responsibilities and owning leaves.
-- Dependencies: actual new references/calls, not just folder placement; flag unapproved
-  responsibility moves, shared contracts or additional layers.
-- Relevant runtime risks: lifecycle, pooling, transaction, null and serialized wiring
-  only where affected. Functional gate coverage is not presumed from a compilation pass.
-- Documentation: actual flow and ownership agree with owning docs; changing docs does
-  not legitimize an unauthorized design deviation.
+## Required Code Categories
 
-One short evidence row per requested category is enough when satisfied. Cite meaningful
-code locations and source sections; do not merely assert that a document was read.
-Expand actual violations/uncertainties only. NotApplicable requires both prior permission
-in the request and an explanation. Never use it to hide missing required verification.
-Distinguish introduced defects from pre-existing debt; do not request unrelated cleanup.
-For genuine ambiguity, report NotCovered rather than inventing a rule or claiming proof.
-Under the ordinary SceneWork route, missing bespoke automated coverage belongs in
-remainingRisks and does not itself require InsufficientEvidence or new test tooling.
-Required compile/scope/reference evidence and actual defects remain subject to review.
+Every C# candidate, including temporary helpers, needs:
 
-Summarize responsibilities, dependencies and remaining risk once in the compact record.
-Use "unchanged" when supported. No full-project scan, per-line compliance essay, second
-reviewer, or parallel convention/architecture reviews merely to populate the record.
+- **Conventions:** changed declarations, applicable local-style precedence, naming and serialization rules.
+- **Ownership:** changed classes remain within documented responsibilities and their owning Systems leaves.
+- **Dependencies:** actual changed references/calls and permitted direction, not folder placement alone. Identify unapproved responsibility moves, shared contracts or extra layers.
+
+Inspect lifecycle, pooling, transactions, null handling and serialized wiring where affected. Compilation does not prove functional behavior. Check whether current flow/ownership agrees with the owning documentation; updating a document does not legitimize an unauthorized design change. For an authorized normative-rule change, use the approved prior rule and authorization supplied by root.
+
+For a concrete NPC domain concern, the relevant portion of [review-workflow.md](../../reviewing-npc-work-code/references/review-workflow.md) may supply a checklist. It is not an instruction to run a full audit, add a reviewer or update the project-wide report.
+
+## Evidence and Coverage
+
+One concise row per applicable category is enough when satisfied. Cite meaningful code locations and rule sections; "read the document" is not evidence. Expand actual violations or uncertainty, not every convention sentence.
+
+Distinguish introduced defects from pre-existing debt. Existing issues explicitly included in acceptance still matter; unrelated cleanup is outside the review. When a material rule or condition is genuinely ambiguous, report missing required coverage rather than inventing a rule.
+
+Use SKILL.md's ordinary verdict and record rules. Record absent bespoke automated coverage and excluded automatic play/screen QA in remainingRisks without demanding new test tooling. Keep missing mandatory compile/scope/reference evidence and actual defects blocking under the applicable verdict.
+
+For selected strict/pinned review, use its exact coverage and result contract through [selected-gate-review.md](selected-gate-review.md). Do not apply ordinary optional-coverage exceptions to required gates or pinned rule rows.
+
+Summarize responsibilities, dependency direction and remaining risk once. Use "unchanged" when supported. No full-project scan, per-line compliance essay or parallel convention/architecture reviews merely to populate a record.

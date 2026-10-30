@@ -1,6 +1,6 @@
 # Project Art Routing
 
-Use this reference to select the nearest existing asset family. Always inspect the actual approved image and its `.meta`; the examples below document current patterns, not immutable global rules.
+Use this reference to select the nearest existing asset family. Inspect the actual approved image and the same-purpose reference `.meta` used for import defaults. The examples below document patterns, not immutable global rules; explicit authorized assignment values take precedence.
 
 ## Current Family References
 
@@ -16,9 +16,17 @@ Use this reference to select the nearest existing asset family. Always inspect t
 
 1. Prefer references named by the assignment.
 2. Otherwise select two or three references from the same asset family and intended on-screen scale.
-3. Use the closest same-purpose sibling `.meta` for proposed import settings.
-4. If candidates disagree on view, rendering density, or scale, report the conflict instead of averaging them.
+3. Use explicit authorized assignment values for specified output/import fields. Fill only unspecified fields from the closest same-purpose sibling `.meta`.
+4. If candidate reference families disagree on view, rendering density or scale and the assignment does not resolve the choice, report the conflict instead of averaging them. A deliberate authorized override is not itself a conflict.
 5. Never use files under `Assets/Plugins` as project art references.
+
+## Target Settings and Comparison
+
+For each applicable field, use its explicit authorized target when supplied, otherwise the selected reference default. Compare the proposed value against that target. Record explicit overrides and their source in the normal worker report, outside any serialized importSpec with a fixed schema.
+
+For example, reference pivot (0.5, 0.5) plus an explicit bottom-center requirement yields target pivot (0.5, 0.0). Keep unspecified PPU/filter settings from the appropriate reference. This difference is intentional; do not change the reference's importer to make both match.
+
+Report contradictory or unsupported requirements to root. A reference supplies defaults, not permission to override the user or rewrite existing importer/rig data.
 
 ## ImportSpec Fields
 
@@ -34,4 +42,4 @@ Return the fields that the later Unity import step needs:
 - mipmap enablement, sRGB handling, and sprite mesh type;
 - slicing rectangles, borders, or tile cell size when applicable.
 
-Do not claim these settings were applied unless Unity importer evidence proves it.
+These are proposed handoff values. Assembly applies them; do not claim they were applied without actual Unity importer evidence. Keep ordinary handoff concise. Only selected legacy v1 requires the exact existing serialized schema and its permitted fields; do not expand that schema to add provenance, slicing or extra report fields.
