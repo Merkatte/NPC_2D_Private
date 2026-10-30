@@ -2,7 +2,7 @@
 
 ## 기능 목적
 
-전투 감지, target 상태, 이동·공격 실행, Guard와 Enemy의 role별 판단을 연결하는 영역의 인덱스다. 이 문서는 스크립트 목록을 소유하지 않고 전투 작업을 필요한 leaf 문서로 라우팅한다.
+전투 감지, target 상태, 이동·공격 실행, Guard와 Enemy의 role별 판단과 성벽 방어를 연결하는 영역의 인덱스다. 공통 전투는 leaf로, 여러 책임으로 나뉜 성벽 방어는 하위 폴더로 안내한다.
 
 ## 세부 기능 라우팅
 
@@ -12,6 +12,7 @@
 | 공격 주기, damage, range, melee/ranged 거리 | [Attack Runtime](Attack_Runtime.md) |
 | Guard 공급 판단, 순찰, 감지 interrupt, 능력치 | [Guard](Guard.md) |
 | Enemy 추적·공격·Idle 판단과 능력치 | [Enemy](Enemy.md) |
+| 성벽 전투·도주·시설 피해/복구·웨이브·진행 상태 | [Defense](Defense/README.md) |
 
 ## 전체 흐름
 
@@ -25,6 +26,8 @@ role selector -> CombatLib.TryFindNearestTarget -> CombatRuntimeState
 ```
 
 Guard는 전투 대상이 없으면 공급 또는 경비를 판단한다. Enemy는 destination과 need를 사용하지 않고 감지된 전투 대상만 추적한다.
+
+Defense는 공통 target·공격과 NPC runtime 위에 전장 대응·시설 내구도·웨이브 진행을 연결한다. 공통 공격 계약의 상세 내용은 기존 leaf가 계속 소유한다.
 
 ## 세부 기능 간 의존 관계
 
@@ -46,15 +49,15 @@ Movement -> 동적 target 추적
 
 ## 외부 기능 연결
 
-- 공통 action·queue: [NPC Decision and Actions](../NPC_Decision_and_Actions/README.md)
-- runtime target reset: [NPC Runtime](../NPC_Runtime.md)
-- actor prefab 생성: [Spawning and Pooling](../Spawning_and_Pooling.md)
-- animator 없는 Enemy 표현: [NPC Presentation](../NPC_Presentation.md)
+- 공통 action·queue: [NPC Decision and Actions](../NPC/Decision_and_Actions/README.md)
+- runtime target reset: [NPC Runtime](../NPC/Runtime/Lifecycle_and_Stats.md)
+- actor prefab 생성: [Spawning and Pooling](../NPC/Runtime/Spawning_and_Pooling.md)
+- animator 없는 Enemy 표현: [NPC Presentation](../NPC/Presentation/Adapter.md)
 
 ## 알려진 제약과 TBD
 
 - NPC가 일반적으로 `ICombatTarget`이 되는 정책은 아직 확정되지 않았다.
-- 기존 비Defense 씬은 TestOnly Enemy 생성 경로를 유지한다. DefenseTest의 production 생성은 [Defense Progression](../Defense/Progression.md)의 DefenseWaveController가 소유한다. Enemy 전용 animation은 아직 없다.
+- 기존 비Defense 씬은 TestOnly Enemy 생성 경로를 유지한다. DefenseTest의 production 생성은 [Defense Progression](Defense/Progression.md)의 DefenseWaveController가 소유한다. Enemy 전용 animation은 아직 없다.
 
 ## 문서 갱신 조건
 

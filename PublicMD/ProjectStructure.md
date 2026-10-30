@@ -1,6 +1,6 @@
 # Project Structure
 
-> 문서 기준일: 2026-09-27
+> 문서 기준일: 2026-10-30
 > 이 문서는 전체 구조 지도와 기능 문서 라우팅만 소유한다. 구체 클래스 흐름과 Unity 배선은 `PublicMD/Systems`의 해당 문서가 소유한다.
 
 ## 1. 구조 한눈에 보기
@@ -21,64 +21,48 @@ NPCManager / WorkerPool          생성과 조립
 
 ## 2. 기능 문서 지도
 
-| 기능 영역 | 문서 | 읽는 경우 |
-|---|---|---|
-| 건물 건설 | [Construction](Systems/Construction/README.md) | CSV 정의, 부지·예약·공사·완공, 건설 UI |
-| 주택·입주 | [Housing](Systems/Housing/README.md) | 단계별 옵션, 주민 배정, 집 생활·여관 회복, 주택 UI |
-| 경로 탐색 | [Navigation](Systems/Navigation.md) | 노드 그리드, A*, 지형 비용, 지역 출입구 |
-| NPC 공통 runtime | [NPC Runtime](Systems/NPC_Runtime.md) | queue 소비, 공통 stat, disable/reset |
-| 불만도·태업 | [NPC Dissatisfaction](Systems/NPC_Dissatisfaction.md) | 원인별 누적·회복, 유닛별 설정, 시간 갱신과 태업 상태 |
-| 건축가 시민 | [Builder](Systems/Builder.md) | 건설·배회·생활 queue, 건축가 작업 tuning |
-| 판단과 action | [NPC Decision and Actions](Systems/NPC_Decision_and_Actions/README.md) | utility, selector, action lifecycle, 이동, 생활 action |
-| 농사 | [Farming](Systems/Farming/README.md) | 농장 progress, 수확 transaction, 생산 definition, 씨앗 선택·작물 표현, Farming/Harvest action |
-| 전투 | [Combat](Systems/Combat/README.md) | 감지, target, 공격, Guard, Enemy |
-| 성벽 방어 | [Defense](Systems/Defense/README.md) | 성벽·궁병·다운·도주, 시설 파괴·복구, 웨이브·이벤트·진행 정지 |
-| 상호작용과 목적지 | [Interaction and Destinations](Systems/Interaction_and_Destinations.md) | provider, destination, 건물 action |
-| 아이템과 inventory | [Inventory and Items](Systems/Inventory_and_Items/README.md) | CSV, 공유 자원·용량, NPC 봇짐, 입고, 창고 UI |
-| 플레이어 골드 | [Player Gold](Systems/Player_Gold.md) | 공유 자원의 골드 항목으로 이동하는 안내 |
-| 상단(Merchant Caravan) | [Merchant Caravan](Systems/Merchant_Caravan.md) | 방문 phase·타이머, 클릭 가능 판정, 거래 transaction |
-| 시청(Town Hall) | [Town Hall](Systems/Town_Hall.md) | 모집 쿨다운·phase, 정착지원금 transaction, 예약 기반 NPC 스폰, 낙하 연출 |
-| NPC 표현 | [NPC Presentation](Systems/NPC_Presentation.md) | 이동 animation, Flip, 건물·도구 표현 |
-| NPC 생각·대사 | [NPC Messages](Systems/NPC_Messages.md) | 상태 기반 문구 선택, 지정 대사 토큰, Hover 메시지 수명 |
-| UI | [UI](Systems/UI.md) | popup, hover, gauge, pointer routing |
-| 카메라 조작 | [Camera Control](Systems/Camera_Control.md) | 테스트 씬 방향키 이동, 마우스 휠 직교 줌과 범위 설정 |
-| 문구와 지역화 | [Localization](Systems/Localization.md) | Localize CSV, 안정적인 Enum 생성, SO 조회, Text/TMP 표시 |
-| 생성과 pooling | [Spawning and Pooling](Systems/Spawning_and_Pooling.md) | role 생성, prefab catalog, worker pool |
-| Codex 작업 하네스 | [Harness Architecture](HARNESS_ARCHITECTURE.md) | Skill 기반 오케스트레이션, 결정적 gate, 실행 증거, Reviewer 경계 |
+| 대기능 | 읽는 경우 |
+|---|---|
+| [NPC](Systems/NPC/README.md) | NPC 개체의 공통 수명·판단·실행·표현 |
+| [Settlement](Systems/Settlement/README.md) | 정착지 건설·건축가 작업·주거·시청 모집 |
+| [Economy](Systems/Economy/README.md) | 농사·아이템·공유 자원·물류·상단 거래 |
+| [Combat](Systems/Combat/README.md) | 공통 감지·공격·직군 판단과 성벽 방어 |
+| [World](Systems/World/README.md) | 경로 탐색과 목적지·provider 공통 계약 |
+| [UI](Systems/UI/README.md) | 입력·표시 수명·구체 view·시각 규칙·지역화·카메라 조작 |
 
-판단·action, 농사, 전투, 건설, inventory는 독립 세부 기능이 4개 이상이므로 폴더 `README.md`가 필요한 leaf 문서를 다시 선택한다. 상위 README에는 전체 파일 목록이 없다.
+기능 폴더에서는 각 README의 선택표를 따라 필요한 하위 기능을 반복 선택하여 leaf에 도달한다. 구체 작업의 진입점은 다음 표를 사용한다. Codex 작업 조정·검증 경계는 gameplay 기능 밖의 [Harness Architecture](HARNESS_ARCHITECTURE.md)를 따른다.
 
 ## 3. 작업별 읽기 라우팅
 
 | 작업 | 필수 기능 문서 | 조건부 추가 문서 |
 |---|---|---|
-| queue 처리·공통 stat | NPC Runtime | Action Runtime, Spawning |
-| 불만 원인·누적·태업 | NPC Dissatisfaction | NPC Runtime, Selector and Queue, Action Runtime, NPC Messages |
-| utility·위험·look-ahead | Decision Policy | Interaction, role 문서 |
-| selector·새 action | Selector and Queue, Action Runtime | concrete action leaf |
-| 이동 실행·동적 target·경로 추종 | [Movement](Systems/NPC_Decision_and_Actions/Movement.md) | Navigation(경로 조회 변경), Presentation, Combat Targeting |
-| 노드 그리드·A*·힙·지형 비용·지역 출입구 | [Navigation](Systems/Navigation.md) | Movement(추종 연결), Selector and Queue(요청 변경), Combat/Guard(순찰 연결) |
-| 건설·부지·완공 | Construction | Builder, Inventory and Items, Interaction, Navigation |
-| Farmer·농장·씨앗 | Farming | Decision Policy, Inventory, UI |
-| 밭 클릭·씨앗 소비·심기 | [Farming Runtime](Systems/Farming/Runtime_and_Transactions.md) | Farming Definition and Catalog, Inventory, UI(source 바인딩) |
-| 수확물 운반·창고 입고 | Inventory and Items | Farming Runtime, Selector and Queue, Interaction |
-| Guard 순찰·판단 | Combat/Guard | Targeting, Attack, Decision Policy |
-| Enemy 판단·stat | Combat/Enemy | Targeting, Attack, Spawning |
-| 감지·target lifecycle | Combat/Targeting and Perception | Guard 또는 Enemy |
-| 공격·사거리·damage | Combat/Attack Runtime | 공격 role 문서 |
-| 북쪽 성벽 방어·궁병·도주·시설 피해·복구 | [Defense](Systems/Defense/README.md) | Combat, Navigation, Builder, Construction, Town Hall |
-| 습격 웨이브·이벤트·게임 정지 | [Defense Progression](Systems/Defense/Progression.md) | Defense, Spawning and Pooling, UI |
-| destination·provider | Interaction and Destinations | Decision Policy, 소비 domain |
-| item·warehouse·CSV | Inventory and Items | 생산 또는 interaction 문서 |
-| 골드 잔액·획득·지출 | Player Gold | Merchant Caravan, Town Hall(현재 gameplay 소비·획득 지점) |
-| 상단 방문·타이머·거래 | Merchant Caravan | Player Gold, Inventory and Items, UI |
-| 시청 모집·정착지원금·예약 스폰 | Town Hall | Player Gold, Spawning and Pooling, UI |
-| animation·Flip·도구 | NPC Presentation | 이를 호출하는 action 문서 |
-| 주민 생각·지정 대사 | NPC Messages | NPC Runtime, UI, Localization |
-| popup·hover·gauge·click 감지 | UI | 데이터를 제공하는 domain 문서 |
-| 문구·언어·LocalizeKey·Text/TMP 표시 | Localization | UI, singleton 접근 변경 시 ARCHITECTURE |
-| role·prefab·pool | Spawning and Pooling | 생성되는 role 문서 |
-| Codex Skill·작업 위임·Unity 자동 검증 | Harness Architecture | 변경 대상 gameplay 기능 문서, 필요 시 ARCHITECTURE |
+| queue 처리·공통 stat | [NPC Runtime](Systems/NPC/Runtime/Lifecycle_and_Stats.md) | [Action Runtime](Systems/NPC/Decision_and_Actions/Action_Runtime.md), [Spawning](Systems/NPC/Runtime/Spawning_and_Pooling.md) |
+| 불만 원인·누적·태업 | [NPC Dissatisfaction](Systems/NPC/Runtime/Dissatisfaction.md) | [NPC Runtime](Systems/NPC/Runtime/Lifecycle_and_Stats.md), [Selector and Queue](Systems/NPC/Decision_and_Actions/Selector_and_Queue.md), [Action Runtime](Systems/NPC/Decision_and_Actions/Action_Runtime.md), [NPC Messages](Systems/NPC/Presentation/Messages.md) |
+| utility·위험·look-ahead | [Decision Policy](Systems/NPC/Decision_and_Actions/Decision_Policy.md) | [Interaction](Systems/World/Interaction_and_Destinations.md), role 문서 |
+| selector·새 action | [Selector and Queue](Systems/NPC/Decision_and_Actions/Selector_and_Queue.md), [Action Runtime](Systems/NPC/Decision_and_Actions/Action_Runtime.md) | concrete action leaf |
+| 이동 실행·동적 target·경로 추종 | [Movement](Systems/NPC/Decision_and_Actions/Movement.md) | [Navigation](Systems/World/Navigation.md)(경로 조회 변경), [Presentation](Systems/NPC/Presentation/Adapter.md), [Combat Targeting](Systems/Combat/Targeting_and_Perception.md) |
+| 노드 그리드·A*·힙·지형 비용·지역 출입구 | [Navigation](Systems/World/Navigation.md) | [Movement](Systems/NPC/Decision_and_Actions/Movement.md)(추종 연결), [Selector and Queue](Systems/NPC/Decision_and_Actions/Selector_and_Queue.md)(요청 변경), [Combat/Guard](Systems/Combat/Guard.md)(순찰 연결) |
+| 건설·부지·완공 | [Construction](Systems/Settlement/Construction/README.md) | [Builder](Systems/Settlement/Construction/Builder.md), [Inventory and Items](Systems/Economy/Inventory_and_Items/README.md), [Interaction](Systems/World/Interaction_and_Destinations.md), [Navigation](Systems/World/Navigation.md) |
+| Farmer·농장·씨앗 | [Farming](Systems/Economy/Farming/README.md) | [Decision Policy](Systems/NPC/Decision_and_Actions/Decision_Policy.md), [Inventory](Systems/Economy/Inventory_and_Items/README.md), [UI](Systems/UI/README.md) |
+| 밭 클릭·씨앗 소비·심기 | [Farming Runtime](Systems/Economy/Farming/Runtime_and_Transactions.md) | [Farming Definition and Catalog](Systems/Economy/Farming/Definition_and_Catalog.md), [Inventory](Systems/Economy/Inventory_and_Items/README.md), [UI](Systems/UI/README.md)(source 바인딩) |
+| 수확물 운반·창고 입고 | [Inventory and Items](Systems/Economy/Inventory_and_Items/README.md) | [Farming Runtime](Systems/Economy/Farming/Runtime_and_Transactions.md), [Selector and Queue](Systems/NPC/Decision_and_Actions/Selector_and_Queue.md), [Interaction](Systems/World/Interaction_and_Destinations.md) |
+| Guard 순찰·판단 | [Combat/Guard](Systems/Combat/Guard.md) | [Targeting](Systems/Combat/Targeting_and_Perception.md), [Attack](Systems/Combat/Attack_Runtime.md), [Decision Policy](Systems/NPC/Decision_and_Actions/Decision_Policy.md) |
+| Enemy 판단·stat | [Combat/Enemy](Systems/Combat/Enemy.md) | [Targeting](Systems/Combat/Targeting_and_Perception.md), [Attack](Systems/Combat/Attack_Runtime.md), [Spawning](Systems/NPC/Runtime/Spawning_and_Pooling.md) |
+| 감지·target lifecycle | [Combat/Targeting and Perception](Systems/Combat/Targeting_and_Perception.md) | [Guard](Systems/Combat/Guard.md) 또는 [Enemy](Systems/Combat/Enemy.md) |
+| 공격·사거리·damage | [Combat/Attack Runtime](Systems/Combat/Attack_Runtime.md) | 공격 role 문서 |
+| 북쪽 성벽 방어·궁병·도주·시설 피해·복구 | [Defense](Systems/Combat/Defense/README.md) | [Combat](Systems/Combat/README.md), [Navigation](Systems/World/Navigation.md), [Builder](Systems/Settlement/Construction/Builder.md), [Construction](Systems/Settlement/Construction/README.md), [Town Hall](Systems/Settlement/Town_Hall.md) |
+| 습격 웨이브·이벤트·게임 정지 | [Defense Progression](Systems/Combat/Defense/Progression.md) | Defense, [Spawning and Pooling](Systems/NPC/Runtime/Spawning_and_Pooling.md), [UI](Systems/UI/README.md) |
+| destination·provider | [Interaction and Destinations](Systems/World/Interaction_and_Destinations.md) | [Decision Policy](Systems/NPC/Decision_and_Actions/Decision_Policy.md), 소비 domain |
+| item·warehouse·CSV | [Inventory and Items](Systems/Economy/Inventory_and_Items/README.md) | 생산 또는 interaction 문서 |
+| 골드 잔액·획득·지출 | [Player Gold](Systems/Economy/Inventory_and_Items/Shared_Resources.md) | [Merchant Caravan](Systems/Economy/Merchant_Caravan.md), [Town Hall](Systems/Settlement/Town_Hall.md)(현재 gameplay 소비·획득 지점) |
+| 상단 방문·타이머·거래 | [Merchant Caravan](Systems/Economy/Merchant_Caravan.md) | [Player Gold](Systems/Economy/Inventory_and_Items/Shared_Resources.md), [Inventory and Items](Systems/Economy/Inventory_and_Items/README.md), [UI](Systems/UI/README.md) |
+| 시청 모집·정착지원금·예약 스폰 | [Town Hall](Systems/Settlement/Town_Hall.md) | [Player Gold](Systems/Economy/Inventory_and_Items/Shared_Resources.md), [Spawning and Pooling](Systems/NPC/Runtime/Spawning_and_Pooling.md), [UI](Systems/UI/README.md) |
+| animation·Flip·도구 | [NPC Presentation](Systems/NPC/Presentation/Adapter.md) | 이를 호출하는 action 문서 |
+| 주민 생각·지정 대사 | [NPC Messages](Systems/NPC/Presentation/Messages.md) | [NPC Runtime](Systems/NPC/Runtime/Lifecycle_and_Stats.md), [UI](Systems/UI/README.md), [Localization](Systems/UI/Localization.md) |
+| popup·hover·gauge·click 감지 | [UI](Systems/UI/README.md) | 데이터를 제공하는 domain 문서 |
+| 문구·언어·LocalizeKey·Text/TMP 표시 | [Localization](Systems/UI/Localization.md) | [UI](Systems/UI/README.md), singleton 접근 변경 시 ARCHITECTURE |
+| role·prefab·pool | [Spawning and Pooling](Systems/NPC/Runtime/Spawning_and_Pooling.md) | 생성되는 role 문서 |
+| Codex Skill·작업 위임·Unity 자동 검증 | [Harness Architecture](HARNESS_ARCHITECTURE.md) | 변경 대상 gameplay 기능 문서, 필요 시 ARCHITECTURE |
 
 상위 게임 규칙을 설계하거나 변경하면 먼저 `Game_Plan.md`와 `SPEC.md`를 읽는다. 여러 기능의 책임이나 의존 방향을 바꾸면 `ARCHITECTURE.md`, C#을 수정하면 `CodeConvention.md`를 추가로 읽는다.
 
@@ -136,35 +120,32 @@ UI input -> IUIService <- domain IHoverInfoSource
 | 새 role | selector, 필요한 stat/definition, `NPCManager` creation entry |
 | 새 destination | `BuildingType`, scene `DestinationDB` row, 공통 provider registration |
 | 새 facility runtime state | 해당 domain의 scene component |
-| 새 item 운반·입고 흐름 | `ICarriedInventory` 소비 provider, `InteractionRequest.Cargo`, 실행 action, [Inventory and Items](Systems/Inventory_and_Items/README.md) |
-| 새 경로 지형·지역·출입구 | [Navigation](Systems/Navigation.md)의 profile과 scene 조립; 이동 실행 변경은 [Movement](Systems/NPC_Decision_and_Actions/Movement.md) |
+| 새 item 운반·입고 흐름 | `ICarriedInventory` 소비 provider, `InteractionRequest.Cargo`, 실행 action, [Inventory and Items](Systems/Economy/Inventory_and_Items/README.md) |
+| 새 경로 지형·지역·출입구 | [Navigation](Systems/World/Navigation.md)의 profile과 scene 조립; 이동 실행 변경은 [Movement](Systems/NPC/Decision_and_Actions/Movement.md) |
 | 새 gameplay 난수 | `IRandomSource`를 주입받는 domain 계산 |
 | 새 popup·hover | category enum, base view 구현, `UIManager` registry |
 | 새 prefab 형태 | `NPCPrefabType`, prefab catalog, pool/spawn 조립 |
-| 새 crop | `FarmProductionDefinition` asset, `CropCatalog` 등록, 결과 item CSV row, [Farming](Systems/Farming/README.md) |
-| 새 골드 획득·지출 지점 | `ResourceManager.TryExchange`/`TrySpend` 호출자, [Player Gold](Systems/Player_Gold.md) |
+| 새 crop | `FarmProductionDefinition` asset, `CropCatalog` 등록, 결과 item CSV row, [Farming](Systems/Economy/Farming/README.md) |
+| 새 골드 획득·지출 지점 | `ResourceManager.TryExchange`/`TrySpend` 호출자, [Player Gold](Systems/Economy/Inventory_and_Items/Shared_Resources.md) |
 | 새 골드 소비 domain(업그레이드 등) | 그 domain 전용의 새 작은 provider가 `ResourceManager`를 직접 참조. 기존 provider(예: `MerchantTradeSite`, `TownHallRecruitment`)를 거치지 않는다 |
-| 새 world click 대상 | `IClickPopupSource` 구현, `Clickable` 레이어 collider, [UI](Systems/UI.md) |
+| 새 world click 대상 | `IClickPopupSource` 구현, `Clickable` 레이어 collider, [UI](Systems/UI/README.md) |
 
 구체 절차와 불변 규칙은 표의 대상 기능 문서를 따른다.
 
 ## 7. 기능 문서 분할 규칙
 
-자체 실행 흐름, 별도 변경 진입점, 독립 변경 가능성을 모두 가진 세부 기능이 한 문서에 4개 이상이면 폴더형 인덱스로 분할한다. 파일 수만으로 나누지 않는다.
+계층 배치·분할 기준은 [Systems 문서 안내](Systems/README.md#계층-분할-기준)가 소유한다. `Systems` 루트에는 안내 README와 대기능 폴더만 두고, 각 기능 폴더 아래에는 하위 기능 폴더 또는 leaf를 둔다. 하위 기능은 같은 규칙으로 재귀 분할하며 고정 깊이를 두지 않는다.
 
-```text
-Systems/Feature/
-  README.md       선택표, 전체 흐름, leaf 간 의존성
-  SubFeature.md   상세 흐름, 주 소유 파일, 최소 확인 범위
-```
+한 leaf의 독립 세부 기능이 4개 이상이면 폴더형 인덱스와 하위 문서로 분할한다. 상위 책임을 묶는 폴더에는 이 최소 개수를 적용하지 않는다. 각 README는 바로 아래 기능의 선택과 관계를 안내하고, leaf는 상세 흐름·주 소유 파일·최소 확인 범위를 소유한다.
 
-모든 production C#은 하나의 leaf 또는 단일 기능 문서에서만 주 소유한다. 다른 문서는 링크로 연결한다.
+모든 production C#은 하나의 leaf에서만 주 소유한다. 다른 문서는 링크로 연결한다.
 
 ## 8. 문서 갱신 규칙
 
 - 파일 추가·이동·삭제: 주 소유 기능 문서의 파일 표를 갱신한다.
 - 책임·흐름·Unity 배선 변경: 해당 leaf 문서를 갱신한다.
-- 세부 기능이 4개에 도달: 기능 인덱스와 leaf 분할을 같은 변경에서 수행한다.
+- 한 leaf의 독립 세부 기능이 4개에 도달: 기능 인덱스와 하위 문서로 분할한다. 각 하위 기능에도 같은 기준을 적용한다.
+- 기능 폴더 추가·문서 이동·분할: 부모 README의 선택표와 활성 문서·지침의 링크, 이 문서의 작업별 진입 경로를 함께 갱신한다.
 - 여러 시스템의 의존 방향 변경: `ARCHITECTURE.md`도 갱신한다.
 - 보편적 C# 작성 규칙 변경: `CodeConvention.md`도 갱신한다.
 - 문서와 코드가 다르면 코드를 현재 사실로 보고 같은 작업에서 문서를 교정한다.

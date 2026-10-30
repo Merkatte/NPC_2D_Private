@@ -37,7 +37,7 @@ Enemy는 hunger·thirst·fatigue나 `DestinationDecider`, `DestinationDB`를 사
 | target 선택·추적 | `EnemyActionSelector.cs`, [Targeting and Perception](Targeting_and_Perception.md) |
 | melee/ranged 거리 | `EnemyActionSelector.cs`, `EnemyStat.cs`, [Attack Runtime](Attack_Runtime.md) |
 | health·damage source | `CombatTarget.cs`, `EnemyStat.cs`, `IHealthState.cs`, [Targeting and Perception](Targeting_and_Perception.md) |
-| Enemy 생성·prefab | `EnemyStatDefinition.cs`, [Spawning and Pooling](../Spawning_and_Pooling.md), Enemy prefab |
+| Enemy 생성·prefab | `EnemyStatDefinition.cs`, [Spawning and Pooling](../NPC/Runtime/Spawning_and_Pooling.md), Enemy prefab |
 
 ## 불변 규칙
 
@@ -64,8 +64,8 @@ Enemy는 hunger·thirst·fatigue나 `DestinationDecider`, `DestinationDB`를 사
 
 - [Targeting and Perception](Targeting_and_Perception.md)
 - [Attack Runtime](Attack_Runtime.md)
-- [Spawning and Pooling](../Spawning_and_Pooling.md)
-- [NPC Presentation](../NPC_Presentation.md)
+- [Spawning and Pooling](../NPC/Runtime/Spawning_and_Pooling.md)
+- [NPC Presentation](../NPC/Presentation/Adapter.md)
 
 ## 문서 갱신 조건
 

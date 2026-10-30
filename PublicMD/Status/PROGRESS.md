@@ -1,4 +1,12 @@
-﻿# 적 교전 상대 유지·성벽 타겟 왕복 방지 — 2026-10-21
+﻿# Systems 기능 문서 재귀 계층 재배치 — 2026-10-30
+
+- 범위: Systems 루트는 README와 NPC/Settlement/Economy/Combat/World/UI 여섯 대기능 폴더로 정리했다. 기존 문서 44개를 책임별 경로로 옮기고 NPC의 Runtime/Decision_and_Actions/Presentation, Combat/Defense 등 하위 계층을 연결했다. 폴더별 README는 바로 아래 기능만 안내하며 현재 구성은 인덱스 17개·leaf 49개다.
+- 기존 UI.md는 Framework의 routing/input/hover/popup, Views의 씨앗 선택/골드 HUD, 공통 Presentation으로 분할했다. 기존 상세 계약·배선·미검증 기록을 보존했다. Inventory_and_Items와 Player_Gold 이동 안내는 실제 인덱스·Shared_Resources로 통합하고 골드 안내의 고유 내용을 보존했다.
+- ProjectStructure의 대기능 지도와 작업별 링크, 활성 Systems·기획·계획·루트 README의 이동 경로와 UI 제목 앵커를 갱신했다. Archive와 기존 Status 기록의 당시 경로는 보존했다. 코드·Unity 에셋은 변경하지 않았다. CropCatalog.cs와 TestTownHallRecruitProbe.cs의 코드 주석 두 곳에 있는 이전 문서 경로는 코드 수정 범위 밖으로 유지했다.
+- 확인: 활성 Markdown의 상대 링크·제목 앵커, 모든 폴더의 README와 직속 하위 문서 안내, 이동 전후 상세 내용·C# 경로 보존, 명시된 주 소유 스크립트 누락·중복과 git diff --check를 확인했다. 기존 CombatLib 중복 소유는 실제 파일을 읽어 Targeting_and_Perception으로 단일화하고 Attack_Runtime은 소비 링크로 바꿨다. 루트의 읽기 전용 확인이며 별도 코드 리뷰·Unity 컴파일·Play/화면 검증은 문서 작업에 실행하지 않았다.
+- 검사 결과는 이 항목과 세션 도구 출력에 기록했다. 새 검사 도구·코드·하네스는 저장소에 추가하지 않았고 기존 .codex/skills.zip·PublicMD.zip은 보존했다. 커밋·푸시하지 않았다.
+
+# 적 교전 상대 유지·성벽 타겟 왕복 방지 — 2026-10-21
 
 - 사용자 승인에 따라 외부 검객과 교전을 시작한 적은 현재 상대를 유지한다. 더 가까운 검객이나 적/상대의 성벽 안팎 경계 변경만으로 동일 대상 Move/DefenseAttack을 재시작하지 않는다. 기존 획득 거리 6, 별도 해제 거리 임시 기본 9(획득보다 최소 0.1 크게 보정)를 사용한다. 전투 불능·소실·target 불가·거리 초과·사거리 밖 접근 불가 시 해제하여 현재 위치에 맞는 기존 내부 대상/성벽 commitment/돌파 판단을 재개한다. 획득과 유지가 같은 접근 조건을 사용한다.
 - 변경: DefenseResponsePolicy, DefenseActor, DefenseBattlefield, DefenseCombatSettings 및 주 소유 Defense leaf, Game_Plan/SPEC. 개체별 교전 상태는 actor에서 Initialize/Unbind/Downed 때 정리하며 공유 tuning은 settings가 소유한다. 기존 아군 추격·공통 MoveAction/follower·공격 타이밍은 변경하지 않았다. 씬·프리팹·meta 수정 없이 기존 설정 연결과 신규 필드 기본값/fallback을 사용한다.

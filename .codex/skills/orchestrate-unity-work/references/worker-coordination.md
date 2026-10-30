@@ -1,155 +1,69 @@
 # Worker Coordination
 
-Read this reference before delegating implementation or investigation to any worker.
+This reference owns assignment/report contents, role boundaries and shared-worktree scheduling. Read it before delegation. Use the ordinary message contracts here; serialized legacy contracts are conditional under [extended-workflows.md](extended-workflows.md).
 
-## Selection
+## Roles and Context
 
-Assign every required implementation role to a separate worker, including small changes and existing authoring-tool execution. The root coordinates, verifies, maintains workflow/status documents and accepts results; it does not produce code, art or wiring. Only an explicit user exception changes that boundary. Delegation failure does not authorize root implementation.
-
-Use only needed roles. Run independent code/art tasks concurrently. Assembly may inspect and prepare concurrently, but waits for stable code/art and successful compilation before writes/imports. A one-role request needs one role worker, not all three.
-
-Read-only investigations may overlap in what they inspect. Parallel writers must have non-overlapping writable ownership known before they start. When ownership cannot be made disjoint, run the work sequentially.
-
-Use native collaboration subagents: create one subagent per assignment with `spawn_agent`, communicate with `send_message` or `followup_task`, and collect lifecycle results with `wait_agent`; use `interrupt_agent` only when work must be stopped. The root retains orchestration. Do not require tmux, pane layouts, terminal keystrokes, or pane output scraping.
-
-## Context and Role Isolation
-
-- Start workers and reviewers with `fork_turns="none"`; do not copy the whole conversation or other workers' reasoning.
-- Supply relevant user requirements/approvals, role Skill, objective, required documents/reference assets, exact paths, exclusions and evidence requirements. Workers may read directly relevant dependencies under project routing.
-- Maintain a small handoff contract: class/interface/serialized field names, asset paths, import requirements, ownership and dependency readiness. The root transmits facts and artifacts between roles.
-- Reuse an agent only for the same role and related scope. A different role/unrelated scope needs a fresh context. A candidate worker never becomes its independent reviewer.
-- Shared worktrees are not filesystem isolation. Verify actual diffs and preserve prior dirty content; hashes are only required by a selected protocol, not ordinary work. A role prompt is not a security sandbox.
+Assign every required implementation role to a separate worker, including small edits and existing authoring-tool execution. Root coordinates, checks evidence and maintains shared/status/workflow documents; it does not implement code, graphics or wiring. Delegation failure requires same-role reassignment or reporting the missing capability, not root implementation. Only an explicit user exception changes this boundary.
 
 | Role | Owns | Reports to root instead of editing |
 |---|---|---|
-| Code | Assigned C#, including Editor/eval/assembly helpers; assigned new script meta and code-owner docs | Scenes, prefabs, SO assets, importer changes and graphics |
-| Graphics | Assigned raster files, import specification and art evidence | C#, Unity import/meta and scene wiring |
-| Assembly | Assigned scene/prefab/SO/import changes and readback through existing tools or supplied helpers | C# creation/modification, including temporary helper/eval logic; source image generation |
-| Reviewer | Read-only current candidate review and findings | Every implementation fix |
-| Root | Scope/contracts, scheduling, checks/evidence, shared/status/workflow docs and final report | Code/art/wiring implementation and remediation |
+| Code — author-unity-code | Assigned C#, including authorized helpers outside Assets; assigned new script meta and code-owner docs | Scenes, prefabs, SO assets, import changes and graphics |
+| Graphics — create-project-sprites | Assigned raster files, import specification and art evidence | C#, Unity import/meta and wiring |
+| Assembly — assemble-unity-objects | Assigned scene/prefab/SO/import operations and readback through permitted YAML, existing tools or supplied helpers | C# authoring/modification, including temporary helper logic; source image generation |
+| Reviewer — reviewing-unity-candidate | Read-only candidate assessment | All implementation fixes |
+| Root | Scope/contracts, scheduling, checks/evidence, shared/status/workflow documents, final decision | Code/art/wiring implementation and remediation |
 
-Passing arguments to an existing helper is execution. Authoring new C# logic, even
-outside Assets, is code work. A code worker must not author the gate accepting its
-own candidate; accepting-gate changes require their own independent scope/evidence.
-Do not build a feature-specific validator just to produce a completion record.
+Passing arguments to an existing helper is execution; authoring new C# logic is code work. These roles do not authorize verification-tool development or unrestricted YAML changes. Apply SceneWork.md's tool, serialization and verification limits.
 
-## WorkerAssignment
+Use native collaboration subagents, not terminal panes, scraping or a worker-managed control plane. Start each worker/reviewer with `fork_turns="none"`. Supply only relevant requirements/approvals, role skill, documents, exact paths, input artifacts and evidence requirements. Workers may inspect directly relevant dependencies under project routing.
 
-For the ordinary-work route in `Tools/NpcHarness/SceneWork.md`, these are the fields
-of a concise assignment, not a requirement to serialize WorkerAssignment v1. The
-legacy v1 schema applies only to explicitly selected legacy role-policy runs.
-`acceptanceSlice` can be the shared common checks plus the requested changed values;
-it does not require a new functional gate. Root verifies actual evidence and scope.
+Reuse an agent only for the same role and related scope. A candidate worker never becomes its independent reviewer; a reviewer never becomes a remediation worker. Root transmits agreed class/interface/serialized-field names, asset paths, import requirements and readiness between roles, not another worker's reasoning.
 
-Give each worker a bounded assignment containing:
+## WorkerAssignment — Ordinary Work
 
-- `assignmentId`: stable identifier for reporting and ownership;
-- `roleSkill`: the project worker Skill to follow when one matches the slice;
-- `objective`: one independently completable outcome;
-- `requiredContext`: project documents and candidate inputs to inspect;
-- `writablePaths`: exact files or narrow directories exclusively owned by this worker;
-- `forbiddenPaths`: accepting gates, fixtures, unrelated user changes, and other workers' ownership;
-- `artifactPaths`: separate ignored or temporary paths for Jobs, logs, reports, generated variants, and build evidence;
-- `allowedTools` and `forbiddenOperations`: explicit capability boundary for Tool-mediated or high-risk work;
-- `baseline`: starting commit plus an explicit pre-existing dirty-path list or hashes, including an explicit empty list when none overlap;
-- `acceptanceSlice`: observable contribution expected from this workstream;
-- `preliminaryChecks`: checks the worker may run before reporting;
-- `reportRequirements`: changed files, checks, evidence, unresolved items, and deviations.
+Give a concise message containing the following information; no serialized v1 file is required:
 
-An assignment grants no permission beyond its stated paths and the user's existing authority. `artifactPaths` do not grant source or candidate mutation rights. A worker that discovers a required out-of-scope change must stop and report it instead of editing.
+- identity: `assignmentId` and matching `roleSkill`;
+- outcome: `objective` and observable `acceptanceSlice`;
+- context: `requiredContext`, relevant approvals and stable handoff contracts/dependency readiness;
+- ownership: exact files or narrow `writablePaths`, `forbiddenPaths` and starting `baseline` commit/dirty paths (explicitly empty when none overlap);
+- execution: `allowedTools`, `forbiddenOperations` and separate temporary/ignored `artifactPaths` for logs or outputs;
+- evidence: `preliminaryChecks`, any reusable current results and `reportRequirements` below.
 
-Use `$author-unity-code` for C#, `$create-project-sprites` for raster art, and `$assemble-unity-objects` for ordinary bounded YAML/Editor API or selected legacy Tool work. An assignment narrows its role; it cannot grant another role's files or operations. Add/reassign the required role instead.
+Acceptance may consist of common checks and requested changed values; it does not require a new functional gate. An assignment narrows a role and grants no additional user authority. Artifact paths grant no source-edit rights. Required out-of-scope changes are reported to root; add/reassign the appropriate role rather than letting a worker cross roles.
 
-## WorkerReport
+Tell workers the remaining task-wide correction budget. Do not grant independent retry allowances per worker; root accounts for corrections under [remediation-loop.md](remediation-loop.md).
 
-For ordinary work, return one concise collaboration message with the fields below;
-link existing raw logs instead of creating duplicate report/evidence files. Follow
-SceneWork.md verification limits; do not assign a verification-code worker without
-an explicit user request for verification development.
+## WorkerReport — Ordinary Work
 
-Require each worker to return:
+Return one concise collaboration message; link raw logs rather than writing duplicate report files:
 
-- `assignmentId` and `status`: `Candidate`, `Blocked`, or `Failed`;
-- `reasonCode`: `None` for a candidate or a stable role-specific reason for blocked/failed work;
-- `roleSkill`: the role contract actually followed;
-- `changedFiles`: only files it intentionally changed;
-- `checksRun`: command or gate name with actual outcome;
-- `evidence`: logs, result paths, and relevant observations;
-- `unresolved`: remaining work, uncertainty, or external dependency;
-- `deviations`: unexpected worktree changes or assignment boundary issues.
+- `assignmentId`, `roleSkill`, `status` (Candidate, Blocked or Failed) and `reasonCode` (None for Candidate, otherwise the concrete blocker/failure);
+- `changedFiles` intentionally edited;
+- `checksRun` with actual commands/outcomes, and `evidence` with logs, relevant inputs/freshness and observations;
+- `unresolved` work/uncertainty and `deviations` from assigned scope or expected worktree state.
 
-For code, `checksRun`/`evidence` must contain five categories: actual compile
-command/result/log; conventions (rule/document and code location); ownership (class
-responsibility and Systems leaf); dependencies (changed calls/references and allowed
-direction); and scope (actual diff, prior edits and diff check). Include relevant
-forbidden-reference/serialization searches. One short evidence row per category is
-enough. "Read CodeConvention" or "build passed" does not establish architecture
-compliance. Missing evidence is unverified. Independent code review is still required.
+Code evidence covers five categories: actual compile command/result/log; conventions with rule/code locations; ownership with class responsibility and owning Systems leaf; changed dependencies and permitted direction; actual diff/scope with prior edits and diff check. Include relevant forbidden-reference/serialization inspection. A short row per category is enough; "read the rules" or "build passed" alone does not prove architecture compliance.
 
-`Candidate` means the worker submitted its slice for root inspection. It never means `Accepted`, even if every worker reports `Candidate` or a worker-local test passes.
+Candidate submits a slice for root inspection, not acceptance. A successful worker check may be reused under SKILL.md's freshness/coverage rules; it is neither automatically discarded nor accepted from the report alone.
 
-## Writable Ownership
+## Ownership and Scheduling
 
-Canonicalize paths and reject overlapping file or directory ownership before spawning parallel writers. Treat nested paths as overlap.
+Create only needed workers. Run independent code/art work concurrently. Assembly can inspect/prepare concurrently, but waits for stable input code/art and successful compilation before dependent writes/imports.
 
-Treat coupled Unity data as one ownership unit:
+Canonicalize paths before parallel writes, including nested-directory overlaps. Shared worktrees and role prompts are not filesystem isolation. Treat a serialized asset and its meta, every edit within one scene/prefab/SO, and a new script with its meta as coupled ownership units. Assign shared settings, package, assembly-definition, registry or manifest files to one owner.
 
-- a scene, prefab, ScriptableObject, material, animation asset, or other serialized asset and its `.meta` file;
-- all changes within the same `.unity`, prefab, or serialized asset, even when workers target different GameObjects or fields;
-- a script and a newly generated companion `.meta` file;
-- shared project, package, assembly definition, registry, manifest, or settings files.
+Sequence Unity mutations, imports, compilation-triggering operations and saves on the same Editor. If live auto-import prevents safe parallel writes, assign staging paths outside Assets and track target paths. Source promotion stays with its authoring role; assembly owns import/serialized changes. Do not change auto-refresh settings or save user state to force concurrency. Preserve existing scene structure and SceneWork.md's unsaved-state safeguards.
 
-Do not run concurrent Unity Editor mutations, imports, scene saves, compilation-triggering asset operations, or Play Mode sessions in the same project. Workers may prepare disjoint text changes, but the root sequences Unity import, serialization, and final verification.
+## Reconciliation and Partial Failure
 
-If an open Editor would auto-import parallel writes, prepare code/art at assigned
-staging paths outside Assets until promotion/import is scheduled. Source promotion
-remains with its authoring role; assembly owns import/serialized changes. Track
-staging and target paths. Do not change auto-refresh settings or save user state to
-force concurrency. Freeze shared field names and asset paths before handoff.
+1. Root records baseline and assignment-to-path ownership before workers start.
+2. While workers run, root does not edit or reassign their writable paths.
+3. After required reports, inspect actual status/diff including relevant untracked files and serialized state against baseline, ownership and reports.
+4. Flag overlaps, unreported or unauthorized changes and partial output from blocked/failed workers.
+5. On conflict, stop new writes and final verification. Preserve all prior/unrelated work, invalidate affected reports and assign one same-role owner at a time to reconcile. Seek user direction only if resolution requires broader authority or risks unrelated work.
 
-Assembly may start read-only preparation early; writes wait for its dependencies.
-A graphics worker returns an import specification, not a wired scene.
+Never reset/discard a conflicted worktree automatically. A required Blocked/Failed workstream makes the combined candidate incomplete; preserve successful slices and do not silently remove the failed requirement. Correct within authorized scope and the shared budget, or report the partial diff and blocker.
 
-## Shared Worktree Protocol
-
-All collaboration workers share the same worktree. Parallel delegation is not isolation.
-
-1. Before spawning, the root records the repository baseline and an assignment-to-path ownership map.
-2. While workers run, the root does not edit their owned paths or assign them elsewhere.
-3. After all required reports arrive, the root reads the actual status and diff rather than concatenating reports or trusting claimed file lists.
-4. Compare actual paths against the baseline and ownership map. Flag any path reported by multiple workers, changed outside the ownership union, omitted from reports, or coupled to another worker's Unity asset.
-5. On conflict, stop new writes and do not run the final gate. Preserve unrelated and pre-existing work. Invalidate affected reports and assign one same-role owner at a time to reconcile. The root does not patch worker files. Request user direction only when reconciliation needs broader authority.
-
-Do not automatically reset, discard, or overwrite a conflicted shared worktree.
-
-## Partial Failure
-
-A `Blocked` or `Failed` report prevents the combined candidate from reaching final verification when its workstream is required. Successful slices remain unaccepted candidate material; do not discard them automatically and do not silently remove the failed requirement.
-
-Inspect changes left by the unsuccessful worker. If the original scope and remediation budget permit a correction, assign one sequential owner and follow the bounded remediation rules. Otherwise stop with the partial diff, evidence, and unresolved assignment clearly reported.
-
-## Root Aggregation and Acceptance
-
-For ordinary work, the root uses the common checks and evidence record from
-`Tools/NpcHarness/SceneWork.md` after reconciliation. Steps 5-6 below describe the
-selected gate workflow only; never invent a GateResult or require a new functional
-profile solely to serialize an ordinary worker report.
-
-The root owns aggregation:
-
-1. verify actual changes against every assignment and the original scope;
-2. resolve all ownership conflicts and required partial failures;
-3. inspect the combined diff and Unity serialized state;
-4. form one current candidate;
-5. run one root-selected deterministic acceptance profile over the complete candidate;
-6. accept only its valid `GateResult`.
-
-Worker checks are preliminary evidence. Per-worker success, report consensus, or parallel speed does not replace the final deterministic gate.
-
-After selected checks, require independent review for every C# change and other
-required-risk scope. Wait for the actual result and inspect conventions/ownership/
-dependencies evidence. Route fixes to the original role. A launch is not completion.
-No implementation/remediation worker may be the candidate's independent reviewer.
-Wait for a free concurrency slot instead of reusing a worker as reviewer. Ordinary
-review uses common evidence; selected GateResult/review-evidence contracts remain
-unchanged. SceneWork.md's automatic play/screen exclusions still apply.
+After reconciliation, follow SKILL.md's common checks and required independent review. For an explicitly selected strict workflow, also follow extended-workflows.md; worker success does not replace its required root-owned acceptance.

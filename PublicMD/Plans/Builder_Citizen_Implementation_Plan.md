@@ -21,7 +21,7 @@
 5. 시청의 기존 모집 transaction과 NPCManager의 selector/stat entry를 연결한다. UI는 설정된 카드 목록을 사용한다.
 6. `$create-project-sprites`로 만든 망치 후보를 확인하고, Unity Editor API로 import·SO·prefab·FarmerTest를 조립한다.
 
-주 소유 문서: [Builder](../Systems/Builder.md). 공통 책임은 Navigation, NPC Presentation, Town Hall, Spawning and Pooling 문서를 따른다.
+주 소유 문서: [Builder](../Systems/Settlement/Construction/Builder.md). 공통 책임은 Navigation, NPC Presentation, Town Hall, Spawning and Pooling 문서를 따른다.
 
 ## 적용과 검증
 

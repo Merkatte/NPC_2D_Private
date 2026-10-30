@@ -1,0 +1,119 @@
+# Town Hall
+
+## 기능 목적과 책임 경계
+
+하나의 TownHallRecruitment가 직군별 후보, 쿨다운, 예약과 낙하 코루틴을 독립적으로 소유한다. Farmer는 60초/100골드, Guard는 90초/100골드, Builder는 60초/100골드이며 세 후보 모두 초기 준비 상태로 구성된다. 골드 잔액은 [Player Gold](../Economy/Inventory_and_Items/Shared_Resources.md), worker 예약 API는 [Spawning and Pooling](../NPC/Runtime/Spawning_and_Pooling.md)이 소유한다.
+
+TownHallVisual은 클릭 표면과 월드 아이콘만 소유한다. TownHallPopup은 탭 선택과 모집 의도를 전달하고 TownHallRecruitCard는 읽기 전용 상태를 표시한다. UI가 타이머나 골드를 직접 변경하지 않는다.
+
+## Defense 궁수 모집
+
+Defense 전용 scene/popup은 Archer 카드를 추가한다. NPCManager의 빈 궁수 자리 확인과 실제 lease 예약은 골드 지출보다 앞서고 실패는 NoArcherStation으로 표시한다. 기존 enum 값·원본 세 직군 카드·공용 prefab은 유지한다. pause 중 TryDispatchCandidate는 NotReady이고 모집 시간도 정지한다. 자리 수명은 [Defense response](../Combat/Defense/Battlefield_and_Response.md), 씬 조립은 [Defense progression](../Combat/Defense/Progression.md)이 소유한다.
+
+## 현재 실행 흐름
+
+1. Awake가 직군별 설정을 검증하고 CandidateReady, 남은 시간 0으로 runtime 상태를 생성한다. 중복/잘못된 설정은 한 번 오류를 출력하고 모집을 거부한다.
+2. TryDispatchCandidate(NPCType)가 해당 직군의 준비 상태와 활성 상태를 확인한다.
+3. NPCManager.TryReserveWorker → ResourceManager.TrySpend 순으로 처리한다. 예약 실패는 골드·후보 무변경, 골드 부족은 예약 취소 후 후보 보존이다.
+4. 성공한 직군만 Recruiting으로 전환하고 전체 쿨다운 값을 채운다. 낙하 및 기립 연출 중에는 해당 직군의 IsDispatching이 타이머를 막는다. 다른 직군은 계속 모집·카운트다운할 수 있다.
+5. 기존 SpawnLanding clip의 visual 하강량을 제외한 나머지만 root에 적용한다. 기립까지 기다린 뒤 CommitReservation을 호출한다. 성공 후에만 해당 직군의 카운트다운을 시작한다.
+6. 컴포넌트 또는 GameObject 비활성화 시 각 코루틴을 명시적으로 중지하고 남은 유료 예약은 착지점에서 커밋한다. 커밋 실패는 예약 취소·지원금 환급·후보 복구로 처리한다. 씬 teardown 중에는 worker를 다시 초기화하지 않는다.
+7. 하나라도 CandidateReady이면 준비 완료 월드 아이콘, 모두 대기 중이면 모집 중 아이콘이다.
+
+TryGetRecruitment(NPCType, out RecruitmentStatus)는 값 복사만 반환한다. 요청되지 않은 직군이나 미구성 상태는 false다. 기존 무인자 모집 API와 강제 상태 변경 API는 없다.
+
+## 주 소유 스크립트
+
+| 경로 | 책임 |
+|---|---|
+| `Assets/Scripts/Actor/TownHallRecruitment.cs` | 직군별 설정·상태·타이머·예약·지원금 transaction·낙하 lifecycle |
+| `Assets/Data/Struct/RecruitmentStatus.cs` | UI가 읽는 직군·phase·남은 시간·비용·낙하 상태 값 |
+| `Assets/Scripts/System/Actor/TownHallVisual.cs` | 클릭 표면과 집계 phase 아이콘 |
+| `Assets/Scripts/UI/TownHallPopup.cs` | 탭·직군 선택, 상태 조회와 모집 의도 전달 |
+| `Assets/Scripts/UI/TownHallRecruitCard.cs` | 선택된 직군의 공유 상세·비용·상태·시간·모집 버튼 표시 |
+| `Assets/Scripts/UI/TownHallRoleView.cs` | 명시된 직군 목록의 표시와 선택 의도 |
+| `Assets/Scripts/Enum/RecruitPhase.cs` | Recruiting/CandidateReady, 기존 직렬화 값 유지 |
+| `Assets/Scripts/Enum/RecruitResult.cs` | Success/NotReady/NotEnoughGold/SpawnUnavailable/NoArcherStation |
+
+WorkerReservation의 계약과 소유는 [Spawning and Pooling](../NPC/Runtime/Spawning_and_Pooling.md)을 따른다.
+
+## 변경 유형별 최소 확인 범위
+
+| 변경 | 최소 확인 범위 |
+|---|---|
+| 후보·쿨다운·직군 설정 | TownHallRecruitment.cs, TownHall.prefab |
+| 예약·지출·비활성화 | TownHallRecruitment.cs, NPCManager 예약 API, Player Gold, Spawning and Pooling |
+| 탭·카드·버튼 | TownHallPopup.cs, TownHallRecruitCard.cs, TownHallRoleView.cs, WarmPixelTownHallPopup.prefab, UI |
+| 시청 클릭·월드 아이콘 | TownHallVisual.cs, PointerClickRouter, FarmerTest.unity |
+
+## 불변 규칙
+
+- 하나의 시청 컴포넌트가 모든 직군을 소유하며 runtime 상태와 Coroutine을 직군 간 공유하지 않는다.
+- 예약 → 지출 → 낙하 → 커밋 순서를 지킨다. 성공한 직군만 쿨다운을 재설정하며 타 직군의 시간을 멈추지 않는다.
+- 낙하 중 연타와 비활성 상태의 모집은 NotReady다. 중복 커밋은 NPCManager의 기존 예약 집합이 거부한다.
+- 초기 모집은 즉시 가능하다. 팝업 재개방·탭 전환·모집 성공은 모집 도메인을 초기화하지 않는다.
+- 모집 성공 후 팝업은 유지된다. 기본 탭은 모집이며 마을 상태 탭에는 정확히 `준비중입니다`를 표시한다.
+- 타이머는 Time.deltaTime을 사용하며, 팝업은 초 단위 표시가 바뀔 때만 시간 문자열을 갱신한다.
+
+## 현재 UI 연결
+
+DefenseTest의 WarmPixelTownHallPopup은 Farmer/Guard/Builder/Archer 네 TownHallRoleView와 하나의 TownHallRecruitCard 상세를 연결한다. scene instance의 `_recruitment`는 기존 TownHallRecruitment를 참조하며 모집 규칙과 비용·타이머를 변경하지 않는다. 기본 Farmer(없으면 첫 유효 직군)를 선택하며 선택만으로 지출하지 않는다. 실제 모집 버튼만 TryDispatchCandidate를 호출한다. 성공 후 선택·창을 유지하고 실패 사유를 표시한다. 대상 수명이 끝나면 RequestClose로 닫는다.
+
+Body/RecruitmentContent는 역할 목록과 공유 상세, Body/TownStatusPanel은 준비중 안내를 소유한다. 결과 문구는 Footer에 둔다. 능력치는 `—`, 상세 정보 준비 중으로 유지한다. 작은 화면의 전체 비율 축소는 공통 PopupCanvasFit(UI.md 소유)이 담당하며 예전 `_fitToCanvas`/`_recruitmentScrollRect`는 사용하지 않는다. 다른 씬과 옛 prefab은 보존하지만 옛 배치의 runtime 호환을 구현하지 않는다.
+
+## 이전 Unity 배선과 검증 기록
+
+아래 2026-10-09까지의 카드·스크롤 설명은 보존된 옛 에셋의 기록이며 현재 DefenseTest UI 계약은 위 절을 따른다.
+
+2026-09-26 Unity CLI로 `BuilderCitizenSetup.Setup`을 실행해 세 번째 카드와 초기 준비 상태의 100골드/60초 Builder 설정을 prefab/scene에 저장했다. TownHallPopup은 비어 있지 않은 카드 목록을 사용하고 null/중복 직군을 거부한다. TownHallRecruitCard에는 건축가 이름이 등록돼 있다. 실제 모집 플레이는 사람의 확인 항목이다. [Builder 계획](../../Plans/Builder_Citizen_Implementation_Plan.md) 참고.
+
+FarmerTest의 기존 TownHall 인스턴스는 NPCManager/ResourceManager를 prefab override로 참조한다. TownHall.prefab과 scene 인스턴스의 `_recruitments`에는 Farmer·Guard·Builder 행이 있다. FarmerTest NPCManager에도 세 직업의 생성 entry가 있고 worker pool을 공유한다. Builder 추가 시 기존 Farmer·Guard 비용과 쿨다운은 유지했다.
+
+TownHallPopup.prefab은 기존 목재 외곽·제목·닫기 버튼과 상인 탭·양피지 스타일을 재사용한다. 세 카드에는 farmer-hoe, guard-sword, builder-hammer sprite subasset을 지정한다. scene의 `_recruitment`와 UIManager popup 등록은 유지한다. PointerClickRouter와 시청 클릭 collider의 layer 9 mask 연결은 이미 존재하며 레이어 이름 자체는 필수 조건이 아니다.
+
+2026-10-09 UI 배치는 920×760 popup, 780×480 모집 영역 안에 780×436 RectMask2D viewport와 가로 ScrollRect/scrollbar를 둔다. 카드 원본 330×550은 0.75 배율, 264 간격으로 Content 아래에 배치하며 세 카드 Content 폭은 799.5, Defense의 궁수 포함 네 카드는 1063.5다. 제목·탭·닫기·결과 문구는 스크롤 밖에 유지한다. 결과 문구는 y=-306, 높이30으로 종이 내부에 둔다.
+
+`_recruitmentScrollRect`는 이전 배선과 호환되는 선택 참조다. 모집 탭 전환과 팝업 재개방 시 관성을 멈추고 맨 왼쪽으로 되돌린다. `_fitToCanvas`를 켜면 최초 배율을 보존하며 실제 root Canvas 크기를 popup 부모 좌표계로 변환해 24 단위 여백 안에 들어가도록 축소한다. PopupUI 부모의 고정 100×100 크기는 화면 크기로 사용하지 않는다. 화면 변경은 LateUpdate에서 반영하며 PopBase의 anchoredPosition 진입·퇴장 애니메이션은 그대로 둔다. 모집 상태·타이머는 초기화하지 않는다. 기존 scene의 카드 참조와 Defense scene-added ArcherCard는 유지한다. 조립 도구와 웨이브 UI는 [Defense progression](../Combat/Defense/Progression.md)이 소유한다.
+
+기존 TestTownHallRecruitProbe를 직군 지정 API로 이관했다. 현재 Farmer가 Recruiting일 때의 거부, 미등록 role 예약 실패, 준비 상태의 골드 부족, 미구성 인스턴스 거부를 확인한다. 만들 수 없는 상태는 SKIP이며 초기 대기 상태를 가정하지 않는다.
+
+2026-09-19 작업의 실제 Play Mode(동시 모집, 60/90초 독립 카운트다운, 낙하 중 disable, 팝업 조작)는 사용자 지시로 생략하여 NOT_VERIFIED다. 컴파일·직렬화 확인은 runtime 통과를 대신하지 않는다.
+
+## WarmPixel 프리팹
+
+2026-10-16 `Assets/Prefab/UI/WarmPixelTownHallPopup.prefab`을 별도 표시용으로 추가했다. 기본 크기는 1440×900이며 왼쪽 직군 목록, 오른쪽 농부 상세·초상·능력치 자리, 하단 지원금·모집 버튼으로 나눈다. Body와 상세 영역은 stretch anchor를 사용하고 하단 모집 영역은 아래에 고정한다. 창의 RectTransform 크기를 조정할 수 있으나 작은 크기의 배치와 실제 화면은 사람 확인 대상이다.
+
+헤더는 `WarmPixelMerchantPopup`의 규격을 따른다. 높이 82, 아이콘 40×40, 제목 30pt, 제목 옆 세로 구분선 2×38, 닫기 32×32(상단 24·우측 34 여백), 하단 구분선 높이 3·좌우 12 여백이다. 탭은 상단 14·높이 54·28pt로 왼쪽 x=216부터 놓으며, 긴 시청 탭명을 위해 폭 144·간격 16(x=216/376)을 사용한다. 선택 밑줄은 높이 7, 선택·비선택 글자색과 구분선색은 상인 헤더와 맞춘다. Body의 상단 여백은 108이다.
+
+2026-10-20 UI 연동에서 TownHallPopup·TownHallRecruitCard·TownHallRoleView를 연결했다. 예시 모집 가능/지원금 값은 실제 RecruitmentStatus로 갱신한다. 직군 선택·탭·닫기·모집은 기존 domain API에 연결하며 체력·이동 속도·작업 속도·운반량은 `—`로 유지한다. 최종 스탯 규칙은 확정하지 않는다.
+
+사람 이미지는 실제 NPCGirl의 `player-dotween-transparent.png` sprite subasset을 네 곳에 재사용하고, 괭이·검·망치를 직군별 별도 도구 아이콘으로 배치한다. 세 직군은 현재 같은 주민 prefab을 공유한다. 기존 시청 카드의 portrait가 가리키는 그림은 캐릭터가 아닌 도구이며, 기존 PNG와 importer는 보존한다.
+
+표시용 프리팹의 창 Image는 별도 `Background` 자식이 소유한다. 제목·탭·닫기와 `HeaderDivider`는 `Header` 아래에 두며, 기존 `Body/RoleSelector`, `Body/FarmerDetail/PortraitAndStats`, `RecruitmentBand`의 의미 있는 묶음은 유지한다. 화면 배치를 바꾸지 않고 [공통 UI 계층 원칙](../UI/Presentation.md#ui-프리팹-계층-원칙)을 적용한다.
+
+`Header/CityIcon`은 `Assets/Art/Generated/UI/WarmPixel/town-hall-header-icon.png`의 전용 공공건물 도트 Sprite를 사용한다. 기존40×40 헤더 배치·직군 도구·실제 시청 건물 이미지는 유지하며, importer 규격은 [헤더 전용 도트 아이콘](../UI/Presentation.md#헤더-전용-도트-아이콘)을 따른다.
+
+창·기본 패널·모집 버튼·닫기는 기존 WarmPixel 에셋을 재사용한다. 새 `Assets/Art/Generated/UI/WarmPixelTownHall/01-selection-panel.png`와 `02-portrait-panel.png`는 각각 선택 항목·상태 badge와 초상 배경이다. 두 이미지는 불투명 RGB 1254×1254, Sprite Single/Point/PPU100, mipmap·압축 없음, NPOT None, max2048, 사방 border64로 import했다. 새 고해상도 패널의 Image multiplier는 5, 기존 WarmPixel sliced sprite는 0.5다. 표시용 이미지와 배치의 실제 시각 확인은 미검증이며 자동 Play·화면 검증은 수행하지 않는다.
+
+## 알려진 제약과 TBD
+
+- 후보 직업 추첨, 스탯 랜덤화, 명부·스탯 미리보기는 보류한다. 직군은 명시적 설정이고 기존 role stat definition을 재사용한다.
+- 마을 상태는 placeholder다. 업그레이드, 해고·despawn, 저장/불러오기는 추가하지 않는다.
+- 낙하 먼지·사운드는 이번 범위가 아니다.
+
+## 관련 문서
+
+- [Player Gold](../Economy/Inventory_and_Items/Shared_Resources.md)
+- [Spawning and Pooling](../NPC/Runtime/Spawning_and_Pooling.md)
+- [UI](../UI/README.md)
+- [Guard](../Combat/Guard.md)
+
+## 문서 갱신 조건
+
+직군 설정·예약 transaction·낙하 lifecycle·UI 탭·Unity 배선이 바뀌면 갱신한다.
+
+## 공유 자원 transaction
+
+기존 _goldManager 필드의 타입은 ResourceManager이며 골드 item ID로 지출/환급한다. DeferNotifications 범위에서 후보·예약 상태까지 확정해 중복 모집 재진입을 막는다. 환급이 정수 상한 때문에 실패하면 PendingRefund와 진행 상태를 보존하고 TryRetryRefund로 재시도한다. 실패한 환급을 지급 완료로 지우거나 포화 처리하지 않는다. TownHallPopup은 기존 모집 상태·시간 표시 경로를 유지한다. 골드 잔액 HUD를 추가하지 않는다. 단일 시청 규칙은 유지하며 시청은 이번 건설 목록에 포함하지 않는다.
+
+2026-10-01의 모집 버튼 라벨 180×50과 serialized 연결은 유지한다. 2026-10-09 배치에서 닫기는 72×72, 우상단 anchor/pivot(1,1), 위치(-18,-18)이다. 실제 화면·스크롤·클릭 확인은 사람의 확인 항목이며 자동 Play 검증은 수행하지 않는다.

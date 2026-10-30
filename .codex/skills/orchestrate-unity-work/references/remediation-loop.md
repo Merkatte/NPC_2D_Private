@@ -1,70 +1,36 @@
 # Bounded Remediation
 
-Use this reference after a deterministic gate did not return `Pass`, or after a required independent review returned `ChangesRequested`.
+Use after an existing check fails, required review requests changes, or verification is blocked. Ordinary work uses check/finding evidence; only a selected extended workflow needs GateResult fields and full-profile reruns.
 
-The GateResult fields and complete-profile reruns below apply to selected gated
-workflows. Ordinary work retains the same budget, same-role correction and repeat-cause
-rules, but records failed common checks/findings instead of gate IDs. Bind review to
-the current Git baseline/diff; after a correction refresh affected common checks, then
-obtain fresh independent review. Do not create a gate to remediate ordinary work.
+## One Shared Budget
 
-## Retry Record
+The budget set during scoping belongs to the whole task, across roles, worker replacements, check failures and review findings. For example, with two attempts total, a code correction followed by an assembly correction uses both; neither worker receives another two attempts.
 
-Keep a compact run record containing:
+One attempt is one bounded corrective candidate revision prompted by failed checks or blocking findings, not each file edit, command or tool call. Root agrees its scope and counts it once when the revision starts changing the candidate, including an unsuccessful partial correction. A coordinated revision may cover several roles only when root bounds it as one correction beforehand; later corrections cannot be bundled retroactively to evade the limit.
 
-- the initial candidate remediation budget and attempts used;
-- each GateResult path, profile/version, and status;
-- for each `Fail`, the failed check IDs and their evidence;
-- each required ReviewResult and any blocking finding IDs;
-- the correction made, changed paths, and resulting failure signature;
-- the final disposition: passed, exhausted, repeated cause, infrastructure blocked, or user authority required.
+Investigation, evidence-only repair and a rerun without candidate mutation do not consume candidate attempts. They still follow the stopping rules below. Never reset the ledger on reassignment or silently increase the budget.
 
-One remediation attempt means one corrective candidate mutation prompted by a failed check or review finding. Code/art/wiring corrections belong to the original role worker or a fresh same-role worker, never root or reviewer. Workflow/status documents and evidence remain root duties. Preliminary investigation, evidence-only repair and verification without candidate mutation do not consume an attempt. Never reset or silently increase the shared budget.
+Keep the initial budget, attempts used, failed check/finding evidence, correction/changed paths and outcome in the single task record. Link existing logs; do not create separate retry reports.
 
-## Candidate Fail
+## Candidate Defect or Blocking Finding
 
-For `status: Fail`:
+1. Confirm evidence belongs to the current candidate. Review findings must come from an eligible required reviewer and be evidenced Critical/Major blockers.
+2. Identify the cause from the failed condition, expected/actual values, affected files and concrete defect category. Ignore only volatile details such as timestamps or temporary paths.
+3. If the same cause remains or returns after a correction, stop even with budget left. Also stop if the budget is exhausted.
+4. Assign the smallest justified correction within authorized paths, requirements and permissions to the owning role. Root/reviewer do not implement it. Scope or authority expansion needs the user's decision.
+5. Count the correction once, inspect the actual resulting diff and invalidate evidence whose inputs could be affected.
+6. Rerun affected ordinary checks; reuse unaffected current evidence. Changed reviewed code/contracts require fresh independent review after current checks succeed. For strict protocols, follow [extended-workflows.md](extended-workflows.md).
 
-1. Confirm the result belongs to the current candidate and selected profile.
-2. Form a failure signature from the profile/version, sorted failed check IDs, and the materially relevant actual values or error category. Messages and paths may be normalized only to remove volatile timestamps or temporary locations.
-3. Compare the signature with earlier post-correction failures. If the same cause has returned, stop even when budget remains. Preserve the evidence rather than trying variants blindly.
-4. If no attempts remain, stop and report exhaustion.
-5. Derive the smallest correction justified by failed checks. Passing checks and unrelated cleanup do not authorize extra edits.
-6. Before editing, confirm the correction stays within the original writable paths, requirements, and permissions. If not, stop and request the needed user decision or authority.
-7. Apply one correction and increment attempts used exactly once.
-8. Mark the previous result expired, inspect the new candidate, and run the complete affected gate profile again.
+Do not weaken expected values, remove checks, change fixtures, edit the accepting validator or omit a review condition to obtain approval. Harness/verification development is a separate explicitly requested scope with independent validation, not candidate remediation.
 
-Do not weaken expected values, remove failing checks, change fixtures, or edit the accepting validator as remediation. A harness change is a separate scoped task with independent self-tests.
+## Infrastructure and Evidence Blockers
 
-## Review ChangesRequested
+A failed execution environment, missing/malformed evidence or unavailable runner does not prove a candidate defect. Preserve logs, distinguish it from an actual failed check, and do not modify candidate code/assets on that basis.
 
-For a contract-valid required review with `verdict: ChangesRequested`:
-
-1. Confirm the `candidateRunId` matches the current passing GateResult and the reviewer was not a candidate worker.
-2. Use only `Critical` or `Major` findings marked blocking. Form a repeat signature from finding severity, affected file, concrete defect category, and relevant acceptance condition.
-3. Stop when the same blocking cause returns after correction or no attempts remain.
-4. Derive the smallest correction supported by finding evidence; do not copy a reviewer recommendation beyond the confirmed scope or authority.
-5. Apply one correction and increment attempts used once.
-6. Expire both the GateResult and ReviewResult immediately.
-7. Inspect the new candidate, rerun the complete deterministic gate, and obtain a new independent review only after `Pass`.
-
-The reviewer remains read-only and cannot perform this correction. Do not change review criteria or omit the triggering acceptance condition to obtain approval.
-
-## Infrastructure Error
-
-For `status: InfrastructureError`:
-
-- do not infer a defect in the candidate;
-- do not modify candidate code or assets from this evidence;
-- do not consume the candidate remediation budget;
-- identify the environment or verifier blocker and preserve its logs;
-- correct it only when the action is already authorized and does not expand scope;
-- rerun the same gate after the blocker is actually resolved.
-
-If resolving the blocker needs new permission, an external action, or a scope change, stop and ask the user. If the cause is unknown or the same infrastructure blocker recurs after one corrective action, stop rather than loop.
-
-A missing or malformed GateResult is likewise a verification/evidence blocker, not proof of a candidate defect. Preserve available logs and repair the result-producing path without editing the candidate.
+Correct the environment/evidence only within existing authority; rerun the relevant check after the blocker is resolved. Do not consume candidate budget for this repair, invent a passing result, or write a replacement runner. Stop if the cause remains unknown or the same blocker recurs after one corrective action; new permission or external dependencies require reporting the blocker and the needed decision.
 
 ## Freshness
 
-Every candidate mutation invalidates all GateResults and ReviewResults whose inputs could be affected, including a previous `Pass` or `Approve`. Gate evidence becomes current again only after the complete relevant profile runs against the new candidate. When review is required, review evidence becomes current only after that new pass is independently reviewed. Changing the gate, its expected values, fixtures, review policy, or review criteria never refreshes acceptance for the candidate that motivated that change.
+A correction invalidates checks and review whose inputs could be affected, including prior Pass/Approve results. A document/log-only repair does not invalidate unrelated compile evidence, but a changed requirement or dependency can invalidate review/check coverage. Re-establish input relevance and freshness rather than rerunning everything or assuming everything survives.
+
+Changing verification criteria, policy or fixtures never refreshes acceptance for the candidate that motivated that change. Do not report completion while a required current check or review is missing, failed or blocked.

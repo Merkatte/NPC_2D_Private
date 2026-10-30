@@ -4,7 +4,7 @@
 > 작성일: 2026-08-29
 > 상위 roadmap: `PublicMD/PLAN.md`
 > 요구사항: `PublicMD/SPEC.md`의 `SRC-024`, `REQ-F-052`~`REQ-F-060`, `REQ-D-016`
-> 현재 구현 지도: `PublicMD/Systems/Farming/README.md`
+> 현재 구현 지도: `PublicMD/Systems/Economy/Farming/README.md`
 
 ## 2026-09-22 심기 연결 구현
 

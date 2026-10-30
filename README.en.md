@@ -25,15 +25,15 @@ This introduction reflects the repository as of **2026-10-17**. Features have di
 
 | Area | Current implementation | Documentation |
 |---|---|---|
-| Autonomous behavior | Utility evaluation, role-specific queues, work, food, drink, sleep, and wandering | [Decisions and Actions](PublicMD/Systems/NPC_Decision_and_Actions/README.md) |
-| Farming and logistics | Carrot/Potato seed selection and planting, growth, harvesting, NPC cargo, and warehouse deposits | [Farming](PublicMD/Systems/Farming/README.md) |
-| Resources and trade | Shared quantities and storage capacity, visiting merchant sales UI, combined item debit and gold credit | [Resources](PublicMD/Systems/Inventory_and_Items/README.md) · [Merchant](PublicMD/Systems/Merchant_Caravan.md) |
-| Recruitment | Farmers, guards, and builders with independent costs, cooldowns, and reserved spawning; archers in the Defense scene | [Town Hall](PublicMD/Systems/Town_Hall.md) |
-| Construction | Designated plots, selection, payment/cancellation, builder reservations, work, completion, and staged visuals | [Construction](PublicMD/Systems/Construction/README.md) |
-| Housing and daily life | Four housing tiers, automatic assignment, home/inn recovery, upgrades, dissatisfaction, and work strikes | [Housing](PublicMD/Systems/Housing/README.md) · [Dissatisfaction](PublicMD/Systems/NPC_Dissatisfaction.md) |
-| Wall defense | Swordsman and archer pursuit/combat, wall damage and passage changes, civilian fleeing, downed actors, repairs, rebuilding, and rubble clearance | [Combat](PublicMD/Systems/Combat/README.md) · [Defense](PublicMD/Systems/Defense/README.md) |
-| Waves and events | Preparation/raid phases, enemy spawning, event choices, pause, and game over when the town hall is destroyed | [Defense Progression](PublicMD/Systems/Defense/Progression.md) |
-| Observation and UI | Facility popups, stock/gold displays, farm gauges, thought bubbles, and localization infrastructure | [UI](PublicMD/Systems/UI.md) · [NPC Messages](PublicMD/Systems/NPC_Messages.md) |
+| Autonomous behavior | Utility evaluation, role-specific queues, work, food, drink, sleep, and wandering | [Decisions and Actions](PublicMD/Systems/NPC/Decision_and_Actions/README.md) |
+| Farming and logistics | Carrot/Potato seed selection and planting, growth, harvesting, NPC cargo, and warehouse deposits | [Farming](PublicMD/Systems/Economy/Farming/README.md) |
+| Resources and trade | Shared quantities and storage capacity, visiting merchant sales UI, combined item debit and gold credit | [Resources](PublicMD/Systems/Economy/Inventory_and_Items/README.md) · [Merchant](PublicMD/Systems/Economy/Merchant_Caravan.md) |
+| Recruitment | Farmers, guards, and builders with independent costs, cooldowns, and reserved spawning; archers in the Defense scene | [Town Hall](PublicMD/Systems/Settlement/Town_Hall.md) |
+| Construction | Designated plots, selection, payment/cancellation, builder reservations, work, completion, and staged visuals | [Construction](PublicMD/Systems/Settlement/Construction/README.md) |
+| Housing and daily life | Four housing tiers, automatic assignment, home/inn recovery, upgrades, dissatisfaction, and work strikes | [Housing](PublicMD/Systems/Settlement/Housing/README.md) · [Dissatisfaction](PublicMD/Systems/NPC/Runtime/Dissatisfaction.md) |
+| Wall defense | Swordsman and archer pursuit/combat, wall damage and passage changes, civilian fleeing, downed actors, repairs, rebuilding, and rubble clearance | [Combat](PublicMD/Systems/Combat/README.md) · [Defense](PublicMD/Systems/Combat/Defense/README.md) |
+| Waves and events | Preparation/raid phases, enemy spawning, event choices, pause, and game over when the town hall is destroyed | [Defense Progression](PublicMD/Systems/Combat/Defense/Progression.md) |
+| Observation and UI | Facility popups, stock/gold displays, farm gauges, thought bubbles, and localization infrastructure | [UI](PublicMD/Systems/UI/README.md) · [NPC Messages](PublicMD/Systems/NPC/Presentation/Messages.md) |
 
 Code and wiring exist for these features; play and visual verification across every scene and scenario is still incomplete. Actual checks, user confirmations, and remaining coverage are recorded in [Progress](PublicMD/Status/PROGRESS.md) and the owning feature documents.
 

@@ -25,15 +25,15 @@ Project N은 주민들이 스스로 판단하고 일하는 작은 마을을 운�
 
 | 영역 | 현재 구현 | 상세 문서 |
 |---|---|---|
-| 자율 행동 | Utility 판단, 직군별 queue 구성, 업무·식사·음료·수면·배회 | [판단과 Action](PublicMD/Systems/NPC_Decision_and_Actions/README.md) |
-| 농사와 물류 | 당근·감자 씨앗 선택·심기, 성장·수확, NPC 봇짐 운반과 창고 입고 | [농사](PublicMD/Systems/Farming/README.md) |
-| 자원과 거래 | 공유 수량·창고 용량, 방문 상단의 판매 UI, 물품 차감·골드 지급의 일괄 처리 | [자원](PublicMD/Systems/Inventory_and_Items/README.md) · [상단](PublicMD/Systems/Merchant_Caravan.md) |
-| 주민 모집 | 농부·경비병·건축가의 독립 비용·쿨다운·예약 스폰; Defense 씬은 궁병 추가 | [시청](PublicMD/Systems/Town_Hall.md) |
-| 건설 | 지정 부지의 시설 선택·지불·취소, 건축가 예약·작업·완공과 공사 단계 표현 | [건설](PublicMD/Systems/Construction/README.md) |
-| 주거와 생활 | 주택 1~4단계, 자동 입주, 집·여관 회복, 업그레이드와 불만도·태업 | [주거](PublicMD/Systems/Housing/README.md) · [불만도](PublicMD/Systems/NPC_Dissatisfaction.md) |
-| 성벽 방어 | 검객·궁병의 적 추적과 전투, 성벽 손상·통로 변화, 주민 도주·쓰러짐, 수리·재건·잔해 제거 | [전투](PublicMD/Systems/Combat/README.md) · [방어](PublicMD/Systems/Defense/README.md) |
-| 웨이브와 사건 | 정비·습격 전환, 적 생성, 이벤트 선택, 일시정지와 시청 파괴 시 게임 종료 | [방어 진행](PublicMD/Systems/Defense/Progression.md) |
-| 관찰과 UI | 시설 팝업, 재고·골드 표시, 농장 게이지, 주민 생각 말풍선과 지역화 기반 | [UI](PublicMD/Systems/UI.md) · [주민 메시지](PublicMD/Systems/NPC_Messages.md) |
+| 자율 행동 | Utility 판단, 직군별 queue 구성, 업무·식사·음료·수면·배회 | [판단과 Action](PublicMD/Systems/NPC/Decision_and_Actions/README.md) |
+| 농사와 물류 | 당근·감자 씨앗 선택·심기, 성장·수확, NPC 봇짐 운반과 창고 입고 | [농사](PublicMD/Systems/Economy/Farming/README.md) |
+| 자원과 거래 | 공유 수량·창고 용량, 방문 상단의 판매 UI, 물품 차감·골드 지급의 일괄 처리 | [자원](PublicMD/Systems/Economy/Inventory_and_Items/README.md) · [상단](PublicMD/Systems/Economy/Merchant_Caravan.md) |
+| 주민 모집 | 농부·경비병·건축가의 독립 비용·쿨다운·예약 스폰; Defense 씬은 궁병 추가 | [시청](PublicMD/Systems/Settlement/Town_Hall.md) |
+| 건설 | 지정 부지의 시설 선택·지불·취소, 건축가 예약·작업·완공과 공사 단계 표현 | [건설](PublicMD/Systems/Settlement/Construction/README.md) |
+| 주거와 생활 | 주택 1~4단계, 자동 입주, 집·여관 회복, 업그레이드와 불만도·태업 | [주거](PublicMD/Systems/Settlement/Housing/README.md) · [불만도](PublicMD/Systems/NPC/Runtime/Dissatisfaction.md) |
+| 성벽 방어 | 검객·궁병의 적 추적과 전투, 성벽 손상·통로 변화, 주민 도주·쓰러짐, 수리·재건·잔해 제거 | [전투](PublicMD/Systems/Combat/README.md) · [방어](PublicMD/Systems/Combat/Defense/README.md) |
+| 웨이브와 사건 | 정비·습격 전환, 적 생성, 이벤트 선택, 일시정지와 시청 파괴 시 게임 종료 | [방어 진행](PublicMD/Systems/Combat/Defense/Progression.md) |
+| 관찰과 UI | 시설 팝업, 재고·골드 표시, 농장 게이지, 주민 생각 말풍선과 지역화 기반 | [UI](PublicMD/Systems/UI/README.md) · [주민 메시지](PublicMD/Systems/NPC/Presentation/Messages.md) |
 
 각 기능의 코드와 배선은 존재하지만, 모든 씬·상황의 플레이와 화면 검증이 끝난 상태는 아닙니다. 검사 결과, 사용자 확인과 남은 항목은 [진행 기록](PublicMD/Status/PROGRESS.md)과 각 기능 문서에서 관리합니다.
 

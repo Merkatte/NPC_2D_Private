@@ -2,7 +2,7 @@
 
 > 기록일: 2026-09-27
 > 상태: 게임 규칙·구조 확정 후 [상세 구현 계획](Building_Construction_Implementation_Plan.md)을 Plan Mode에서 승인했고 2026-09-27 구현에 착수했다. 구현 완료 기록은 아니다.
-> 이 문서는 이번 건설 대화의 확정 규칙과 보류 사항을 소유한다. 현재 구현은 [Builder](../Systems/Builder.md)를 따른다.
+> 이 문서는 이번 건설 대화의 확정 규칙과 보류 사항을 소유한다. 현재 구현은 [Builder](../Systems/Settlement/Construction/Builder.md)를 따른다.
 
 ## 1. 목적과 현재 범위
 

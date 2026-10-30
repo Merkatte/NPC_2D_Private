@@ -61,7 +61,7 @@ request는 값만이 아니라 transaction에 참여하는 capability도 나를 
 
 scene composition root가 role, selector, stat definition과 prefab/pool을 조립한다. spawn 전에 selector와 runtime stat의 호환성을 검사하고, actor root에는 이미 조립된 dependency를 전달한다.
 
-세부 구조: [Spawning and Pooling](Systems/Spawning_and_Pooling.md)
+세부 구조: [Spawning and Pooling](Systems/NPC/Runtime/Spawning_and_Pooling.md)
 
 ### 3.2 Action lifecycle
 
@@ -76,13 +76,13 @@ Return -> Clear -> pool
 - `Failed`: 구성 또는 transaction 전제가 깨져 남은 queue를 폐기한다.
 - `Clear()` 뒤에는 이전 actor의 context, timer, target, flag가 없어야 한다.
 
-세부 구조: [Action Runtime](Systems/NPC_Decision_and_Actions/Action_Runtime.md), [NPC Runtime](Systems/NPC_Runtime.md)
+세부 구조: [Action Runtime](Systems/NPC/Decision_and_Actions/Action_Runtime.md), [NPC Runtime](Systems/NPC/Runtime/Lifecycle_and_Stats.md)
 
 ### 3.3 판단
 
 공통 판단은 stat, 현재 위치, destination과 provider option을 입력받고 하나의 semantic decision을 반환한다. role selector는 combat처럼 즉시 처리해야 하는 role 우선순위와 decision-to-queue 변환만 소유한다.
 
-세부 구조: [NPC Decision and Actions](Systems/NPC_Decision_and_Actions/README.md)
+세부 구조: [NPC Decision and Actions](Systems/NPC/Decision_and_Actions/README.md)
 
 ### 3.4 상호작용과 transaction
 
@@ -90,7 +90,7 @@ selector는 registry에서 capability를 선택해 request와 함께 action cont
 
 아이템은 생산 시설에서 소비 시설로 순간이동하지 않고 actor를 거친다. 현재 방향은 `Farm -> NPC cargo -> Warehouse`이며, 각 단계는 목적지가 수락한 만큼만 이동하고 거부된 잔량은 이전 소유자에게 남아 소실되지 않는다.
 
-세부 구조: [Interaction and Destinations](Systems/Interaction_and_Destinations.md)
+세부 구조: [Interaction and Destinations](Systems/World/Interaction_and_Destinations.md)
 
 ### 3.5 전투
 
@@ -106,9 +106,9 @@ domain은 표시 가능한 read model을 제공하고 UI facade는 category별 v
 `IHoverInfoSource`로 지역화 키와 추적 anchor를 제공한다. `NPCThoughtCatalog`는 공유 정의,
 `NPCMessageState`는 개체별 지정 대사·캐시·timer, `NPCThoughtSelector`는 표시 문구 선택을 소유한다.
 행동 selector/action/NPCComponent에는 메시지 책임이 없다. 표시용 난수는 NPC별 전용이며
-gameplay 난수와 공유하지 않는다. 상세 계약은 [NPC Messages](Systems/NPC_Messages.md)를 따른다.
+gameplay 난수와 공유하지 않는다. 상세 계약은 [NPC Messages](Systems/NPC/Presentation/Messages.md)를 따른다.
 
-세부 구조: [UI](Systems/UI.md)
+세부 구조: [UI](Systems/UI/README.md)
 
 ### 3.7 지역화 정의와 표시
 
@@ -117,7 +117,7 @@ lookup은 공유 정의의 파생 캐시이며 actor/scene mutable 상태가 아
 `LocalizeManager`는 씬 전환을 넘는 단일 문구 조회 진입점이다. `LocalizeText` presentation adapter의
 직접 singleton 접근만 허용하며 action/selector/provider의 숨은 의존성으로 확장하지 않는다.
 Manager는 별도 루트에서 DontDestroyOnLoad를 적용하고, SO는 Inspector로 연결한다.
-상세 계약과 배선은 [Localization](Systems/Localization.md)이 소유한다.
+상세 계약과 배선은 [Localization](Systems/UI/Localization.md)이 소유한다.
 
 ## 4. 의존 방향
 
@@ -129,7 +129,7 @@ DefenseBattlefield는 scene의 전투 대상·성벽·궁병 슬롯을 등록하
 
 시설 durability는 기능 해제를 기존 facility/plot owner에 위임하며, maintenance provider가 수리·재건·잔해 청소의 lease와 진행도·비용 transaction을 소유한다. Builder selector가 작업 우선순위를 선택하고 maintenance action은 주입된 lease를 실행·반환한다. 신규 건설은 기존 construction 경로를 사용한다.
 
-DefenseGameSession은 scene의 pause lease와 GameOver 정지를 소유한다. Wave/Event controller는 공유 정의로부터 scene 타이머·현재 상태를 운영하고 UI는 그 조회와 명령을 소비한다. 공유 ScriptableObject에 HP·현재 웨이브·이벤트 시간을 저장하지 않는다. 초기 군사 배치와 적 웨이브는 production 생성 경로에 연결하며 기존 TestOnly 초기 자원 구성과 분리한다. 현재 파일 ownership과 배선은 [Defense](Systems/Defense/README.md)를 따른다.
+DefenseGameSession은 scene의 pause lease와 GameOver 정지를 소유한다. Wave/Event controller는 공유 정의로부터 scene 타이머·현재 상태를 운영하고 UI는 그 조회와 명령을 소비한다. 공유 ScriptableObject에 HP·현재 웨이브·이벤트 시간을 저장하지 않는다. 초기 군사 배치와 적 웨이브는 production 생성 경로에 연결하며 기존 TestOnly 초기 자원 구성과 분리한다. 현재 파일 ownership과 배선은 [Defense](Systems/Combat/Defense/README.md)를 따른다.
 
 ### 주택·입주 연결 (2026-10-08 승인 범위)
 
@@ -137,11 +137,11 @@ NPCManager는 주민 등록/해제와 읽기 전용 roster를 제공하고 Housi
 
 selector는 업무 존재와 생활 재판단을 소유한다. WorkerNPC의 주기 hook은 selector 결과에 따른 queue 폐기/재선택만 수행하며 HomeStayAction은 주입된 집으로 이동하고 체류를 실행한다. ActionContext는 기존 단일 provider 경로를 유지한다. 집 효과를 위해 action에서 Manager나 selector를 역참조하지 않는다.
 
-업그레이드는 BuildingPlot/ConstructionState의 공사 transaction이며 기존 House의 등록/입주를 유지한다. Factory/CompletedBuildingFacility가 sprite와 단계 적용을 연결하고 House는 검증된 단계와 효과를 소유한다. HousePopup은 source를 통해 표시와 요청만 전달한다. 구체 현재 구현과 단일 파일 ownership은 [Housing](Systems/Housing/README.md) 및 [Construction](Systems/Construction/README.md)을 따른다.
+업그레이드는 BuildingPlot/ConstructionState의 공사 transaction이며 기존 House의 등록/입주를 유지한다. Factory/CompletedBuildingFacility가 sprite와 단계 적용을 연결하고 House는 검증된 단계와 효과를 소유한다. HousePopup은 source를 통해 표시와 요청만 전달한다. 구체 현재 구현과 단일 파일 ownership은 [Housing](Systems/Settlement/Housing/README.md) 및 [Construction](Systems/Settlement/Construction/README.md)을 따른다.
 
 ### 불만도·태업 연결 (2026-10-03 승인 범위)
 
-공유 stat definition은 불만도 설정을 주민별 runtime stat에 복사한다. NPCStat이 소유하는 DissatisfactionState가 원인별 누적·회복과 태업 판정을 맡고 NPCDissatisfaction은 명시적 초기화·시간 전달·원인 등록 경계를 맡는다. WorkerNPC는 초기화/해제 배관과 기존 queue lifecycle만 소유한다. selector/decider는 읽기 상태로 업무 후보를 제한하고 action은 주입된 업무 요구 조건을 실행 시작/Tick에서 확인한다. 중단은 기존 ReplanRequested/Stop/Clear 경로를 사용한다. provider transaction, NPCComponent의 이동·표현과 UI 표시 책임은 그대로다. 메시지는 읽기 view만 소비한다. 상세 구현 사실은 [NPC Dissatisfaction](Systems/NPC_Dissatisfaction.md)과 관련 leaf를 따른다.
+공유 stat definition은 불만도 설정을 주민별 runtime stat에 복사한다. NPCStat이 소유하는 DissatisfactionState가 원인별 누적·회복과 태업 판정을 맡고 NPCDissatisfaction은 명시적 초기화·시간 전달·원인 등록 경계를 맡는다. WorkerNPC는 초기화/해제 배관과 기존 queue lifecycle만 소유한다. selector/decider는 읽기 상태로 업무 후보를 제한하고 action은 주입된 업무 요구 조건을 실행 시작/Tick에서 확인한다. 중단은 기존 ReplanRequested/Stop/Clear 경로를 사용한다. provider transaction, NPCComponent의 이동·표현과 UI 표시 책임은 그대로다. 메시지는 읽기 view만 소비한다. 상세 구현 사실은 [NPC Dissatisfaction](Systems/NPC/Runtime/Dissatisfaction.md)과 관련 leaf를 따른다.
 
 허용되는 기본 방향:
 
@@ -211,7 +211,7 @@ selector -> ActionContext(INavigationService) -> MoveAction/GuardAction -> NPCPa
 TilemapNavigation은 scene snapshot과 순수 A*/heap workspace를 소유한다.
 TileNavigationProfile은 공유 definition만 소유하며 actor 경로/커서는 action별 follower가 소유한다.
 WorkerNPC queue lifecycle, provider transaction, DestinationDecider 판단 책임은 유지한다.
-상세 주 소유 문서는 Systems/Navigation.md와 Systems/NPC_Decision_and_Actions/Movement.md다.
+상세 주 소유 문서는 Systems/World/Navigation.md와 Systems/NPC/Decision_and_Actions/Movement.md다.
 
 ## 건설과 공유 자원 (2026-09-27 구현 후보)
 
@@ -222,4 +222,4 @@ WorkerNPC queue lifecycle, provider transaction, DestinationDecider 판단 책�
 - DestinationDB는 같은 종류의 여러 시설을 등록하고 후보/provider 조회를 제공한다. DestinationDecider의 공통 선택 정책은 가용성을 확인하고 등록된 출입 anchor의 제곱거리로 선택한다. decider와 role selector가 이 정책을 재사용하며 NPCDecision에 선택한 시설/provider identity를 보존한다. Farm/Guard 작업 위치 난수는 시설 확정 후 소비한다.
 - 공유 CSV는 검증 성공 후 불변 정의로 공개한다. 생성 중인 시설은 dependency 주입 전에 활성화하지 않는다. 테스트 시작 자원/주민은 TestOnly에서 설정한다.
 
-상세 ownership은 Systems/Construction, Systems/Inventory_and_Items, Systems/Builder.md를 따른다. 현재 컴파일·배선·리뷰 결과는 PROGRESS와 승인된 상세 계획에 기록한다.
+상세 ownership은 Systems/Settlement/Construction, Systems/Economy/Inventory_and_Items, Systems/Settlement/Construction/Builder.md를 따른다. 현재 컴파일·배선·리뷰 결과는 PROGRESS와 승인된 상세 계획에 기록한다.

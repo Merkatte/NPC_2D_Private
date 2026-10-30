@@ -1,0 +1,92 @@
+# NPC Runtime
+
+## 기능 목적
+
+`WorkerNPC`가 한 NPC의 action queue를 실행하고, `NPCStat`이 개체별 mutable 상태를 보관하는 공통 런타임을 설명한다. 무엇을 할지 결정하는 정책과 구체 action 구현은 이 문서의 책임이 아니다.
+
+## 책임 경계
+
+- `WorkerNPC`: 초기화, 현재 action, 대기 queue, 결과 처리, 취소와 pool 반환을 소유한다.
+- `NPCStat`: 체력·이동 속도·욕구의 현재값과 개별 `DissatisfactionState`를 소유한다. 불만 계산은 [NPC Dissatisfaction](Dissatisfaction.md)이 소유한다.
+- stat definition: 공유 초기값에서 매번 새 runtime stat을 만든다.
+- selector는 queue를 구성하고 action은 실행한다. `WorkerNPC`는 우선순위나 도메인 규칙을 판단하지 않는다.
+- Unity 이동·애니메이션·방향 표현은 [NPC Presentation](../Presentation/Adapter.md)이 소유한다.
+- `TryGetCurrentState(out IStatView, out ActionType?)`는 초기화된 활성 worker의 읽기 전용 stat과
+  현재 행동 종류만 제공한다. 실패 시 null/null이며 action 객체·queue는 노출하지 않는다.
+  생각 선택·표시는 별도 [NPC Messages](../Presentation/Messages.md)가 소유한다.
+
+## 현재 실행 흐름
+
+```text
+WorkerNPC.Init(role, runtime stat, selector)
+  -> NPCComponent.Init(stat)
+  -> selector.RequestNewActionQueue(...)
+  -> action.Start()
+  -> action.Tick()
+     -> Completed: 현재 action 반환 후 다음 action
+     -> ReplanRequested/Failed: 현재 action과 남은 queue를 모두 반환 후 재판단
+  -> OnDisable: queue와 actor-local runtime state 정리
+```
+
+`WorkerNPC`는 비어 있는 queue를 selector에게 다시 요청한다. `Failed`와 `ReplanRequested`는 의미는 다르지만 둘 다 남은 예측 queue를 폐기한다.
+
+## 주 소유 스크립트
+
+| 경로 | 한 줄 책임 |
+|---|---|
+| `Assets/Data/ScriptableObject/Script/DefaultStatContext.cs` | 기본 NPC runtime stat을 생성하는 공유 definition |
+| `Assets/Data/ScriptableObject/Script/NPCStatDefinition.cs` | role별 stat definition의 공통 factory 계약 |
+| `Assets/Data/Struct/StatEffect.cs` | 체력·욕구 변화량을 전달하는 immutable 효과 값 |
+| `Assets/Scripts/Actor/WorkerNPC.cs` | NPC action queue lifecycle의 단일 실행 owner. `BeginSpawnPresentation`/`CompleteSpawnPresentation`으로 예약 중(Init 전) gameplay 물리·감지 참여도 소유([Spawning and Pooling](Spawning_and_Pooling.md)의 예약 기반 스폰 API가 호출) |
+| `Assets/Scripts/Interface/IStatView.cs` | 판단과 실행이 읽는 공통 stat view 계약 |
+| `Assets/Scripts/System/Actor/NPCStat.cs` | 한 NPC의 mutable 체력·이동·욕구 상태 |
+
+## 변경 유형별 최소 확인 범위
+
+| 변경 | 먼저 읽을 파일·문서 |
+|---|---|
+| queue 결과 처리·취소 | `WorkerNPC.cs`, [Action Runtime](../Decision_and_Actions/Action_Runtime.md) |
+| 공통 stat 필드·증감 | `NPCStat.cs`, `IStatView.cs`, `StatEffect.cs` |
+| NPC 초기 stat | `NPCStatDefinition.cs`, `DefaultStatContext.cs`, 생성하는 role 문서 |
+| pool 재사용 초기화 | `WorkerNPC.cs`, [Spawning and Pooling](Spawning_and_Pooling.md), [NPC Presentation](../Presentation/Adapter.md) |
+
+## 불변 규칙
+
+- runtime stat은 NPC 인스턴스마다 새로 생성하며 ScriptableObject에 현재값을 저장하지 않는다.
+- action instance를 반환하기 전에 `Stop()`과 selector의 반환 경로를 거친다.
+- 비활성화된 pooled NPC에는 이전 queue, stat, target, cargo, animation state가 남지 않아야 한다. `NPCComponent.ResetRuntimeState`가 `WorkerNPC.Init`과 `OnDisable` 양쪽에서 이를 처리한다.
+- `Init` 전(예약만 된) worker는 `Update()`가 no-op이지만 GameObject·Collider2D는 이미 활성 상태다. `BeginSpawnPresentation`/`CompleteSpawnPresentation`은 idempotent해야 하고, `CompleteSpawnPresentation`은 무조건 켜는 대신 `Begin` 시점에 저장해 둔 이전 상태로 복구한다.
+- `WorkerNPC`에 role별 우선순위, destination 조회, action 세부 로직을 추가하지 않는다.
+
+## Unity 배선
+
+공유 NPC prefab에는 `WorkerNPC`와 `NPCComponent`가 연결된다. `WorkerNPC._component`는 필수이며 selector와 stat definition은 `NPCManager`의 생성 entry에서 role별로 조립된다.
+
+## 알려진 제약과 TBD
+
+- disable 시 NPCManager 목록과 주택 점유를 해제한다. production despawn 명령과 운반물 처리 정책은 아직 없다.
+- need의 장기 성장·밸런스 규칙은 아직 프로토타입 수준이다.
+
+## 관련 문서
+
+- [판단과 Action 인덱스](../Decision_and_Actions/README.md)
+- [NPC Presentation](../Presentation/Adapter.md)
+- [Spawning and Pooling](Spawning_and_Pooling.md)
+
+## 문서 갱신 조건
+
+`WorkerNPC` lifecycle, 공통 stat 모델, action 결과 소비 방식이 바뀌면 이 문서를 갱신한다.
+
+## 불만도·태업 연결
+
+DefaultStatContext는 `_dissatisfactionSettings`를 새 stat에 복사하고 OnValidate/runtime 생성 경계에서 검증한다. NPCStat/GuardStat의 기존 생성자는 기본 설정으로 호환된다. IStatView는 CurrentDissatisfaction·MaximumDissatisfaction·IsOnStrike를 읽기 전용으로 제공한다. 최초 상태는 0/원인 없음이다. WorkerNPC의 `_dissatisfaction`은 Init/OnDisable 연결·해제만 하며 정책과 계산을 포함하지 않는다.
+
+## 선택적 Defense 실행 중단
+
+`_defenseActor`가 연결된 variant는 Init 시 같은 stat을 DefenseActor에 전달한다. `SetActionExecutionEnabled(false)`는 현재/대기 queue를 반환하고 NPCDissatisfaction을 suspend한다. GameObject/Component disable이나 NPCComponent.ResetRuntimeState를 호출하지 않으므로 Downed의 cargo·주거·stat은 남는다. 새 Init은 기존 pool 초기화 계약을 사용한다. HP0 및 role 정책은 [Defense](../../Combat/Defense/Battlefield_and_Response.md)가 소유한다.
+
+Worker Update와 AdvanceQueue는 Time.timeScale=0에서 실행하지 않는다. action Tick 중 game-over가 발생해도 다음 queue를 시작하지 않으며 외부 중단이 현재 action을 반환했는지 확인한다. 이 실행 guard는 시간이 0이어도 즉시 완료하는 action/transaction을 막는다.
+
+## 선택적 주거 연결
+
+Init의 선택적 ResidentHousingState는 selector와 NPCDissatisfaction에 전달한다. 기존 3인수 Init은 미연결 상태다. WorkerNPC는 selector.GetReassessmentSeconds 간격마다 ShouldReplan을 호출하고 true이면 기존 queue 취소/재요청만 수행한다. 업무·귀가·욕구 정책은 selector, 이동·체류는 HomeStayAction이 소유한다. Disabled 알림은 NPCManager 등록 해제로 연결되고 구독자 예외를 격리하여 local 참조 정리를 계속한다. 자세한 실행은 [Housing Life](../../Settlement/Housing/Life.md)를 따른다.

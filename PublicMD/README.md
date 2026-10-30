@@ -8,7 +8,7 @@
 AGENTS.md
   -> ProjectStructure.md의 작업 라우팅
     -> 관련 Systems 문서
-      -> 계층형 기능이면 기능 README에서 leaf 선택
+      -> 기능 README에서 하위 기능 선택을 반복하여 leaf 도달
         -> leaf의 변경 유형별 최소 파일
 ```
 
@@ -48,6 +48,8 @@ AGENTS.md
 | `PublicMD/Code_Evaluation_Result.md` | `PublicMD/Status/Code_Evaluation_Result.md` |
 | `PublicMD/InteractionProvider_Unification_Plan.md` | `PublicMD/Archive/Plans/InteractionProvider_Unification_Plan.md` |
 | `Session_Plan/PublicMD_Progressive_Disclosure_Plan.md` | `PublicMD/Archive/Plans/PublicMD_Progressive_Disclosure_Plan.md` |
+
+2026-10-30 Systems 문서는 [대기능 인덱스](Systems/README.md)를 시작으로 재귀적 기능 폴더에 재배치했다. 기존 Inventory_and_Items와 Player_Gold 이동 안내는 실제 기능 인덱스와 공유 자원 leaf로 통합했다.
 
 역사 문서는 당시 경로와 판단을 보존한다. 활성 지침과 현재 구조 문서만 새 경로를 기준으로 한다.
 

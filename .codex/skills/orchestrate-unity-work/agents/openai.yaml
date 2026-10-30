@@ -1,4 +1,4 @@
 interface:
   display_name: "Orchestrate Unity Work"
-  short_description: "Coordinate, gate, and review Unity candidates"
-  default_prompt: "Use $orchestrate-unity-work to choose the smallest executor, gate the Unity candidate, and independently review it when policy or structural risk requires."
+  short_description: "Coordinate scoped Unity work and required review"
+  default_prompt: "Use $orchestrate-unity-work to scope Unity work, delegate needed roles, reuse current relevant checks, and await required independent review; use extended evidence only when explicitly selected."

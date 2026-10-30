@@ -4,7 +4,7 @@
 
 Guard의 전투 우선순위, 공급 판단, 경비 지점 순찰과 role 전용 stat·cost를 설명한다.
 
-기존 Guard selector/action은 기존 씬의 순찰·추격을 유지한다. DefenseTest의 Guard=1 검객과 Archer=5는 별도 [Defense response](../Defense/Battlefield_and_Response.md)를 사용한다. GuardPost의 optional `_defenseDurability`는 CurrentHealth/ChangeHealth를 시설 HP owner로 위임한다. 미연결 초소는 기존 자체 HP/Died 이벤트를 유지한다.
+기존 Guard selector/action은 기존 씬의 순찰·추격을 유지한다. DefenseTest의 Guard=1 검객과 Archer=5는 별도 [Defense response](Defense/Battlefield_and_Response.md)를 사용한다. GuardPost의 optional `_defenseDurability`는 CurrentHealth/ChangeHealth를 시설 HP owner로 위임한다. 미연결 초소는 기존 자체 HP/Died 이벤트를 유지한다.
 
 ## 현재 실행 흐름
 
@@ -40,9 +40,9 @@ Guard selector가 target 유지·획득 정책과 combat queue를 소유한다. 
 | 변경 | 최소 파일·문서 |
 |---|---|
 | 전투 우선순위·target 유지 | `GuardActionSelector.cs`, [Targeting and Perception](Targeting_and_Perception.md) |
-| 공격 queue·접근 거리 | `GuardActionSelector.cs`, [Attack Runtime](Attack_Runtime.md), [Movement](../NPC_Decision_and_Actions/Movement.md) |
+| 공격 queue·접근 거리 | `GuardActionSelector.cs`, [Attack Runtime](Attack_Runtime.md), [Movement](../NPC/Decision_and_Actions/Movement.md) |
 | 순찰 경로·중단 | `GuardAction.cs`, `GuardActionCost.cs`, `GuardStat.cs` |
-| 공급·경비 utility | `GuardActionSelector.cs`, [Decision Policy](../NPC_Decision_and_Actions/Decision_Policy.md) |
+| 공급·경비 utility | `GuardActionSelector.cs`, [Decision Policy](../NPC/Decision_and_Actions/Decision_Policy.md) |
 | Guard stat asset | `GuardStatDefinition.cs`, `GuardStat.cs`, scene creation entry |
 
 ## 불변 규칙
@@ -73,8 +73,8 @@ Guard selector가 target 유지·획득 정책과 combat queue를 소유한다. 
 
 - [Targeting and Perception](Targeting_and_Perception.md)
 - [Attack Runtime](Attack_Runtime.md)
-- [Decision Policy](../NPC_Decision_and_Actions/Decision_Policy.md)
-- [Spawning and Pooling](../Spawning_and_Pooling.md)
+- [Decision Policy](../NPC/Decision_and_Actions/Decision_Policy.md)
+- [Spawning and Pooling](../NPC/Runtime/Spawning_and_Pooling.md)
 
 ## 문서 갱신 조건
 
@@ -94,4 +94,4 @@ GuardStatDefinition의 `_dissatisfactionSettings`는 각 GuardStat으로 복사�
 
 ## 주거 연결
 
-HasAvailableWork는 기존 target의 유효성/감지 후보 또는 가용 GuardPost를 읽기만 한다. 감지 조회는 target을 확정하지 않고 위치 난수를 소비하지 않는다. 실제 전투 queue는 종전 우선순위와 target 확정 경로를 유지한다. 선택적 residence와 여관 회복 설정은 BaseNPCActionSelector의 주거 overload에서 전달하며 집 체류 중 새 업무가 있으면 기존 role 판단으로 돌아간다. [Housing Life](../Housing/Life.md)를 따른다.
+HasAvailableWork는 기존 target의 유효성/감지 후보 또는 가용 GuardPost를 읽기만 한다. 감지 조회는 target을 확정하지 않고 위치 난수를 소비하지 않는다. 실제 전투 queue는 종전 우선순위와 target 확정 경로를 유지한다. 선택적 residence와 여관 회복 설정은 BaseNPCActionSelector의 주거 overload에서 전달하며 집 체류 중 새 업무가 있으면 기존 role 판단으로 돌아간다. [Housing Life](../Settlement/Housing/Life.md)를 따른다.

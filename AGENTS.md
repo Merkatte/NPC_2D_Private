@@ -7,7 +7,7 @@
 모든 PublicMD와 모든 코드를 먼저 읽지 않는다.
 
 1. `PublicMD/ProjectStructure.md`의 작업별 표에서 관련 기능 문서를 찾는다.
-2. 기능이 폴더라면 해당 `README.md`에서 필요한 leaf 문서만 선택한다.
+2. 기능이 폴더라면 해당 `README.md`에서 필요한 하위 기능을 선택하고, 폴더별 README를 따라 필요한 leaf 문서에 도달할 때까지 반복한다.
 3. leaf의 `변경 유형별 최소 확인 범위`가 지정한 코드와 Unity 에셋만 먼저 연다.
 4. 아래 조건에 해당할 때만 루트 공통 문서를 추가한다.
 
@@ -83,7 +83,7 @@ C# 파일을 새로 만들거나 수정할 때 읽는다. naming, serialized fie
 - `CLAUDE.md`와 `.claude`는 Claude 전용이다. Codex는 읽거나 수정하지 않는다.
 - 실제 코드·Unity 직렬화와 문서가 다르면 코드와 에셋을 현재 사실로 보고 같은 변경에서 주 소유 기능 문서를 교정한다.
 - 하나의 production C#은 하나의 Systems leaf 문서만 주 소유한다.
-- 세부 기능이 4개 이상인 영역은 폴더형 README와 leaf 문서로 분할한다.
+- `Systems` 루트에는 안내 README와 대기능 폴더만 두며, 기능 폴더는 필요에 따라 하위 기능 폴더와 leaf로 재귀 분할한다. 고정 깊이는 두지 않는다. 한 leaf의 독립 세부 기능이 4개 이상이면 반드시 분할한다. 배치·분할의 상세 기준은 `PublicMD/Systems/README.md`를 따른다.
 - 기존 파일의 local style이 명확하면 유지하되 새 코드에는 `CodeConvention.md`를 적용한다.
 - 사용자의 관련 없는 미커밋 변경을 수정하거나 되돌리지 않는다.
 - 씬·프리팹 배선은 YAML 직접 편집으로 진행해도 된다. 먼저 해당 씬의 Hierarchy, 역할별 묶음,
