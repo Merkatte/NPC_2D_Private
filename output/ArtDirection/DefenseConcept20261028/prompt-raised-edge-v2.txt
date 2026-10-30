@@ -1,0 +1,18 @@
+Use case: style-transfer
+Create a SMALL, STRICT4x4 TILE ATLAS using the reference's exact grass/dirt edge art direction. This is a pixel-art sprite sheet, NOT a completed map. ONE opaque square PNG. Target256x256 total, exactly4columns x4rows, each cell64x64. If generated larger, preserve precisely4x4 equal square cells and draw at a coarse logical64px per cell.
+PRIMARY visual reference: flat clear medium-green grass interior, flat muted warm tan dirt, irregular dark green grassy lip with thin warm brown shadow on DIRT side. This reference supersedes generic cozy grass textures.
+CRITICAL ART: Every grass/dirt interface must visibly have three very narrow elements: 1 low irregular angular grass-tuft silhouette, 2 dark forest-green contour/sod lip1-2logical pixels thick, 3 warm dark ochre-brown contact shadow1logical pixel wide immediately outside lip on DIRT side. Selected short lighter green1px rim marks on grass side only. These edges create slight raised sod depth, not flat color boundaries. Edge depth must survive reduction to64pixels per cell. No large cliffs, rock walls, black outlines, broad bevels or deep drops.
+INTERIORS: absolutely flat solid medium grass green and flat solid warm tan soil. NO grass tufts floating inside, NO rocks, flecks, plants, grain, noise, dithering, gradient, highlights or patterned textures inside either terrain. All detail concentrated at grass/dirt INTERFACE. Match reference's green and warm ochre, not pale yellow or olive.
+LAYOUT: exactly16 equally sized64x64cells edge-to-edge, absolutely no drawn grid lines, separators, gutters, padding, labels, numbers, text, margins or border.
+Row1 left-to-right: completely plain grass fill; completely plain dirt fill; half grass north/half dirt south; half grass south/half dirt north.
+Row2: half grass west/half dirt east; half grass east/half dirt west; grass-north edge variant; grass-south edge variant.
+Row3: convex grass quarter corners occupying NE, SE, SW, NW respectively, dirt elsewhere. Their boundaries meet adjacent cell edges at midpoints.
+Row4: concave grass inverse corners: dirt quarter at NE, SE, SW, NW respectively, grass elsewhere. Their boundaries meet adjacent cell edges at midpoints.
+For split cells, grass and dirt each cover approximately half the cell, interface intersects edge midpoints. Boundaries are gently irregular INSIDE cell while preserving endpoint positions. Do not surround every tile with grass or make standalone islands.
+Flat90degree overhead ground only, crisp deliberate square pixel clusters at logical64px, no antialias blur, no smooth vector shapes, no painted shading. Remember dark GREEN lip and narrow BROWN dirt-side shadow are essential. One convincing16-tile edge study.
+
+Actual processing:
+Native provider PNG1254x1254 opaque saved unchanged as grass-dirt-raised-edge-source-v2.png. One generation; no corrective generation.
+Aseprite1.3.18.6 isolated batch command: aseprite -b output/ArtDirection/DefenseConcept20261028/grass-dirt-raised-edge-source-v2.png --scale 0.20435 --save-as output/ArtDirection/DefenseConcept20261028/grass-dirt-raised-edge-tilesheet-v2.png
+sips verified finalPNG256x256, no alpha. Final visual inspection confirms dark green contour and brown dirt-side shadow remain visible at64px cell scale. No live app documents/settings modified.
+Limitations: generated interior gradients and softened pixel-cluster edges remain;64px slicing geometry is exact but interface connectors/seam adjacency are not validated. Preview only, no Unity import.

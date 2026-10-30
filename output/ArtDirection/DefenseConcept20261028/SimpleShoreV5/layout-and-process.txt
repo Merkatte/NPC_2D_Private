@@ -1,0 +1,36 @@
+Simple Shore V5 — native 64px terrain concept and actual tile mosaic
+
+New user direction: simplify terrain, keep identical quiet grass/water fill colors, concentrate layered detail at connected edges. This revision permits new art; earlier originals remain untouched.
+Palette source: WaterV2CornersV4/water-v2-corners-v4.aseprite, retaining its adjusted 32-color palette. Style inputs: that water sheet and the previously inspected grass-dirt-detail-variants-v3.png. V3 contributes only functional binary geometry and connector collars, not its finished flat-band artwork.
+No image generation. A bounded native Aseprite authoring helper is supplied by the separate code role and reviewed by root before graphics execution. No Python image editing, new validator, Assets/import/scene edits or live Aseprite document changes.
+
+Atlas: 256x256, sixteen 64x64 cells. Row-major 1-based indices:
+01 plain grass; 02 plain water; 03 sparse water ripples; 04 quieter water ripple variant.
+05 land north; 06 land east; 07 land south; 08 land west.
+09 convex land NW; 10 convex land NE; 11 convex land SE; 12 convex land SW.
+13 concave land with water cutout NW; 14 NE; 15 SE; 16 SW.
+
+Common flat grass palette index3 and water index14. Every tile uses identical base colors. Extended land masks produce two grass-side lip pixels (indices1,2), four water-side soil pixels (7,9,9,8), then one teal contact-shadow pixel (12). Decoration is restricted to x/y8..55: small grass-blade clusters at the lip, sparse light/dark soil clusters with upper-left light. No independent interior grass clumps, fill gradients, white foam ring or dense noise. Shared outer8px connector collars remain undecorated and identical by construction.
+
+Pond is an actual 8x8 mosaic of those exact tile pixels (512x512), with no separately illustrated landscape. Water vertices in a 9x9 grid: y2:x3..5; y3:x2..6; y4:x3..6; y5:x2..6; y6:x3..5. All other vertices are land. This creates stepped outer bends and a notch with both corner families.
+Previews are integer nearest-neighbor copies: atlas4x and pond2x, both1024x1024. Final PNGs retain indexed32 color and no alpha; editable native Aseprite files accompany them.
+
+Import proposal only: Multiple64x64 grid, Point filtering, no mipmaps, uncompressed. PPU not finalized. Actual commands, selected layout and observations follow after execution.
+
+Executed command (first native pass, exit0):
+'/Users/minbh/Library/Application Support/Steam/steamapps/common/Aseprite/Aseprite.app/Contents/MacOS/aseprite' --batch --script '/private/tmp/defense-concept-20261028/simple-shore-v5/build-simple-shore-v5.lua'
+Root reviewed the helper before execution. The helper authors native indexed pixels, writes the atlas, then copies those exact atlas pixels into the pond. No resampling or quantization is used to create the64px art. Preview expansion is integer pixel copying.
+
+Actual pond tile indices, top to bottom and left to right:
+01 01 01 01 01 01 01 01
+01 01 15 05 05 16 01 01
+01 15 09 02 02 10 16 01
+01 14 12 03 02 02 06 01
+01 15 09 02 04 02 06 01
+01 14 12 02 02 11 13 01
+01 01 14 07 07 13 01 01
+01 01 01 01 01 01 01 01
+
+Selected outputs: simple-shore-v5.png and .aseprite; simple-shore-v5-preview.png; pond-v5.png and .aseprite; pond-v5-preview.png.
+File checks: atlas256x256 and pond512x512 are opaque indexed8-bit PNGs; both previews1024x1024 indexed. PNG PLTE96bytes confirms32palette entries. Actual previews inspected: grass and water base colors remain consistent across all cells, closed shoreline connects through both corner families without visible cracks or rectangular water-color changes. Decorations remain concentrated around the edge. No cleanup iteration was required for this candidate.
+Limits: repeated shore and grass-blade patterns remain visible, especially on long straight runs. Edge art is deliberately simplified and procedurally authored rather than hand-painted. The demonstrated layout was inspected; this is not a full47-autotile family or exhaustive test of arbitrary maps. No Unity import, RuleTile configuration or runtime use tested. Existing artwork and user-deleted assets were preserved. The old standalone grass reference was no longer present at execution time; prior inspection and its exact sampled colors already retained in V4 were reused.

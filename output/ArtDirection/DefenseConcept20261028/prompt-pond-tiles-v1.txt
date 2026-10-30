@@ -1,0 +1,40 @@
+TERRAIN PROMPT
+Use case: stylized-concept
+Create ONE MODULAR TERRAIN TILE ATLAS matching image1's approved pond scene style, palette and chunky pixels. Image2 provides atlas organization reference only. Do NOT draw a whole pond scene.
+Opaque square sheet, target256x256, exactly4columns x4rows of64x64 tiles. If native larger, keep exact uniform4x4 grid and coarse logical64px-per-cell drawing. NO gutters/gridlines/separators/labels/margins. Each square tile filled to edges, never diamond/isometric tiles.
+Row1: plain grassfill; plain teal pondwater; same pondwater with2short subtle cyan ripples; same pondwater shallow variant as low-contrast flat lighter teal plane.
+Row2: four grass-water HALF-FILL cardinal shore tiles: grassN/E/S/W respectively. Boundary crosses midpoint of opposite tile edges.
+Row3: four convex grassy quarter corners NE/SE/SW/NW, water elsewhere, interface meets midpoints of adjacent tile edges.
+Row4: four inverse concave corners with waterquarter NE/SE/SW/NW, grass elsewhere.
+Maintain uniform connector endpoints and2terrain base colors at cell margins. Grass is quiet same medium green as pond scene; water muted cyan/teal matching scene. Shore has low angular dark-green grassy lip, tiny brown earth hints, thin dark teal water-side contact shadow. Only occasional short pale cyan shoreline accents, no bright continuous foam line. Interiors solid calm flat colors, no gradients, no grain or grass texture. No props, character, stones, plants, reeds or leaf on this TERRAIN layer. Crisp meaningful pixel clusters, no soft blur. These are distinct modular tile pieces, not an assembled illustration.
+
+DETAIL OVERLAY PROMPT
+Use case: stylized-concept
+Create ONE MODULAR DETAIL OVERLAY SPRITE SHEET for approved pond scene image1. Match its soft warm-gray stone, green reeds, small flowers and teal-water accents, crisp chunky pixel style. It is NOT a whole scene or terrain atlas.
+GENUINE TRANSPARENT RGBA background, no colored/checkerboard backdrop. Square target256x256, exactly4columns x4rows, eachcell64x64. Native larger allowed while preserving4x4logical grid.16 separate sprites, each contained fully WITHIN its own cell, generous transparent breathing space around all sides. No labels, gridlines, gutters drawn, numbers or outlines around cells. Sprite pixels only, all empty space transparent.
+Row1 left-to-right: short HORIZONTAL low two-course warm-gray stone-bank module; short VERTICAL low two-course bank module; LEFT END tapered stone-bank cap; RIGHT END tapered stone-bank cap.
+Row2: low stone-bank corner turning NE; low stone-bank corner turning NW; irregular SMALL2-3stone cluster; another SMALL irregular3stone cluster.
+Stone-bank means2LOW stacked courses of broad flat stones, height around character shin/knee, simple2-3tone shading and selected seams, no huge boulders or cliffs. Front-readable classic top-down RPG projection matching scene, not diamond isometric modules. Faint compact contact shadows can be semi-transparent but do not paint ground under sprites.
+Row3: small shortgrass tuft; small2-3blade reed/sedge tuft; tiny white/cream flower cluster with stems/leaves; tiny pink flower cluster with stems/leaves.
+Row4: small gravel cluster3-4pebbles; medium gravel cluster5-7pebbles;2-3partially submerged stones tinted slightly teal with a couple tiny waterline accents but NO opaque water rectangle; ONE tiny lily leaf with one subtle cyan ripple fragment, NO water disk underneath.
+Keep sparse low visual density and coherent scale across sheet. Clean isolated recognizable silhouettes at64px, precise chunky pixel art, no gradients, no photoreal texture, no grass carpets, no character/buildings/terrain rectangles. Every cell a separate modular overlay prop with transparent surrounding pixels.
+
+TERRAIN CORRECTION after root review
+Correct ONLY this terrain atlas's CELL GEOMETRY and BASE COLOR consistency. Preserve same rough grassy lip/shadow style. Exactly4columns x4rows of independent square cells.
+Use ONE identical flat grass green and ONE identical flat teal water base everywhere. No gradient, vignette, per-cell lightness changes or visible grid line. Row1 waterfill and rippledwater must be same base color as all shore water. Row1grass matches all shore grass. Shallowwater in row1col4 can be single modestly lighter flat teal.
+Row1: grassfill, waterfill, samewater with2tiny ripples, shallowwaterfill.
+Row2: grassN/waterS; grassE/waterW; grassS/waterN; grassW/waterE. Boundaries at cell midpoint, sparse small jagged variations.
+Row3 four INDEPENDENT convex GRASS quarter-corners, in order NE,SE,SW,NW. In EACH cell the grass quarter-circle is centered on that cell's specified corner and radius HALF CELL WIDTH. The grass shape reaches the midpoint of that corner's TWO ADJACENT cell edges, water fills rest. Never extend a curve across two cells. Each column is a separate quarter-corner piece.
+Row4 four INDEPENDENT concave grass corners, equivalently WATER quarter-corners centered at NE,SE,SW,NW respectively with radius HALF CELL WIDTH, grass fills rest. Water quarter reaches midpoints of two neighboring cell edges.
+Keep all curve endpoints precisely at cell-edge midpoints. Do not draw multi-cell arch motifs or a whole-pond shape across columns. Each cell wholly independent. No labels, grids, gutters, extra props. Low grassy lip narrow darkgreen/earth/teal shadow; cyan highlights sparse. Opaque square256x256target, exact4x4cells64px; if native larger maintain this uniform geometry.
+
+ACTUAL PROCESSING AND LIMITS
+Terrain: one initial generation plus one correction. Selected corrected provider exec-acb98f1a-d6a3-4da9-afa5-7b119773c098.png retained unchanged as pond-terrain-source-v1.png,1254x1254opaque.
+Details: one generation, provider exec-bdff1360-66f8-4d59-92d7-a18ca6860057.png retained unchanged as pond-details-source-v1.png,1254x1254with alpha.
+Aseprite1.3.18.6 isolated batch commands:
+aseprite -b output/ArtDirection/DefenseConcept20261028/pond-terrain-source-v1.png --scale 0.20435 --save-as output/ArtDirection/DefenseConcept20261028/pond-terrain-tiles-v1.png
+aseprite -b output/ArtDirection/DefenseConcept20261028/pond-details-source-v1.png --scale 0.20435 --save-as output/ArtDirection/DefenseConcept20261028/pond-details-tiles-v1.png
+Both commands exit0. Final sips: bothPNG256x256; terrain noalpha, details alpha=yes. Both final files visually inspected at delivered size.
+Known terrain failure: correction did not resolve middle paired-arch contours or inconsistent corner endpoints. This is not a production-ready valid independent-corner/autotile set. Uniform64px slicing does not fix generated geometry. Some gradients and strong cyan edge accents remain.
+Details: transparent isolated sprites recognizable, but several bank pieces include foliage and orientations/endcaps are approximate; modular joining, exact per-cell isolation, pixel-grid cleanup and alpha fringe behavior on actual game background not validated. No seam certification.
+Conceptual import only:Multiple64x64grid,Point,no mipmaps,uncompressed,sRGB,Clamp; not applied. No Unity/liveAseprite document/settings changes. Prior outputs preserved.

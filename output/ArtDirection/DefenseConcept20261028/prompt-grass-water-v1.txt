@@ -1,0 +1,26 @@
+Use case: stylized-concept
+Create ONE STATIC4x4pixel-art GRASS-WATER SHORE TILE ATLAS. Target256x256 opaque square PNG,16equal cells64x64, exact4columns4rows. If native larger, preserve4x4layout and coarse logical64px cell artwork.
+Reference1 is primary GRASS PALETTE AND LOW SOD-LIP STYLE: flat medium green grass with narrow dark green ragged edge. Replace all dirt terrain with pond WATER. Reference2 supplies only muted turquoise/teal POND COLOR inspiration. Do NOT copy buildings, character, trees, props, shore rocks or map layout.
+Every tile filled edge-to-edge with grass or water. No labels, drawn grid lines, gutters, padding, separators, margins, square tile borders or isolated tile shadows. This is a sprite sheet, NOT a full map or pond illustration.
+PRECISE16CELL LAYOUT:
+Row1: plain solid grass fill; quiet turquoise water fill; same water with2-3tiny short angular pale-cyan ripple marks; same water with ONE tiny isolated aquatic leaf and one subtle ripple.
+Row2: four half-fill cardinal shore edges, grass occupying N/E/S/W respectively, water other half. Interfaces run to midpoints of opposite cell edges.
+Row3: convex grass quarter corners occupying NE/SE/SW/NW respectively, water elsewhere. Interfaces meet midpoints of neighboring edges.
+Row4: inverse concave corners with WATER quarter at NE/SE/SW/NW respectively, grass elsewhere.
+In shore cells retain familiar low uneven pixel grass tuft silhouette, narrow dark-green contour1-2logical pixels. Immediately on WATER side add a thin dark teal contact shadow, conveying grass bank just slightly above water. A very thin muted earth pixel can peek underneath sparsely, but NO sandy beach, broad brown strip, stone wall, cliffs or giant rocks. Shallow pond right beside grass. Only selected tiny light-green top rim accents.
+WATER: muted cool turquoise/teal flat broad planes, sparse short angular pale-cyan ripple hints, a few broken lighter shoreline-water marks. NO continuous thick white foam stripe, white scallops, glitter, waves, ocean surf or reflections everywhere. Clear still shallow pond, calm and readable.
+GRASS: flat calm mid-green, no scattered texture noise. Only1-2shore tiles may contain one tiny sedge/reed tuft2-3blades, keep almost all tiles undecorated. Decoration must never obscure interface geometry. Interiors85-95percent empty.
+Style: crisp deliberate square pixel clusters, small64px game tile feeling, restrained limited palette, coherent green/teal contrasts. No gradients, airbrush, gloss, watercolor, bevel-shaded panels, strong black outlines or grain. Keep border connector points consistent; irregularity inside tiles. Single static atlas only, no animation frames or extra outputs.
+
+Targeted correction requested after root review:
+Edit image1 with ONLY these targeted changes. Preserve its exact4x4tile organization, all grass-water boundary shapes/orientations, fills, leaf and ripple locations.
+1 Match ALL grass interior green to image2's quieter medium-green grass. Image1's current bright lime green is too vivid. Image2 is palette/style reference ONLY; copy no dirt shapes.
+2 Lower saturation/brightness of the pale-cyan shoreline accents slightly; retain thin dark-teal water-side bank contact shadow and narrow dark-green grass lip. No new foam or broad highlights.
+3 Add TWO very small sedge tufts TOTAL: one tuft in row2,column1 near grassy shore, another in row3,column4 near grassy shore. Each just2-3pointed blades, about5-7logical pixels tall when each tile is64px. Root them immediately on grass side of edge, unmistakably visible but restrained. No reeds elsewhere, no large shrubs.
+Nothing else changes. No text/grid/gutters/margins. Same square opaque4x4atlas, logical64px cells, intended final256x256. Crisp deliberate pixel clusters, quiet flat colors, no extra textures.
+
+Actual processing:
+Initial generation plus one targeted correction. Corrected provider1254x1254 opaque PNG copied unchanged to grass-water-shore-source-v1.png; initial provider output retained at provider location.
+Aseprite1.3.18.6 isolated batch: aseprite -b output/ArtDirection/DefenseConcept20261028/grass-water-shore-source-v1.png --scale 0.20435 --save-as output/ArtDirection/DefenseConcept20261028/grass-water-shore-variants-v1.png
+Command exit0. sips finalPNG256x256,no alpha. Final visual inspection: greener hue now closer to earlier grass family, two small shoreline sedge tufts visible, dark bank shadow and cyan accents present, quiet/ripple/leaf water fills present.
+Limits: mild gradients, softened pixel edges and per-cell water color variation remain; cyan shoreline accent extends along much of edge; generated corners are not guaranteed complete valid autotile topology.64px slicing geometry does not establish seamless adjacency. Static preview only, no Unity import and no live Aseprite document/settings changes.

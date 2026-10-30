@@ -1,0 +1,34 @@
+Planted Shore V6 — decorative variants added to unchanged V5 terrain
+
+Readonly source: ../SimpleShoreV5/simple-shore-v5.aseprite. Its original sixteen64px tiles and32-color palette are copied unchanged into the top256x256 of a new256x384 atlas. No generation, recoloring, quantization, resampling or original-file edits.
+The separate code role supplies a bounded native Aseprite authoring helper. Graphics execution follows root review. New pixel decorations are restricted to plain grass pixels inside x/y8..55, preserving all original shore profiles and connector collars.
+
+Appended tile IDs, 1-based row-major:
+17 grass with two filled13x14 leaf clumps.
+18 grass with15x20 broad reed blades and a leaf clump.
+19 grass with a17x14 three-head cream/pink flower cluster and a leaf clump.
+20 grass with three rounded shaded stones:12x9,8x6,5x4.
+21 copy of original5 (land north), with tufts and a small stone.
+22 copy of original6 (land east), with reeds and a small stone.
+23 copy of original7 (land south), with cream/pink flowers and a tuft.
+24 copy of original8 (land west), with stones and a tuft.
+
+The same V5 pond shape is assembled from exact atlas tile copies. Decorations occupy three loose zones and leave water and most grass unchanged. The west-facing decorative tile24 is available in the sheet but not needed by this pond's geometry. No separately generated pond image.
+Output targets: planted-shore-v6.png/.aseprite256x384,2x nearest preview512x768; pond-v6.png/.aseprite512x512,2x nearest preview1024x1024. No Unity import or scene edits. Import proposal remains Multiple64px grid, Point, no mipmaps, uncompressed; PPU undecided.
+
+Actual execution: the following command completed successfully twice, for the first pass and the one selected art cleanup. Root reviewed each helper version before execution.
+'/Users/minbh/Library/Application Support/Steam/steamapps/common/Aseprite/Aseprite.app/Contents/MacOS/aseprite' --batch --script '/private/tmp/defense-concept-20261028/planted-shore-v6/build-planted-shore-v6.lua'
+
+Final actual pond tile IDs, top to bottom and left to right:
+01 01 20 17 01 01 01 01
+01 01 15 21 05 16 01 01
+01 15 09 02 02 10 16 01
+01 14 12 03 02 02 22 18
+01 15 09 02 04 02 06 01
+01 14 12 02 02 11 13 01
+01 01 14 07 23 13 01 01
+01 01 01 20 19 01 01 01
+
+Selected native art uses filled tapered leaf silhouettes, compact dark green bases, three flower heads over a leaf bed, and shaded rounded stones. Decorations are concentrated in upper, right and lower zones. Every pond pixel is copied from its specified atlas tile; there is no separately generated or painted landscape.
+Checks: file identifies opaque indexed8-bit PNGs at256x384 and512x512; previews512x768 and1024x1024. PNG PLTE96bytes confirms32palette entries. Both final previews inspected after cleanup: visible denser plant clusters and stones, consistent water/grass bases, continuous shore through both corner families. Original16 tile indices and palette are copied directly from V5; appended variants only alter original plain grass index3 inside8px collars. All other material pixels remain untouched by the guarded authoring operation.
+Limits: this is a small repeated decorative vocabulary, not comprehensive biome variation. Some plant/stone shapes repeat. Native art and shown tile mosaic are inspected; Unity import, RuleTile configuration and exhaustive arbitrary layouts are not tested. No source assets, scenes, importer metadata or live Aseprite documents changed. No further iterations after the single cleanup.

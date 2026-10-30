@@ -1,0 +1,42 @@
+Use case: stylized-concept
+Create ONLY EIGHT NEW CORNER TILES that extend the supplied existing water tile art, NOT a replacement atlas. Reference image1 is the primary exact art family: preserve its medium teal water, irregular raised grassy sod, angular tiny grass blades and reeds, tiny flowers, warm tan bank, shaded little stones, dark colored contact edges. Its lively yet sparse shore detail density is important. Reference2 defines the precise green grass family and detailed jagged edge treatment. Do NOT simplify to smooth flat outline bands or diagram curves.
+Layout: one opaque wide rectangular image, target1536x768 (2:1), EXACT4columns and2rows, eight equal SQUAREcells, edge-to-edge with no gutters/borders/gridlines/labels/text. Each cell is one independent64x64 logical pixel tile shown enlarged; deliberate chunky actual pixel clusters, NO gradients, anti-aliasing, gloss, photographic texture or dithering.
+Top row: four CONVEX LAND corners NW, NE, SE, SW respectively. For NW tile grass occupies the NW corner and reaches halfway along top and left edges; water fills remainder, with an irregular curved grassy edge joining those two midpoints. Other three are rotated GEOMETRIES, with vegetation still naturally upright to screen.
+Bottom row: four CONCAVE LAND corners with WATER cutout NW, NE, SE, SW respectively. For NW water cutout tile, water occupies the NW corner reaching halfway along top/left edges, and grass fills the remainder. Other three correspondingly rotated geometries. Each shape must be completed within its own squarecell. NO two-cell spanning arch as one shape.
+Connection: boundary enters exactly at midpoint of respective two cell edges; first/last6logicalpixels approaching each connector should align straight. Variation and little plants concentrated away from connector edge. Keep water and grass flat base colors identical across all cells, matching references, without per-cell lighting shifts. Thin rugged dark green lip, irregular warm tan low sod bank around2-3logicalpixels plus thin dark teal water shadow. A few sparse cyan water ripples, not white foam.
+Keep the original v2 charm and richness: a few tiny grass tufts, occasional2-3reedblades, small cream/pink blooms and small warm-gray pebbles purposefully grouped along some corners, modest variations across the8cells. Most interior remains quiet. Every corner must still clearly read at64px. Do not add gigantic rocks or plants. No characters/buildings/fullscene/isometricperspective. 90degree overhead ground-only pixel sprites. Only generate these eight newcorners; existing sixteen source tiles will be copied separately and must not be redrawn here.
+
+
+One targeted correction prompt (result retained as selected draft):
+Use case: precise-object-edit
+EDIT ONLY the first reference image, the existing 4-column by2-row corner sheet. Keep its excellent rich pixel-art style, palette, vegetation scale/density, small reeds/flowers/pebbles, irregular raised grassy sod/tanbank/shadow treatment, and exactly8squarecells in a2:1canvas. Reference2 is original v2 straightshore art for matching boundary detail. Reference3 supplies accepted grass colors. Do not replace art with flat procedural bands.
+ONE NECESSARY GEOMETRY FIX: each boundary must meet the EXACT MIDPOINT of its two appropriate cell edges, NOT three-quarters. Think each cell is64x64pixels: crossings at pixel32, never48. There are4equalcolumns,2equalrows. Toprow convexLAND NW/NE/SE/SW; bottomrow concaveLAND with WATERcutout NW/NE/SE/SW. For top-left corner tile, grass meets topedge halfway across and leftedge halfway down; allremainingtop/right/bottomedge portions arewater. Its grass footprint is a quartercircle-like irregular region with radius32 logicalpixels, not48. The same midpoint rule applies to allsevenothers. Bottom-left tile is its inverse: water only in theNWcorner, crossingmidpointtop+left, grassremainder.
+Preserve the specific corner directions, detailed art, same-flatgrass/water basecolors and small sparseplants. Change only corner footprint size/position as needed to connect to32px midpoint and reposition existing detailgroups a little inward if needed. First/last6logicalpixels at connector should be straight and have consistent v2 grasslip+tanbank+tealshadow thickness. Keep everycornerindependentwithinitsowncell, no paired giantarch that needs two cells tocomplete. No text/gridlines/gutters/labels. Crisp blockyactualpixelclusters, no gradients/newgloss/noise/hugeplants. Output target1536x7682:1 exactly4by2cells. This is a precise connector correction, not a redesign.
+
+Process and actual result:
+Primary source: ../water-detail-pixel-v2.aseprite, original sixteen indexed64px tiles. Grass reference: Assets/Art/Generated/TerrainTest/grass-dirt-detail-variants-v3.png. Neither input edited.
+Initial provider draft: /Users/minbh/.codex/generated_images/01a17df4-be28-75d1-80a8-4ace4c8ca02c/exec-599f8ca8-6a70-49ac-aa2a-7c1d248c6023.png
+Selected corrected provider draft: /Users/minbh/.codex/generated_images/01a17df4-be28-75d1-80a8-4ace4c8ca02c/exec-dd3deb33-03d0-48e3-85e4-404dff024450.png
+Selected native draft copied unchanged to corner-draft-v4.png:1774x887 opaque. One generation plus one correction; no more generation.
+Exact executed command, exit0:
+'/Users/minbh/Library/Application Support/Steam/steamapps/common/Aseprite/Aseprite.app/Contents/MacOS/aseprite' --batch --script '/private/tmp/defense-concept-20261028/water-v2-corners-v4/assemble-water-v4.lua'
+The bounded assembly helper was written by the separate code role and reviewed by root. Original sixteen tile indices copied exactly, no smoothing, no redraw, no change to silhouettes, plant/rock/flower/ripple arrangements. Only eight dedicated green palette entries changed. Source palette index0 and all water/earth/stone/flower entries retained. New corner draft sampled cell-by-cell with nearest neighbor to64px, quantized without dithering to ORIGINAL32 palette indices, then rendered with updatedgreen palette. No procedural corner geometry reconstruction.
+Actual replacement palette indices and accepted-reference RGB samples:
+1=49,105,61 from(14,161)
+2=59,145,80 from(237,145)
+3=67,174,99 from(32,16)
+4=95,199,110 from(91,85)
+5=150,187,103 from(164,64)
+27=56,127,66 from(226,32)
+28=68,159,76 from(235,142)
+29=142,179,95 from(228,64)
+Layout256x448,4columns7rows, nominal64x64 each:
+Rows1-4: original v2 sixteen tile index patterns, unchanged.
+Row5: convex land NW,NE,SE,SW (new art).
+Row6: concave land with water cutout NW,NE,SE,SW (new art).
+Row7: four absolutely plain grassfills, palette3. Standalone grass-fill-v4.png repeats one64x64fill.
+Outputs: water-v2-corners-v4.png and editable .aseprite; water-v2-corners-v4-preview.png exact2x nearest-neighbor512x896; original-preserved-v4.png256x256 crop; original-vs-preserved-v4.png512x256 side-by-side original left and recolored preserved right. All are in owned WaterV2CornersV4 folder.
+Evidence: file reports final256x448indexed8-bit colormap and preview512x896indexed; sips confirms final and64x64grassfill opaque; finalPNG PLTE96bytes=32entries. Preview and original-vs-preserved reviewed visually. Original silhouettes and detailed pixels preserved; newly sampled corner details appear richer and closer to originalv2 than the rejected V3 reconstruction.
+Limitations: imagegen correction did not reliably achieve requested exact midpoint connectors. New corner edge crossings and width profiles remain approximate, so64px slicing is exact but adjacency/seams are NOT validated. No assembled pond is claimed or supplied for this revision. New corner art is generated then nearest-sampled/indexed, not hand pixel-authored. Prior cyan foliage shadows remain because water/cyan slots were intentionally preserved. Grass palette comes from actual reference samples; no claim that every other source material was recolored. No native cleanup pass was used.
+Import proposal only: Multiple64px grid, Point, no mipmaps, uncompressed; PPU not finalized. No Unity imports, Assets, .meta, scene or live Aseprite document changes.
+

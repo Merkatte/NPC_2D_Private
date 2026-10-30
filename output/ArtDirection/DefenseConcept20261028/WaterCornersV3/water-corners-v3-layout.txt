@@ -1,0 +1,30 @@
+WaterCornersV3 — 64x64 logical-pixel tiles; all indices are 1-based.
+Atlas: 256x256, four columns by four rows. Palette: unchanged indexed32 source.
+Atlas indices, row column name:
+01: r1 c1 grass-fill
+02: r1 c2 water-fill
+03: r1 c3 quiet-ripples
+04: r1 c4 underwater-stones
+05: r2 c1 land-N
+06: r2 c2 land-E
+07: r2 c3 land-S
+08: r2 c4 land-W
+09: r3 c1 convex-land-NW
+10: r3 c2 convex-land-NE
+11: r3 c3 convex-land-SE
+12: r3 c4 convex-land-SW
+13: r4 c1 concave-land-water-NW
+14: r4 c2 concave-land-water-NE
+15: r4 c3 concave-land-water-SE
+16: r4 c4 concave-land-water-SW
+Pond: 512x512, eight rows by eight columns; exact atlas pixel copies.
+Pond rows (top to bottom); entries run left to right:
+r1: 01 01 01 01 01 01 01 01
+r2: 01 15 05 05 05 05 16 01
+r3: 01 08 02 02 02 02 06 01
+r4: 01 14 12 03 02 02 06 01
+r5: 01 15 09 02 04 02 06 01
+r6: 01 08 02 02 02 02 06 01
+r7: 01 14 07 07 07 07 13 01
+r8: 01 01 01 01 01 01 01 01
+Previews: atlas x4 and pond x2, both 1024x1024; nearest-neighbor index copies.

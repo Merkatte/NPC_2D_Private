@@ -1,0 +1,38 @@
+{ "frames": [
+   {
+    "filename": "water-v2-corners-v4.png",
+    "frame": { "x": 0, "y": 0, "w": 256, "h": 448 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 448 },
+    "sourceSize": { "w": 256, "h": 448 },
+    "duration": 100
+   },
+   {
+    "filename": "grass-dirt-detail-variants-v3.png",
+    "frame": { "x": 256, "y": 0, "w": 256, "h": 256 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+    "sourceSize": { "w": 256, "h": 256 },
+    "duration": 100
+   },
+   {
+    "filename": "dirt-interior-variants-v1.png",
+    "frame": { "x": 256, "y": 256, "w": 256, "h": 256 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+    "sourceSize": { "w": 256, "h": 256 },
+    "duration": 100
+   }
+ ],
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.6-arm64",
+  "image": "terrain-packed-v1.png",
+  "format": "RGBA8888",
+  "size": { "w": 512, "h": 512 },
+  "scale": "1"
+ }
+}

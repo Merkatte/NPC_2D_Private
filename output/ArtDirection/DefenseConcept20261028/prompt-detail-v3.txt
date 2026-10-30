@@ -1,0 +1,19 @@
+Use case: stylized-concept
+Create ONE square opaque 4x4 pixel-art TILE DETAIL COMPARISON SHEET,16 tiles total. Target256x256 pixels, each64x64 cell. If larger native output is needed, maintain exactly4x4 equal square cells and coarse logical64px-per-cell pixel art.
+Reference1 is the approved raised grass/dirt edge style: clear medium-green grass, muted warm tan dirt, ragged dark forest-green sod lip with a narrow brown contact shadow on dirt side. Reference2 confirms the restrained grassy lip and clear interiors. KEEP this edge appearance. Change atlas organization to the comparison grid below. This is NOT an assembled map, not landscape illustration.
+EXACT ORGANIZATION:
+Four columns are decorative categories left-to-right: (1) plain baseline with no decoration (2)1-3 tiny warm-gray stones (3)2-3 slightly taller green grass tufts (4)2-3 sparse tiny flowers.
+Four rows are boundary shapes: row1 horizontal irregular grass-north/dirt-south edge at mid-height; row2 convex grass corner in upper-left; row3 concave grass corner with dirt quarter in upper-left; row4 gently sweeping irregular grass/dirt boundary.
+Within EACH row, all FOUR tiles must repeat the SAME major boundary shape and orientation, at matching positions, so only decoration changes. Do not rotate or redesign boundary between columns. Each tile's boundary extends to cell edges. Maintain equal cell size and clear4x4 organization with no extra panels.
+STYLE: Flat90degree overhead2D pixel ground. Dark-green irregular grass lip1-2logical pixels thick with warm-brown dirt-side contact shadow1logical pixel and occasional tiny light-green rim segments. Crisp square-pixel clusters. Grass/dirt interiors solid calm colors with NO gradients, noise, grain or scattered flecks.
+STONES column:1-3 small warm-gray pebbles near boundary on dirt side, each about3-6logical pixels wide, two or three flat shade tones and tiny contact shadow. No large boulders.
+TALLER GRASS column:2-3 small blade clusters growing just inside green edge,4-7logical pixels tall, a few darker/lighter green pixels, clearly recognizable and restrained. Don't cover entire tile.
+FLOWERS column:2-3 tiny cream/yellow/pink blooms near grass-side edge, thin stems and tiny green leaves, flower head2-4logical pixels wide,4-7pixels overall height. Use each color sparingly, not giant cartoon flowers.
+Vary decorative placements between rows, avoid identical stamped clusters. At least75-85% interiors remain empty calm fields. Decoration is intentional readable small pixel detail, not texture.
+No labels/text/numbers, no drawn grid/separators, no gutters/padding/margins, no white background, no drop shadows around rectangular tiles. Every cell fills edge-to-edge with grass and dirt. No perspective, shiny bevels, watercolor, airbrush or smooth vector illustration. One compact beautiful16-cell study showing baseline vs stones vs grass vs flowers on the same boundary shapes.
+
+Actual processing:
+Native provider PNG1254x1254 opaque retained unchanged as grass-dirt-detail-source-v3.png. One generation, no corrective generation.
+Aseprite1.3.18.6 isolated batch: aseprite -b output/ArtDirection/DefenseConcept20261028/grass-dirt-detail-source-v3.png --scale 0.20435 --save-as output/ArtDirection/DefenseConcept20261028/grass-dirt-detail-variants-v3.png
+Command succeeded exit0. sips verified finalPNG256x256, no alpha. Final viewed at delivered resolution: baseline/stones/tallergrass/flowers visibly distinct, comparable row contours, dark-green lip and brown shadow retained.
+Limits: some gradients and softened pixel edges remain; row contours are visually comparable, not guaranteed pixel-identical;64x64 grid slicing does not establish seamless connectors. Aesthetic comparison only, not complete autotile topology. No Unity import or live Aseprite document/settings mutation.

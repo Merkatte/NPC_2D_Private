@@ -1,0 +1,24 @@
+Use case: stylized-concept
+Create ONE functional-looking visual concept of a grass/dirt pixel tile atlas, NOT an assembled map or illustration. Output target exactly 512x512 pixels, opaque. EXACTLY EIGHT COLUMNS by EIGHT ROWS, 64 square cells total, each64x64. If output system requires1024x1024, use precisely8x8 cells each128x128, with artwork drawn as exact integer2x pixel art so it can downscale nearest-neighbor to512x512.
+No gutters, padding, grid lines, labels, numbers, borders or drop shadows. The 64 invisible square cell boundaries are evenly spaced across entire canvas, touching edge-to-edge. Every cell completely filled with grass, dirt, or both. ALL64 cells exist uniformly; never merge cells into bigger sections.
+Flat 90-degree top-down GROUND-ONLY pixel art. Quiet muted sage/olive green grass and pale warm ochre dirt. Broad flat colors, sparse purposeful few-pixel grass tufts or tiny soil flecks, no gradient, grain, dithering or mottled texture. Crisp square-pixel clusters. No black outlines or raised beveled turf. No trees, buildings, characters, ponds, props or perspective.
+Reference image is COLOR/DETAIL-RESTRAINT ONLY, never copy its scene, character or buildings.
+The atlas geometry is more important than decoration. Draw distinctly different connecting transition cells, not 64 isolated circular dirt islands. Boundaries reach exact cell edges. Any grass/dirt boundary intersecting a cell edge does so at that edge's midpoint. Wiggle boundary INSIDE the cell but preserve fixed edge connectors. Use dirt centered connector width32 source pixels (half a cell) for narrow paths, centered on each connected edge.
+Row1: 4 fully grass fill variants then4 fully dirt fill variants.
+Row2: eight HALF-FILL boundary tiles, grass on north, east, south, west side respectively, repeated twice as subtly irregular variants. Each split meets midpoints of opposite cell edges.
+Row3: convex dirt corner quarter-rounds occupying NE, SE, SW, NW corners respectively, repeated twice. Dirt reaches two neighboring cell edges from their midpoints to their shared corner; grass elsewhere.
+Row4: concave inverse corners: grass quarter-round in NE, SE, SW, NW with dirt elsewhere, repeated twice.
+Row5: eight broad gently curved grass/dirt transition variants, boundaries connecting midpoints of cell edges, useful for natural irregular path borders.
+Row6: four centered vertical dirt path strip variants joining top/bottom edge; four centered horizontal dirt path strip variants joining left/right edge. Grass flanks, common half-cell path width.
+Row7: eight elbow path cells: dirt path connects N+E, E+S, S+W, W+N, repeated twice, connectors centered half-cell wide, grass in remaining corners.
+Row8: four T-junction paths in four orientations, then one four-way cross path, then three gentle S-curve path variants. Same centered half-cell-wide edge connectors.
+Keep invisible grid strict and uniformly aligned: every cell is a distinct usable geometric piece. Flat sparse 64px pixel art, no text, no map layout.
+
+Targeted correction:
+Keep this EXACT 8-column 8-row tile atlas layout, every shape and orientation, one opaque square image. Remove ALL faint grid lines and outlines between cells: there must be NO visible vertical/horizontal dividers drawn over the terrain, NO gutters or padding. Each adjacent tile touches directly. Keep the64 evenly spaced square cells; don't merge or rearrange them. Replace gradients with flat muted sage green grass and flat pale warm ochre dirt, only sparse small deliberate pixel clusters. Preserve crisp pixel edges and all connecting transition shapes. Ground-only sprite sheet, no text. Deliver EXACTLY1024x1024 pixels with8x8 cells of128x128; each2x2 output block should represent one original pixel so it can be reduced to512x512 nearest-neighbor. Do not add any new details.
+
+Actual mechanical processing:
+Provider produced1254x1254 opaque PNG despite requested dimensions; retained as grass-dirt-tilesheet-source.png.
+Aseprite1.3.18.6 isolated batch --shrink-to512,512 produced511x511 due to rounding; replaced using source with --scale0.4087 and --save-as grass-dirt-tilesheet-64-concept.png.
+Final command: aseprite -b output/ArtDirection/DefenseConcept20261028/grass-dirt-tilesheet-source.png --scale 0.4087 --save-as output/ArtDirection/DefenseConcept20261028/grass-dirt-tilesheet-64-concept.png
+Final dimensions verified by sips:512x512, PNG, no alpha. No live app documents/settings changed. Exact64x64 slicing yields8x8 cells, but generated boundary alignment/connectors and seamless adjacency are not validated. Some smooth gradients/color drift remain. Preview only, no Unity import.

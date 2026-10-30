@@ -1,0 +1,39 @@
+Water Corners V3 — native indexed pixel authoring and exact tile assembly
+
+Approved basis: ../water-detail-pixel-v2.aseprite and its 32-color palette.
+Style reference: Assets/Art/Generated/TerrainTest/grass-dirt-detail-variants-v3.png.
+No new image generation. New shore geometry is authored at actual 64x64 pixels through a bounded Aseprite Lua authoring helper supplied by the separate code role. Existing ripple and underwater-stone pixels are reused. This is not a high-resolution scene shrunk into a purported tilemap.
+
+Atlas: 256x256 opaque indexed PNG and editable Aseprite; 4x4 equal 64px cells. IDs below are 1-based, row-major, screen top to bottom.
+01 grass fill; 02 water fill; 03 quiet water ripples; 04 underwater stones.
+05 grass north; 06 grass east; 07 grass south; 08 grass west.
+09 convex land NW; 10 convex land NE; 11 convex land SE; 12 convex land SW.
+13 concave land / water cutout NW; 14 water cutout NE; 15 water cutout SE; 16 water cutout SW.
+
+Shared connector contract: midpoint between pixel31 and32. Outer8px collars have straight matching boundary profiles. Shape variation occurs inside the cell. Two grass-side dark-green pixels, two tan bank pixels on the water side, one dark-teal water-side contact-shadow pixel. Boundary classification extends outside each cell so its outer rectangle is never incorrectly outlined. Palette indices are zero-based: grass3, lip1, bank9, water14, shadow12. Plain grass/water fills reuse approved palette colors. Reused fill details receive an8px plain-water margin.
+
+NW convex land boundary polygon: (0,0),(31,0),(31,8),(30,13),(28,16),(28,19),(24,23),(22,26),(17,28),(13,30),(8,31),(0,31). Other convex masks rotate this shape; concave masks complement the corresponding corner mask. Cardinal interiors vary by small integer steps while preserving common collars. No decorative marks on connector pixels.
+
+Pond: 8x8 exact64px tile copies =512x512, with2x nearest-neighbor1024 preview. A9x9 vertex grid defines water at x2..6,y2..6 inclusive except vertex(2,4), which is land. All other vertices are land. This introduces a shoreline notch and both corner families without ambiguous diagonal states. The output is an actual tile-index mosaic, not an independently generated pond illustration. Actual tile indices and executed command are recorded below after authoring.
+
+Import proposal only, not applied: Multiple64x64 grid, Point filtering, no mipmaps, uncompressed. PPU not finalized. Reference asset currently uses PPU128, bilinear filtering and compressed import; these are not changed. Unity scene use, RuleTile setup and exhaustive terrain topology are outside this task.
+
+Executed native authoring command, exit0:
+'/Users/minbh/Library/Application Support/Steam/steamapps/common/Aseprite/Aseprite.app/Contents/MacOS/aseprite' --batch --script '/private/tmp/defense-concept-20261028/water-corners-v3/build-water-corners.lua'
+Root reviewed the bounded Lua authoring helper before execution. No source edit, imagegen call, raster resampling or palette quantization occurred for these new shore tiles. The helper writes the native tile pixels and copies exactly those pixels into the pond. Preview pixels use integer nearest-neighbor copies.
+Output pond stem is water-pond-v3, explicitly approved by root, rather than the initially proposed pond-assembled-v3. Separate water-corners-v3-layout.txt was also approved and contains the same index map recorded here.
+
+Actual pond tile IDs (top-to-bottom, left-to-right):
+01 01 01 01 01 01 01 01
+01 15 05 05 05 05 16 01
+01 08 02 02 02 02 06 01
+01 14 12 03 02 02 06 01
+01 15 09 02 04 02 06 01
+01 08 02 02 02 02 06 01
+01 14 07 07 07 07 13 01
+01 01 01 01 01 01 01 01
+
+Checks: file reports indexed 8-bit colormap PNGs, atlas256x256, pond512x512 and both previews1024x1024. sips confirms atlas and pond have no alpha. Atlas PNG PLTE length96bytes confirms32palette entries. Visual inspection finds a continuous closed shoreline, rounded outer pond corners and an inward peninsula using both corner families. Full-cell empty fills and both reused detail fills connect without visible rectangular color seams. All corners are independent64px tiles even where neighboring atlas cells form larger visual shapes.
+Limits: this is a small functional connector family, not47-autotile coverage. The shown8x8 arrangement has been visually inspected; exhaustive arbitrary arrangements, Unity slicing, RuleTile rules and runtime use were not tested. Repeated straight shore contours are visible; the native bands are intentionally plain, and decorative shoreline variants and directional highlight polish remain absent. Underwater stones retain the prior generated-and-indexed source appearance. No claim of hand-authored source decoration or finished production art. Existing project assets, importer settings and live Aseprite documents were not changed.
+
+Final selected cleanup: root reviewed one bounded decorateShore update; the same command above was rerun once, exit0. Sparse3–5px grass tips use palette1/2/4, tiny earth-shadow accents use8, and selected interiors receive a7x6grassclump. Every write is restricted to x/y8..55 and excludes the water-side shadow. The shared outer8px connector collars, base masks, fill tiles and pond index layout remain unchanged. Both final previews were inspected again: visible small grass accents, continuous joined outline, both corner families and closed shoreline. Final dimensions/opacity/indexed mode were rechecked and unchanged. This supersedes the initial-pass note that shoreline decorations were absent; repeated contour and clump placement remains a visible limitation. No further cleanup or image generation was performed.
