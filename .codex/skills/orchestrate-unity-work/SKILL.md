@@ -29,7 +29,7 @@ Read [extended-workflows.md](references/extended-workflows.md) only when the use
 5. Set one task-wide corrective-attempt budget before verification, normally one or two attempts. Zero disables corrective attempts. Share it across all workers, check failures and review findings; never reset it on reassignment or increase it without user authorization.
 6. Resolve missing choices only when they materially affect the requested outcome or authority.
 
-When implement-npc-feature applies, preserve its native planning mode, explicit plan approval, separate implementation phase and progress requirements. This skill does not replace that specialized workflow.
+For NPC/worker feature work that requires planning, use [implement-npc-feature](../implement-request-feature/SKILL.md) to establish any missing approved scope before implementation; invoking this orchestrator directly does not bypass that workflow's planning/approval or execution-mode gates. On handoff, consume the approved scope, completion conditions, prerequisites and approval evidence. If approval or a material product decision is missing, return only that gap to the user/planning step; do not restart planning for an unchanged approved scope. This orchestrator owns role/skill selection, worker assignments, tools, scheduling, verification, independent review and completion. Execution choices within scope do not need another planning approval; material scope, behavior or acceptance changes need a specific user decision before affected work.
 
 ## 2. Assign the Needed Roles
 
@@ -74,3 +74,5 @@ Keep the ordinary final report to:
 - unverified behavior, remaining risks or blockers.
 
 Keep scope/baseline and any corrective-attempt history in the same task record. Report exhaustion or repeated failure clearly when stopping. Do not add unused gate/profile/hash fields to ordinary reports or commission another review merely to fill a handoff.
+
+For implement-npc-feature handoffs, update PublicMD/Status/PROGRESS.md with the actual final or blocked state against the approved completion conditions, including changed files, material decisions, check/log and role/reviewer evidence, unverified items and next actions. Use the existing task record/evidence rather than creating a second review or acceptance report. Selection, approval and delegation alone do not complete a feature.

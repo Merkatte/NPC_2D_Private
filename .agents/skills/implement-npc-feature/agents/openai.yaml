@@ -1,4 +1,4 @@
 interface:
-  display_name: "Implement NPC Feature"
-  short_description: "Plan, build, review, and record NPC features"
-  default_prompt: "Use $implement-npc-feature to plan and implement the requested NPC feature after approval."
+  display_name: "Plan NPC Feature Work"
+  short_description: "Select and scope feature work for approved handoff"
+  default_prompt: "Use $implement-npc-feature to clarify my selected feature task or recommend the next task from our agreed plan, define its scope and completion conditions, then hand approved execution to $orchestrate-unity-work."

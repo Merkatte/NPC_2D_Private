@@ -1,82 +1,76 @@
 ---
 name: implement-npc-feature
-description: Plan NPC or worker features, delegate implementation to separate code, graphics and assembly workers, await independent code review, and update PROGRESS.md. Use for NPC feature or wiring work. Preserve native planning mode, explicit plan approval and a separate implementation phase.
+description: Select and scope NPC_Work_2D feature work from the user's request and agreed plans, define completion conditions, obtain plan approval, and hand execution to orchestrate-unity-work. Use for choosing the next feature task or preparing a selected one; not for implementation coordination or code audits.
 ---
 
 # Implement NPC Feature
 
-Follow the phases in order. Do not combine planning and implementation.
+Decide what feature work to do, why it is needed and where it ends. Use the user's choices and agreed plans as the basis. This is the canonical planning/approval entry; the .agents entry routes here.
 
-This is the canonical NPC implementation workflow. The `.agents` entry delegates
-here. Apply `../orchestrate-unity-work/references/worker-coordination.md` for role
-ownership/context. Root plans, schedules and verifies; role workers implement.
+[orchestrate-unity-work](../orchestrate-unity-work/SKILL.md) owns how approved work is executed: choosing role skills and workers, allocating paths, scheduling, checking evidence, routing corrections, reviewing and deciding implementation completion. Do not duplicate those procedures here.
 
-## 1. Plan
+For substantive feature planning, preserve the existing native planning gate: Codex requires Plan collaboration mode, using the current model unless explicitly constrained; Claude Code requires Opus with Plan Mode. If the applicable mode/model is missing, request the necessary switch before planning rather than imitating it. An already approved handoff follows the execution gate in section 4 instead of restarting planning.
 
-1. Capture the requested behavior, boundaries, and observable acceptance criteria.
-2. Apply the planning gate for the active agent environment:
-   - In Claude Code, require the Opus model with Plan Mode active.
-   - In Codex, require Plan collaboration mode. The current Codex model is acceptable unless the user or project instructions require a specific Codex model.
-   - If the applicable planning mode or model requirement is not satisfied, stop and ask the user to switch. Do not imitate a missing mode or another agent's model.
-3. Read `PublicMD/ProjectStructure.md`, use its routing table, and then read only the relevant `PublicMD/Systems` leaf documents. When a feature is a folder, read its `README.md` only to select the needed leaf; do not automatically read every sibling leaf.
-4. Add conditional project documents only when applicable:
-   - game rules or player experience: `PublicMD/Game_Plan.md` and `PublicMD/SPEC.md`;
-   - roadmap, prerequisite, or completion status: `PublicMD/PLAN.md` and the selected feature's active document linked under `PublicMD/Plans`;
-   - cross-system ownership or dependency changes: `PublicMD/ARCHITECTURE.md`;
-   - planned C# creation or modification: `PublicMD/CodeConvention.md`.
-5. Follow the selected leaf document's change-routing table and inspect only the relevant code, scenes, prefabs, tests, and additional specifications.
-6. Produce a concrete plan containing scope, responsibility placement, files to create or change, dependency direction, validation, risks, and explicit exclusions.
-7. Ask the user to approve the plan. End the turn without editing implementation files.
+## 1. Identify What the User Has Already Chosen
 
-## 2. Implement
+Read the current request together with relevant prior agreements. State the interpretation briefly before planning; do not require the user to select a formal mode for these two branches.
 
-1. Start only after explicit user approval.
-2. Apply the implementation gate for the active agent environment:
-   - In Claude Code, require the Sonnet model.
-   - In Codex, require Default collaboration mode. Use the current Codex model unless the user or project instructions require a specific Codex model.
-   - If the applicable implementation mode or model requirement is not satisfied, stop and ask the user to switch before editing implementation files.
-3. Re-read any project document changed since planning.
-4. Delegate approved C# work to `$author-unity-code`, images to `$create-project-sprites`, and Unity wiring to `$assemble-unity-objects` with fresh role contexts and disjoint paths. Parallelize independent preparation; assembly writes follow ready code/art and compilation. Root does not implement role files. Preserve the documented architecture and local style.
-5. Keep utility policy in decision code, role priority and queue composition in selectors, selected behavior lifecycle in actions, execution dependencies in `ActionContext`, facility transactions in providers, movement/presentation in `NPCComponent`, and active queue lifecycle in `WorkerNPC`.
-6. Validate in proportion to the change: compile, run existing relevant non-Play-Mode tests, and inspect Unity scene or prefab serialized wiring when applicable. Follow `Tools/NpcHarness/SceneWork.md` verification/evidence limits and automatic exclusions: do not write verification-only runners, eval helpers, validators or tests without an explicit user request for verification development. Reuse unaffected checks and one compact task record. Hand off unavailable gameplay/runtime/visual coverage as unverified; its absence alone does not block completion. Actual defects, failed existing checks, compilation and independent review remain mandatory.
-7. Require code-worker compile, convention, ownership, dependency and scope evidence. Inspect actual diff and collect common checks or selected gates. This produces a candidate; completion also requires the independent review below.
+| Request/context | Action |
+|---|---|
+| A feature, behavior or plan item is selected | Clarify that selected task's scope, prerequisites and completion conditions. Do not replace it with a preferred backlog item. |
+| No task is selected; the user asks what to do next | Recommend a bounded next task from agreed priorities, unfinished work and prerequisites, explaining why. |
+| Only a broad area is named | Narrow choices within that area; ask only when alternatives materially change scope, behavior or authority. |
+| "Proceed" follows a concrete agreed task/plan | Use that context. Do not restart task selection or ask for approval already given for the unchanged plan. |
 
-## 3. Delegate Review to an Independent Codex Agent
+For example, "warehouse capacity first" selects a task; "what next?" asks for a recommendation. "Improve the warehouse" may need a choice of outcome. Identify selected/recommended work in the first substantive sentence so the user can correct a mistaken interpretation.
 
-After successful current validation, spawn an independent read-only collaboration
-agent with `fork_turns="none"`, using `$reviewing-unity-candidate`. Every C# change
-requires this review. It must not be an implementation worker; wait for an available
-slot if necessary. Do not launch the legacy background CLI reviewer for this workflow.
+If the user asks only for advice, explanation or comparison, deliver that without editing implementation or triggering execution. Agreement with a direction alone is not approval of an unspecified implementation scope.
 
-Read [references/codex-review-agent.md](references/codex-review-agent.md). Supply
-original request, approved scope/exclusions, actual diff, relevant rules, current
-compile/scope/reference evidence and selected gates if any. Do not pass the whole
-conversation, author's reasoning or self-assessed compliance as review evidence.
+## 2. Check the Plan and Relevant Current State
 
-Wait for the result. Confirm conventions, ownership and dependency coverage using
-code/document locations; compile success or reviewer launch alone is insufficient.
-Route blocking fixes to the original role or a fresh same-role worker. Reviewer
-stays read-only; root does not patch implementation files. Rerun affected checks and
-review on a changed candidate within the shared remediation budget. Missing/failed
-review remains incomplete. For a selected pinned workflow, also require accept-review.
+- For next-task recommendations, read PublicMD/PLAN.md, the relevant active detailed plan it links, and relevant recent PROGRESS.md entries. Check only the code/assets needed to establish a candidate task's completion or prerequisites; do not audit the whole project.
+- For a selected task, use applicable plan entries as context without reopening settled priorities. Read ProjectStructure.md and follow folder READMEs recursively to the owning Systems leaf and its minimum change scope.
+- Add Game_Plan.md/SPEC.md for gameplay rules or player experience, CodeConvention.md for planned C#, and ARCHITECTURE.md for cross-feature responsibility, shared contracts or dependency changes.
+- Prefer actual code/serialized state when status documentation is stale. Distinguish confirmed facts from unresolved items; keep undecided game rules as TBD rather than inventing them.
+- Do not read CLAUDE.md or .claude.
 
-Store the actual review under the run evidence path. Do not overwrite the separate
-repository-wide `PublicMD/Status/Code_Evaluation_Result.md` audit for a bounded review.
+If the user-selected task lacks a prerequisite, explain the dependency and propose the smallest prerequisite slice or alternative ordering. Do not silently switch tasks, expand scope or rewrite agreed priorities/game rules. Material changes to those agreements need the user's decision.
 
-## 4. Update Progress
+## 3. Define a Reviewable Scope and Obtain Approval
 
-Update `PublicMD/Status/PROGRESS.md` with the actual final or blocked state. Follow its existing format. Record:
+Produce one concise scope proposal in the conversation or the existing relevant plan. A new handoff document is not mandatory. Include:
 
-- completed task or slice;
-- files changed;
-- implementation decisions;
-- verification performed and its actual result;
-- next actions and blockers;
-- role/agent ownership, independent reviewer identity, actual verdict and unresolved findings.
+- selected task, original user outcome and its relation to an existing plan when applicable;
+- included behavior and explicit exclusions;
+- prerequisites, approved game-rule decisions and unresolved questions;
+- intended responsibility/dependency boundaries and likely affected code/document/asset paths, based on owning Systems documents;
+- observable completion conditions, relevant existing checks and human/unverified QA;
+- material risks and the decisions needed before execution.
 
-Pending review may be recorded as pending, never as accepted. Preserve the separate repository audit report.
+Describe outcome constraints and affected surfaces, not a worker roster or command-by-command implementation schedule. The orchestrator turns the approved scope into exact assignments and selects the needed skills, agents, tools and verification route. Do not repeat a static NPC class-responsibility catalog here; current Systems leaves own that information.
 
-## 5. Report
+Use existing verification capabilities under [SceneWork.md](../../../Tools/NpcHarness/SceneWork.md). Planning a feature does not authorize new verification-only code or automatic Play Mode/game-screen checks; those need separate explicit requests. Distinguish human QA from mandatory executable checks.
 
-Report the implemented scope, actual checks, independent review outcome, unresolved
-items and progress update. Complete only when required evidence and review are present.
+For a new or materially changed proposal, request explicit approval and end the planning turn without implementation. Preserve approval already given for a concrete unchanged plan. Unresolved choices that determine behavior, scope or acceptance must be settled before execution; routine execution choices belong to the orchestrator.
+
+## 4. Hand the Approved Scope to the Orchestrator
+
+Implementation starts only after explicit plan approval and the existing execution-mode gate: Default collaboration mode in Codex; Sonnet in Claude Code. If the required mode/model is missing, request the switch before implementation. Do not ask the user to approve the same unchanged plan again after switching modes.
+
+Pass the original request, approved scope above, relevant document/plan links, approval evidence and any separately authorized verification to $orchestrate-unity-work. A concise message or reference to the existing plan is sufficient. Recheck only facts/documents that changed since approval.
+
+This is a change of workflow responsibility, not a requirement to spawn a separate "implement" or "orchestrator" agent. The same root can adopt the orchestrator skill and continue authorized execution. This planning skill does not create implementation/review workers, execute their tasks or commission its own second review.
+
+The orchestrator determines the actual role/skill selection, assignment boundaries, parallel/sequential order, tool use, checks and required independent review. It must preserve the approved goal, scope, game rules and completion conditions.
+
+If execution reveals a material scope/behavior/acceptance change, return that specific decision to the user with its impact. Update only the affected part of the plan and obtain approval for that change; do not silently expand work or restart the entire planning process. Ordinary in-scope implementation corrections remain with the orchestrator under its shared budget.
+
+## 5. Carry Completion and Progress Requirements Through the Handoff
+
+The handoff is planning completion, not feature completion. For execution requested by the user, the orchestrator continues through implementation, required checks/review and final reporting; do not stop at delivering a plan once execution is approved and available.
+
+Require the orchestrator to record the actual completed or blocked state in PublicMD/Status/PROGRESS.md using its existing format: scope/files, material decisions, performed/reused checks and log locations, role/reviewer evidence, unverified items and next actions/blockers. Use this as the compact task record where practical or reference the existing record without copying full evidence.
+
+Do not mark a plan item implemented merely because it was selected, scoped, approved or delegated. Report the outcome against its approved completion conditions using the orchestrator's evidence; do not repeat its checks or launch another review to produce a second completion report.
+
+The retained legacy CLI review launchers are not part of this workflow. [The review reference](references/codex-review-agent.md) routes historical links to the current orchestrator-owned procedure.
