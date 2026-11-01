@@ -12,6 +12,8 @@ Use this reference to select the nearest existing asset family. Inspect the actu
 | Merchant UI | `Assets/Art/Generated/UI/` | Warm wood, paper, olive, green, and terracotta surfaces with beveled or outlined edges. Many panels are sliced sprites, but border, PPU, filter, and compression differ by element. Copy only from the closest same-purpose sibling. |
 | Farm tiles | `Assets/Art/Generated/Tiles/` | 32-pixel tile cells, point filtering, PPU 32, multiple-sprite sheets and Tile assets. Preserve exact grid and adjacency requirements from the selected sibling sheet. |
 
+For terrain production, use [create-terrain-tiles](../../create-terrain-tiles/SKILL.md) for inventory, connection profiles, pixel-art quality and atlas preservation. The farm row is one existing family, not a universal 32px/PPU rule. Concept outputs such as DefenseConcept20261028 are not automatically approved production references; use the current assignment's selected assets and resolved values.
+
 ## Selection Rules
 
 1. Prefer references named by the assignment.

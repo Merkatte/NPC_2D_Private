@@ -7,6 +7,8 @@ description: Create or edit bounded raster sprite candidates for NPC_Work_2D usi
 
 Act as the assigned graphics worker. Produce a raster candidate, proposed import settings and evidence for root inspection. Unity import/wiring belongs to assembly; final acceptance and independent visual review remain outside the author's role.
 
+For terrain tiles (including shores, corners, interior variants and terrain atlas assembly), also apply [create-terrain-tiles](../create-terrain-tiles/SKILL.md) within this same Graphics assignment. This file owns common role/verification/handoff rules; that specialization owns tile inventory, connectors, pixel-art quality and preservation during assembly. Read each once; this is not a request for another worker or recursive dispatch.
+
 ## 1. Confirm the Assignment
 
 Use the ordinary WorkerAssignment and role/handoff rules in [worker-coordination.md](../orchestrate-unity-work/references/worker-coordination.md). A concise root message is sufficient; do not require a per-image gate, assignment JSON or hash manifest for ordinary work.
@@ -27,7 +29,7 @@ A requested bottom-center pivot is valid even when the reference uses a centered
 
 ## 3. Produce the Candidate
 
-- Use the available $imagegen skill for new raster generation and image editing, following its input and transparency rules.
+- Use the available $imagegen skill for new raster generation and image editing, following its input and transparency rules. For the explicitly agreed Terrain workflow, use existing native pixel-editor/Aseprite operations for pixel-preserving edits and atlas composition under create-terrain-tiles; do not regenerate approved artwork merely to pack it.
 - Base the prompt on approved references, intended view, silhouette, palette, material language and exact deliverable constraints.
 - Generate the smallest useful number of variants. Promote only the selected candidate into the assigned output path. Preserve other provider/run-artifact variants unless cleanup is explicitly authorized.
 - Preserve requested transparency and keep unrequested surrounding pixels, text, shadows and presentation mockups out of production sprites.

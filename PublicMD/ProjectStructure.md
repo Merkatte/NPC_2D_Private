@@ -63,6 +63,7 @@ NPCManager / WorkerPool          생성과 조립
 | 문구·언어·LocalizeKey·Text/TMP 표시 | [Localization](Systems/UI/Localization.md) | [UI](Systems/UI/README.md), singleton 접근 변경 시 ARCHITECTURE |
 | role·prefab·pool | [Spawning and Pooling](Systems/NPC/Runtime/Spawning_and_Pooling.md) | 생성되는 role 문서 |
 | 코드 품질 평가·재평가 | [평가 조정 스킬](../.codex/skills/reviewing-npc-work-code/SKILL.md) | 평가 대상 Systems 문서, [스킬 개선 합의·완료 기록](Archive/Plans/Code_Review_Skills_Improvement_Plan.md) |
+| Terrain 타일·모서리·가운데 변형·타일시트 제작 | [Terrain 제작 스킬](../.codex/skills/create-terrain-tiles/SKILL.md) | 승인된 기준 이미지·구성·연결 규약, Unity 배선은 별도 조립 역할 |
 | Codex Skill·작업 위임·Unity 자동 검증 | [Harness Architecture](HARNESS_ARCHITECTURE.md) | 변경 대상 gameplay 기능 문서, 필요 시 ARCHITECTURE |
 
 상위 게임 규칙을 설계하거나 변경하면 먼저 `Game_Plan.md`와 `SPEC.md`를 읽는다. 여러 기능의 책임이나 의존 방향을 바꾸면 `ARCHITECTURE.md`, C#을 수정하면 `CodeConvention.md`를 추가로 읽는다.

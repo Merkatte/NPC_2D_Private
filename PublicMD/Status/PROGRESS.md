@@ -1,4 +1,13 @@
-﻿# Systems 기능 문서 재귀 계층 재배치 — 2026-10-30
+﻿# Terrain 전용 제작 스킬 — 2026-11-01
+
+- 사용자 합의에 따라 [create-terrain-tiles](../../.codex/skills/create-terrain-tiles/SKILL.md)를 추가했다. 기준 자산·규격, 필수 구성, 방향 의미, 연결 조건, 변형 범위, 장식 포함 방식, 시트 납품과 완료 근거의 8개 계약을 기존 작업 기록에서 정한다. 승인된 값은 재사용하며 타일 크기·중앙 연결·보호 폭·팔레트 수를 전역 상수로 강제하지 않는다.
+- 구성·연결성과 승인된 픽셀아트 화풍을 모두 완료 조건으로 유지한다. 축소·양자화·aseprite 저장만으로 픽셀아트 품질을 주장하지 않는다. 장식 다양성을 새 대각선 연결로 바꾸거나, 완성 타일 대신 별도 장식 시트로 대체하지 않는다.
+- 새 표현 생성과 승인 픽셀 보존 편집·시트 조립을 구분한다. 기존 native pixel editor/Aseprite를 활용하는 합의된 Terrain 경로를 연결했고, 통과한 타일은 보존하며 실패 ID와 직접 연결 범위만 기존 공유 수정 한도 안에서 고친다. 실제 납품 타일의 복사 조합으로 연결을 확인한다.
+- create-project-sprites의 공통 Graphics 역할에 Terrain 전문 지침을 함께 적용한다. 전문 스킬 때문에 별도 작업자를 추가하지 않으며, Unity Tile/RuleTile·import·씬 배선은 기존 Assembly 역할에 남긴다. 공통 그래픽 스킬·참조와 worker-coordination, ProjectStructure에 연결했다.
+- 검사: 관련 스킬 3개에 기존 quick_validate.py 형식 검사 통과, 관련 Markdown 6개의 로컬 링크 113개 존재와 metadata 확인, git diff --check 통과. 별도 읽기 전용 에이전트가 48px 비중앙 연결 계열의 장식 추가, 보존형 합성 도구 미확인, 연결 성공·화풍 실패·예산 소진, 가운데 누락·원치 않은 대각선 연결의 4개 모의 요청을 점검했고 중대한 지침 충돌을 보고하지 않았다.
+- 미검증: 실제 Terrain 생성·편집·연결 결과와 개선 효과. 이번 작업은 스킬·정책 문서만 변경했으며 기존 이미지·코드·Unity 에셋, 제작 helper·검증 도구는 변경/생성하지 않았다. 커밋·푸시는 수행하지 않았다.
+
+# Systems 기능 문서 재귀 계층 재배치 — 2026-10-30
 
 - 범위: Systems 루트는 README와 NPC/Settlement/Economy/Combat/World/UI 여섯 대기능 폴더로 정리했다. 기존 문서 44개를 책임별 경로로 옮기고 NPC의 Runtime/Decision_and_Actions/Presentation, Combat/Defense 등 하위 계층을 연결했다. 폴더별 README는 바로 아래 기능만 안내하며 현재 구성은 인덱스 17개·leaf 49개다.
 - 기존 UI.md는 Framework의 routing/input/hover/popup, Views의 씨앗 선택/골드 HUD, 공통 Presentation으로 분할했다. 기존 상세 계약·배선·미검증 기록을 보존했다. Inventory_and_Items와 Player_Gold 이동 안내는 실제 인덱스·Shared_Resources로 통합하고 골드 안내의 고유 내용을 보존했다.

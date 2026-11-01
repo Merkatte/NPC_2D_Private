@@ -16,6 +16,8 @@ Assign every required implementation role to a separate worker, including small 
 
 Passing arguments to an existing helper is execution; authoring new C# logic is code work. These roles do not authorize verification-tool development or unrestricted YAML changes. Apply SceneWork.md's tool, serialization and verification limits.
 
+For terrain artwork, keep the Graphics role and include [create-terrain-tiles](../../create-terrain-tiles/SKILL.md) in requiredContext alongside create-project-sprites. One graphics worker uses both; specialization alone does not require an extra agent. Assign the requested tile inventory, connector/style invariants and allowed pixel-editor/packing operations. Atlas image composition and tile-copy previews remain graphics work; Unity Tile/RuleTile assets, importers and Tilemap wiring remain assembly work. Use the existing task-wide correction budget across both geometry and visual failures.
+
 Use native collaboration subagents, not terminal panes, scraping or a worker-managed control plane. Start each worker/reviewer with `fork_turns="none"`. Supply only relevant requirements/approvals, role skill, documents, exact paths, input artifacts and evidence requirements. Workers may inspect directly relevant dependencies under project routing.
 
 Reuse an agent only for the same role and related scope. A candidate worker never becomes its independent reviewer; a reviewer never becomes a remediation worker. Root transmits agreed class/interface/serialized-field names, asset paths, import requirements and readiness between roles, not another worker's reasoning.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Terrain Tiles"
+  short_description: "Build connected terrain tiles in approved pixel art"
+  default_prompt: "Use $create-terrain-tiles to create the requested terrain tiles while preserving their inventory, connections and approved pixel-art style."
