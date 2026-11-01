@@ -1,0 +1,78 @@
+Terrain two versions 20261102 — A rich — pre-generation contract
+Graphics role; writable A-rich only. Built-in imagegen for art, portable ImageMagick for exact copies. Concept; no production readiness claim. One corrective edit allocated at most.
+Direction: visually rich warm olive/sage grass, ochre earth, teal water; composed tufts, flowers, stones, strong material clusters. No uniform noise or cell halos.
+Coordinates x right/y down. Requested raw sheet8 columns x4 rows, square cells; actual measured source crops recorded after generation. Opaque RGB. No native32px authorship claim.
+Inventory, row-major:
+R1 G1 quiet-rich base; G2 broad patch; G3 flowers; G4 pebbles; G5 tufts; D1 dirt; D2 worn dirt; D3 pebble dirt.
+R2 GN GE GS GW (grass half on named side), O_NW O_NE O_SE O_SW (grass quadrant named; dirt elsewhere).
+R3 I_NW I_NE I_SE I_SW (dirt quadrant named; grass elsewhere), W1 W2 W3 Deep.
+R4 BN BE BS BW (grass half on named side, water opposite), P_NW P_NE P_SE P_SW (water SE,SW,NW,NE quadrant respectively).
+
+Shared edge targets before art (provisional concept targets; generated geometry requires actual proof):
+GN grass top/dirt bottom at horizontalmidline; GE grass right; GS grass bottom; GW grass left. At crossing ends a thin darkolive grass lip occupies grass side, earth contactshade 1logicalpixel on dirt side; basecolors constant; crossing at midpoint, short matching straight profile near endpoint. Contour variation/decor only interior. All four orientations share palette and profilewidth, not rotated lighting.
+BN/BE/BS/BW grass same namedside; warm earth lip2logicalpixels on grassside + mutedteal shallowband2logicalpixels on waterside; regularwaterbase same W1. No depthgradient.
+Grasscorner neighbor pairs (side:neighbor):
+O_NW N:GW W:GN; O_NE N:GE E:GN; O_SE S:GE E:GS; O_SW S:GW W:GS.
+I_NW N:GE W:GS; I_NE N:GW E:GS; I_SE S:GW E:GN; I_SW S:GE W:GN.
+P_NW E:BN S:BW; P_NE W:BN S:BE; P_SE W:BS N:BE; P_SW E:BS N:BW.
+Interiorcompatibility intended G1-G5, D1-D3, W1-W3 within ownfamilies; Deep selfrepeat only. Deep-to-W needs transition not requested; no directmix claim.
+Proof plan: exactcopied 4x4 grass closedpatch, 4x4 dirtpatch in grass forconcaves, 4x4 closedpond; each includes allcornerorientations +2consecutive eachstraight. Separate allrequestedcorner2-neighbor joinstrips if absent; repeat/mix grass/dirt/water/deep interiorpanels. Inspect eachfamily/orientation; sceneillustrative notproof.
+
+RESULT — concept images delivered; strict pixel/continuity acceptance FAILED.
+Mainfiles: scene-A.png1536x1024; tilesheet-A.png1648x824,32cells206x206; bothopaquePNG.
+Unmodifiedsource-sheet-A.png1774x887 retained. imagegen ignored requested1536x768 and added gutters. Final tile crops exclude those gutters; 206px is actual selectedconceptsample size, NOT32pxnative.
+Actual sourcecrop rule: everycell206x206; columnx=[3,228,449,670,893,1115,1336,1558], rowy=[3,228,450,667]. Apply inventoryrowmajor above. No resize,recolor,rotation,mirror or filter. Selecting interiorrectangles trims a small portion of eachgeneratedsample; cannot claimoriginaledgegeometry preserved. The deliveredselectedpixels are unchanged.
+Magick compare -metric AE: all32individualselectedtilePNGs versus their finalatlas cells returned0(0). Mainimage opaque=True measured viaidentify. Boundaryproof2472x824; interiorproof3296x824. Individual4x4proofs824x824.
+
+ACTUAL ASSEMBLY MATRICES (4columns, slash separatesrows)
+grass-closed: O_SE GS GS O_SW / GE G1 G3 GW / GE G2 G1 GW / O_NE GN GN O_NW.
+dirt-closed-concave: I_SE GN GN I_SW / GW D1 D2 GE / GW D3 D1 GE / I_NE GS GS I_NW.
+pond-closed: P_NW BN BN P_NE / BW W1 W2 BE / BW W3 W1 BE / P_SW BS BS P_SE.
+Labels denote materialoccupancy, not placement: e.g NWslot ofgrassclosed uses O_SE (landSE), withGS on top.
+Everyrequestedconvex/concave/pondcorner appears once with both declaredstraightneighbors. Eachstraightdirection appears as2consecutivecopies, testing straight-to-straight. No extra joinstrip required because closedassemblies coverallassignedorientations.
+boundary-proof-A.png is exact+append ofgrassclosed,dirtclosedconcave,pondclosed,lefttoright.
+grass-mixed: G1 G2 G1 G3 / G4 G1 G5 G1 / G1 G3 G1 G4 / G5 G1 G2 G1.
+dirt-mixed: D1 D2 D1 D3 / D3 D1 D2 D1 / D1 D3 D1 D2 / D2 D1 D3 D1.
+water-mixed: W1 W2 W1 W3 / W3 W1 W2 W1 / W1 W3 W1 W2 / W2 W1 W3 W1.
+G1-repeat,D1-repeat,W1-repeat,Deep-repeat:4x4 identicalsourcecopies.
+interior-proof-A.png isexact+append ofgrassmixed,dirtmixed,watermixed,Deeprepeat,lefttoright.
+
+VISUAL RESULTS BY FAMILY/ORIENTATION
+Inventory:32requiredsamplecategories present with correct generalmaterialoccupancy; no diagonalrouteadded. G1 is excessivelydenseforquietbase; W3 incorrectlybecomeslighterwater althoughdeclaredsamefamily.
+Interiors:
+G1selfrepeat andG1-G5mix FAIL: conspicuousregular tuftclusters/patchrhythm, localcolorsteps, excessivebackgroundspeckle.
+D1selfrepeat andD1-D3mix FAIL: recurringlarge soilmarks formobviousgridrhythm, somecelltonesteps; finegrain exceedsdesiredintentionalclusters.
+W1selfrepeat andW1-W3mix FAIL: repeated brightwater rims anddifferentW3valuecause obviouscellgrid.
+Deepselfrepeat FAIL: square-ish perimeterhighlightpattern repeats. Deep-to-W intentionallyNOTTESTED andNOTcompatiblewithouttransition.
+Grass-dirtstraightjoins GN,GE,GS,GW: alltested in2tile straight runs; FAIL strictsharedprofileacceptance, endpointshape/color/lipwidth mismatch andvisiblecellsteps. This includesseparateorthogonalruns, notinferredfromone direction.
+Grassconvexcorner O_NW(N:GW,W:GN),O_NE(N:GE,E:GN),O_SE(S:GE,E:GS),O_SW(S:GW,W:GS): alltested, allFAIL. Materialquadrants arecorrect, butcontourendpointheightsandlipprofilesjump; especiallylarge discontinuityatO_SE/GS andO_SW/GS topjoins.
+Grassconcavecorner I_NW(N:GE,W:GS),I_NE(N:GW,E:GS),I_SE(S:GW,E:GN),I_SW(S:GE,W:GN): alltested, allFAIL strictprofilecontinuity; bothsidejoins assessed, andcornercurvature/texture doesnotinheritbothstraights. Concavedirtpatch isclosedvisually butclosednessisnotseamacceptance.
+Shorestraightjoins BN,BE,BS,BW: alltested in2tileruns; allFAIL strictprofilecontinuity, bankwidth/contour/colorsteps andadjacentwaterfillmismatch.
+Pondcorners P_NW(E:BN,S:BW),P_NE(W:BN,S:BE),P_SE(W:BS,N:BE),P_SW(E:BS,N:BW): alltested,bothneighbors each; allFAIL, withlargecorner-to-straight offsets andshallowbandwidth/valuechanges. Closedpondexposesfailuresclearly.
+Native-detailinspection performed onallthreeclosedregions, interiorstrip,D1repeat, generatedsheet/scene. No integerresamplingperformed; forbiddenresamplingwasnotusedasstyleproof.
+Pixelquality FAIL: sheetisrichbutstillfinetextured/noisy; scenehasattractivecomposedplantgroupsandthresholdcontactbutretainspainterlyfineedgesinsteadofconsistentlowresolutiongrid.
+Scene-A isindependentlygeneratedillustration, NOTmosaic/continuityproof, anddoesnotrepairthetiles.
+Noartcorrectioncallspent: sameknown generativehalo/profilefailure recurred; repeatingwhole-sheetpromptwouldnotbecrediblelocalrepair. Twoinitialimagegen callsused(sheet,scene); optionalallocatedcorrectionunused.
+NoAssets/Unity/import/meta/code/skillchanges. Prioroutputsretained. ImportSpec:notapplicable,visualconceptsonly. No claimofmanualpixelauthorship,functionaltileset,all47coverage,orUnityreadiness.
+
+EXACT SHEET PROMPT
+Use case: stylized-concept. Create a complete rich PIXEL-ART TERRAIN TILE SHEET. Reference image is the approved rich material direction: warm olive/sage grass, warm ochre earth, blue-teal pond, composed flower/stone/tuft groups. Preserve expressive rich pixel clusters, reduce allover noise. Never flatten it into crude blank swatches or procedural vector icons.
+FORMAT: raw opaque atlas, landscape2:1, 1536x768 requested. EXACTLY8 columns x4 rows of equal square samples, zero gutters, zero gaps, no gridlines, no text, no labels, no border. Every tile fills its square. It is32 separate tile designs, not one flowing landscape. Crisp deliberately chosen coarse square pixel clusters, logical32x32-style enlarged; consistent pixel size, no tinygrain/blur.
+CONTINUITY: base fill colors do NOT shade according to tile position. NO per-cell bright center/dark rim, radial/linear gradients, vignette, embossed squares, lighting across backgroundfills, paintgrain, dither. Richness comes from a few purposeful contiguous patches and crafted small grass/flower/stone groups. Keep boundaryedges consistent, decorations inside theircells. Water regular variants share EXACT same teal background at all edges; Deep is a separate selfrepeating class, never directly mixed.
+
+INVENTORY row-major:
+R1: G1 grassbase with selective clustered blades; G2 grass broad organic patch; G3 grass flowergroup; G4 grass pebbles; G5 grass tufts; D1 warm ochre soilbase with sparse intentional wornclusters; D2 same soilbase with center wear; D3 same soilbase with few pebbles. Same backgroundcolor and edgecolor within each material family. Decorations fully composited onterrain, not detachedprops.
+R2: GN grass top half/dirt bottom; GE grass right/dirt left; GS grass bottom/dirt top; GW grass left/dirt right. Then O_NW grass only NWquarter/dirt elsewhere; O_NE grass only NEquarter; O_SE grass only SEquarter; O_SW grass only SWquarter. These4 convexgrass corners are distinctorientations, not paired arches spilling into neighborcell.
+R3: I_NW dirt only NWquarter/grass otherthree; I_NE dirt only NEquarter; I_SE dirt only SEquarter; I_SW dirt only SWquarter. Distinct4 concavegrass orientations. Then W1 mediumteal water quiet base; W2 samebase with tiny ripplecluster; W3 samebase with different tiny ripplecluster; Deep uniform darkteal water separate selfcompatible class. Water has some large crafted flat pixel clusters but no per-cell gradient or rimtexture.
+R4: BN grass top/water bottom; BE grass right/water left; BS grass bottom/water top; BW grass left/water right. Then P_NW convex pondwater perimeter corner, water SEquarter and grass otherthree; P_NE water SWquarter; P_SE water NWquarter; P_SW water NEquarter. Sparse reeds/floral accents integrated ongrassside, don't obstructjoiningedge.
+
+MATERIAL CONNECTORS: straightdividers meet midpoint at each joiningcellboundary. Grass-dirtprofile: thin darkolive lip ongrass side and one logicalpixel warm earthshade ondirtside. Shoreprofile: 2logicalpixels earthybank ongrassside and2logicalpixels shallowteal onwaterside, then same regularwaterbase. Profiles reach tileedges with identical width/palette, no endpointbumps, no fade-out. Corners inherit the exactprofile of both neighborstraights. At exteriorcellendpoints contour remainsstraight for3logicalpixels, then curves inward with intentional pixelstairs. Four orientations share pattern andpalette, neverdirectionallight.
+Cornerneighbors: O_NW joinsGWabove andGNleft; O_NE GEabove/GNright; O_SE GEbelow/GSright; O_SW GWbelow/GSleft. I_NW GEabove/GSleft; I_NE GWabove/GSright; I_SE GWbelow/GNright; I_SW GEbelow/GNleft. P_NW BNright/BWbelow; P_NE BNleft/BEbelow; P_SE BSleft/BEabove; P_SW BSright/BWabove.
+No diagonallyconnected routes, no trees/buildings/characters/UI. Topdown terrain, no isometric diamonds. Rich restrained curated pixelart rather than noisy painterly illustration. Opaque PNG.
+
+EXACT SCENE PROMPT
+Use case: stylized-concept. Create ONE landscape terrain concept, VARIANT A: RICH CLUSTERED PIXEL ART, 1536x1024. Use the supplied village image as the warm material and compositional reference. Maintain a cropped timber-and-stone cottage near the upper left, worn doorstep and stone threshold grounding into a wide open ochre working/combat clearing, olive/sage grass margins, and blue-teal pond on right. No UI, no text, no characters. This is an independent scene illustration, not a demonstration assembled from tiles.
+
+Rich direction: carefully composed visible grass blades in small thick groups, warm grey embedded stones, a few cream-yellow flower clusters, layered earthen banks, crafted steppingstones and varied material clusters. Concentrate richer vegetation around cottage foundation and pond margins. Keep center clearing open and readable, with broad low-contrast earth wear patches and occasional small pebble groups. Grass has large calm patches between small clusters. Ground is artistically detailed but not an allover speckle carpet. Do not reduce it to flat featureless swatches.
+Pond: one coherent medium teal body across the whole water area, restrained horizontal ripples, a shallow flat-color edge band only beside a visible earthy bank. No cell-sized water halos, no repeated tile-centered shading, no patchwork squares. Boundary contour has intentional square pixel stairs, little roots and grass tufts near selected corners. Cottage grounding has a short broad contactshadow and worn threshold, rather than floating building over generic floor.
+Pixel art: cohesive deliberate square-pixel clusters like a highly crafted low-resolution game environment; clear limited shade steps and crisp jagged contours. Use a logical384x256-style scene enlarged4x, natural yet clearly square pixels. All material forms expressive, richer than a minimal terrain variation, but no painterly blur, photo grain, high-resolution illustration texture, random dither, smooth vector gradients or antialiased outlines. Broad region lighting only through discrete pixelshade groups, never a gradient restarting in each terrain tile. Warm honey ochre soil, olive/sage green grass, muted turquoise/teal water, warm stone and reddish timber architecture. Orthographic topdown RPG ground, not isometric diamond perspective. Opaque background.

@@ -1,0 +1,40 @@
+TerrainValidatedConcept20261102 A-rich — minimal native-editing trial
+Role: Graphics/create-project-sprites + create-terrain-tiles.
+Status: minimal base submitted for root visual review. Boundary/corner/atlas/scene expansion has NOT started.
+Writable path: this A-rich directory only. All prior outputs, dirty skill files and Unity/code preserved.
+Method: existing ImageMagick7.1.2-35 Q8 native crop, roll(pixel reordering), mask(draw hard pixel polygons), CopyOpacity/Over composite, exact tile repetition. No Python or new helper scripts. No imagegen calls. No downscale or palette quantization. One nearest-neighbor2x copy only for viewing; production base remains128x128.
+Style reference: ../TerrainDualConcept20261102/A-rich/D1.png rich earth; existing source not production-approved. Inherited soft/fine cluster edges remain a visual risk.
+First family planned: grass-earth. First prerequisite only: dirt base self-repetition. Straight profiles and corner source coordinates are not established yet; no connection promise.
+
+NATIVE SOURCES / EDITS
+Prior D1 source206x206 unchanged.
+dirt-source-sample.png = crop128x128 at(40,40) from priorD1.
+dirt-offset.png = exact +64,+64 cyclic roll, moving original four edge seams to center.
+vertical-clone.png = priorD1 crop24x128 at(80,40), rolled y64; patch composited at(52,0) with stepped hard mask. Outer top/bottom repeat phase preserved.
+horizontal-clone.png = priorD1 crop128x24 at(40,80), rolled x64; patch at(0,52) with stepped hard mask. Outer left/right repeat phase preserved.
+center-clone.png = priorD1 crop32x32 at(76,76); patch at(48,48) with hard stepped diamond-like mask repairing cross intersection.
+Masks and intermediate PNGs retained. Artwork colors/pixels come from original material; masks only select cloned source pixels. No flat color bands or new procedural texture.
+Final dirt-base-A.png128x128. Actual4x4 repeat dirt-repeat-A.png512x512. Inspection-only2x dirt-repeat-A-2x.png1024x1024, point filter.
+Observed: no prominent hard seams at new tile boundaries, but obvious regular motif rhythm and inherited antialiased/fine source texture persist. Native and integer inspection completed. NOT a pixel-style acceptance or full continuity acceptance.
+No edge/corner/Unity checks performed; those are dependent on root visual decision.
+Budget at initial submission: zero new generation calls; initial native base work only; no corrective round yet.
+
+A CORRECTIVE ROUND — FINAL RESULT
+Root rejected first nativebase for obvious repeating pinwheel/diamond clusters and inherited softness.
+One allocatedAcorrectiveround used: builtinimagegen made new dirt-only source, withoutpreviousimage anchor.
+dirt-correction-source.png actual1254x1254opaque. Requested1024but generator chose1254; no native128logicalgrid claim.
+dirt-correction-repeat.png actual5016x5016: exact4x4 copies of complete1254source, no crop/resize/recolor.
+dirt-correction-seam-closeup.png:512x512 exactcrop at(998,998) fromrepeat, centered around(1254,1254)four-tile junction.
+dirt-correction-seam-closeup-2x.png:1024x1024nearest-neighborviewonly. Source/artworknotresampled.
+NativecompareAE between source and repeatcell1254x1254at(1254,1254)=0(0).
+Visualresult: largehalo andearlierdominant pinwheelrhythm reduced; tile-grid notdominant inwideview. Butpixelstyle FAILS: visibleantialiased/softblockedges,mottledcontinuousshading,andnotconsistentlogicalgrid. Backgroundstillresemblesgeneratedtextureinstead of deliberatecrisp authoredclusters.
+No further nativecloning undertaken because seamrepaircannotfixsource-widepixelstylewithoutreplacingart. Rootnotifiedpromptly. Boundary/cornerfamily notstarted; fullatlasandscene expansionstopped as latestskillrequires.
+Finalstatus:FAILED minimalstyletrial. RequestednewAfullscene+32tilesheetremainincomplete. Nativeeditingcapabilityexists; issueisartquality, notmissingCLI. No proceduralreplacement/downscale/quantization, noextraretry, noUnity/codechanges.
+Budget:A1used,Ballocationmanagedbyroot. Oneimagegencallinthiscorrectiveround.
+
+EXACT CORRECTION PROMPT
+Create ONE square seamless warm ochre DIRT MATERIAL TEXTURE for a richly crafted top-down pixel-art game. This is a close view of terrain material only, no objects or scene. Opaque square PNG1024x1024.
+It must look like precise manually placed pixel art from an indexed sprite editor: deliberate square pixels on a consistent logical128x128 grid displayed at8x enlargement. Every smallest visible pixel block is a clean uniform8x8 square in the final image. Hard crisp edges, flat color inside each pixel. No soft edges, antialiasing, tiny grain, noise, dithering, blur or painterly render.
+The dirt is warm muted ochre, with restrained but crafted EARTH CLUSTERS: mostly calm same-tone ground, interspersed with many small subtle irregular compact shade groups, a few faint embedded mineral fragments and quiet scuffed marks. Contrast is low: use6 closely related ochre/brown shades with small value differences. The texture is rich through intentional shapes, not through density or harsh dark spots. No conspicuous stones, cracks, flowers, plants or objects. No dark pinwheels, star shapes, diamonds, circles, spokes or single large salient motif. No repeating stamp patterns.
+Distribute the modest low-contrast clusters naturally over the whole square. No focal point and no per-tile silhouette. Nothing differs at the perimeter: base tone and detail density are spatially constant. NO bright center, NO dark rim, NO gradient in any direction, no vignette, no embossed edge, no border, no frame or gridlines. The left and right edges and top and bottom edges must continue the same material unobtrusively when tiled; any cluster touching an edge continues naturally on the oppositeedge.
+This should read as warm compact earth seen straight down, with readable intentional low-resolution clusters, suitable beneath richer medieval timber and stone buildings. Not a photograph, not realistic sand, not a smooth orange gradient, not a flat vector swatch, not checkerboard. The entire picture is ONLY the terrain texture. No text, presentation, labels, multiple samples or extra panels.

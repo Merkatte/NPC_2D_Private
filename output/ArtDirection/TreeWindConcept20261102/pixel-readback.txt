@@ -1,0 +1,46 @@
+﻿frametree-frame01.png 112x144 colors=28 alpha-min=0 alpha-max=1
+alpha-values=2 opaque-pixels=5592 bbox=90x111+12+16
+fixed y103-143 frame01 AE=0
+canvas-edge frame01 1x144+0+0 alpha-max=0
+canvas-edge frame01 1x144+111+0 alpha-max=0
+canvas-edge frame01 112x1+0+0 alpha-max=0
+canvas-edge frame01 112x1+0+143 alpha-max=0
+frametree-frame02.png 112x144 colors=28 alpha-min=0 alpha-max=1
+alpha-values=2 opaque-pixels=5592 bbox=90x111+14+16
+fixed y103-143 frame02 AE=0
+canvas-edge frame02 1x144+0+0 alpha-max=0
+canvas-edge frame02 1x144+111+0 alpha-max=0
+canvas-edge frame02 112x1+0+0 alpha-max=0
+canvas-edge frame02 112x1+0+143 alpha-max=0
+frametree-frame03.png 112x144 colors=28 alpha-min=0 alpha-max=1
+alpha-values=2 opaque-pixels=5592 bbox=90x111+12+16
+fixed y103-143 frame03 AE=0
+canvas-edge frame03 1x144+0+0 alpha-max=0
+canvas-edge frame03 1x144+111+0 alpha-max=0
+canvas-edge frame03 112x1+0+0 alpha-max=0
+canvas-edge frame03 112x1+0+143 alpha-max=0
+frametree-frame04.png 112x144 colors=28 alpha-min=0 alpha-max=1
+alpha-values=2 opaque-pixels=5592 bbox=90x111+10+16
+fixed y103-143 frame04 AE=0
+canvas-edge frame04 1x144+0+0 alpha-max=0
+canvas-edge frame04 1x144+111+0 alpha-max=0
+canvas-edge frame04 112x1+0+0 alpha-max=0
+canvas-edge frame04 112x1+0+143 alpha-max=0
+inverse-upper-shift frame02 AE=0
+inverse-middle-shift frame02 AE=0
+inverse-upper-shift frame04 AE=0
+inverse-middle-shift frame04 AE=0
+neutral01=03 AE=0
+sheet frame01 AE=0
+sheet frame02 AE=0
+sheet frame03 AE=0
+sheet frame04 AE=0
+decodedGIF frame01 AE=0
+decodedGIF frame02 AE=0
+decodedGIF frame03 AE=0
+decodedGIF frame04 AE=0
+GIF scene=0 size=112x144 delay-centiseconds=20 disposal=BackgroundGIF scene=1 size=112x144 delay-centiseconds=20 disposal=BackgroundGIF scene=2 size=112x144 delay-centiseconds=20 disposal=BackgroundGIF scene=3 size=112x144 delay-centiseconds=20 disposal=Background
+Iterations: 0
+Iterations: 0
+Iterations: 0
+Iterations: 0

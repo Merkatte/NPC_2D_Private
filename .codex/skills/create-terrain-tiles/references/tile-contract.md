@@ -2,16 +2,18 @@
 
 Resolve these eight dimensions before producing a functional terrain set. Reuse approved values from the assignment, task record and inspected same-purpose assets. Ask only about unresolved choices that affect the outcome; do not ask the user to fill a new form every time.
 
+In the same assignment/task record, identify the first minimal family/subset, existing passing tiles to reuse and available native pixel-editing/assembly method. Follow SKILL.md section 3 before expanding to the full inventory; a requested final atlas is not an instruction to generate all its tiles at once.
+
 | Dimension | Resolve |
 |---|---|
 | Reference and format | Approved style/reference roles; logical cell size, view, intended scale, palette/shading treatment, transparency and requested formats |
 | Required inventory | Material fills, N/E/S/W borders, convex/concave corners, transition families and exact requested decorative variants/counts |
 | Direction semantics | Coordinate convention and material occupancy; “NW corner” alone is insufficient |
-| Connection contract | Each edge's material profile, crossing positions, width/color/shadow treatment and valid neighbor relationships |
+| Connection contract | Each edge's material profile, crossing positions, width/color/shadow treatment; self-repeatable fills, mix-compatible variants and required transitions between materials/depths |
 | Variation permissions | Pixels/features that may change, connection structure that must remain stable, and any explicitly requested structural alternatives |
 | Decoration delivery | Decorations baked into terrain, optional editable layers or separate overlays as actually requested |
 | Atlas/delivery layout | Stable IDs, row/column order, dimensions, padding/gutters, preserved existing cells and required individual/sheet/editable outputs |
-| Completion evidence | Inventory coverage, requested join examples/repetition, style comparison, actual preservation and disclosed remaining gaps |
+| Completion evidence | Inventory coverage, exact-tile fill repetition/mixes and boundary assemblies covering each requested family/direction; separate interior, straight-join and corner-join results, style comparison, preservation and remaining gaps under SKILL.md section 5 |
 
 ## Inventory Without Assumed Full Coverage
 
@@ -30,7 +32,9 @@ For a conventional image grid, record x increasing right and y increasing down; 
 
 Define material A/B occupancy in each corner. Example only: NW convex land means land occupies the NW corner with water elsewhere; NW concave land means water cuts into the NW corner with land elsewhere. Both involve N/W boundary crossings, but are different tiles. Do not assume this example replaces the chosen family definition.
 
-Record actual connector positions/profile from the approved straight edges. Midpoints are optional design choices, not a global law. A corner must match its specific neighbors in material, profile, lip/bank/shadow and edge color; position alone is insufficient. If varying shape near the edge would break these properties, keep that region stable.
+For each requested boundary family, record actual connector positions/profiles from its approved straight edges and identify each corner's intended neighbors on both joining sides. Midpoints are optional design choices, not a global law. A corner must match those neighbors in material, contour, profile, border/lip/shadow width and edge color; position alone is insufficient. If varying shape near the edge would break these properties, keep that region stable.
+
+Anchor each established connector to a source tile ID and its actual edge pixel coordinates/region so it can be reused in corner and variant edits. A written midpoint, color or width target is only a design requirement until the source artwork implements it; do not treat prompt text as a reusable pixel boundary.
 
 Distinguish a visual diagonal segment within a corner from diagonal-only cell connectivity or a new saddle/crossing case. Add a new connectivity class only when requested. Do not rotate the whole artwork blindly to produce missing orientations when lighting/detail orientation would change.
 

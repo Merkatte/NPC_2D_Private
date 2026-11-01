@@ -1,0 +1,74 @@
+Terrain continuity skill test — 2026-11-02
+Role: Graphics/create-project-sprites + create-terrain-tiles.
+Status: FAILED visual/continuity acceptance; files supplied for inspection. No production/import claim.
+Scope: only output/ArtDirection/TerrainContinuity20261102/. Prior TerrainConcept20261102 files, skill edits, Assets and Unity untouched.
+Method: built-in imagegen 3 calls total (initial full sheet, one focused center correction, illustrative scene). Shared correction budget exhausted. No Python, raster drawing scripts, filtering, recoloring, resampling or procedural replacement artwork.
+Native assembly: official portable ImageMagick 7.1.2-35 Q8 supplied by root. Only -crop +repage, montage -geometry +0+0, tile: repetition, +append, identify and compare used.
+
+DELIVERABLES
+terrain-tilesheet-attempt1.png: 1774x887 RGB opaque. FAILED overview: full 8x4 category inventory is visually approximate, thin gridlines and merged corner forms remain, backgrounds retain shading.
+center-source-correction.png: 1774x887 RGB opaque. Focused 4x2 center revision; original generated pixels retained.
+terrain-center-tilesheet.png: 1024x512, 4x2 uniform 256x256 cells, zero gutters/text; exact copied crops listed below. FAILED strict continuity/pixel-style acceptance due residual nonpixel tonal variation.
+terrain-scene-illustrative.png: 1536x1024 RGB opaque. Separate illustration using prior scene composition and center sheet palette; NOT exact-tile mosaic proof. Open clearing, threshold grounding, quiet olive/ochre/teal preserved. Still fine tonal variation and variable pixel scale.
+continuity-proof-strip.png: 3072x1024 opaque, exact +append of three unchanged 1024x1024 panels, left dirt-mixed, middle water-mixed, right deep-repeat. No rescaling.
+attempt1-repeat-proof.png: 2304x768. Failed initial source interiors, left dirt, middle regular water, right Deep; each 4x4 of192px crop.
+Other PNGs in this folder are retained source crops and exact repetition/mixed panels named by material.
+
+COORDINATES AND INVENTORY
+Coordinates x rightward, y downward; origin top-left; dimensions in actual output pixels. No native32px authorship claim.
+Correction source crop rectangles all256x256:
+D1 dirt at(94,94); D2 dirt-worn(538,94); D3 dirt-pebbles(981,94); D4 dirt-scuff(1425,94).
+W1 water(94,538); W2 water-ripple(538,538); W3 water-ripple2(981,538); Deep(1425,538).
+These are central samples of the generated cells, not preserved full raw cell boundaries. Decorations remain wholly contained. Atlas row1 D1 D2 D3 D4; row2 W1 W2 W3 Deep. No rotation/recolor/resize.
+Initial attempt crops all192x192: dirt(1124,15), water(902,459), Deep(1568,459). Thin raw gridlines deliberately excluded from these interior tests; this does not validate fullsheet boundaries.
+
+DECLARED COMPATIBILITY
+D1-D4 intended same dirt family; W1-W3 intended same water family; Deep intended self-repeat only. Deep cannot directly mix with W1-W3 without explicit transition art, which was not generated. No shallow/deep blend claimed.
+All self-repeat panels are4x4. Dirt-mixed rows:
+D1 D2 D1 D3 / D4 D1 D2 D1 / D1 D3 D4 D1 / D3 D1 D1 D2.
+Water-mixed rows:
+W1 W2 W1 W3 / W3 W1 W2 W1 / W1 W3 W1 W1 / W2 W1 W3 W1.
+
+CHECKS AND RESULTS
+ImageMagick identify measured above dimensions and opaque=True for main deliverables.
+ImageMagick compare -metric AE between each of eight crop PNGs and its matching final atlas cell: all eight 0(0), proving assembly retained pixels.
+ImageMagick identify unique colors of supposedly plain256px crops: dirt68, water50, Deep42. They are visibly not exact single-color backgrounds; counts alone are not an art-quality test.
+Opened original-detail sheet, crops/mosaics, final strip and scene. Initial repeat exposes periodic gradients. Correction substantially reduces large cell-center halos, but low-contrast grain/mottling remains in dirt and water, and Deep4x4 still shows faint periodic bands. These are observed FAILURES, not merely unverified. Pixel style is still not a verified coherent coarse native grid.
+No exact boundary/corner join proof, depth transitions, Unity import or runtime validation performed. Fullsheet edge/corner families remain failed/unaccepted context. No further regeneration performed.
+
+PROMPT1 FULL SHEET
+Use case: stylized-concept, terrain tilesheet continuity correction.
+Use supplied old board only for palette and pixel-art material language. Create a NEW raw terrain tilesheet image, 1536 pixels wide by 768 pixels tall: EXACTLY 8 columns x 4 rows of 192x192 square tiles. Every tile touches its neighbors with zero gutters, zero padding, zero frame, zero labels, no text. Whole image is occupied by the 32 terrain squares. Topdown 2D warm medieval pixel terrain. Logical32x32 pixel-style cells enlarged to visible chunky square pixels, crisp intentional clusters. The sheet is an atlas of separate tile designs, NOT one flowing landscape.
+CRITICAL correction: the old reference has per-cell center/rim gradients that cause checkerboard seams. Remove ALL gradients, all color ramps inside background fills, all vignettes, all per-cell illumination, all embossed/beveled tile effects. Water and dirt backgrounds must be exactly uniform solid color over the entire tile. A flat-color sprite-editor canvas, NOT a rendered or photographed surface. No subtle gradients even if aesthetically pleasing. No noise, grain, dither, blur, antialiasing. Pixel detail is only sparse intentional decorations and boundary clusters.
+MATERIAL BASES: grass muted olive #7D9542, dirt warm ochre #C88A43, regular water teal #137D89, deep water dark teal #155666. Background colors are identical between all tiles belonging to each family, including all four outer edges. Edge band of interiors must remain uniform base color; decoration does not touch edges. Deep is a separate self-repeating class and does NOT mix directly with normal water; no shallow tile in this sheet. No allover texture. Preserve expressive pixel material edges and charming tiny composed flowers/rocks/reeds, do not make icons or vectors.
+Inventory left to right:
+ROW1: G1 plain grass very quiet flat olive; G2 same olive with one subtle broad contiguous patch only in center; G3 same olive with tiny cream flowers; G4 same olive with two pebbles; G5 same olive with sparse tuft; D1 plain dirt solid ochre absolutely uniform; D2 same ochre with two small grouped wear marks near center only; D3 same ochre with three tiny center pebbles. All base and variants have EXACTLY THE SAME boundary color across all four edges within family.
+ROW2: four straight grass-dirt boundaries with grass on N, E, S, W respectively, divider at half cell. Then four convex grass corners with grass occupying NW, NE, SE, SW quadrant respectively and dirt in other three quadrants. Coarse stepped corners, no diagonal routes. Matching base colors and narrow grass lip. At boundary-crossing sides, profiles meet at midpoint consistently.
+ROW3: four concave grass corners with dirt occupying NW, NE, SE, SW quadrant respectively and grass elsewhere. Then W1 absolutely solid regular teal water, W2 same regular teal plus one sparse little center ripple, W3 same regular teal plus two tiny offset center ripple dashes, DEEP absolutely solid dark teal #155666 over its whole square. W1-W3 all four edge bands IDENTICAL #137D89, no depth halo, NO LIGHT CENTER, NO DARK RIM, NO LEFT-RIGHT OR UP-DOWN TONE CHANGE. DEEP all pixels same #155666. Depth transitions are deliberately out of scope, do not add gradients instead.
+ROW4: four straight pond banks with grass on N,E,S,W respectively and regular water opposite. Narrow warm earth lip and two-shade shallow rim confined only to the boundary, never extending as gradients across the tile. Then four convex water outer corners NW,NE,SE,SW of a pond perimeter: water occupies the SE,SW,NW,NE quadrant respectively, grass outside with bank between. Sparse reed/flower details embedded at at most two bank cells. These are four different orientations, not copies.
+No buildings/characters/UI. Palette and contour character follow reference, but background fills are true UNLIT SOLID COLORS. True crisp pixel illustration and genuinely repeatable interior backgrounds are BOTH mandatory. Especially check dirt and water: do not shade each square like a small separate tile object. Opaque PNG.
+
+PROMPT2 FOCUSED CENTER CORRECTION (no image reference)
+Create a flat pixel-art TERRAIN INTERIOR TILE ATLAS, opaque PNG, 1536x768, exactly FOUR columns and TWO rows of equal square cells, each cell384x384. No gaps, no grid lines, no outlines around cells, no labels, no margins or presentation board. Just a raw 4x2 texture atlas.
+
+This atlas must use truly constant solid background colors, like the pencil and paint-bucket tools of an indexed-color pixel editor. It is NOT an image of physical objects and has NO lighting. No shader. No gradients. No vignette. No edge darkening. No lighter tile centers. No shadow around tiles. NO NOISE. A background described as flat means the exact SAME RGB color at every pixel not occupied by a sparse decoration. The four adjacent cells in each row should visually blend into ONE continuous uninterrupted field of their shared base color without any trace of cell outlines. The only exception is the last bottom cell which is a separately darker Deep-water class.
+
+ROW ONE, all four cells have identical flat warm ochre background #C88A43:
+cell1 dirt base: ENTIRE CELL ONE SOLID COLOR #C88A43, absolutely no marks.
+cell2 worn dirt: same exact #C88A43 fill, with two small low-contrast deliberate pixel-cluster wear marks near the center; outside those marks every pixel remains #C88A43.
+cell3 pebble dirt: same exact #C88A43 fill, with a little compact group of three warm grey pixel pebbles near the center, small simple silhouettes and just two shades; outside pebbles every pixel remains #C88A43.
+cell4 dirt alternate: same exact #C88A43 fill, one small faint square-step scuff near center, rest perfectly uniform.
+
+ROW TWO:
+cell1 water base: ENTIRE CELL ONE SOLID TEAL COLOR #137D89, absolutely no marks.
+cell2 ripple water: same exact #137D89 fill, a single tiny cluster of 2 short horizontal flat pale teal pixel dashes near center; no surrounding shade halo.
+cell3 ripple alternate: same exact #137D89 fill, two tiny separated horizontal pale teal dashes slightly off center; no surrounding shade halo.
+cell4 Deep water: ENTIRE CELL ONE SOLID DARK TEAL COLOR #155666, absolutely no marks or gradients. This is its own separate self-compatible depth class, not a tile that mixes directly with regular water.
+
+All decorations remain inside the central HALF of the cell so wide outside bands are exactly constant background. Use crisp logical32x32-style large square pixels for the tiny decoration clusters. Pure flat fills in the empty cells are intentional and mandatory: do not embellish them. The minimal backgrounds give open readable combat lanes in a medieval top-down RPG; decorative art is sparse but composed with deliberate charming pixel shapes, not noise or confetti. Soft rendering is forbidden. There must be zero local lighting or photographic/painterly texture, even extremely subtle. Never render these as beveled separate squares. Native pixel editor screenshot of plain solid terrain texture and small pixel details, without any interface.
+
+PROMPT3 ILLUSTRATIVE SCENE (prior scene v2 and corrected center atlas supplied as reference)
+Use case: stylized-concept.
+Create one terrain-focused landscape concept for a warm medieval top-down pixel-art game, 1536x1024. Use the supplied village scene for composition only, and the small center-tile atlas for warm ochre earth and teal water palette only. This is an illustrative scene, not a proof of tiled pixel joins. Keep cropped timber and stone cottage at upper left, worn doorstep grounded with a compact contact shadow and a few cobbles, wide open central working/combat clearing, olive grass at margins and right-side pond. No characters or text.
+Improve the ground: a continuous quiet ochre field crosses the entire clearing WITHOUT cell-size color resets or round shaded squares. The grass uses broad sparse low-contrast olive patches, and just a few small composed cream flowers, pebbles and grass tufts near margins. The pond is a continuous quiet medium teal interior with one restrained ripple cluster, a short earthy bank and a narrow flat-color shallow rim at the land boundary only. Do NOT use dark Deep water in this pond: no depth transition family is yet drawn. No repeated light-centered/dark-rimmed water squares. Depth is not represented by a gradient. Water and dirt fills are flat unlit colors; no smooth tone gradients anywhere on terrain.
+Style: carefully deliberate coarse low-resolution pixel clusters, logical384x256 scene enlarged4x, crisp square pixels and controlled palette. Terrain boundary stairs must read as square-pixel contours, not smooth vector curves, not antialiased. Building richer but compatible warm timber/stone, solid chunky roof and stone shapes. Keep detail low, scene open and calm, ornament concentrated at building threshold and pond margins. Avoid allover texture, grain, dithering, painterly shading, smooth edges, blur, gradient backgrounds and isolated tile-shaped highlights. Crisp expressive pixel shapes and quiet continuous ground are simultaneous requirements. Opaque image, no UI, title, frame, grid, labels or watermarks.

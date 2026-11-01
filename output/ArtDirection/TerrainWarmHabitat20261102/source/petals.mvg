@@ -1,0 +1,13 @@
+fill '#76b0a9'
+rectangle 17,23 22,23
+rectangle 41,42 46,42
+fill '#e2c4ad'
+polygon 18,20 20,19 22,20 21,22 18,22
+fill '#f1ddc1'
+rectangle 18,20 20,20
+fill '#d4b0a4'
+polygon 43,39 45,38 47,39 46,41 43,41
+fill '#ebc8b4'
+rectangle 43,39 45,39
+fill '#b4c491'
+polygon 30,49 33,48 35,50 33,51 30,51

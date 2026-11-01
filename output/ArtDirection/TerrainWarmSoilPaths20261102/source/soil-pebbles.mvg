@@ -1,0 +1,20 @@
+fill '#b49d78'
+polygon 14,22 17,20 21,21 23,24 21,26 16,26 13,24
+polygon 41,43 44,41 47,42 48,45 45,47 41,46
+fill '#b6ad92'
+polygon 14,21 17,19 20,20 22,23 20,25 16,24
+polygon 41,42 44,40 46,41 47,44 44,45 41,44
+fill '#d3c5a7'
+polygon 15,21 17,20 20,21 19,22 15,22
+rectangle 43,41 45,42
+fill '#a49f86'
+rectangle 18,23 20,24
+rectangle 44,44 45,44
+fill '#b6aa89'
+polygon 32,14 34,13 36,14 35,16 32,16
+fill '#d5c4a1'
+rectangle 33,13 34,14
+fill '#b9a47e'
+rectangle 25,47 27,48
+fill '#ddc698'
+rectangle 26,46 27,46

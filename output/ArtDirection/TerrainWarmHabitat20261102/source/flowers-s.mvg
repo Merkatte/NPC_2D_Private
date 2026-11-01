@@ -1,0 +1,27 @@
+fill '#8d9b63'
+polygon 17,57 22,55 27,57 27,59 23,61 18,60
+fill '#7c925e'
+rectangle 21,50 22,57
+polygon 20,58 18,57 18,55 20,55 21,56 23,54 25,54 25,56 23,58
+fill '#b7c186'
+rectangle 23,54 25,54
+fill '#cc9386'
+rectangle 19,46 24,50
+rectangle 17,47 25,49
+fill '#e8beb0'
+rectangle 19,45 22,47
+rectangle 17,47 19,49
+rectangle 22,47 25,49
+rectangle 20,49 22,51
+fill '#f5d7be'
+rectangle 19,45 21,46
+fill '#d3ad67'
+rectangle 20,47 22,49
+fill '#7f9660'
+rectangle 46,53 47,57
+fill '#adba7c'
+rectangle 44,55 48,56
+fill '#edcf9b'
+rectangle 45,51 48,53
+fill '#f1dfb5'
+rectangle 45,50 47,51
