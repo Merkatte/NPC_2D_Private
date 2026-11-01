@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Combat Domain"
+  short_description: "Assess Combat ownership and domain behavior."
+  default_prompt: "Use $reviewing-combat-domain to assess the requested Combat scope and report evidence and limitations."

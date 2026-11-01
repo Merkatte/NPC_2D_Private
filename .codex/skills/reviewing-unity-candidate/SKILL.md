@@ -17,7 +17,7 @@ Use the ordinary review below unless root explicitly selected a strict gate or p
 - Follow [SceneWork.md](../../../Tools/NpcHarness/SceneWork.md): no new or expanded verification-only code without a separate explicit request, and no automatic Play Mode/game-screen checks or retries without a separate explicit request. Report needed actions to root; this read-only role does not acquire implementation authority.
 - Preserve raw check outcomes. Review cannot turn a failed check into success, and compilation alone does not establish runtime behavior or architecture compliance.
 
-Use reviewing-npc-work-code for a repository-wide NPC/worker audit. This skill does not expand a candidate review into that audit or update PublicMD/Status/Code_Evaluation_Result.md.
+Use reviewing-npc-work-code for requested project/domain/feature quality assessments and prior-issue reassessment. This candidate acceptance skill does not automatically launch that assessment or update PublicMD/Status/Code_Evaluation_Result.md.
 
 ## 1. Establish the Ordinary Review Basis
 

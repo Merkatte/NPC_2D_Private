@@ -14,7 +14,7 @@ Every C# candidate, including temporary helpers, needs:
 
 Inspect lifecycle, pooling, transactions, null handling and serialized wiring where affected. Compilation does not prove functional behavior. Check whether current flow/ownership agrees with the owning documentation; updating a document does not legitimize an unauthorized design change. For an authorized normative-rule change, use the approved prior rule and authorization supplied by root.
 
-For a concrete NPC domain concern, the relevant portion of [review-workflow.md](../../reviewing-npc-work-code/references/review-workflow.md) may supply a checklist. It is not an instruction to run a full audit, add a reviewer or update the project-wide report.
+For additional assessment criteria, consult the relevant portion of the [shared checklist](../../reviewing-npc-work-code/references/review-workflow.md). A relevant domain skill linked from reviewing-npc-work-code may supply domain questions; use only those questions under this candidate's scope and verdict contract. This does not activate audit coordination, another reviewer or the project-wide report.
 
 ## Evidence and Coverage
 

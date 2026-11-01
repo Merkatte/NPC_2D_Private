@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review World Domain"
+  short_description: "Assess World ownership and domain behavior."
+  default_prompt: "Use $reviewing-world-domain to assess the requested World scope and report evidence and limitations."

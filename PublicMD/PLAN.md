@@ -84,6 +84,10 @@ gameplay Phase와 별도로, Codex 작업 결과를 독립적으로 검증하는
 
 이 작업은 현재 gameplay Phase의 완료를 대신하지 않는다. 결정적 GateResult와 HarnessBeacon self-test를 먼저 완성한 뒤 cross-platform runner, 단일 작업 Skill, Reviewer와 선택적 멀티에이전트 순서로 진행한다.
 
+### 개선 완료 — 코드 평가 스킬 체계
+
+[코드 평가 스킬 개선 합의·완료 기록](Archive/Plans/Code_Review_Skills_Improvement_Plan.md)에 따라 2026-11-01 평가 조정 스킬, 공통 기준·기록·재평가 규칙과 여섯 영역 전문 스킬을 작성했다. `.agents` 진입점은 `.codex` 원본을 연결하며, 요청된 수정은 평가 완료 후 `orchestrate-unity-work`가 조정한다. 스킬 형식 검사와 네 가지 모의 요청 확인을 완료했다. 실제 코드 평가는 실행하지 않았으며 기존 코드 평가 보고서는 그대로 유지했다.
+
 ## 2. 전체 로드맵
 
 ```text

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Economy Domain"
+  short_description: "Assess Economy ownership and domain behavior."
+  default_prompt: "Use $reviewing-economy-domain to assess the requested Economy scope and report evidence and limitations."

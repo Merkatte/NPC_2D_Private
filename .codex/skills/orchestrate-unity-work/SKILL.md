@@ -31,6 +31,8 @@ Read [extended-workflows.md](references/extended-workflows.md) only when the use
 
 For NPC/worker feature work that requires planning, use [implement-npc-feature](../implement-request-feature/SKILL.md) to establish any missing approved scope before implementation; invoking this orchestrator directly does not bypass that workflow's planning/approval or execution-mode gates. On handoff, consume the approved scope, completion conditions, prerequisites and approval evidence. If approval or a material product decision is missing, return only that gap to the user/planning step; do not restart planning for an unchanged approved scope. This orchestrator owns role/skill selection, worker assignments, tools, scheduling, verification, independent review and completion. Execution choices within scope do not need another planning approval; material scope, behavior or acceptance changes need a specific user decision before affected work.
 
+For a reviewing-npc-work-code handoff, first consume the completed assessment record, the requested findings/fix scope and existing authorization. This orchestrator selects implementation roles and manages corrections, affected checks and required independent candidate review; the evaluator does not. Reuse authorization for unchanged requested fixes without another permission prompt. Bug-fix authorization does not include unrelated redesign or TBD game-rule decisions. Do not rerun a whole-project assessment after each correction; verify the affected paths under the ordinary check-reuse rules.
+
 ## 2. Assign the Needed Roles
 
 Read [worker-coordination.md](references/worker-coordination.md) before delegation. It owns role boundaries, WorkerAssignment/WorkerReport contents, handoffs and shared-worktree scheduling.

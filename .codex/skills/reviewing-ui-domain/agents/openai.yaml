@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review UI Domain"
+  short_description: "Assess UI ownership and domain behavior."
+  default_prompt: "Use $reviewing-ui-domain to assess the requested UI scope and report evidence and limitations."

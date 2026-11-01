@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review NPC Domain"
+  short_description: "Assess NPC ownership and domain behavior."
+  default_prompt: "Use $reviewing-npc-domain to assess the requested NPC scope and report evidence and limitations."

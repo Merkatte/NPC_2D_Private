@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Settlement Domain"
+  short_description: "Assess Settlement ownership and domain behavior."
+  default_prompt: "Use $reviewing-settlement-domain to assess the requested Settlement scope and report evidence and limitations."
