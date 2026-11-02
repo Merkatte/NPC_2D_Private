@@ -1,4 +1,12 @@
-﻿# Terrain 전용 제작 스킬 — 2026-11-01
+# DefenseTest 장식 나무 인스턴싱 — 2026-11-03
+
+- 사용자 요청에 따라 북쪽 성벽과 적 생성선 위의 지형 가장자리에 네 색상 나무 50개를 요청하는 고정 시드 장식 배치를 준비했다. `/InGameObjects/Map/InstancedTrees` 한 객체의 `InstancedTreeGrove`가 공용 quad와 수종별 행렬 묶음을 제출하며, 나무별 GameObject·SpriteRenderer·Animator는 생성하지 않는다. 기존 사용자 나무 4개와 미저장 수정은 보존하고, 사용자의 명시적 동의로 함께 저장한다.
+- 새 `InstancedTreeWind` shader는 기존 12프레임·2.04초 시트를 GPU 시간과 나무별 위상으로 선택한다. PPU20의 밑동 기준 quad, Point/무압축 PNG와 재질4개를 사용한다. 알파 절단과 밑동 Y 기반 깊이는 이 XY 배경의 나무 간 겹침만 처리한다. NPC 정렬 통합·통행 차단·벌목·브러시·GPU 개별 culling은 추가하지 않았다.
+- 변경: `Actor/InstancedTreeGrove.cs`, `Art/Shaders/InstancedTreeWind.shader`, 제한된 조립용 `Editor/SceneWork/DefenseTreeGroveSetup.cs`, Generated/Environment/Trees의 재질과 PNG import 설정, DefenseTest 배선, World/Environment_Presentation 주 소유 문서와 안내. 기존 삭제된 village-tree 자산6개는 사용자 변경으로 보존했다.
+- 검증: Unity strict 컴파일 오류0/경고0, 실제 조립 메뉴 완료, shader 오류 사전검사, 재질·50개 요청 설정 readback, 새 host 하나 외 hierarchy 동일, 기존 사용자 객체 보존, PNG import 변경 Point/무압축 두 항목만 확인. 독립 읽기 전용 `/root/forest_candidate_review` Approve/findings없음. 보정0/2회. 실제 배치 개수·화면·Play 동작·성능 수치는 미검증이며 자동 Play/스크린샷·새 검증 코드는 수행하지 않았다.
+- 단일 기록: `.harness-runs/defense-tree-instancing-20261103/work-record.md`, 컴파일과 조립 원본 로그는 해당 `code/`, `assembly/`. 사용자 승인 후 DefenseTest만 저장했고 dirty=false·디스크의 신규 host/재질/좌표 참조를 확인했다. Unity가 생성한 빈 `m_Name:` 후행 공백1곳은 직렬화 형식으로 보존했다. 커밋·푸시하지 않았다.
+
+# Terrain 전용 제작 스킬 — 2026-11-01
 
 - 사용자 합의에 따라 [create-terrain-tiles](../../.codex/skills/create-terrain-tiles/SKILL.md)를 추가했다. 기준 자산·규격, 필수 구성, 방향 의미, 연결 조건, 변형 범위, 장식 포함 방식, 시트 납품과 완료 근거의 8개 계약을 기존 작업 기록에서 정한다. 승인된 값은 재사용하며 타일 크기·중앙 연결·보호 폭·팔레트 수를 전역 상수로 강제하지 않는다.
 - 구성·연결성과 승인된 픽셀아트 화풍을 모두 완료 조건으로 유지한다. 축소·양자화·aseprite 저장만으로 픽셀아트 품질을 주장하지 않는다. 장식 다양성을 새 대각선 연결로 바꾸거나, 완성 타일 대신 별도 장식 시트로 대체하지 않는다.
