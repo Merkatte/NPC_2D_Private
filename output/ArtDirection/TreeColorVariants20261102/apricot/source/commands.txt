@@ -1,0 +1,19 @@
+Actual production used installed FFmpeg8.1 and unchanged Aseprite1.3.18.6 helper.
+All paths below are relative to output/ArtDirection/TreeColorVariants20261102/apricot except explicit repository paths.
+
+ffmpeg -i source/apricot-generated.png -vf 'format=rgba,scale=96:135:flags=neighbor,lut=a=if(gte(val\,128)\,255\,0),pad=112:144:8:2:color=0x00000000' -pix_fmt rgba -frames:v 1 source/apricot-sampled.png
+ffmpeg -i source/apricot-sampled.png -vf 'palettegen=max_colors=32:reserve_transparent=1' -frames:v 1 source/palette.png
+ffmpeg -i source/apricot-sampled.png -i source/palette.png -lavfi '[0:v][1:v]paletteuse=dither=none:alpha_threshold=128,format=rgba,premultiply=inplace=1,format=rgba' -pix_fmt rgba -frames:v 1 source/apricot-base.png
+ffmpeg -i source/apricot-base.png -vf 'crop=108:143:4:0,pad=112:144:0:1:color=0x00000000,format=rgba' -pix_fmt rgba -frames:v 1 source/apricot-aligned.png
+
+Wood-highlight native mask: preserve alpha only for exact RGB225,136,88 or236,150,96 at y>=103; other mask pixels alpha0. This spatial mask avoids fixing identical warm colors in upper leaves. Dark wood colors are explicitly listed in leafwind-config.json.
+
+From repository root:
+'/Users/minbh/Library/Application Support/Steam/steamapps/common/Aseprite/Aseprite.app/Contents/MacOS/aseprite' -b --script-param input=output/ArtDirection/TreeColorVariants20261102/apricot/source/apricot-aligned.png --script-param outdir=output/ArtDirection/TreeColorVariants20261102/apricot/frames --script-param config=output/ArtDirection/TreeColorVariants20261102/apricot/source/leafwind-config.json --script output/ArtDirection/TreeLeafWindWarm20261102/authoring/build-leafwind.lua
+
+Standard Aseprite exports: --sheet-type horizontal --sheet apricot-sheet.png --data apricot-sheet.json --format json-array --save-as apricot.gif
+GIF4x preview: FFmpeg geq alpha compositing over RGB216,210,186, nearest4x, palettegen64/paletteuse dither=none, loop0.
+Wrap: decoded GIF frames11,0,1 with zero-based indexes, beige composite, hstack, nearest4x.
+Wood check: exported native fixed wood layer alphaextract -> alphamerge with each decoded GIF frame -> premultiply=inplace=1 -> format=rgba -> framemd5.
+Alpha check: decoded GIF -fps_mode passthrough -f rawvideo -pix_fmt rgba, xxd -p -c4, cut alpha byte, sort/uniq.
+Border check: alphaextract; crop four1px edges; hstack; signalstats.YMAX.

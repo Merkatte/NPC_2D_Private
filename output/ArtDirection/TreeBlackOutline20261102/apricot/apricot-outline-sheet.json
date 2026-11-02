@@ -1,0 +1,119 @@
+{ "frames": [
+   {
+    "filename": "apricot-outline 0.gif",
+    "frame": { "x": 0, "y": 0, "w": 112, "h": 144 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 112, "h": 144 },
+    "sourceSize": { "w": 112, "h": 144 },
+    "duration": 200
+   },
+   {
+    "filename": "apricot-outline 1.gif",
+    "frame": { "x": 112, "y": 0, "w": 112, "h": 144 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 112, "h": 144 },
+    "sourceSize": { "w": 112, "h": 144 },
+    "duration": 160
+   },
+   {
+    "filename": "apricot-outline 2.gif",
+    "frame": { "x": 224, "y": 0, "w": 112, "h": 144 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 112, "h": 144 },
+    "sourceSize": { "w": 112, "h": 144 },
+    "duration": 160
+   },
+   {
+    "filename": "apricot-outline 3.gif",
+    "frame": { "x": 336, "y": 0, "w": 112, "h": 144 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 112, "h": 144 },
+    "sourceSize": { "w": 112, "h": 144 },
+    "duration": 200
+   },
+   {
+    "filename": "apricot-outline 4.gif",
+    "frame": { "x": 448, "y": 0, "w": 112, "h": 144 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 112, "h": 144 },
+    "sourceSize": { "w": 112, "h": 144 },
+    "duration": 160
+   },
+   {
+    "filename": "apricot-outline 5.gif",
+    "frame": { "x": 560, "y": 0, "w": 112, "h": 144 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 112, "h": 144 },
+    "sourceSize": { "w": 112, "h": 144 },
+    "duration": 160
+   },
+   {
+    "filename": "apricot-outline 6.gif",
+    "frame": { "x": 672, "y": 0, "w": 112, "h": 144 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 112, "h": 144 },
+    "sourceSize": { "w": 112, "h": 144 },
+    "duration": 160
+   },
+   {
+    "filename": "apricot-outline 7.gif",
+    "frame": { "x": 784, "y": 0, "w": 112, "h": 144 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 112, "h": 144 },
+    "sourceSize": { "w": 112, "h": 144 },
+    "duration": 200
+   },
+   {
+    "filename": "apricot-outline 8.gif",
+    "frame": { "x": 896, "y": 0, "w": 112, "h": 144 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 112, "h": 144 },
+    "sourceSize": { "w": 112, "h": 144 },
+    "duration": 160
+   },
+   {
+    "filename": "apricot-outline 9.gif",
+    "frame": { "x": 1008, "y": 0, "w": 112, "h": 144 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 112, "h": 144 },
+    "sourceSize": { "w": 112, "h": 144 },
+    "duration": 160
+   },
+   {
+    "filename": "apricot-outline 10.gif",
+    "frame": { "x": 1120, "y": 0, "w": 112, "h": 144 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 112, "h": 144 },
+    "sourceSize": { "w": 112, "h": 144 },
+    "duration": 160
+   },
+   {
+    "filename": "apricot-outline 11.gif",
+    "frame": { "x": 1232, "y": 0, "w": 112, "h": 144 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 112, "h": 144 },
+    "sourceSize": { "w": 112, "h": 144 },
+    "duration": 160
+   }
+ ],
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.6-arm64",
+  "image": "apricot-outline-sheet.png",
+  "format": "RGBA8888",
+  "size": { "w": 1344, "h": 144 },
+  "scale": "1"
+ }
+}

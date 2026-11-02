@@ -1,0 +1,13 @@
+FFmpeg8.1, one operation on each final RGBA frame; no image generation or repaint.
+
+Actual filter:
+[0:v]format=rgba,split=3[a][b][c];[a]alphaextract,dilation=coordinates=255[m];[b]lutrgb=r=0:g=0:b=0[blk];[blk][m]alphamerge[edge];[edge][c]overlay=format=rgb:shortest=1,format=rgba[out]
+
+Execution shape:
+ffmpeg -framerate 25 -i ORIGINAL-frame-%02d.png -filter_complex FILTER -map '[out]' -pix_fmt rgba -fps_mode passthrough -frames:v 12 OUTLINED-frame-%02d.png
+
+Alphaextract+dilation coordinates255 = one8-neighbor expansion. The expanded alpha is applied to a solidblack copy, then original frame composited over it with overlay=format=rgb. This adds#000000 at only the original transparent boundary; overlapping native animationlayers are never outlined individually.
+GIF: pervariant timing.ffconcat; palettegen256reserve_transparent1; paletteuse dither=none; fps_mode passthrough; loop0; final_delay16centiseconds. Timing200,160,160,200,160,160,160,200,160,160,160,160ms unchanged.
+Aseprite native export opens outlinedGIF then --save-as .aseprite, --sheet-type horizontal --sheet PNG --data JSON --format json-array. New editablefiles are flattened12frameimports, not7layer sources. Original layeredfiles remain read-only.
+Preview-only beige compositing uses RGB216,210,186 via geq before nearestscale. Existing7treepositions/phases unchanged in preview/layout.json.
+Original ground anchor(56,130) unchanged. Added black border reaches row130; no translation performed.

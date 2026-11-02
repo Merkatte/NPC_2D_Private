@@ -1,0 +1,37 @@
+POSITIONAL PIXEL READBACK — all 12 PNG frames per variant
+RGB: all RGB24 pixels in each sequence; expected original, actual outlined.
+Alpha: expected original alpha with one dilation coordinates255; actual outlined alpha.
+All eight diff comparisons exit0. Original transparent RGB is zero; matching full RGB also preserves black-only added pixels.
+The earlier green-original-* maskedmerge probe is not acceptance evidence; these direct byte comparisons supersede it.
+
+green rgb
+SHA256=891e8cba01b16217c1c453e45a0584431f2e761574ffa553735f5ea4bbd17ee0
+SHA256=891e8cba01b16217c1c453e45a0584431f2e761574ffa553735f5ea4bbd17ee0
+
+green alpha
+SHA256=5dd4fde33a151e4c839a0efa31096eb8c6952751269f70f83e5ff313447df559
+SHA256=5dd4fde33a151e4c839a0efa31096eb8c6952751269f70f83e5ff313447df559
+
+apricot rgb
+SHA256=99544efecf3647599c2b87988af42fbc88930a6d3c5fead3ab0c45ea0d9866f5
+SHA256=99544efecf3647599c2b87988af42fbc88930a6d3c5fead3ab0c45ea0d9866f5
+
+apricot alpha
+SHA256=6ec7617054398112424004a57dd716996611676aa47dec6311df5b2f9f78d095
+SHA256=6ec7617054398112424004a57dd716996611676aa47dec6311df5b2f9f78d095
+
+gold rgb
+SHA256=8e98a073796453400176094aaf742b694a6f41a8f5c074dee80ce63f5c339131
+SHA256=8e98a073796453400176094aaf742b694a6f41a8f5c074dee80ce63f5c339131
+
+gold alpha
+SHA256=54ee87b4aae2ae53e8517e1f8d6b88d519ce25d94265a672b01beede44d09a59
+SHA256=54ee87b4aae2ae53e8517e1f8d6b88d519ce25d94265a672b01beede44d09a59
+
+rose rgb
+SHA256=c2f62612d07a059c580f46a2157ce3c24b394293da52e55aec4a71673de894fc
+SHA256=c2f62612d07a059c580f46a2157ce3c24b394293da52e55aec4a71673de894fc
+
+rose alpha
+SHA256=6a070ac599aa1f35f07859b1d74283db5392c3ce1c43b60c8d88677e59247256
+SHA256=6a070ac599aa1f35f07859b1d74283db5392c3ce1c43b60c8d88677e59247256

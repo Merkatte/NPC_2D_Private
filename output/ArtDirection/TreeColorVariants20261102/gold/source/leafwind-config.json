@@ -1,0 +1,26 @@
+{
+  "name": "tree-gold-leafwind",
+  "base_inset": 1,
+  "wood_colors": [[109,63,43],[99,56,38],[86,51,36],[142,84,51],[82,48,35],[126,75,45],[119,71,52],[80,46,34],[79,45,33],[76,44,33],[73,41,29]],
+  "lobes": [
+    {"name":"crown", "polygon":[[36,0],[94,0],[94,50],[58,51],[53,44],[46,37],[35,33]]},
+    {"name":"upper_left", "polygon":[[18,31],[44,31],[49,36],[54,42],[57,48],[51,55],[42,64],[18,64]]},
+    {"name":"middle_right", "polygon":[[48,45],[90,45],[90,82],[62,82],[55,76],[49,67]]},
+    {"name":"lower_left", "polygon":[[22,62],[48,62],[55,71],[57,84],[51,91],[22,91]]},
+    {"name":"lower_right", "polygon":[[54,82],[83,82],[83,110],[54,110]]}
+  ],
+  "frames": [
+    {"duration":0.20,"offsets":{}},
+    {"duration":0.16,"offsets":{"crown":[1,0]}},
+    {"duration":0.16,"offsets":{"crown":[1,1],"upper_left":[1,0]}},
+    {"duration":0.20,"offsets":{"crown":[1,1],"upper_left":[1,0],"middle_right":[1,0]}},
+    {"duration":0.16,"offsets":{"upper_left":[1,0],"middle_right":[1,1],"lower_left":[1,0]}},
+    {"duration":0.16,"offsets":{"middle_right":[1,0],"lower_left":[1,0],"lower_right":[1,0]}},
+    {"duration":0.16,"offsets":{"crown":[-1,0],"lower_right":[1,0]}},
+    {"duration":0.20,"offsets":{"crown":[-1,1],"upper_left":[-1,0]}},
+    {"duration":0.16,"offsets":{"crown":[-1,1],"upper_left":[-1,0],"middle_right":[-1,0]}},
+    {"duration":0.16,"offsets":{"upper_left":[-1,0],"middle_right":[-1,1],"lower_left":[-1,0]}},
+    {"duration":0.16,"offsets":{"middle_right":[-1,0],"lower_left":[-1,0],"lower_right":[-1,0]}},
+    {"duration":0.16,"offsets":{"lower_right":[-1,0]}}
+  ]
+}

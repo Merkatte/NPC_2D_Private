@@ -1,0 +1,13 @@
+# One-pixel black tree outlines — 2026-11-02
+
+Status: complete, root accepted. Added a black 1-pixel outer outline, especially foliage, to green, apricot, gold and rose while preserving existing pixels, colors, poses and animation timing.
+
+Baseline `7740ed62acb070bb956b1a415557fd4a7a6af674`; the two pre-existing untracked `TreeLeafWindWarm20261102` and `TreeColorVariants20261102` output folders are read-only inputs. Graphics `/root/tree_graphics` owns this new output folder except this root-owned record. No Unity assets, code or previous outputs are changed.
+
+Method scope: exact native effect on completed animation frames. Add opaque black only to transparent pixels adjacent to the existing silhouette, one native pixel wide; retain original opaque RGB/alpha, 112×144 canvas, 12 frames and 2.04-second timing. The outline follows each posed canopy; internal leaf shading remains intact. Existing Aseprite/FFmpeg tools only; no generative redraw, new authoring helper or verification code.
+
+Root inspected the enlarged green before/after sample, accepted expansion, then independently inspected the four-tree lineup and mixed-grove frame 12→1→2 contact sheet. Outside contours are clean, interiors unchanged, and there is no visible clipping or abrupt pose discontinuity in the wrap images. Root ffprobe inspection confirmed all four native GIFs are 112×144, 12 frames, 2.04 seconds. Existing positional RGB/alpha comparisons passed across all 48 PNG frames: full RGB values are unchanged and output alpha equals exactly one 8-neighbor dilation. Root inspected the direct comparison results. Raw evidence: `checks/pixel-readback.txt` and its expected/actual files; actual effect commands: `effect-filter.txt`. Earlier maskedmerge diagnostic files are superseded and are not acceptance evidence.
+
+Original anchor (56,130) is retained without translation; the external black border extends the lowest opaque row from 129 to 130. New `.aseprite` files are flattened 12-frame GIF imports; original layered sources remain untouched. Existing frame durations and infinite-loop behavior are preserved.
+
+Delivered four variant folders with 12 PNG frames, transparent GIF, sheet/JSON, flattened Aseprite file and enlarged preview. `preview/` contains the established seven-tree layout, animated mixed grove, lineup, wrap contact sheet and `tree-black-outline.zip` (64 production files). Graphics worker `/root/tree_graphics` completed production; root independently accepted the candidate. Correction budget 1, used 0. No C# changes or code review required. Unity import and gameplay playback were not performed and remain outside scope.

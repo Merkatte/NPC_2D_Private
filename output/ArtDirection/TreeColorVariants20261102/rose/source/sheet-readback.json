@@ -1,0 +1,15 @@
+{
+    "programs": [
+
+    ],
+    "stream_groups": [
+
+    ],
+    "streams": [
+        {
+            "width": 1344,
+            "height": 144,
+            "pix_fmt": "rgba"
+        }
+    ]
+}

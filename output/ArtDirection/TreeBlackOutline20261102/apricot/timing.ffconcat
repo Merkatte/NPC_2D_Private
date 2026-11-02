@@ -1,0 +1,25 @@
+ffconcat version 1.0
+file 'frames/apricot-frame-01.png'
+duration 0.20
+file 'frames/apricot-frame-02.png'
+duration 0.16
+file 'frames/apricot-frame-03.png'
+duration 0.16
+file 'frames/apricot-frame-04.png'
+duration 0.20
+file 'frames/apricot-frame-05.png'
+duration 0.16
+file 'frames/apricot-frame-06.png'
+duration 0.16
+file 'frames/apricot-frame-07.png'
+duration 0.16
+file 'frames/apricot-frame-08.png'
+duration 0.20
+file 'frames/apricot-frame-09.png'
+duration 0.16
+file 'frames/apricot-frame-10.png'
+duration 0.16
+file 'frames/apricot-frame-11.png'
+duration 0.16
+file 'frames/apricot-frame-12.png'
+duration 0.16

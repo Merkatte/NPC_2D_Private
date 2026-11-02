@@ -1,0 +1,18 @@
+{
+  "canvas": [392,260],
+  "background": "#d8d2ba",
+  "previewScale": 2,
+  "frameDurationsMs": [200,160,160,200,160,160,160,200,160,160,160,160],
+  "instancesBackToFront": [
+    {"kind":"original_green","position":[12,0],"phaseFrames":0},
+    {"kind":"gold","position":[136,0],"phaseFrames":3},
+    {"kind":"rose","position":[260,0],"phaseFrames":6},
+    {"kind":"apricot","position":[0,112],"phaseFrames":9},
+    {"kind":"rose","position":[92,110],"phaseFrames":3},
+    {"kind":"original_green","position":[184,110],"phaseFrames":6},
+    {"kind":"gold","position":[276,110],"phaseFrames":9}
+  ],
+  "lineupOrder": ["original_green","apricot","gold","rose"],
+  "lineupNativeSize": [480,160],
+  "lineupPreviewScale": 3
+}

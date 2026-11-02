@@ -1,0 +1,7 @@
+frame:0    pts:0       pts_time:0
+lavfi.bbox.x1=22
+lavfi.bbox.x2=89
+lavfi.bbox.y1=5
+lavfi.bbox.y2=129
+lavfi.bbox.w=68
+lavfi.bbox.h=125
