@@ -1,0 +1,90 @@
+{
+  "success": true,
+  "command": "command set_component_properties",
+  "data": {
+    "command": "set_component_properties",
+    "parameters": {
+      "target": "{\"instanceId\":52260}",
+      "type": "InstancedTreeGrove",
+      "properties": "{\"_speciesMaterials\": [{\"guid\": \"ba71a0b37c8aa4827b0aa20ae6b0e3ef\"}, {\"guid\": \"4cbcdf4aaf2374d50adeaac071f1fdc2\"}, {\"guid\": \"844fc535b112f45b080718567426cf2b\"}, {\"guid\": \"d16934012971b4e72828b44cc9174c74\"}, {\"guid\": \"4ae86a45ba9644ea2a44faa9b8552d98\"}]}"
+    },
+    "result": {
+      "component": {
+        "globalId": "GlobalObjectId_V1-2-b626219f452cb83418b2ee4e313685a7-12064599-0",
+        "assetPath": null,
+        "guid": null,
+        "fileId": null,
+        "instanceId": 52264,
+        "hierarchyPath": "/InGameObjects/Map/InstancedTrees",
+        "type": "InstancedTreeGrove"
+      },
+      "properties": {
+        "_speciesMaterials": [
+          {
+            "globalId": "GlobalObjectId_V1-3-ba71a0b37c8aa4827b0aa20ae6b0e3ef-2100000-0",
+            "assetPath": "Assets/Art/Generated/Environment/Trees/Materials/Tree_Green.mat",
+            "guid": "ba71a0b37c8aa4827b0aa20ae6b0e3ef",
+            "fileId": 2100000,
+            "instanceId": null,
+            "hierarchyPath": null,
+            "type": "Material"
+          },
+          {
+            "globalId": "GlobalObjectId_V1-3-4cbcdf4aaf2374d50adeaac071f1fdc2-2100000-0",
+            "assetPath": "Assets/Art/Generated/Environment/Trees/Materials/Tree_Apricot.mat",
+            "guid": "4cbcdf4aaf2374d50adeaac071f1fdc2",
+            "fileId": 2100000,
+            "instanceId": null,
+            "hierarchyPath": null,
+            "type": "Material"
+          },
+          {
+            "globalId": "GlobalObjectId_V1-3-844fc535b112f45b080718567426cf2b-2100000-0",
+            "assetPath": "Assets/Art/Generated/Environment/Trees/Materials/Tree_Gold.mat",
+            "guid": "844fc535b112f45b080718567426cf2b",
+            "fileId": 2100000,
+            "instanceId": null,
+            "hierarchyPath": null,
+            "type": "Material"
+          },
+          {
+            "globalId": "GlobalObjectId_V1-3-d16934012971b4e72828b44cc9174c74-2100000-0",
+            "assetPath": "Assets/Art/Generated/Environment/Trees/Materials/Tree_Rose.mat",
+            "guid": "d16934012971b4e72828b44cc9174c74",
+            "fileId": 2100000,
+            "instanceId": null,
+            "hierarchyPath": null,
+            "type": "Material"
+          },
+          {
+            "globalId": "GlobalObjectId_V1-3-4ae86a45ba9644ea2a44faa9b8552d98-2100000-0",
+            "assetPath": "Assets/Art/Generated/Environment/Trees/Materials/Tree_RedAutumn.mat",
+            "guid": "4ae86a45ba9644ea2a44faa9b8552d98",
+            "fileId": 2100000,
+            "instanceId": null,
+            "hierarchyPath": null,
+            "type": "Material"
+          }
+        ],
+        "_placementRegions": [
+          "<unsupported:Rect>",
+          "<unsupported:Rect>",
+          "<unsupported:Rect>"
+        ],
+        "_treeCount": 50,
+        "_seed": 20261103,
+        "_minimumSpacing": 1,
+        "_treeScale": 1,
+        "_depthOffset": -0.10000000149011612,
+        "_depthPerY": 0.0010000000474974513
+      }
+    },
+    "target": {
+      "host": "127.0.0.1",
+      "port": 7800,
+      "projectPath": "/Users/minbh/Desktop/Unity_Project/NPC_Work_2D/NPC_2D_Private"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

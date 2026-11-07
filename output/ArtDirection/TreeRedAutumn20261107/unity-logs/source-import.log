@@ -1,0 +1,52 @@
+Start importing Assets/Art/Generated/Environment/Trees/Tree_RedAutumn.png using Guid(d76b35f8e52284fbb9d5ac2b7fea4294) [Licensing::Client] Successfully resolved entitlement details
+(TextureImporter) -> (artifact id: '56597ec98a65ef558d558100bcf7347c') in 0.153575042 seconds
+Start importing Assets/Art/Generated/Environment/Trees/Tree_RedAutumn.aseprite using Guid(af69fb053290848f7bbf06ecbfbfe075) (ScriptedImporter) -> (artifact id: '4055b3c4e76a9463676fcc32cde0fb7e') in 0.397593084 seconds
+[Licensing::Client] Successfully resolved entitlement details
+Refreshing native plugins compatible for Editor in 1.43 ms, found 2 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=decdae470548c41219763d96f0c591af): Total: 1.308 seconds - Initiated by RefreshV2(AllowForceSynchronousImport)
+	Summary:
+		Imports: total=2 (actual=2, local cache=0, cache server=0)
+		Asset DB Process Time: managed=55 ms, native=982 ms
+		Asset DB Callback time: managed=222 ms, native=48 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1614, non-scripts=3926
+		Asset File Changes: new=2, changed=2, moved=0, deleted=0
+		Scan Filter Count: 1
+	InvokeCustomDependenciesCallbacks: 0.000ms
+	InvokePackagesCallback: 3.103ms
+	ApplyChangesToAssetFolders: 0.544ms
+	Scan: 294.404ms
+	OnSourceAssetsModified: 3.913ms
+	CategorizeAssetsWithTransientArtifact: 0.146ms
+	ProcessAssetsWithTransientArtifactChanges: 0.672ms
+	CategorizeAssets: 74.003ms
+	ImportOutOfDateAssets: 567.662ms (0.628ms without children)
+		ImportManagerImport: 562.666ms (4.542ms without children)
+			ImportInProcess: 558.096ms
+			UpdateCategorizedAssets: 0.028ms
+		CompileScripts: 0.015ms
+		ReloadNativeAssets: 0.830ms
+		UnloadImportedAssets: 0.099ms
+		ReloadImportedAssets: 0.000ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.621ms
+		InitializingProgressBar: 2.220ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.000ms
+		OnDemandSchedulerStart: 0.582ms
+	PostProcessAllAssets: 218.004ms
+	Hotreload: 45.853ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.810ms
+	UnloadStreamsBegin: 5.111ms
+	PersistCurrentRevisions: 0.177ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 94.093ms
+
+2026-11-07 23:48:28.786 Unity[77894:12887969] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x836f96f80 SDF, ke='Command-F12'>, but is only supported for system-provided menu items; will not be used
+[Worker0] Start importing Assets/Art/Generated/Environment/Trees/Tree_RedAutumn.aseprite using Guid(af69fb053290848f7bbf06ecbfbfe075) Importer(2089858483,b0f066a214c2f5e87bad3c948f4d605d) 
+[Worker1] Start importing Assets/Art/Generated/Environment/Trees/Tree_RedAutumn.png using Guid(d76b35f8e52284fbb9d5ac2b7fea4294) Importer(2089858483,b0f066a214c2f5e87bad3c948f4d605d) 
+[Worker0] (ScriptedImporter)
+[Worker1] (ScriptedImporter)
+[Worker1] [Licensing::Client] Successfully resolved entitlement details
+[Worker1]  -> (artifact id: '3c1c52cdbf1836af8b5702815c74f794') in 0.149603084 seconds
+[Worker0]  -> (artifact id: 'c47389452a82387615d6b18fadf5076a') in 0.184616333 seconds
+Asset Pipeline Refresh (id=7098789b2709548629306d0fdaec0615): Total: 0.155 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)

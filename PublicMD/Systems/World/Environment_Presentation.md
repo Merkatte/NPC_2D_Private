@@ -32,7 +32,7 @@
 
 ## 이미지와 렌더링 계약
 
-- 입력은 `Tree_Green`, `Tree_Apricot`, `Tree_Gold`, `Tree_Rose`의 1344×144 PNG다.
+- 입력은 `Tree_Green`, `Tree_Apricot`, `Tree_Gold`, `Tree_Rose`, `Tree_RedAutumn`의 1344×144 PNG다.
   각각 112×144 프레임 12개를 가로 배치하며, 20 PPU와 위에서 센 ground pivot (56,130)을 사용한다.
   quad는 x `[-2.8,2.8]`, y `[-0.7,6.5]`다.
 - `NPC/InstancedTreeWind` 재질에 `_MainTex`, `_Cutoff=0.5`, GPU instancing을 설정한다.
@@ -47,7 +47,7 @@
 
 ## Unity 배선과 조립
 
-`Tools > NPC Harness > Defense Trees > Prepare Assets`는 네 PNG의 관련 import 설정과
+`Tools > NPC Harness > Defense Trees > Prepare Assets`는 다섯 PNG의 관련 import 설정과
 `Assets/Art/Generated/Environment/Trees/Materials/Tree_*.mat`만 만든다/갱신한다.
 PPU와 기존 sprite 정의를 보존하며 개별 재질만 저장한다. `SaveAssets`/장면 저장은 하지 않는다.
 
@@ -57,12 +57,17 @@ PPU와 기존 sprite 정의를 보존하며 개별 재질만 저장한다. `Save
 월드 기준 x `[-14,8]`, `[13,36]`, `[42,61]`, 공통 y `[26.8,28]`을 host-local Rect로 변환한다.
 50개, seed 20261103, 간격 1, scale 1을 설정한다. 변경된 장면은 저장하지 않는다.
 
+`Tree_RedAutumn`은 동일한 shader·cutoff·instancing 계약의 다섯 번째 수종이다.
+PNG는 20 PPU, Point, Clamp, 무압축, mipmap 없음의 12개 전체 셀로 설정한다.
+각 셀은 112×144, custom pivot `(0.5, 14/144)`이며 Aseprite 원본도 20 PPU를 사용한다.
+씬 수종 목록에 추가할 때 기존 배치·개수·seed·변환·깊이 값은 유지한다.
+
 ## 변경 유형별 최소 확인 범위
 
 | 변경 | 먼저 확인 |
 |---|---|
 | 배치·성능·수명 | `InstancedTreeGrove.cs`, 대상 scene의 component와 부모 변환 |
-| 프레임·pivot·깊이 | shader, 네 PNG importer와 재질, camera·ground 렌더링 설정 |
+| 프레임·pivot·깊이 | shader, 해당 수종 PNG importer와 재질, camera·ground 렌더링 설정 |
 | DefenseTest 배치·조립 | setup script, `DefenseTest.unity`의 Map·벽·spawn anchor |
 
 ## 불변 규칙과 검증

@@ -10,7 +10,7 @@ public static class DefenseTreeGroveSetup
     private const string ScenePath = "Assets/Scenes/DefenseTest.unity";
     private const string TreeFolder = "Assets/Art/Generated/Environment/Trees";
     private const string MaterialFolder = TreeFolder + "/Materials";
-    private static readonly string[] _species = { "Green", "Apricot", "Gold", "Rose" };
+    private static readonly string[] _species = { "Green", "Apricot", "Gold", "Rose", "RedAutumn" };
 
     [MenuItem("Tools/NPC Harness/Defense Trees/Prepare Assets")]
     public static void PrepareAssets()
@@ -69,7 +69,7 @@ public static class DefenseTreeGroveSetup
                 AssetDatabase.SaveAssetIfDirty(material);
             }
         }
-        Debug.Log("Defense tree atlases and four instanced materials prepared. No scene was saved.");
+        Debug.Log($"Defense tree atlases and {_species.Length} instanced materials prepared. No scene was saved.");
     }
 
     private static void ConfigureMaterial(Material material, Shader shader, Texture2D texture)

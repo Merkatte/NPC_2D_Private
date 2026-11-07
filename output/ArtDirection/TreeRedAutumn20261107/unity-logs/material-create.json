@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "command": "command copy_asset",
+  "data": {
+    "command": "copy_asset",
+    "parameters": {
+      "asset": "Assets/Art/Generated/Environment/Trees/Materials/Tree_Rose.mat",
+      "destination": "Assets/Art/Generated/Environment/Trees/Materials/Tree_RedAutumn.mat"
+    },
+    "result": {
+      "globalId": "GlobalObjectId_V1-3-4ae86a45ba9644ea2a44faa9b8552d98-2100000-0",
+      "assetPath": "Assets/Art/Generated/Environment/Trees/Materials/Tree_RedAutumn.mat",
+      "guid": "4ae86a45ba9644ea2a44faa9b8552d98",
+      "fileId": 2100000,
+      "instanceId": null,
+      "hierarchyPath": null,
+      "type": "Material"
+    },
+    "target": {
+      "host": "127.0.0.1",
+      "port": 7800,
+      "projectPath": "/Users/minbh/Desktop/Unity_Project/NPC_Work_2D/NPC_2D_Private"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

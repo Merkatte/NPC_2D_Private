@@ -1,0 +1,37 @@
+{
+  "success": true,
+  "command": "command set_import_settings",
+  "data": {
+    "command": "set_import_settings",
+    "parameters": {
+      "asset": "Assets/Art/Generated/Environment/Trees/Tree_RedAutumn.png",
+      "settings": "{\"spritePixelsPerUnit\": 20, \"filterMode\": \"Point\", \"wrapMode\": \"Clamp\", \"textureCompression\": \"Uncompressed\", \"npotScale\": \"None\", \"maxTextureSize\": 2048, \"mipmapEnabled\": false, \"sRGBTexture\": true, \"alphaSource\": \"FromInput\", \"alphaIsTransparency\": true, \"spritesheet\": [{\"name\": \"Tree_RedAutumn_0\", \"rect\": {\"x\": 0, \"y\": 0, \"width\": 112, \"height\": 144}, \"alignment\": 9, \"pivot\": {\"x\": 0.5, \"y\": 0.09722222222222222}, \"border\": {\"x\": 0, \"y\": 0, \"z\": 0, \"w\": 0}}, {\"name\": \"Tree_RedAutumn_1\", \"rect\": {\"x\": 112, \"y\": 0, \"width\": 112, \"height\": 144}, \"alignment\": 9, \"pivot\": {\"x\": 0.5, \"y\": 0.09722222222222222}, \"border\": {\"x\": 0, \"y\": 0, \"z\": 0, \"w\": 0}}, {\"name\": \"Tree_RedAutumn_2\", \"rect\": {\"x\": 224, \"y\": 0, \"width\": 112, \"height\": 144}, \"alignment\": 9, \"pivot\": {\"x\": 0.5, \"y\": 0.09722222222222222}, \"border\": {\"x\": 0, \"y\": 0, \"z\": 0, \"w\": 0}}, {\"name\": \"Tree_RedAutumn_3\", \"rect\": {\"x\": 336, \"y\": 0, \"width\": 112, \"height\": 144}, \"alignment\": 9, \"pivot\": {\"x\": 0.5, \"y\": 0.09722222222222222}, \"border\": {\"x\": 0, \"y\": 0, \"z\": 0, \"w\": 0}}, {\"name\": \"Tree_RedAutumn_4\", \"rect\": {\"x\": 448, \"y\": 0, \"width\": 112, \"height\": 144}, \"alignment\": 9, \"pivot\": {\"x\": 0.5, \"y\": 0.09722222222222222}, \"border\": {\"x\": 0, \"y\": 0, \"z\": 0, \"w\": 0}}, {\"name\": \"Tree_RedAutumn_5\", \"rect\": {\"x\": 560, \"y\": 0, \"width\": 112, \"height\": 144}, \"alignment\": 9, \"pivot\": {\"x\": 0.5, \"y\": 0.09722222222222222}, \"border\": {\"x\": 0, \"y\": 0, \"z\": 0, \"w\": 0}}, {\"name\": \"Tree_RedAutumn_6\", \"rect\": {\"x\": 672, \"y\": 0, \"width\": 112, \"height\": 144}, \"alignment\": 9, \"pivot\": {\"x\": 0.5, \"y\": 0.09722222222222222}, \"border\": {\"x\": 0, \"y\": 0, \"z\": 0, \"w\": 0}}, {\"name\": \"Tree_RedAutumn_7\", \"rect\": {\"x\": 784, \"y\": 0, \"width\": 112, \"height\": 144}, \"alignment\": 9, \"pivot\": {\"x\": 0.5, \"y\": 0.09722222222222222}, \"border\": {\"x\": 0, \"y\": 0, \"z\": 0, \"w\": 0}}, {\"name\": \"Tree_RedAutumn_8\", \"rect\": {\"x\": 896, \"y\": 0, \"width\": 112, \"height\": 144}, \"alignment\": 9, \"pivot\": {\"x\": 0.5, \"y\": 0.09722222222222222}, \"border\": {\"x\": 0, \"y\": 0, \"z\": 0, \"w\": 0}}, {\"name\": \"Tree_RedAutumn_9\", \"rect\": {\"x\": 1008, \"y\": 0, \"width\": 112, \"height\": 144}, \"alignment\": 9, \"pivot\": {\"x\": 0.5, \"y\": 0.09722222222222222}, \"border\": {\"x\": 0, \"y\": 0, \"z\": 0, \"w\": 0}}, {\"name\": \"Tree_RedAutumn_10\", \"rect\": {\"x\": 1120, \"y\": 0, \"width\": 112, \"height\": 144}, \"alignment\": 9, \"pivot\": {\"x\": 0.5, \"y\": 0.09722222222222222}, \"border\": {\"x\": 0, \"y\": 0, \"z\": 0, \"w\": 0}}, {\"name\": \"Tree_RedAutumn_11\", \"rect\": {\"x\": 1232, \"y\": 0, \"width\": 112, \"height\": 144}, \"alignment\": 9, \"pivot\": {\"x\": 0.5, \"y\": 0.09722222222222222}, \"border\": {\"x\": 0, \"y\": 0, \"z\": 0, \"w\": 0}}]}"
+    },
+    "result": {
+      "assetPath": "Assets/Art/Generated/Environment/Trees/Tree_RedAutumn.png",
+      "importerType": "TextureImporter",
+      "platform": "Default",
+      "applied": [
+        "spritePixelsPerUnit",
+        "filterMode",
+        "wrapMode",
+        "textureCompression",
+        "npotScale",
+        "maxTextureSize",
+        "mipmapEnabled",
+        "sRGBTexture",
+        "alphaSource",
+        "alphaIsTransparency",
+        "spritesheet"
+      ],
+      "unknown": []
+    },
+    "target": {
+      "host": "127.0.0.1",
+      "port": 7800,
+      "projectPath": "/Users/minbh/Desktop/Unity_Project/NPC_Work_2D/NPC_2D_Private"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

@@ -1,0 +1,41 @@
+{
+  "success": true,
+  "command": "command console",
+  "data": {
+    "command": "console",
+    "parameters": {
+      "level": "error",
+      "tail": "30"
+    },
+    "result": {
+      "entries": [],
+      "cursor": 0,
+      "session": "a64e86e5678e4c1694cb6e8a7add56a5",
+      "returned": 0,
+      "dropped": false,
+      "reset": false,
+      "counts": {
+        "error": 0,
+        "warn": 0,
+        "log": 0
+      },
+      "groundTruth": {
+        "sampledUtc": "2026-11-07T14:58:36.445408Z",
+        "ageMs": 44,
+        "compilationFailed": false,
+        "compiling": false,
+        "consoleErrors": 0,
+        "consoleWarnings": 0,
+        "consoleLogs": 0,
+        "seeded": true
+      }
+    },
+    "target": {
+      "host": "127.0.0.1",
+      "port": 7800,
+      "projectPath": "/Users/minbh/Desktop/Unity_Project/NPC_Work_2D/NPC_2D_Private"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

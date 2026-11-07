@@ -1,0 +1,49 @@
+{
+  "success": true,
+  "command": "command get_material_properties",
+  "data": {
+    "command": "get_material_properties",
+    "parameters": {
+      "material": "Assets/Art/Generated/Environment/Trees/Materials/Tree_RedAutumn.mat"
+    },
+    "result": {
+      "assetPath": "Assets/Art/Generated/Environment/Trees/Materials/Tree_RedAutumn.mat",
+      "shader": "NPC/InstancedTreeWind",
+      "renderQueue": 3001,
+      "enabledKeywords": [],
+      "properties": [
+        {
+          "name": "_MainTex",
+          "type": "Texture",
+          "value": {
+            "texture": {
+              "globalId": "GlobalObjectId_V1-1-d76b35f8e52284fbb9d5ac2b7fea4294-2800000-0",
+              "assetPath": "Assets/Art/Generated/Environment/Trees/Tree_RedAutumn.png",
+              "guid": "d76b35f8e52284fbb9d5ac2b7fea4294",
+              "fileId": 2800000,
+              "instanceId": null,
+              "hierarchyPath": null,
+              "type": "Texture2D"
+            }
+          }
+        },
+        {
+          "name": "_Cutoff",
+          "type": "Range",
+          "value": 0.5,
+          "range": {
+            "min": 0,
+            "max": 1
+          }
+        }
+      ]
+    },
+    "target": {
+      "host": "127.0.0.1",
+      "port": 7800,
+      "projectPath": "/Users/minbh/Desktop/Unity_Project/NPC_Work_2D/NPC_2D_Private"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

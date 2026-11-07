@@ -1,0 +1,49 @@
+{
+  "success": true,
+  "command": "command get_import_settings",
+  "data": {
+    "command": "get_import_settings",
+    "parameters": {
+      "asset": "Assets/Art/Generated/Environment/Trees/Tree_RedAutumn.png"
+    },
+    "result": {
+      "assetPath": "Assets/Art/Generated/Environment/Trees/Tree_RedAutumn.png",
+      "importerType": "TextureImporter",
+      "settings": {
+        "textureType": "Sprite",
+        "textureShape": "Texture2D",
+        "sRGBTexture": true,
+        "alphaSource": "FromInput",
+        "alphaIsTransparency": true,
+        "isReadable": false,
+        "streamingMipmaps": false,
+        "mipmapEnabled": false,
+        "wrapMode": "Clamp",
+        "filterMode": "Point",
+        "anisoLevel": 1,
+        "spriteImportMode": "Multiple",
+        "spritePixelsPerUnit": 20,
+        "npotScale": "None",
+        "maxTextureSize": 2048
+      },
+      "platform": "Default",
+      "platformOverride": {
+        "overridden": false,
+        "maxTextureSize": 2048,
+        "resizeAlgorithm": "Mitchell",
+        "format": "AutomaticCompressed",
+        "textureCompression": "Uncompressed",
+        "compressionQuality": 50,
+        "crunchedCompression": false,
+        "androidETC2FallbackOverride": "UseBuildSettings"
+      }
+    },
+    "target": {
+      "host": "127.0.0.1",
+      "port": 7800,
+      "projectPath": "/Users/minbh/Desktop/Unity_Project/NPC_Work_2D/NPC_2D_Private"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

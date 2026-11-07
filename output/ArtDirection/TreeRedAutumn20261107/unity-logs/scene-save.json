@@ -1,0 +1,26 @@
+{
+  "success": true,
+  "command": "command save_scene",
+  "data": {
+    "command": "save_scene",
+    "parameters": {
+      "path": "Assets/Scenes/DefenseTest.unity"
+    },
+    "result": {
+      "globalId": "GlobalObjectId_V1-1-b626219f452cb83418b2ee4e313685a7-102900000-0",
+      "assetPath": "Assets/Scenes/DefenseTest.unity",
+      "guid": "b626219f452cb83418b2ee4e313685a7",
+      "fileId": 102900000,
+      "instanceId": null,
+      "hierarchyPath": null,
+      "type": "SceneAsset"
+    },
+    "target": {
+      "host": "127.0.0.1",
+      "port": 7800,
+      "projectPath": "/Users/minbh/Desktop/Unity_Project/NPC_Work_2D/NPC_2D_Private"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}
