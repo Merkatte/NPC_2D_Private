@@ -5894,6 +5894,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: WarmPixelMerchantPopup
       objectReference: {fileID: 0}
+    - target: {fileID: 1000, guid: 66d2013e38f317144bc43fd0cb59ac6b, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1001, guid: 66d2013e38f317144bc43fd0cb59ac6b, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -5976,11 +5980,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1095, guid: 66d2013e38f317144bc43fd0cb59ac6b, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1095, guid: 66d2013e38f317144bc43fd0cb59ac6b, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3562821494405299750, guid: 66d2013e38f317144bc43fd0cb59ac6b, type: 3}
       propertyPath: _tradeSite
@@ -7859,6 +7863,10 @@ PrefabInstance:
     - target: {fileID: 1000, guid: 5630a2f182d5300438b5ef60faeee5b2, type: 3}
       propertyPath: m_Name
       value: WarmPixelTownHallPopup
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000, guid: 5630a2f182d5300438b5ef60faeee5b2, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1001, guid: 5630a2f182d5300438b5ef60faeee5b2, type: 3}
       propertyPath: m_Pivot.x
