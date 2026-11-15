@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4f7755d135f0485292f0bd4a937cd28, type: 3}
+  m_Name: DefenseGoblinArcherAttack
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseEnemyAttackDefinition
+  _style: 0
+  _windupSeconds: 0.45
+  _recoverySeconds: 0.55
+  _burstCount: 5
+  _burstIntervalSeconds: 0.12
+  _projectileSpeed: 8

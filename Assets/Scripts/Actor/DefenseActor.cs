@@ -11,6 +11,8 @@ public sealed class DefenseActor : MonoBehaviour
     [SerializeField] private DefenseCombatSettings _settings;
     [SerializeField] private DefenseCombatPresentation _presentation;
     [SerializeField] private DefenseProjectile _projectilePrefab;
+    [SerializeField] private DefenseEnemyAttackDefinition _enemyAttackDefinition;
+    [SerializeField] private Transform _projectileOrigin;
     private NPCStat _stat;
     private DefenseArcherSlotLease _archerSlot;
     private INavigationService _navigation;
@@ -24,6 +26,8 @@ public sealed class DefenseActor : MonoBehaviour
     public NPCComponent Component => _worker ? _worker.Component : null;
     public DefenseCombatPresentation Presentation => _presentation;
     public DefenseProjectile ProjectilePrefab => _projectilePrefab;
+    public DefenseEnemyAttackDefinition EnemyAttackDefinition => IsEnemy ? _enemyAttackDefinition : null;
+    public Vector3 ProjectilePosition => _projectileOrigin ? _projectileOrigin.position : Position;
     public CombatTarget Target => _combatTarget;
     public NPCStat Stat => _stat;
     public INavigationService Navigation => _navigation;
@@ -122,6 +126,7 @@ public sealed class DefenseActor : MonoBehaviour
     }
     public void Unbind()
     {
+        if (_presentation) _presentation.ResetPose();
         if (_combatTarget) { _combatTarget.Died -= OnHealthDepleted; _combatTarget.SetTargetable(false); }
         if (_isRegistered && Battlefield) Battlefield.Unregister(this);
         _isRegistered = false;

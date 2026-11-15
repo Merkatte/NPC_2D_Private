@@ -20,6 +20,10 @@ NPCManager의 예약 또는 웨이브 생성이 DefenseActor.BindBattlefield 후
 
 DefenseAttackAction은 공격 주기의 설정 비율에서 한 번 타격/발사한다. 근접 벽 commitment는 실제 hit에서 생긴다. 화살은 발사 시 target+Unity owner를 고정하고 이동 후 한 번 피해를 준다. target 소실/Downed이면 사라지고 새 target을 찾지 않는다.
 
+선택적 `DefenseActor._enemyAttackDefinition`이 연결된 Enemy는 같은 `DefenseAttackAction`에서 별도 공격 주기를 실행한다. GoblinArrow는 눌렀다가 튀어오를 때 화살 1개, ShamanEnergyBall은 빠른 상하 변형과 구체 충전 뒤 에너지 구체 1개, SalamanderFireBurst는 느린 들숨 뒤 불덩이를 짧게 연속 발사한다. 액션이 windup·release·burst count·recovery와 실제 발사를 소유하며, 표현 adapter에는 액션의 경과 시간만 전달한다. 기본 임시값은 고블린 0.45초/0.55초, 샤먼 0.8초/0.6초, 샐러맨더 1초/0.65초(windup/recovery)이며 샐러맨더는 0.12초 간격 5발이다. 모든 projectile은 기존 지정 대상 추적과 1회 피해 규칙을 사용하고 광역·화상은 없다. 발사 때 벽 commitment를 기록한다.
+
+새 공격은 각 Tick에 기존 stat 사거리를 확인하고 대상 변경·소실·사거리 이탈 시 미발사분을 취소하고 재판단한다. Stop/Fail/RequestReplan/Clear와 actor disable/Unbind/Downed는 몸 자세와 충전 표시를 정리한다. 이미 발사한 projectile은 기존 수명 규칙을 유지한다. 프레임 지연으로 여러 release 시점을 지난 경우 액션은 아직 발사하지 않은 수량만 따라잡는다. `Time.deltaTime`과 action pause가 진행을 멈추며 animation event는 피해를 만들지 않는다. profile 없는 slime·검객·궁수는 기존 AttackSpeed/HitTimeRatio 분기를 그대로 사용한다.
+
 HP0 친화 actor는 활성 GameObject를 유지한 Downed가 된다. 현재 action/queue를 반환하고 target 불가, 불만 갱신 정지, 자세 변경만 수행한다. stat·cargo·주거·궁수 자리·등록은 보존한다. 적은 등록 해제 후 Destroy한다. 치료·자동 HP 회복·부활은 구현하지 않는다.
 
 ## 주 소유 스크립트
@@ -32,11 +36,13 @@ HP0 친화 actor는 활성 GameObject를 유지한 Downed가 된다. 현재 acti
 | `Assets/Scripts/System/Actor/DefenseArcherSlotLease.cs` | 선예약부터 actor disable까지의 궁수 자리 수명 |
 | `Assets/Scripts/System/Actor/DefenseResponsePolicy.cs` | 역할별 긴급 판단과 combat/flee queue 구성 |
 | `Assets/Scripts/System/Actor/DefenseSoldierActionSelector.cs` | 검객·궁수의 평상시 욕구/주거/배회/지정 duty queue |
-| `Assets/Scripts/System/Action/DefenseAttackAction.cs` | 단일 hit timing, 근접 피해 및 지정 화살 발사 |
+| `Assets/Scripts/System/Action/DefenseAttackAction.cs` | 기존 단일 hit와 선택적 적 windup·연사·회복 timing, 근접 피해 및 지정 projectile 발사 |
 | `Assets/Scripts/System/Action/DefenseStationAction.cs` | 지정 duty 접근·벽 자리 전환·ground-exit 실행·평상시 경비 욕구 비용 |
 | `Assets/Scripts/System/Action/FleeAction.cs` | 선택된 도주 경로 실행 |
 | `Assets/Scripts/Actor/DefenseProjectile.cs` | 지정 target 이동·도착 피해·소실 종료 |
 | `Assets/Data/ScriptableObject/Script/DefenseCombatSettings.cs` | 재판단·근거리 획득·적 교전 해제 거리·도주·hit 비율·화살 속도·도주 대사 tuning |
+| `Assets/Data/ScriptableObject/Script/DefenseEnemyAttackDefinition.cs` | 선택적 적 공격 style·windup·recovery·연사 수/간격·projectile 속도 공유 tuning |
+| `Assets/Scripts/Enum/DefenseEnemyAttackStyle.cs` | GoblinArrow=0, ShamanEnergyBall=1, SalamanderFireBurst=2 직렬화 값 |
 
 ## 변경 유형별 최소 확인 범위
 
@@ -48,6 +54,7 @@ HP0 친화 actor는 활성 GameObject를 유지한 Downed가 된다. 현재 acti
 | 궁수 자리/모집 거절 | ArcherSlotLease, Battlefield, NPCManager, TownHallRecruitment |
 | 병사 추격·궁수 access 전환 | ResponsePolicy, DefenseActor, DefenseStationAction, DefenseAttackAction, WorkerNPC, [Movement](../../NPC/Decision_and_Actions/Movement.md) |
 | hit/화살 | DefenseAttackAction, DefenseProjectile, CombatTargetHandle, combat stat |
+| 적 공격 archetype | DefenseEnemyAttackDefinition/Style, DefenseAttackAction, DefenseActor, [Presentation](Presentation.md), 새 enemy/projectile prefab과 paired EnemyStatDefinition |
 | 통로와 내부 target | Battlefield, ResponsePolicy, [Navigation](../../World/Navigation.md), 조립한 target anchors |
 
 ## 배선·불변 규칙·제약
@@ -55,6 +62,8 @@ HP0 친화 actor는 활성 GameObject를 유지한 Downed가 된다. 현재 acti
 DefenseSoldierActionSelector의 평상시 utility는 GuardDutyDecisionContext로 실제 DutyPosition과 자리 가용성을 전달한다. Defense 전용 `Assets/Data/ScriptableObject/Defense/GuardActionCost.asset`의 Hunger/Thirst/Fatigue는 각 0.3/초이며 기존 interrupt threshold는 보존한다. 공유 GuardActionCost는 변경하지 않고 DefenseSetup도 별도 복사본을 생성한다.
 
 Defense prefab의 worker/target/settings/presentation을 명시 연결한다. NPCManager와 role selector는 같은 Battlefield/ResponsePolicy를 참조한다. Enemy는 Enemy access navigation을 사용하고 기존 주민 생활 경로는 Friendly 기본 경로를 사용한다. 내부 bounds는 disabled BoxCollider의 local geometry를 읽는다. 건물 target anchor는 footprint 밖의 실제 이동 가능한 입구에 둔다. Unity global Find나 target 자동 검색으로 빠진 의존성을 보완하지 않는다.
+
+새 세 prefab은 `Assets/Prefab/Defense/Enemies/DefenseGoblinArcher.prefab`, `DefenseShaman.prefab`, `DefenseSalamander.prefab`이다. `Projectiles/EnergyOrb.prefab`와 `Fireball.prefab`는 기존 Arrow와 같은 DefenseProjectile을 사용한다. 대응하는 `Assets/Data/ScriptableObject/Defense/Enemies/<prefab명>Attack.asset`와 `<prefab명>Stat.asset`가 각각 timing과 stat을 소유한다. 사거리 임시값은 4.5/4/3이며 HP10·발당 공격력2·이동속도2는 기존 EnemyStat에서 복사한다. 새 profile의 공격 주기는 windup + (발수-1)×간격 + recovery이고 stat AttackSpeed는 legacy 공격에만 쓰인다. 최종 밸런스는 TBD다. 새 적을 생성할 때 기존 `BindBattlefield` 후 `WorkerNPC.Init(NPCType.Enemy, pairedStat.CreateRuntimeStat(), 기존 enemy selector)` 흐름을 사용한다. prefab 단독 배치는 자동 초기화되지 않는다. 이 작업은 세 prefab과 대응 에셋만 준비하며 기존 scene, wave controller 및 편성 asset은 변경하지 않는다.
 
 궁수 자리는 비용 지불 전에 예약한다. 벽이 부서졌어도 빈 자리 예약은 가능하고 Downed는 자리를 반납하지 않는다. disable/취소 시에만 해제한다. 전투는 태업에 의해 거절되지 않는다. paused 시간에는 queue 전진과 공격/화살 이동이 정지한다.
 

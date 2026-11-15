@@ -1,3 +1,27 @@
+# 적 충전 파티클 독립 프리팹 분리 — 2026-11-15
+
+- 사용자 요청대로 `Assets/Prefab/Defense/Enemies/Effects/ShamanGather.prefab`, `SalamanderInhale.prefab`를 만들고 각 적의 `ProjectileOrigin/WindupParticles`를 해당 원본의 중첩 프리팹으로 교체했다. presentation의 ParticleSystem 참조도 다시 연결했다.
+- 기존 입자·렌더러·재질 설정은 그대로 보존했다. 적에는 이름·배치만 override하고 module/renderer 설정은 원본에서 상속하므로 입자 크기·색·수명·방출량은 effect 프리팹에서 관리한다. runtime 코드·이미지·재질·씬·웨이브는 변경하지 않았다.
+- Editor 전용 extraction 메뉴와 관리 중인 원본의 설정을 이전 Add 메뉴가 덮어쓰지 못하도록 보호를 추가했다. 실제 Unity Editor 컴파일·네 프리팹 import·GUID/stripped component/상속 참조와 전체 파티클·렌더러 설정 비교·diff check 통과. 독립 `/root/enemy_archetypes_review` Approve/findings없음, 보정0/2.
+- 기록 `.harness-runs/enemy-particle-prefabs-20261115/scene-work.md`, 원본 `editor-compile.log`, `editor-assembly.log`. 실제 원본 속성 변경 조작과 게임 화면은 미검증이며 자동 Play/새 검증 코드는 추가하지 않았다. 커밋·푸시하지 않았다.
+
+# 샤먼 충전·불 도마뱀 들숨 파티클 — 2026-11-15
+
+- 사용자 요청에 따라 샤먼 구체 주변의 청록색 입자와 불 도마뱀 입 앞의 따뜻한 불씨가 안으로 모이는 ParticleSystem을 기존 두 프리팹에 연결했다. 기존 EnergyBall/FireProjectile 이미지를 사용하는 전용 URP Particles/Unlit 재질 2개를 추가했다.
+- DefenseCombatPresentation은 액션 elapsed 차이로만 입자를 Simulate하여 action pause와 함께 멈추며, 발사·취소·Downed·disable·재사용 때 즉시 정리한다. 새 runtime 스크립트 없이 기존 표현 adapter와 조립 helper를 확장했고 공격 시간·피해·다른 적·씬·웨이브는 유지했다.
+- 실제 Unity runtime/Editor 컴파일 성공, 두 프리팹의 local fileID/material GUID·최대 입자40/32·방향·playOnAwake0·재질/텍스처 연결 검사 및 diff check 통과. 독립 `/root/enemy_archetypes_review` Approve/findings없음. 보정0/2.
+- 최초 조립은 사용자가 열어 둔 샤먼 Prefab Stage를 감지해 쓰기 전에 중단했다. 사용자가 메인 씬으로 돌아온 상태를 확인한 후 정상 적용했다. 사용자 편집을 저장·폐기하지 않았다.
+- 기록 `.harness-runs/enemy-charge-particles-20261115/scene-work.md`; 원본 `editor-compile.log`, `editor-assembly.log`. 실제 입자 크기·밀도·양방향 표현·연속 공격과 중단 장면은 미검증이다. 자동 Play/게임 화면 QA와 새 검증 코드는 실행·작성하지 않았다. 커밋·푸시하지 않았다.
+
+# 원거리 적 3종 프리팹·공격 연출 — 2026-11-15
+
+- 사용자가 선택한 두 번째 대기 자세 시안의 고블린 궁수·해골 가면 샤먼·사족 불 도마뱀을 독립 프리팹으로 준비했다. 고블린은 아래로 눌렸다가 튀며 화살 1발, 샤먼은 빠른 상하 변형과 앞쪽 구체 충전 후 1발, 도마뱀은 느린 들숨 후 몸을 복구하며 불덩이 5발을 연속 발사한다. 사거리·충전·회복·연사는 임시 조정값이고 최종 밸런스는 TBD다.
+- 새 프리팹은 `Assets/Prefab/Defense/Enemies/`의 `DefenseGoblinArcher`, `DefenseShaman`, `DefenseSalamander`다. 대응 Attack/Stat 에셋 6개, 투사체 2개, 투명 PNG 5개를 함께 만들었다. 사용자 선택대로 기존 씬·웨이브·기존 적 프리팹은 변경하지 않았다. 생성 시 기존 battlefield/paired stat/selector 초기화 계약을 사용하며 단독 배치만으로 초기화되지 않는다.
+- 액션이 공격 주기·발사·기존 지정 대상 피해 규칙을 소유하고 표현 adapter는 몸 변형·충전 표시만 처리한다. profile 없는 기존 전투는 기존 분기를 유지하며, 취소·다운·disable·재초기화의 자세와 충전 표시 복구를 추가했다. 새 광역 피해·화상 규칙은 없다.
+- 검사: 실제 Unity runtime/Editor 컴파일과 최종 helper 재컴파일 성공, 메뉴 조립 성공, GUID/component 참조·Single/Point/Clamp/무압축·pivot/PPU·방향 확인, PNG 원본/배치 `cmp` 및 `git diff --check` 통과. 별도 `/root/enemy_archetypes_review`가 현재 코드·에셋·원본 로그를 검토하여 Approve/findings없음. 보정0/2.
+- 단일 기록 `.harness-runs/enemy-archetypes-20261115/scene-work.md`, 원본 로그 `editor-compile.log`, `editor-compile-final.log`, `editor-assembly.log`. CLI Pipeline 연결 실패는 보존하고 실제 성공한 native Unity Refresh/메뉴 증거와 구분했다. 역할은 code/art/assembly/independent review로 분리했다.
+- 미검증: 실제 게임에서 발사 위치·공격 연출의 타이밍과 가독성, 취소·다운·재사용 장면. 자동 Play/화면 확인과 새 검증 코드는 실행·작성하지 않았다. 커밋·푸시하지 않았다.
+
 # 공통 BackBG 클릭으로 팝업 닫기 — 2026-11-15
 
 - 사용자 요청대로 BackBg의 uGUI 왼쪽 클릭·터치를 UIManager의 기존 TryHideTopPopup에 연결했다. 여러 창은 최상위 하나씩 닫고 기존 닫기 lifecycle·stack·배경 fade를 사용한다. 내부 UI와 press 시점 world 클릭 차단을 유지하며 drag/오른쪽·가운데 클릭은 닫기에서 제외했다. enable/disable 구독을 대칭 처리했다.
