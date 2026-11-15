@@ -19,6 +19,13 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
         return !(actor.Stat is ICombatStatView combat) ||
             !CombatLib.IsInRange(actor.Position, target.Position, combat.AttackRange);
     }
+    private static bool ShouldStartAttack(DefenseActor actor, ActionType current, CombatTargetHandle selected)
+    {
+        // A moving opponent can enter attack range before the cached navigation route ends.
+        // Keep the target, but stop chasing old waypoints once combat can begin here.
+        return current == ActionType.Move && selected.IsValid && actor.Stat is ICombatStatView combat &&
+            CombatLib.IsInRange(actor.Position, selected.Target.Position, combat.AttackRange);
+    }
     public bool ShouldReplan(NPCComponent component, ActionType current)
     {
         DefenseActor actor = GetActor(component);
@@ -30,7 +37,8 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
             if (!ReferenceEquals(actor.EngagedOpponent, null))
                 return !CanMaintainEnemyEngagement(actor) ||
                     (current != ActionType.DefenseAttack && current != ActionType.Move) ||
-                    !ReferenceEquals(selected.Target, actor.EngagedOpponent);
+                    !ReferenceEquals(selected.Target, actor.EngagedOpponent) ||
+                    ShouldStartAttack(actor, current, selected);
             bool inside = _battlefield.IsInside(actor.Position);
             if (inside != actor.PlannedInside) return true;
             if (current == ActionType.Idle) return true;
@@ -51,7 +59,8 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
             CombatTarget desired = SoldierTarget(actor);
             CombatTargetHandle selected = component.CombatRuntimeState.TargetHandle;
             if (desired) return RequiresCombatGroundExit(actor, desired) ||
-                (current != ActionType.DefenseAttack && current != ActionType.Move || !ReferenceEquals(selected.Target, desired));
+                (current != ActionType.DefenseAttack && current != ActionType.Move || !ReferenceEquals(selected.Target, desired)) ||
+                ShouldStartAttack(actor, current, selected);
             if (actor.IsEmergencyDuty) return true;
             return current == ActionType.DefenseAttack || (current == ActionType.Move && selected.Target != null);
         }

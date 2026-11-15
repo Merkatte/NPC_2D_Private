@@ -1,3 +1,26 @@
+# 공통 BackBG 클릭으로 팝업 닫기 — 2026-11-15
+
+- 사용자 요청대로 BackBg의 uGUI 왼쪽 클릭·터치를 UIManager의 기존 TryHideTopPopup에 연결했다. 여러 창은 최상위 하나씩 닫고 기존 닫기 lifecycle·stack·배경 fade를 사용한다. 내부 UI와 press 시점 world 클릭 차단을 유지하며 drag/오른쪽·가운데 클릭은 닫기에서 제외했다. enable/disable 구독을 대칭 처리했다.
+- 변경: BackBg.cs, UIManager.cs, 주 소유 Routing.md 및 Game_Plan/SPEC의 요청 UX 문구. DefenseTest의 기존 Image/CanvasGroup/raycast/manager 참조와 별도 PopupUI 계층을 직접 확인했고 scene/prefab 변경은 필요하지 않았다.
+- 검사: 기존 csproj 빌드 오류0/참조 경고4, 실제 diff·컨벤션·책임·의존과 git diff --check 통과. 코드 `/root/popup_backdrop_code`, 독립 `/root/popup_backdrop_review` Approve/findings없음. 보정0/2.
+- Unity strict 재컴파일은 밖에서 재시도했으나 Pipeline 연결 실패로 미확인. 실제 마우스/터치·중첩창·내부 조작·Play는 미검증이다. 자동 Play/화면·새 검증 코드는 추가하지 않았다. 기록 `.harness-runs/popup-backdrop-close-20261115/scene-work.md`, 로그 `dotnet-build.log`, `compile.json`. 기존 전투/평가 변경 보존, 커밋·푸시 없음.
+
+# 전투 유닛 동적 추격 재탐색 역행 보정 — 2026-11-15 후속
+
+- 사용자 후속 확인: 양쪽 공격 유닛이 심하게 왕복하며 아군은 가까워지면 공격하지만 적은 계속 왕복함. 아래 사거리 전환 수정만으로 증상 해결이 확인되지 않아 공통 경로를 추가 조사했다.
+- 확인된 소스 원인: A*의 출발 노드를 waypoint로 그대로 넣어, 이동 중 재탐색 때 이미 지나온 현재 셀 중심으로 되돌아갔다. TilemapNavigation은 외부 셀 출발 시 시작 노드 중심만 생략한다. 이후 인접 셀 중심·목적지·지역 출입구·진영 통행·A* 모서리 조건은 유지한다. 느린 추격자가 같은 셀 안에서 반복 재탐색될 수 있다는 설명은 소스 기반이며 실제 플레이 재현 결과가 아니다.
+- 변경: TilemapNavigation.cs와 World/Navigation.md, 아래 DefenseResponsePolicy 수정은 보존. 기존 생성 csproj 빌드 오류0/참조 경고4와 diff 검사 통과. 별도 `/root/enemy_target_review`가 결합된 코드/문서4개와 기존 호출·경로·전투 흐름을 검토하여 Approve/findings없음. 보정1/2 사용.
+- Unity Editor 상태 조회는 일시적으로 성공했으나 후속 재컴파일은 Pipeline 연결 불가로 실패했다. 기존 NavigationTests의 순수/씬 질의 경로를 읽었지만 실행하지 못했다. 실제 왕복 해소·공통 이동 플레이 회귀·현재 Unity 컴파일/import는 미검증이다. 새 테스트·자동 Play·화면 검증은 추가하지 않았다.
+- 단일 기록과 원본: `.harness-runs/enemy-target-oscillation-20261115/scene-work.md`, `dotnet-build-correction1.log`, `compile-correction1.json`, `compile-correction1-start.json`. 기존 변경 보존, 커밋·푸시 없음.
+
+# 성벽 교전 접근 중 이동→공격 전환 보정 — 2026-11-15
+
+- 사용자 보고: 성벽을 공격하던 적에게 아군 공격 유닛이 접근하면 왕복함. 유닛 종류는 검병/궁병 중 확실하지 않음. 실제 플레이 재현 없이 관련 코드 경로를 확인했다.
+- DefenseResponsePolicy에서 같은 상대를 추적하는 Move가 현재 공격 사거리 안에서도 캐시된 이동 경로를 계속 따를 수 있는 조건을 수정했다. 교전 상대를 유지 중인 적과 아군 병사는 기존 재판단 주기에 현재 거리로 Move→DefenseAttack을 전환한다. 타겟 획득·유지·해제 거리, 성벽 commitment·돌파 우선순위, 공격 주기, 공통 navigation과 직렬화는 유지했다. 주 소유 Defense leaf를 갱신했다.
+- 검사: 기존 `dotnet build Assembly-CSharp.csproj --no-restore --nologo` 성공, 오류0/어셈블리 참조 경고4; 대상 source 포함과 실제 diff·컨벤션·책임·의존 방향 및 `git diff --check` 확인. Unity CLI의 재컴파일은 샌드박스 밖 재시도에서도 Pipeline 연결을 찾지 못해 실패했으며 Unity 컴파일/import 성공으로 기록하지 않는다.
+- 역할: 코드 `/root/enemy_target_code`, 독립 읽기 전용 `/root/enemy_target_review` Approve/findings없음. 보정0/2. 단일 기록 `.harness-runs/enemy-target-oscillation-20261115/scene-work.md`, raw `dotnet-build.log`, `compile.json`, `compile-start.json`.
+- 미검증: 실제 Guard/Archer 접근 시 왕복 해소, 대상 소실·거리 이탈 후 기존 선택 복귀, Unity Editor 컴파일/import. 자동 Play/화면·새 테스트/검증 코드는 실행/작성하지 않았다. 기존 평가 문서 변경 보존, 커밋·푸시하지 않음.
+
 # DefenseTest 장식 나무 인스턴싱 — 2026-11-03
 
 - 사용자 요청에 따라 북쪽 성벽과 적 생성선 위의 지형 가장자리에 네 색상 나무 50개를 요청하는 고정 시드 장식 배치를 준비했다. `/InGameObjects/Map/InstancedTrees` 한 객체의 `InstancedTreeGrove`가 공용 quad와 수종별 행렬 묶음을 제출하며, 나무별 GameObject·SpriteRenderer·Animator는 생성하지 않는다. 기존 사용자 나무 4개와 미저장 수정은 보존하고, 사용자의 명시적 동의로 함께 저장한다.

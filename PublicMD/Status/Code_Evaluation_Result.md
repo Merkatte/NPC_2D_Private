@@ -1,5 +1,16 @@
 # Code Evaluation Result
 
+## 2026-11-15 — 외부 소개 적합성 제한 평가
+
+- 요청: 현업 개발 경력자에게 현재 프로젝트를 보여주고 피드백받을 실체가 있는지 판단. 전체 코드 재감사나 채용·상품성 판정이 아닌 overview다. 기준 HEAD `4e3692e`, 검사 시작 시 작업 트리는 clean이었다.
+- 판단: 개발 중인 NPC 마을 시뮬레이션의 구현·설계 피드백을 요청할 근거는 있다. `DestinationDecider.DecideCore/ScoreCandidates`의 상태·시간·위험·미래 후보 평가, `FarmerActionSelector.RequestResidentialWorkQueue`의 긴급 욕구/수확/입고 분기, `FarmWorkSite`의 수확물 인도, `DefenseWaveController.Update`의 정비/분할 생성/잔여 적 판정에서 구체적인 평가 대상을 확인했다. 구현 존재를 재미·완성도·성능 보증으로 확대하지 않는다.
+- 직접 확인: 위 코드와 `BaseInteractionProvider`, `WorkerInventory`, `HarvestAction`, DefenseTest 객체 명칭 일부, `EditorBuildSettings.asset`. ProjectStructure와 관련 Decision/Farming/Defense 문서, PLAN, PROGRESS 관련 이력, 기존 평가와 CodeConvention 일부를 참고했다. 씬 전체 배선은 검수하지 않았다.
+- F02 재평가: **확인된 문제 / High / 미해결**, 최종 확인 2026-11-15. 기존 상세 지적의 조건부 실패 경로가 현재 소스에도 남아 있다. selector는 화물 품목 호환성 없이 수확을 입고보다 먼저 선택하고, `TrySelectNearest`/`FarmWorkSite.CanInteractCore`는 요청 화물을 검사하지 않는다. `WorkerInventory.TryAdd`의 다른 품목 거부 → `HarvestAction.UpdateCompletion`의 비용 적용 전 재판단으로 같은 선택을 반복할 수 있다. 권고와 상세 영향은 아래 F02를 유지한다. 실제 플레이 재현은 하지 않았다.
+- F01은 provider 일부만 대조했으며 전체 파괴/action 경로의 현재 해결 여부는 확인 보류다. 나머지 기존 F/C 항목은 이번 범위에서 미재평가이며 아래의 2026-10-09 결과·근거를 그대로 보존한다.
+- 전달 준비 관찰: 저장된 기본 Build Settings에는 FarmerTest만 enabled로 등록돼 있다. DefenseTest 소개용 빌드를 만들 경우 실제 사용할 build profile/scene 목록과 결과물을 확인해야 한다. 별도 profile 또는 기존 배포 빌드 유무는 확인하지 않았으며 배포 불가능으로 판정하지 않는다.
+- 실행 검사: git status/log, 해당 문서·코드 직접 읽기와 rg 검색, 저장된 씬/기본 빌드 설정의 제한된 텍스트 확인. 컴파일·테스트·자동 Play·게임 화면 수집/판독·배포 빌드는 실행하지 않았다. PROGRESS의 과거 성공 기록을 현재 버전의 재검증 결과로 계산하지 않았다. 외관, 처음 접하는 사람의 이해도, 연속 플레이 안정성, 재미, 제작자의 설명 역량과 상대 반응은 미검증이다.
+- 변경은 이 평가 기록뿐이다. 아래 전체 평가의 날짜와 결론은 과거 기록으로 유지한다.
+
 ## Purpose
 
 게임플레이 production 코드 전체를 사용자가 정한 8가지 기준으로 검수한 결과다. 문서 준수 여부와 문서에 적힌 설계 원칙 자체의 실용성을 별도로 평가했다.

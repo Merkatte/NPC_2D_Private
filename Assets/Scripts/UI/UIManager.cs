@@ -28,6 +28,23 @@ public class UIManager : MonoBehaviour, IUIService
         RefreshBackBg();
     }
 
+    private void OnEnable()
+    {
+        if (_backBg)
+            _backBg.Clicked += HandleBackBgClicked;
+    }
+
+    private void OnDisable()
+    {
+        if (_backBg)
+            _backBg.Clicked -= HandleBackBgClicked;
+    }
+
+    private void HandleBackBgClicked()
+    {
+        TryHideTopPopup();
+    }
+
     public bool TryShow(PopupType popupType)
         => TryShow(popupType, null);
 

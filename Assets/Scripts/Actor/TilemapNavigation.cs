@@ -119,12 +119,14 @@ public sealed class TilemapNavigation : MonoBehaviour, INavigationService, INavi
             return false;
         }
 
-        // Cell centers keep every network segment inside its permitted cells. No
-        // line-of-sight smoothing may cut a blocked corner or bypass terrain costs.
+        // Keep the local-area entrance leg, but do not send an exterior start back to
+        // its own cell center on every replan. The first A* edge reaches an adjacent
+        // cell; diagonal edges already require both orthogonal neighbors to be open.
+        // All subsequent centers remain, preserving the selected route and corners.
         if (startArea >= 0)
             AddPoint(output, _entrances[startArea], start.z);
-        foreach (int node in _nodePath)
-            AddPoint(output, GetCenter(node), start.z);
+        for (int i = startArea >= 0 ? 0 : 1; i < _nodePath.Count; ++i)
+            AddPoint(output, GetCenter(_nodePath[i]), start.z);
         if (goalArea >= 0)
             AddPoint(output, _entrances[goalArea], start.z);
         AddPoint(output, destination, start.z);
