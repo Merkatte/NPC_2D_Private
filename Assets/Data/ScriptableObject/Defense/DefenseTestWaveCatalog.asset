@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ef1df6ae82c146448b4b718c34ccee9, type: 3}
+  m_Name: DefenseTestWaveCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseWaveCatalog
+  _source: 1
+  _csv: {fileID: 4900000, guid: f14a0240dc1e4b578dd55bd7536605c8, type: 3}
+  _enemies:
+  - _id: basic
+    _prefab: {fileID: 3331576660556259891, guid: 473bb73350c7d5d42aefc86d83c10193, type: 3}
+    _statDefinition: {fileID: 11400000, guid: f834729752f281a49bcace6a8153ee92, type: 2}
+  - _id: goblin_archer
+    _prefab: {fileID: 7888718139458148360, guid: b20d4ce08f07345cbb62832278d20993, type: 3}
+    _statDefinition: {fileID: 11400000, guid: 8e27da72ae3524abbb116f1c15af45f2, type: 2}
+  - _id: skull_shaman
+    _prefab: {fileID: 4975397439104794298, guid: d60653905649148128e8497b068bced3, type: 3}
+    _statDefinition: {fileID: 11400000, guid: e22d1876a31bb453699f6e316fc280c7, type: 2}
+  - _id: fire_salamander
+    _prefab: {fileID: 3026684287757760307, guid: fa605fda8b5624023990beca6069c42b, type: 3}
+    _statDefinition: {fileID: 11400000, guid: c1fb929258e4e4f0da5d54355f501af0, type: 2}
+  _waves: []
+  _restDurationSeconds: 60

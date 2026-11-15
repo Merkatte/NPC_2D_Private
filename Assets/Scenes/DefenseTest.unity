@@ -10606,7 +10606,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DefenseWaveController
   _session: {fileID: 990738831}
   _battlefield: {fileID: 990738830}
-  _catalog: {fileID: 11400000, guid: 72842ed666046b646a4a27568e635d32, type: 2}
+  _catalog: {fileID: 11400000, guid: 085121759a3146078d13e6ea23cc4c1f, type: 2}
   _enemyPrefab: {fileID: 3331576660556259891, guid: 473bb73350c7d5d42aefc86d83c10193, type: 3}
   _enemyStatDefinition: {fileID: 11400000, guid: f834729752f281a49bcace6a8153ee92, type: 2}
   _enemySelector: {fileID: 900000019}

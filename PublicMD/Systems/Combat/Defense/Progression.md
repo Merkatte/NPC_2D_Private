@@ -18,7 +18,11 @@
 | `Assets/Scripts/UI/DefensePhaseHUD.cs` | 별도 최소 상태 HUD의 정비/습격·적 수 표시와 조기 시작 요청 |
 | `Assets/Scripts/UI/DefenseEventPopup.cs` | 이벤트 문구·선택지 표시, 선택/닫기 명령 |
 | `Assets/Data/ScriptableObject/Script/DefenseWaveDefinition.cs` | 편성별 적 수와 생성 간격 |
-| `Assets/Data/ScriptableObject/Script/DefenseWaveCatalog.cs` | 순서 있는 편성 목록, 마지막 편성 반복, 공통 정비 시간 |
+| `Assets/Data/ScriptableObject/Script/DefenseWaveCatalog.cs` | Legacy/CSV 소스 선택, 편성 스냅샷 생성과 공통 정비 시간 |
+| `Assets/Scripts/System/Mapper/DefenseWaveCsvMapper.cs` | CSV 헤더·레코드·매핑 검증, wave/order 정렬과 그룹 편성 변환 |
+| `Assets/Data/Struct/DefenseWaveEnemyEntry.cs` | enemyId와 WorkerNPC prefab/NPCStatDefinition의 직렬화 연결 |
+| `Assets/Data/Struct/DefenseWaveSpawnGroup.cs` | CSV 출처 키, 적 종류·수·간격과 생성 참조의 불변 그룹 값 |
+| `Assets/Data/Struct/DefenseWavePlan.cs` | 적별 배열 확장 없이 그룹 목록과 합계를 보존하는 편성 스냅샷 |
 | `Assets/Data/ScriptableObject/Script/DefenseEventDefinition.cs` | ID·웨이브 필터·정비 경과 조건·유효 시간·문구·선택지 |
 | `Assets/Data/ScriptableObject/Script/DefenseEventCatalog.cs` | 중복 ID를 거부하는 순서 있는 이벤트 정의 목록 |
 | `Assets/Data/Struct/DefenseEventChoice.cs` | 선택 표시 문구와 결과 연결 ID 값 |
@@ -30,7 +34,7 @@
 
 | 변경 | 먼저 확인할 범위 |
 |---|---|
-| 편성/정비 | WaveDefinition, WaveCatalog, WaveController와 방어 웨이브 설정 에셋 |
+| 편성/정비 | WaveDefinition, WaveCatalog, WaveCsvMapper, WaveEnemyEntry/SpawnGroup/Plan, WaveController와 방어 웨이브 CSV·설정 에셋 |
 | 적 생성 | WaveController, WorkerNPC.Init, NPCStatDefinition.CreateRuntimeStat, DefenseActor.BindBattlefield/Initialize와 적 prefab |
 | 이벤트 추가/조건 | EventDefinition, EventCatalog, EventChoice, EventController와 이벤트 에셋 |
 | pause/GameOver | GameSession, EventController, DefenseHUD와 시청 피해 owner의 EndGame 호출 |
@@ -38,12 +42,20 @@
 
 ## 현재 실행 흐름
 
-- WaveController.Start가 참조/편성을 검사하고 첫 정비를 시작한다. 정비는 catalog의 설정 시간이며 샘플은 60초다. 초기 정비의 `WaveNumber`는 0이고 다음 습격은 1이다.
+- WaveController.Start가 전체 편성을 한 번 읽고 참조·stat 생존·selector 호환성을 검사한 뒤 그룹/합계와 정비 시간을 세션 스냅샷으로 보존하고 첫 정비를 시작한다. 정비는 catalog의 설정 시간이며 샘플은 60초다. 초기 정비의 `WaveNumber`는 0이고 다음 습격은 1이다. Update와 웨이브 전환에서는 CSV 파싱이나 전체 편성 재검증을 하지 않는다.
 - 정비 시간이 끝나거나 `TryStartNextWave`가 수락되면 다음 편성을 선택한다. 목록 이후에는 마지막 편성을 반복한다. 생성 시작은 다음 Update이고, 이후 scaled 시간 간격으로 최대 한 명씩 생성한다.
-- 생성은 주입된 WorkerNPC prefab과 NPCStatDefinition/scene selector를 사용한다. stat 생존·selector 호환성을 검사한 뒤 복제하고 DefenseActor.BindBattlefield, WorkerNPC.Init 순으로 초기화한다. WorkerNPC가 공통 초기화에서 같은 NPCStat을 DefenseActor에 전달한다.
+- 생성은 현재 그룹의 WorkerNPC prefab과 NPCStatDefinition 및 기존 scene selector를 사용한다. 그룹 경계에서도 다음에 생성할 그룹의 간격을 기다리며 생성 수에 비례한 배열을 만들지 않는다. stat 생존·selector 호환성을 검사한 뒤 복제하고 DefenseActor.BindBattlefield, WorkerNPC.Init 순으로 초기화한다. WorkerNPC가 공통 초기화에서 같은 NPCStat을 DefenseActor에 전달한다.
 - 초기화/등록 실패는 해당 복제만 비활성화·Destroy하고 실패 사유를 한 번 기록한다. 예정 수를 차감하거나 정비로 넘어가지 않는다. HUD는 생성 오류로 진행이 중단되었음을 표시하고 세부 구성 사유는 로그로 확인한다.
 - 모든 예정 생성이 성공했고 Battlefield.AliveEnemyCount가 0이어야 다음 정비를 시작한다. WaveController는 TestOnly spawner나 NPCManager 주민 roster를 참조하지 않는다.
 - 적 spawn 위치는 연결된 Transform 목록을 순환한다. gameplay 전역 난수를 소비하지 않는다.
+
+### CSV 편성 계약
+
+`DefenseWaveCatalog`의 `_source`는 `Legacy=0`, `Csv=1`이다. 기존 serialized 기본값은 Legacy이며 `_waves`·`_restDurationSeconds`와 기존 `TryGetWave`/controller `Configure`/DefenseSetup 호출을 유지한다. CSV 모드에서 기존 TryGetWave는 false를 반환하며 Legacy로 대체하지 않는다. `_csv`는 TextAsset, `_enemies`는 `_id`·`_prefab`(WorkerNPC)·`_statDefinition`(NPCStatDefinition) 항목 배열이다. 새 DefenseTest 전용 카탈로그만 이 소스를 사용하고 TerrainTest와 기존 WaveCatalog/Wave1~3은 유지한다.
+
+CSV는 `wave,order,enemyId,count,spawnInterval` 헤더와 단순 비인용 셀을 사용한다. UTF-8 BOM, 빈 줄, 셀 앞뒤 공백을 허용하고 기존 CSVParser를 그대로 재사용한다. 오류의 record 번호는 헤더를 1로 세는 **빈 줄 제외 레코드 번호**다. wave는 1부터 연속, order는 같은 wave에서 중복 없는 양수이며 간격을 둬도 된다. 물리 행 순서와 무관하게 wave/order로 정렬하고 동일 enemyId의 여러 그룹을 허용한다. 초기 ID는 `basic`, `goblin_archer`, `skull_shaman`, `fire_salamander`다. ID는 비어 있지 않은 단순 비인용 셀이고 카탈로그에 중복 없는 prefab/stat 매핑이 필요하다. 새 ID는 C# 변경 없이 카탈로그 매핑으로 추가할 수 있다. count는 양의 Int32, spawnInterval은 유한 양수이고 웨이브 및 전체 합계는 checked Int32 덧셈으로 검증한다.
+
+승인된 DefenseTest 데이터는 wave1 `basic5`, wave2 `basic3 → goblin_archer1 → basic2 → skull_shaman1 → fire_salamander1`, wave3 `basic3 → goblin_archer1 → basic3 → skull_shaman1 → basic3 → fire_salamander1`이다. order는 10씩 증가하고 간격은 모두 1초, 정비는 60초이며 마지막 편성을 반복한다. CSV/매핑/참조 오류는 record 또는 key와 이유를 기존 실패 상태로 전달하고 전체 계획을 거부한다. 부분 생략·Legacy fallback·hot reload는 없다. CSV 수정은 다음 세션에서 읽는다. 실제 에셋 연결과 사람 Play 확인은 작업 기록의 검증 범위를 따른다.
 
 ## 이벤트와 결과 연결
 

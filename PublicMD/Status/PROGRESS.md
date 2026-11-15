@@ -1,3 +1,11 @@
+# DefenseTest CSV 웨이브 — 2026-11-15
+
+- 승인된 단일 `Assets/Data/CSV/DefenseWaves.csv` 편성·순서·간격을 구현했다. 1웨이브 기존 적5, 2웨이브 기존 적5+신규3종 각1, 3웨이브 기존 적9+신규3종 각1이며 마지막 편성을 반복한다. 간격1초·정비60초, 다음 플레이에서 CSV 변경 반영. 최종 밸런스는 TBD다.
+- DefenseWaveCatalog/Controller와 신규 mapper·그룹/편성/적 매핑 값으로 시작 시 전체 검증·세션 스냅샷을 구성한다. 그룹 수에 비례하는 데이터와 커서로 실행하며 CSV 오류는 부분 실행·Legacy 대체 없이 실패한다. 추가 적 ID는 카탈로그 연결만으로 사용할 수 있다.
+- DefenseTestWaveCatalog 전용 에셋과 CSV/meta를 만들고 DefenseTest의 catalog 참조 한 줄만 교체했다. TerrainTest와 기존 WaveCatalog/Wave1~3, 기존 Configure/DefenseSetup 경로는 보존했다. Game_Plan/SPEC/PLAN 및 주 소유 Progression 문서를 갱신했다.
+- 실제 Unity 컴파일 오류0/경고0, CSV·카탈로그 import와 네 prefab/stat 참조 readback, 씬 연결·깨끗한 로드 상태, 보호 대상 diff 없음, git diff --check를 확인했다. 독립 리뷰 `01a1df57-3e5b-7740-83fa-16ac62022491` Approve/findings없음. 보정1/2 사용.
+- 기록 `.harness-runs/wave-csv-20261115/work-record.md`; 로그 `code/unity-recompile-final.log`, `assembly/*-readback.json`, `assembly/*-import.json`, `assembly/scene-state-final.json`. 코드와 배선은 별도 역할이 수행했다. 실제 생성·공격 표현·일시정지·전멸 후 전환은 사람 Play 확인 항목으로 미검증이며 자동 Play/화면·신규 검증 코드는 실행/작성하지 않았다. 커밋·푸시하지 않았다.
+
 # 적 충전 파티클 독립 프리팹 분리 — 2026-11-15
 
 - 사용자 요청대로 `Assets/Prefab/Defense/Enemies/Effects/ShamanGather.prefab`, `SalamanderInhale.prefab`를 만들고 각 적의 `ProjectileOrigin/WindupParticles`를 해당 원본의 중첩 프리팹으로 교체했다. presentation의 ParticleSystem 참조도 다시 연결했다.

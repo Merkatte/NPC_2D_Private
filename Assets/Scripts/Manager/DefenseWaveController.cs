@@ -11,9 +11,13 @@ public sealed class DefenseWaveController : MonoBehaviour
     [SerializeField] private BaseNPCActionSelector _enemySelector;
     [SerializeField] private Transform[] _spawnPoints;
 
-    private DefenseWaveDefinition _currentDefinition;
+    private DefenseWavePlan[] _waves;
+    private DefenseWavePlan _currentPlan;
+    private float _restDurationSeconds;
     private float _spawnElapsed;
     private int _spawnedCount;
+    private int _groupIndex;
+    private int _spawnedInGroup;
     private string _failureReason;
 
     public bool IsInitialized { get; private set; }
@@ -23,10 +27,9 @@ public sealed class DefenseWaveController : MonoBehaviour
     public int WaveNumber { get; private set; }
     public int NextWaveNumber => WaveNumber + 1;
     public float RestElapsedSeconds { get; private set; }
-    public float RestRemainingSeconds => _catalog
-        ? Mathf.Max(0f, _catalog.RestDurationSeconds - RestElapsedSeconds) : 0f;
-    public int PendingSpawnCount => _currentDefinition
-        ? Mathf.Max(0, _currentDefinition.EnemyCount - _spawnedCount) : 0;
+    public float RestRemainingSeconds => Mathf.Max(0f, _restDurationSeconds - RestElapsedSeconds);
+    public int PendingSpawnCount => _currentPlan != null
+        ? Mathf.Max(0, _currentPlan.EnemyCount - _spawnedCount) : 0;
     public int AliveEnemyCount => _battlefield ? _battlefield.AliveEnemyCount : 0;
     public bool CanStartNextWave => isActiveAndEnabled && IsInitialized && IsResting && !HasFailed &&
         _session && _session.isActiveAndEnabled && !_session.IsPaused && Time.timeScale > 0f;
@@ -49,11 +52,10 @@ public sealed class DefenseWaveController : MonoBehaviour
 
     private void Start()
     {
-        if (!_session || !_battlefield || !_catalog || !_catalog.IsValid || !_enemyPrefab ||
-            !_enemyStatDefinition || !_enemySelector || !_enemyPrefab.Component ||
-            !_enemyPrefab.TryGetComponent(out DefenseActor _) || _spawnPoints == null || _spawnPoints.Length == 0)
+        if (!_session || !_battlefield || !_catalog || !_enemySelector ||
+            _spawnPoints == null || _spawnPoints.Length == 0)
         {
-            Fail("Missing or invalid session, battlefield, catalog, enemy prefab/component, stat, selector or spawn points.");
+            Fail("Missing session, battlefield, catalog, selector or spawn points.");
             return;
         }
         foreach (Transform point in _spawnPoints)
@@ -62,6 +64,27 @@ public sealed class DefenseWaveController : MonoBehaviour
             Fail("Spawn points contain a missing Transform.");
             return;
         }
+        if (!_catalog.TryCreateSnapshot(_enemyPrefab, _enemyStatDefinition,
+            out DefenseWavePlan[] waves, out string error))
+        {
+            Fail(error);
+            return;
+        }
+        // Validate the complete plan before accepting any wave, including later formations.
+        foreach (DefenseWavePlan wave in waves)
+        {
+            for (int index = 0; index < wave.GroupCount; ++index)
+            {
+                DefenseWaveSpawnGroup group = wave.GetGroup(index);
+                if (!TryValidateGroup(group, out error))
+                {
+                    Fail($"{group.SourceKey}: {error}");
+                    return;
+                }
+            }
+        }
+        _waves = waves;
+        _restDurationSeconds = _catalog.RestDurationSeconds;
         IsInitialized = true;
         BeginRest();
     }
@@ -69,7 +92,7 @@ public sealed class DefenseWaveController : MonoBehaviour
     private void Update()
     {
         if (!IsInitialized || HasFailed) return;
-        if (!_session || !_battlefield || !_enemySelector || !_enemyStatDefinition)
+        if (!_session || !_battlefield || !_enemySelector)
         {
             Fail("A required runtime dependency was destroyed.");
             return;
@@ -83,12 +106,18 @@ public sealed class DefenseWaveController : MonoBehaviour
         }
         if (PendingSpawnCount > 0)
         {
+            DefenseWaveSpawnGroup group = _currentPlan.GetGroup(_groupIndex);
             _spawnElapsed += Time.deltaTime;
-            if (_spawnElapsed >= _currentDefinition.SpawnIntervalSeconds)
+            if (_spawnElapsed >= group.SpawnIntervalSeconds)
             {
-                _spawnElapsed -= _currentDefinition.SpawnIntervalSeconds;
-                if (!TrySpawnEnemy()) return;
+                _spawnElapsed -= group.SpawnIntervalSeconds;
+                if (!TrySpawnEnemy(group)) return;
                 ++_spawnedCount;
+                if (++_spawnedInGroup == group.Count)
+                {
+                    ++_groupIndex;
+                    _spawnedInGroup = 0;
+                }
                 Changed?.Invoke();
             }
         }
@@ -99,38 +128,66 @@ public sealed class DefenseWaveController : MonoBehaviour
     public bool TryStartNextWave()
     {
         if (!CanStartNextWave) return false;
-        if (!_catalog || !_catalog.TryGetWave(NextWaveNumber, out DefenseWaveDefinition definition))
+        if (WaveNumber == int.MaxValue)
         {
-            Fail("Wave catalog has no valid next formation.");
+            Fail("Wave number exceeds Int32 capacity.");
             return false;
         }
-        _currentDefinition = definition;
+        _currentPlan = _waves[Mathf.Min(WaveNumber, _waves.Length - 1)];
         ++WaveNumber;
         IsResting = false;
         _spawnedCount = 0;
-        _spawnElapsed = definition.SpawnIntervalSeconds;
+        _groupIndex = 0;
+        _spawnedInGroup = 0;
+        // First spawn is ready on the next Update. Later waits use the incoming group's interval.
+        _spawnElapsed = _currentPlan.GetGroup(0).SpawnIntervalSeconds;
         Changed?.Invoke();
         return true;
     }
 
-    private bool TrySpawnEnemy()
+    private bool TryValidateGroup(DefenseWaveSpawnGroup group, out string error)
+    {
+        error = "Missing enemy prefab/NPCComponent/DefenseActor or stat definition.";
+        if (!group.Prefab || !group.Prefab.Component ||
+            !group.Prefab.TryGetComponent(out DefenseActor _) || !group.StatDefinition) return false;
+        try
+        {
+            NPCStat stat = group.StatDefinition.CreateRuntimeStat();
+            error = "Enemy stat definition is dead or incompatible with the scene selector.";
+            if (stat == null || !(stat.CurrentHealth > 0f) || !_enemySelector.CanUseStat(stat)) return false;
+        }
+        catch (Exception exception)
+        {
+            error = $"Enemy stat validation failed: {exception.Message}";
+            return false;
+        }
+        error = null;
+        return true;
+    }
+
+    private bool TrySpawnEnemy(DefenseWaveSpawnGroup group)
     {
         WorkerNPC worker = null;
         try
         {
-            NPCStat stat = _enemyStatDefinition.CreateRuntimeStat();
-            if (stat == null || stat.CurrentHealth <= 0f || !_enemySelector.CanUseStat(stat))
+            if (!group.StatDefinition)
             {
-                Fail("Enemy stat definition is dead or incompatible with the scene selector.");
+                Fail($"{group.SourceKey}: enemy stat definition was destroyed.");
+                return false;
+            }
+            NPCStat stat = group.StatDefinition.CreateRuntimeStat();
+            if (stat == null || !(stat.CurrentHealth > 0f) || !_enemySelector.CanUseStat(stat))
+            {
+                Fail($"{group.SourceKey}: enemy stat definition is dead or incompatible with the scene selector.");
                 return false;
             }
             Transform point = _spawnPoints[_spawnedCount % _spawnPoints.Length];
-            if (!point || !_enemyPrefab)
+            if (!point || !group.Prefab)
             {
-                Fail("Enemy prefab or selected spawn point was destroyed.");
+                Fail($"{group.SourceKey}: enemy prefab or selected spawn point was destroyed.");
                 return false;
             }
-            worker = Instantiate(_enemyPrefab, point.position, point.rotation);
+            worker = Instantiate(group.Prefab, point.position, point.rotation);
             if (!worker.TryGetComponent(out DefenseActor actor) || !worker.Component)
                 throw new InvalidOperationException("Spawned enemy lacks DefenseActor or NPCComponent.");
             actor.BindBattlefield(_battlefield);
@@ -147,7 +204,7 @@ public sealed class DefenseWaveController : MonoBehaviour
                 worker.gameObject.SetActive(false);
                 Destroy(worker.gameObject);
             }
-            Fail($"Enemy initialization failed: {exception.Message}");
+            Fail($"{group.SourceKey}: enemy initialization failed: {exception.Message}");
             return false;
         }
     }
@@ -163,7 +220,7 @@ public sealed class DefenseWaveController : MonoBehaviour
     {
         IsResting = true;
         RestElapsedSeconds = 0f;
-        _currentDefinition = null;
+        _currentPlan = null;
         Changed?.Invoke();
     }
 
