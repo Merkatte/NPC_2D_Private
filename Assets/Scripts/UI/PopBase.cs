@@ -64,7 +64,7 @@ public abstract class PopBase : MonoBehaviour
             // Reached only when a pending Close() motion is interrupted before it deactivates the
             // object (see Close()) — reverse it instead of leaving the exit tween to finish under us.
             if (_isClosing)
-                PlayEnterMotion();
+                PlayEnterMotion(false);
 
             return;
         }
@@ -72,7 +72,7 @@ public abstract class PopBase : MonoBehaviour
         OnBeforeOpen();
         gameObject.SetActive(true);
         transform.SetAsLastSibling();
-        PlayEnterMotion();
+        PlayEnterMotion(true);
         OnOpened();
     }
 
@@ -105,14 +105,15 @@ public abstract class PopBase : MonoBehaviour
     {
     }
 
-    private void PlayEnterMotion()
+    private void PlayEnterMotion(bool resetPosition)
     {
         if (!TryGetMotionTarget(out RectTransform rect))
             return;
 
         _isClosing = false;
         _motionTween?.Kill();
-        rect.anchoredPosition = _restingAnchoredPosition + Vector2.down * _offScreenDistance;
+        if (resetPosition)
+            rect.anchoredPosition = _restingAnchoredPosition + Vector2.down * _offScreenDistance;
         _motionTween = rect.DOAnchorPos(_restingAnchoredPosition, _enterDuration).SetEase(Ease.OutBack);
     }
 

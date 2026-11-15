@@ -12,6 +12,7 @@ Defense 전용 variant의 공격/Downed 자세와 자동 도주 말풍선은 [De
 - 봇짐을 "언제 보일지"는 `WorkerInventory`가 판단하고, 실제로 켜고 끄는 것은 `NPCComponent.SetCarryVisible` 한 곳뿐이다. `SetCarryVisible`은 `CarryVisualPresenter.SetVisible`에 위임하며, presenter가 Animator 재생과 중복 호출 guard를 소유한다.
 - selector와 action은 `NPCComponent`의 의미 기반 메서드만 호출하고 Animator parameter나 visual child를 직접 찾지 않는다. `HarvestAction`/`DepositAction`도 마찬가지로 화물 Animator를 직접 만지지 않는다.
 - NPC의 방향은 animation이 잡는 visual rotation이 아니라 이동 root의 local scale로 반전한다.
+- `GroundDepthSort`는 명시적으로 배선한 NPC·건물의 공통 지면 깊이 표현만 소유한다. gameplay·navigation·physics나 root Z를 변경하지 않으며, 상단의 비행 시점은 [Merchant Caravan](../../Economy/Merchant_Caravan.md)이 명령한다.
 - presentation은 gameplay 완료 시간을 결정하지 않는다. `CarryVisualPresenter.SetVisible`은 bool 세팅과 `Animator.SetBool` 호출로 끝나 transaction을 블록하지 않는다.
 - 봇짐의 반복 이동 모션(걷기 띠용거림 등)과 1회성 등장/퇴장 모션은 서로 다른 Animator가 서로 다른 Transform을 소유한다 — 메인 Animator(`NPCGirl` 루트)는 `Visual`과 `Visual/ToolAnchor/Tool`만, 화물 Animator(`CarryAnchor`)는 `CarryMotion` 하나만 바인딩해 겹치지 않는다.
 
@@ -50,6 +51,47 @@ NPCComponent.Awake / ResetRuntimeState -> CarryVisualPresenter.ResetImmediate()
 |---|---|
 | `Assets/Scripts/System/Actor/NPCComponent.cs` | NPC 이동 root, 방향 scale, Animator parameter, 도구 표시, cargo와 combat runtime state 소유, 화물 표시 요청을 `CarryVisualPresenter`로 전달 |
 | `Assets/Scripts/System/Actor/CarryVisualPresenter.cs` | 화물 전용 Animator 재생, 동일 상태 재요청 guard, pool 재사용을 위한 즉시 Hidden 복구 |
+| `Assets/Scripts/System/Actor/GroundDepthSort.cs` | 안정적인 지면 anchor와 명시적 공중 상태로 객체 하나의 SortingGroup 순서를 갱신하는 공통 presenter |
+| `Assets/Editor/SceneWork/DepthOrderSetup.cs` | 승인된 DefenseTest 씬·15개 프리팹에 지면 그룹·공중 예외·UI 순서를 조립하고 해당 파일만 저장하는 Editor 명령 |
+
+## 선택적 지면 깊이 정렬
+
+`GroundDepthSort`는 `_sortingGroup`에 연결한 단일 `SortingGroup`의 `sortingOrder`만 쓴다.
+그룹 내부 body/tool/cargo 등 renderer의 기존 상대 순서와 sorting layer는 바꾸지 않는다.
+컴포넌트를 추가하고 참조를 연결한 객체만 적용 대상이며, 누락된 필수 그룹은 한 번 오류를 남기고 컴포넌트를 비활성화한다.
+
+`_groundAnchor`는 animation으로 흔들리거나 공중으로 올라가는 visual이 아닌 안정적인 지면 Transform이다.
+생략하면 컴포넌트가 붙은 객체의 Transform을 사용하므로 객체의 안정적인 루트에 배치한다.
+지면 Y는 `anchor.position.y + _groundYOffset`이고 월드 단위 offset의 기본값은 0이다.
+지면 순서는 `clamp(10000 - round(groundY * 100), 1000, 19000)`이며, 정수 변환 전 clamp로 overflow를 피한다.
+`LateUpdate`는 계산 결과를 캐시하고 바뀐 order만 쓴다. `SetAirborne(true)`는 `20000 + _airborneOrderOffset`을 즉시 적용하고
+`SetAirborne(false)`는 현재 지면 깊이로 복귀한다. sorting layer는 조립에서 일치시킨다.
+`_airborneOrderOffset`은 기본 0, 범위 0–99이며 공중 그룹끼리만 상대 순서를 정한다. 지면 계산에는 영향을 주지 않는다.
+
+enable/disable은 공중 상태와 order cache를 지우고 현재 지면 순서로 초기화한다.
+따라서 pool 재대여 후 이전 공중 상태나 이전 위치의 cached order가 남지 않는다.
+공중 표현 owner는 활성화 이후 필요한 상태를 다시 명령한다. 비활성 중 받은 공중 요청도 다음 enable에서 초기화된다.
+world-space NPC 상태 Canvas는 그룹 내부 sprite 순서와 별도로 override sorting을 유지하고,
+상태 Canvas 25000·projectile 30000은 지상/공중 객체보다 앞에 둔다. Overlay UI는 화면 위에 유지한다.
+이 presenter는 Canvas나 projectile을 찾거나 변경하지 않으며, 북쪽 instanced tree shader의 ZWrite 깊이는 범위 밖이다.
+
+`DepthOrderSetup.Setup` (`Tools > NPC > Defense > Apply Depth Order`)은 idle Editor, Prefab Mode 밖,
+저장된 활성 `DefenseTest`를 요구한다. 9개 성벽은 기존 ground anchor, 11개 부지는 공사 레이어 전용
+identity `ConstructionLayers`와 plot anchor를 사용한다. EmptyPlot/완공 시설은 공사 그룹에 넣지 않는다.
+배치된 Warehouse/Inn/Eat 및 House/Inn/Restaurant/Warehouse Defense variant는 기존 EntrancePoint를 쓴다.
+TownHall은 `DefenseBuildingDurability._workAnchor`로 연결된 DefenseWorkAnchor(local Y -2)를 사용한다.
+GuardPost 씬 배치와 GuardPostDefense는 모두 자기 root에 Y offset -1.672를 적용한다. 두 visual의 같은
+1254px center-pivot sprite, 150 PPU, 0.4 scale에서 계산한 하단 기준(`-1254 / 150 / 2 * 0.4`)이다.
+씬 GuardPost에는 EntrancePoint 자식이 없고 `_entrance`/`_workAnchor`는 떨어진 GuardPatrolArea를 가리키므로
+깊이 anchor로 사용하지 않는다. prefab의 기존 EntrancePoint·gameplay 참조도 변경하지 않는다.
+Soil 씬 배치와 SoilDefense는 ground를 제외하고 21개 Carrot 루트와 DefenseRubble을 각각 묶는다.
+DefenseNPC/Enemy 및 GoblinArcher/Shaman/Salamander 루트만 NPC 그룹을 추가하며 새 적의 Y offset은
+각각 -0.6/-0.6/-0.35, 기존 NPC/Enemy는 0이다. DefenseNPC의 기존 panic Canvas는 override sorting 25000,
+Arrow/EnergyOrb/Fireball은 30000으로 설정한다. UI Canvas 직계 자식 순서는
+HUDUI → HoveringUI → BackBG → PopupUI → DefenseUI이고 활성 상태·배치·참조는 보존한다.
+상단의 5개 그룹은 [Merchant Caravan](../../Economy/Merchant_Caravan.md)을 따른다.
+명령은 코드에 열거된 15개 prefab path와 `Assets/Scenes/DefenseTest.unity`만 저장한다. 공통 원본 prefab,
+tree/material/camera/project settings는 저장·수정하지 않는다. helper 실행·배선 확인 결과는 root 작업 기록이 소유한다.
 
 ## 변경 유형별 최소 확인 범위
 
@@ -62,6 +104,7 @@ NPCComponent.Awake / ResetRuntimeState -> CarryVisualPresenter.ResetImmediate()
 | 봇짐 등장/퇴장 연출 | `CarryVisualPresenter.cs`, `Assets/Animation/Carry/*`, NPC prefab의 `CarryAnchor/CarryMotion/Basket` 계층 |
 | 봇짐 표시 판단(비었는지)·용량 | `NPCComponent.cs`, [Inventory and Items](../../Economy/Inventory_and_Items/README.md)의 `WorkerInventory` |
 | Animator 없는 role | `NPCComponent.cs`, 해당 role prefab, spawning 문서 |
+| 객체 지면 깊이·공중 전환 | `GroundDepthSort.cs`, 대상 객체의 SortingGroup·안정적인 root/ground anchor, 상단은 `MerchantCaravan.cs` |
 
 ## 에셋과 검증 도구
 
@@ -108,4 +151,4 @@ NPCComponent.Awake / ResetRuntimeState -> CarryVisualPresenter.ResetImmediate()
 
 ## 문서 갱신 조건
 
-`NPCComponent` 표현 API, animator parameter, clip/controller, prefab visual·tool 배선이 바뀌면 갱신한다.
+`NPCComponent` 표현 API, animator parameter, clip/controller, prefab visual·tool 배선, `GroundDepthSort`의 anchor·그룹·순서 계약이 바뀌면 갱신한다.

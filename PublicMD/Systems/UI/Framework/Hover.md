@@ -34,6 +34,13 @@ UIManager → HoverBase.TryShow/refresh → FarmGaugeHover 또는 NPCMessageHove
 
 FarmGaugeHover에는 fill image와 camera를 연결한다. NPC 메시지의 상세 배선과 기존 검증 범위는 아래 문구 표시 연계를 따른다.
 
+`FarmGaugeHover`는 Awake에서 자신의 RectTransform, 부모 RectTransform과 root Canvas를 캐시한다.
+world anchor의 화면 좌표를 부모 RectTransform 평면의 local XY로 변환하고 기존 local Z를 유지한다.
+Overlay는 null camera, 그 외 Canvas는 root Canvas의 worldCamera를 사용한다.
+카메라 뒤의 anchor나 평면 변환 실패는 CanvasGroup alpha만 숨기고 source와 refresh를 유지하여 다음 유효 refresh에서 다시 표시한다.
+CanvasGroup은 기존 것을 캐시하거나 없으면 자기 GameObject에 runtime으로 추가하며, 비활성화 때 원래 alpha를 복원한다.
+non-overlay Canvas에는 worldCamera가 필요하며, 필수 참조 누락은 초기화 오류를 기록하고 표시를 종료한다.
+
 ## 문구 표시 연계
 
 꼬리 없는 독립 말풍선 패널은 `Assets/Art/Generated/UI/ui-speech-panel-white-9slice.png`다.

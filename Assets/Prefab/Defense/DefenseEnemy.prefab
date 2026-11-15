@@ -17,6 +17,8 @@ GameObject:
   - component: {fileID: 387043612824599280}
   - component: {fileID: 566215127673884982}
   - component: {fileID: 7108522048300930173}
+  - component: {fileID: 8355621728896834255}
+  - component: {fileID: 6144189097690691472}
   m_Layer: 6
   m_Name: DefenseEnemy
   m_TagString: Untagged
@@ -189,6 +191,8 @@ MonoBehaviour:
   _settings: {fileID: 11400000, guid: 8c28ff00b8c15da49bfacafcc44ad651, type: 2}
   _presentation: {fileID: 7108522048300930173}
   _projectilePrefab: {fileID: 9088787921628549661, guid: 4e0ca6234d4eb6c41a9f5e9479259cd2, type: 3}
+  _enemyAttackDefinition: {fileID: 0}
+  _projectileOrigin: {fileID: 0}
 --- !u!114 &7108522048300930173
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -206,6 +210,37 @@ MonoBehaviour:
   _weaponRenderer: {fileID: 0}
   _sword: {fileID: 0}
   _bow: {fileID: 0}
+  _chargeVisual: {fileID: 0}
+  _windupParticles: {fileID: 0}
+--- !u!210 &8355621728896834255
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2984862999116002434}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 10000
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 0
+--- !u!114 &6144189097690691472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2984862999116002434}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93a7f4cd514c4bcb8b3ce6d90fa2ec25, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::GroundDepthSort
+  _sortingGroup: {fileID: 8355621728896834255}
+  _groundAnchor: {fileID: 9068102775316106780}
+  _groundYOffset: 0
+  _airborneOrderOffset: 0
 --- !u!1 &3500484482095528566
 GameObject:
   m_ObjectHideFlags: 0

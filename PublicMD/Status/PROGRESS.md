@@ -1,3 +1,12 @@
+# DefenseTest 깊이 정렬·팝업 가림 수정 — 2026-11-15
+
+- 웨이브 HUD가 일반 팝업을 덮던 Canvas 순서를 `HUDUI → HoveringUI → BackBG → PopupUI → DefenseUI`로 수정했다. 기존 여러 팝업 정책·DefenseUI 비활성 상태와 controller 참조를 보존했다. FarmGaugeHover는 부모 Canvas 평면 좌표로 투영하고, PopBase는 닫기 중 재열기를 현재 위치에서 이어간다.
+- 선택적 GroundDepthSort와 SortingGroup을 DefenseTest 및 관련 프리팹15개에 연결했다. 씬의 성벽·건설 레이어·시설·작물·농장 잔해47그룹, 방어 actor5종·시설 variant5종·SoilDefense22그룹·상단5그룹을 지면 기준으로 정렬한다. 상단은 비행 중 별도 순서로 전환하고 재방문/disable 때 상태를 초기화한다. 말풍선·투사체 순서도 조정했다. 이동·물리·게임 규칙은 변경하지 않았다.
+- ConstructionVisual의 선택적 layersRoot로 공사 그림4개만 묶고 빈 부지·완공 시설은 분리했다. Editor 조립 helper는 승인된 씬1개·프리팹15개만 저장한다. 기존 fileID/GUID·게임플레이 참조·활성 상태를 유지했고 공통 원본·trees·카메라·ProjectSettings는 변경하지 않았다. 관련 주 소유 문서를 갱신했다.
+- 실제 Unity 결합 컴파일 오류0/경고0, 조립 저장 로그16건 및 저장 직후 active/clean 씬, 현재 디스크 참조·그룹 수·변경 범위·git diff --check를 확인했다. 독립 리뷰 `01a1df7e-df58-7f10-8bb0-e1e705d6bbc0`가 현재 후보를 Approve/findings없음으로 판정했다. 보정1/2 사용.
+- 기록 `.harness-runs/depth-order-20261115/work-record.md`; 원본 `world-code/compile-correction1.json`, `assembly/correction1-console-after.json`, `assembly/correction1-scene-after.json`. 신규 빈 m_Name 행의 공백 정리 뒤 Refresh는 실행됐으나 최종 live 상태·계층 조회는 Pipeline main-thread timeout으로 미확인이다(`assembly/final-editor-status.json`, `final-scene.json`, `final-console.json`). 이전 저장/로드 성공과 최종 live import 미확인을 구분한다.
+- 실제 화면의 가림·상단 재방문·유닛 이동 중 표현·팝업 재열기는 사람 Play 확인 항목이다. 자동 Play/게임 화면·신규 검증 코드는 실행/작성하지 않았다. 구현·정적 검토 완료 후 사용자 요청으로 이 변경만 커밋·푸시한다. 별도 요청된 요즈 3D 모델은 output/3D/YozBody에서 독립 작업하며 이 변경에 포함하지 않는다.
+
 # DefenseTest CSV 웨이브 — 2026-11-15
 
 - 승인된 단일 `Assets/Data/CSV/DefenseWaves.csv` 편성·순서·간격을 구현했다. 1웨이브 기존 적5, 2웨이브 기존 적5+신규3종 각1, 3웨이브 기존 적9+신규3종 각1이며 마지막 편성을 반복한다. 간격1초·정비60초, 다음 플레이에서 CSV 변경 반영. 최종 밸런스는 TBD다.

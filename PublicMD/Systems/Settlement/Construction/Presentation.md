@@ -21,7 +21,9 @@
 
 ## 배선과 제약
 
-같은 부지 루트에 BuildingPlot과 ConstructionVisual을 연결한다. EmptyPlot 및 Materials/LowerFrame/UpperFrame/Cover는 직접 자식이며 네 SpriteRenderer는 서로 달라야 하고 sprite가 있어야 한다. 표시 자식에는 collider를 두지 않는다. 부지·시설 루트와 작업점은 애니메이션 대상이 아니다.
+같은 부지 루트에 BuildingPlot과 ConstructionVisual을 연결한다. EmptyPlot은 항상 직접 자식이다. 선택적 `_layersRoot`가 없으면 기존처럼 Materials/LowerFrame/UpperFrame/Cover도 부지의 직접 자식이며, 연결하면 네 레이어는 그 Transform의 직접 자식이어야 한다. `_layersRoot`는 자기 Transform 또는 부지의 직접 자식만 허용하고 EmptyPlot 자체는 허용하지 않는다. 네 SpriteRenderer는 서로 달라야 하고 sprite가 있어야 한다. 표시 자식에는 collider를 두지 않는다. 부지·시설 루트와 작업점은 애니메이션 대상이 아니다.
+
+DefenseTest 깊이 조립은 identity Transform `ConstructionLayers`를 부지 바로 아래 만들고 네 레이어만 현재 자세를 보존해 옮긴 뒤 `_layersRoot`를 연결한다. 이 컨테이너의 SortingGroup/GroundDepthSort는 plot root를 ground anchor로 사용한다. EmptyPlot·완공 시설·시설 잔해는 공사 그룹 밖에 남기며, 단계 표시와 tween은 기존 네 레이어만 계속 제어한다. 조립 명령은 [공통 깊이 표현](../../NPC/Presentation/Adapter.md)의 `DepthOrderSetup`이 소유한다. 미배선 씬은 기존 직접 자식 구성을 유지한다.
 
 BuildingTest는 기존 Materials/EmptyPlot을 재사용하며 Scaffolding을 LowerFrame으로 전환한다. 새 세 레이어는 1536×1024, PPU150, bottom-center pivot, sorting order 5/6/7, 공통 localY 1.0866667이다. 자재 importer·위치는 기존값을 유지한다. 새 레이어의 발바닥 기준을 기존 그림과 맞춘 오프셋이다.
 

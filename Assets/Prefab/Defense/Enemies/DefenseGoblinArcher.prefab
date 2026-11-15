@@ -255,6 +255,8 @@ GameObject:
   - component: {fileID: 5433843450442258410}
   - component: {fileID: 4873496720854499507}
   - component: {fileID: 5794583191939231126}
+  - component: {fileID: 6725555368307537603}
+  - component: {fileID: 1658844424802368435}
   m_Layer: 6
   m_Name: DefenseGoblinArcher
   m_TagString: Untagged
@@ -448,6 +450,36 @@ MonoBehaviour:
   _sword: {fileID: 0}
   _bow: {fileID: 0}
   _chargeVisual: {fileID: 0}
+  _windupParticles: {fileID: 0}
+--- !u!210 &6725555368307537603
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2686029325563207538}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 10060
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 0
+--- !u!114 &1658844424802368435
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2686029325563207538}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93a7f4cd514c4bcb8b3ce6d90fa2ec25, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::GroundDepthSort
+  _sortingGroup: {fileID: 6725555368307537603}
+  _groundAnchor: {fileID: 2109925322884888767}
+  _groundYOffset: -0.6
+  _airborneOrderOffset: 0
 --- !u!1 &4666554280792889344
 GameObject:
   m_ObjectHideFlags: 0

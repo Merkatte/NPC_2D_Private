@@ -5,6 +5,7 @@ public sealed class ConstructionVisual : MonoBehaviour
 {
     [SerializeField] private BuildingPlot _plot;
     [SerializeField] private GameObject _emptyVisual;
+    [SerializeField] private Transform _layersRoot;
     [SerializeField] private SpriteRenderer _materials;
     [SerializeField] private SpriteRenderer _lowerFrame;
     [SerializeField] private SpriteRenderer _upperFrame;
@@ -26,19 +27,22 @@ public sealed class ConstructionVisual : MonoBehaviour
     {
         OnValidate();
         SpriteRenderer[] renderers = { _materials, _lowerFrame, _upperFrame, _cover };
+        Transform layersRoot = _layersRoot ? _layersRoot : transform;
         bool isConfigured = _plot && _plot.gameObject == gameObject && _emptyVisual
-            && _emptyVisual.transform.parent == transform;
+            && _emptyVisual.transform.parent == transform
+            && (layersRoot == transform || layersRoot.parent == transform)
+            && layersRoot.gameObject != _emptyVisual;
         for (int i = 0; i < renderers.Length; ++i)
         {
             SpriteRenderer renderer = renderers[i];
-            isConfigured &= renderer && renderer.sprite && renderer.transform.parent == transform
+            isConfigured &= renderer && renderer.sprite && renderer.transform.parent == layersRoot
                 && renderer.gameObject != _emptyVisual && !renderer.GetComponent<Collider2D>();
             for (int j = 0; j < i; ++j)
                 isConfigured &= renderer != renderers[j];
         }
         if (!isConfigured)
         {
-            Debug.LogError($"ConstructionVisual '{name}': assign _plot on this root, _emptyVisual and four distinct sibling sprite layers without colliders.", this);
+            Debug.LogError($"ConstructionVisual '{name}': assign _plot on this root, direct-child _emptyVisual and four distinct sibling sprite layers under _layersRoot (self or direct child) without colliders.", this);
             enabled = false;
             return;
         }

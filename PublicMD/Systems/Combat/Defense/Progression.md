@@ -79,6 +79,8 @@ HUD와 Popup은 상시 활성 host에 붙이고 실제 숨기는 popup/game-over
 
 DefenseTest의 DefensePhaseHUD는 phase 표시와 다음 습격 시작을 담당한다. Assets/Prefab/UI/DefensePhaseHUD.prefab의 활성 root에 붙이고 `_statusText` Legacy Text와 별도 자식 `_nextWaveButton`을 연결한다. scene dependency `_session`·`_waves`는 prefab에서 비워 두고 scene override 또는 Configure로 주입한다. 기존 DefenseHUD는 `_showPhaseControls=false`로 옛 상태 글자·시작 버튼만 숨기고 이벤트 알림·선택 popup·GameOver 책임을 유지한다. DefenseStatus는 알림 버튼의 부모이므로 통째로 비활성화하지 않는다. DefenseUI host는 Canvas 마지막에 유지해 이벤트/GameOver modal이 일반 popup·HUD 위에서 입력을 차단한다.
 
+현재 DefenseTest 직렬화에서는 `DefenseUI` host 자체가 비활성이고 별도 `HUDUI/DefensePhaseHUD`가 활성이다. 위 이벤트·GameOver host의 상시 활성 lifecycle 계약과 현재 씬 상태는 구분한다. 깊이 정렬 수정은 기존 host 활성 상태를 보존하며 이벤트 UI를 새로 활성화하지 않는다. Canvas의 실제 형제 순서는 `HUDUI → HoveringUI → BackBG → PopupUI → DefenseUI`로, 웨이브 정보와 시작 버튼은 일반 팝업 뒤에 배치한다. 공통 계층 규칙은 [UI Presentation](../../UI/Presentation.md)을 따른다.
+
 정비에는 다음 습격 번호와 남은 정수 초, 습격에는 현재 번호와 생존/생성 대기 적 수, 초기화/생성 오류/GameOver에는 짧은 상태를 표시한다. session·wave Changed 이벤트에 구독하고 남은 초·생존 수·대기 수·시작 가능 여부만 Update에서 비교하여 값이 바뀔 때 문구를 갱신한다. 매 프레임 문자열을 만들지 않는다. 버튼은 유효한 정비 때만 보이고 pause 중에는 controller의 CanStartNextWave에 따라 비활성화한다. 클릭은 TryStartNextWave만 요청하며 이벤트 선택·시간 배율·자원·적 생성 상태를 직접 변경하지 않는다. OnEnable/OnDisable과 Configure가 구독·listener를 대칭적으로 관리하며 필수 참조 누락은 한 번 진단하고 입력을 비활성화한다. 초기 누락 뒤 유효한 Configure로 회복할 수 있다.
 
 골드 변경 알림의 주 소유와 독립 prefab 계약은 [UI](../../UI/README.md)의 선택적 골드 알림 HUD 절을 따른다. 두 view의 씬 연결과 실제 화면/Play는 별도 확인 항목이다.

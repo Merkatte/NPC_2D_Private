@@ -31,6 +31,7 @@ public sealed class MerchantCaravan : MonoBehaviour
     [SerializeField] private Transform _building;
     [SerializeField] private Animator _merchantAnimator;
     [SerializeField] private TransportBird[] _birds;
+    [SerializeField] private GroundDepthSort[] _groundDepthSorts;
 
     [SerializeField, Min(MinimumLiftHeight)] private float _buildingLiftHeight = 12f;
     [SerializeField, Min(MinimumLiftHeight)] private float _birdLiftHeight = 7f;
@@ -90,6 +91,7 @@ public sealed class MerchantCaravan : MonoBehaviour
         // visits, so Awake has not run yet on the first visit. SetActive(true) runs Awake/OnEnable
         // synchronously, so _isConfigured is safe to read immediately after.
         gameObject.SetActive(true);
+        SetAirborne(false);
 
         if (!_isConfigured)
         {
@@ -107,6 +109,7 @@ public sealed class MerchantCaravan : MonoBehaviour
         // clearing so IsVisiting reports correctly whether this was a normal finish or a forced
         // deactivation mid-visit.
         _visitRoutine = null;
+        SetAirborne(false);
     }
 
     private IEnumerator VisitRoutine()
@@ -118,6 +121,7 @@ public sealed class MerchantCaravan : MonoBehaviour
             _buildingGround,
             _buildingLandDuration);
         yield return MoveCrew(isLanding: true, _crewLandDuration);
+        SetAirborne(false);
 
         _visual.SetTradeAvailable(true);
         StartBirdGroundPresentation();
@@ -128,6 +132,7 @@ public sealed class MerchantCaravan : MonoBehaviour
         StopBirdGroundPresentation();
 
         yield return GatherBirds();
+        SetAirborne(true);
         yield return MoveCrew(isLanding: false, _crewLiftDuration);
         yield return MoveBuildingAndCarryingBirds(
             _buildingGround,
@@ -144,6 +149,7 @@ public sealed class MerchantCaravan : MonoBehaviour
     /// </summary>
     private void ResetPresentation()
     {
+        SetAirborne(true);
         _visual.SetTradeAvailable(false);
 
         Vector3 buildingAirPosition = _buildingGround + Vector3.up * _buildingLiftHeight;
@@ -160,6 +166,16 @@ public sealed class MerchantCaravan : MonoBehaviour
         }
 
         ApplyBirdCarryPose(buildingAirPosition);
+    }
+
+    private void SetAirborne(bool isAirborne)
+    {
+        if (_groundDepthSorts == null)
+            return;
+
+        for (int i = 0; i < _groundDepthSorts.Length; ++i)
+            if (_groundDepthSorts[i])
+                _groundDepthSorts[i].SetAirborne(isAirborne);
     }
 
     /// <summary>

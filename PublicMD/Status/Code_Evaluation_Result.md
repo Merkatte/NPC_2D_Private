@@ -1,5 +1,16 @@
 # Code Evaluation Result
 
+## 2026-11-15 — DefenseTest 렌더링 깊이·UI 계층 조사
+
+- 사용자 요청: 상점 상승·유닛·UI 앞뒤 가림 종합 수정. 대상 DefenseTest, 특히 웨이브 HUD와 일반 팝업의 겹침. 기준 df780a8, 시작 clean. 소스·직렬화 조사이며 Play 재현 아님. 기존 미관련 지적은 미재평가다.
+- F11 / 확인된 문제 / Low: FarmGaugeHover.ApplyInfo는 WorldToScreenPoint의 카메라 깊이까지 RectTransform.position에 복사한다. 실제 Overlay Canvas의 게이지에 Z10이 유입되는 경로다. Canvas 평면으로 변환해야 하며 실제 가림 심각도는 미검증.
+- F12 / 확인된 문제 / Medium: PopBase.Open의 닫기 취소가 PlayEnterMotion의 화면 아래1200 초기화까지 반복해 재열기 순간 이동을 만든다. 현재 위치부터 복귀하도록 분리한다. 기존 F03의 거래 세션 미복원은 현재 TryBindSource/StartSession 경로에서 해결됐으나 이번 위치 문제와 별개다.
+- F13 / 확인된 문제 / Medium: 건물/상점 SpriteRenderer order0, NPC 몸2·도구/화물1, 성벽2·잔해3 등이 같은 Default 층에서 객체 단위 그룹 없이 고정돼 있다. 지면의 앞뒤 위치와 관계없이 부분 렌더러가 다른 객체에 끼는 구조다. 상점 상승도 Shop 자식 Y만 바꾸며 지면 정렬 기준/공중 예외가 없다. ground anchor 기준 객체 그룹 정렬과 비행 중 표시 순서 분리가 필요하다. NPCPathFollower는 offset.z=0으로 평면 이동하므로 이 근거만으로 navigation을 바꾸지 않는다.
+- F14 / 확인된 문제 / Medium: DefenseTest Canvas(1153680008)의 자식 순서가 BackBG, HoveringUI, PopupUI, HUDUI, DefenseUI다. 활성 DefensePhaseHUD의 글자·버튼은 PopupUI보다 위에서 그려지고 raycast를 받는다. PopBase.SetAsLastSibling은 PopupUI 내부에서만 유효하다. 일반 HUD를 배경/팝업 아래로 이동하는 배선 수정이 필요하다. 비활성 DefenseUI의 상태 표시와 EventModal/GameOver는 기존 계층·활성 상태·controller 참조를 유지한다.
+- 조사 완료: 일반 Canvas는 Overlay이며 등록 여섯 팝업은 PopupUI 직접 자식이다. 팝업 자체의 요소 혼합이나 비영 Z 결함은 확인되지 않았다. 전체 Z 일괄 초기화나 공통 카메라/게임 규칙 변경은 근거가 없다. 주 증상은 F14와 일치하는 소스/배선 경로이며 실제 Play 재현은 하지 않았다.
+- 검사: 관련 소스·씬·프리팹·Renderer2D/GraphicsSettings·shader 직접 읽기. 자동 Play/화면·신규 검사 코드는 수행하지 않았다. 이후 수정과 후보 검증은 별도로 기록한다.
+- 수정 후 상태: F11은 부모 Canvas 평면 투영, F12는 현재 위치에서 재열기, F13은 명시적 지면 그룹·상단 공중 순서, F14는 HUD를 팝업 뒤로 옮기는 Canvas 형제 순서로 코드/배선상 처리했다. Unity 컴파일 오류0/경고0, 저장 직후 씬 readback과 현재 디스크 참조 검사, 독립 후보 리뷰 Approve/findings없음. 실제 화면 개선은 사람 Play 미검증이며 공백 정리 후 최종 live import는 Pipeline timeout으로 미확인이다. 상세 결과는 PROGRESS와 `.harness-runs/depth-order-20261115/work-record.md`를 따른다.
+
 ## 2026-11-15 — 외부 소개 적합성 제한 평가
 
 - 요청: 현업 개발 경력자에게 현재 프로젝트를 보여주고 피드백받을 실체가 있는지 판단. 전체 코드 재감사나 채용·상품성 판정이 아닌 overview다. 기준 HEAD `4e3692e`, 검사 시작 시 작업 트리는 clean이었다.

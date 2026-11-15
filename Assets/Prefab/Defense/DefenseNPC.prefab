@@ -255,6 +255,8 @@ GameObject:
   - component: {fileID: 6133977103625026943}
   - component: {fileID: 1493337838235665995}
   - component: {fileID: 5099714119426819674}
+  - component: {fileID: 9099376767127269782}
+  - component: {fileID: 2622703381600639924}
   m_Layer: 8
   m_Name: DefenseNPC
   m_TagString: Untagged
@@ -500,6 +502,8 @@ MonoBehaviour:
   _settings: {fileID: 11400000, guid: 8c28ff00b8c15da49bfacafcc44ad651, type: 2}
   _presentation: {fileID: 1493337838235665995}
   _projectilePrefab: {fileID: 9088787921628549661, guid: 4e0ca6234d4eb6c41a9f5e9479259cd2, type: 3}
+  _enemyAttackDefinition: {fileID: 0}
+  _projectileOrigin: {fileID: 0}
 --- !u!114 &1493337838235665995
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -517,6 +521,8 @@ MonoBehaviour:
   _weaponRenderer: {fileID: 1031793011229107082}
   _sword: {fileID: -6346143765800849767, guid: 8b0dcd56354b2074fad56d3ee443a97a, type: 3}
   _bow: {fileID: 21300000, guid: c7c818508f3e533448a31b375954fed8, type: 3}
+  _chargeVisual: {fileID: 0}
+  _windupParticles: {fileID: 0}
 --- !u!114 &5099714119426819674
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -532,6 +538,35 @@ MonoBehaviour:
   _actor: {fileID: 6133977103625026943}
   _panel: {fileID: 8831226203904509706}
   _text: {fileID: 8923142173655441610}
+--- !u!210 &9099376767127269782
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3262494035716902277}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 10000
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 0
+--- !u!114 &2622703381600639924
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3262494035716902277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93a7f4cd514c4bcb8b3ce6d90fa2ec25, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::GroundDepthSort
+  _sortingGroup: {fileID: 9099376767127269782}
+  _groundAnchor: {fileID: 1256073667249634160}
+  _groundYOffset: 0
+  _airborneOrderOffset: 0
 --- !u!1 &3438186285964877645
 GameObject:
   m_ObjectHideFlags: 0
@@ -1026,7 +1061,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 100
+  m_SortingOrder: 25000
   m_TargetDisplay: 0
 --- !u!222 &3894228241300562801
 CanvasRenderer:

@@ -107,6 +107,10 @@ Popup이 카트 변경마다 예상 판매 금액을 되묻는 데 쓴다(mutate
 
 ## 불변 규칙
 
+- 선택적 `MerchantCaravan._groundDepthSorts` 배열은 [공통 GroundDepthSort](../NPC/Presentation/Adapter.md)에 연결하며 비어 있거나 null인 항목은 건너뛴다. 상단은 Shop·상인 Visual·새 3마리의 5개 독립 그룹이다. Shop은 caravan root, 상인 Visual은 root 아래 별도 MerchantGroundAnchor, 새는 각자의 안정적인 이동 root를 ground anchor로 사용한다. 상인 anchor는 MerchantLanding clip의 Visual 위치 마지막 값 `(0,-1.35,0)`을 저작된 착륙 자세의 부모 변환으로 world에 투영한 뒤 caravan root-local 좌표로 고정한다. 애니메이션되는 상인 Visual을 anchor로 삼지 않는다. 공중 offset은 Shop 0, 상인 3, 새 배열 순서대로 1/2/4이며 지면에서는 각 anchor의 깊이를 쓴다.
+- 방문 시작은 깊이 상태를 초기화한 뒤 건물 하강과 승무원 착륙 동안 `SetAirborne(true)`를 유지한다. 승무원 전체 착륙 완료 후에만 `false`로 바꾸며, 체류와 지상 집합 중에는 지면 정렬을 사용한다. 집합 이후 탑승 시작부터 건물 상승 완료까지 다시 `true`다. `OnDisable`도 `false`로 정리하므로 중간 비활성화 후 새 방문에 공중 상태가 남지 않는다. 참조 미배선 시 기존 연출·거래 동작을 유지하며 자동 component 탐색·추가는 하지 않는다.
+- 착륙 anchor 조립은 import된 AnimationClip의 실제 위치 곡선을 읽는다. 곡선이 없는 축은 상인 Visual의 저작된 local position을 유지한다. 현재 X/Y는 각각 8개 key의 곡선이며 Z는 상수 0으로 곡선이 생략되어 있다. 없는 곡선이나 Transform을 새로 만드는 보정은 하지 않는다.
+
 - `MerchantCaravan`은 `ResourceManager`나 거래 로직을 모른다. `MerchantVisual`도 마찬가지다. `MerchantTradeSite`만 `ResourceManager`를 안다.
 - `MerchantTradeSite`는 상단 거래만 담당한다. 나중에 모집·업그레이드가 생겨도 각자 자기 전용의 작은 provider를 새로 만들고 이 컴포넌트를 거치지 않는다 — "모든 거래의 총괄자" 역할을 만들지 않는다.
 - 체류(dwell) 타이머를 건드리는 외부 메서드는 없다. 상호작용으로 리셋되거나 연장되지 않는다.

@@ -8,6 +8,11 @@
 
 IUIService.TryShow → UIManager → PopBase.TryBindSource → Open. 이미 열린 popup의 대상 변경도 바인딩 경로를 사용한다. PopupCanvasFit은 크기만 맞추며 위치는 PopBase가 소유한다.
 
+완전히 닫힌 popup은 기존 화면 아래 시작 위치에서 진입한다. 닫기 tween 도중 Open이 들어오면
+퇴장 tween을 완료 콜백 없이 중단하고 현재 anchoredPosition에서 원래 위치로 복귀한다.
+이때 화면 아래 위치를 다시 설정하거나 OnBeforeOpen/OnOpened를 중복 호출하지 않는다.
+source 재바인딩, 닫기 전 처리와 실제 비활성화 시 OnClosed 호출은 기존 lifecycle을 유지한다.
+
 ## 주 소유 스크립트
 
 | 경로 | 한 줄 책임 |

@@ -17,6 +17,8 @@ GameObject:
   - component: {fileID: 538059550555067810}
   - component: {fileID: 6739995177396453156}
   - component: {fileID: 6616276654705317901}
+  - component: {fileID: 1766560733622652882}
+  - component: {fileID: 9063357953360444750}
   m_Layer: 6
   m_Name: DefenseShaman
   m_TagString: Untagged
@@ -211,6 +213,35 @@ MonoBehaviour:
   _bow: {fileID: 0}
   _chargeVisual: {fileID: 1696133102372628761}
   _windupParticles: {fileID: 6028293286020214854}
+--- !u!210 &1766560733622652882
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 507129212999559749}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 10060
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 0
+--- !u!114 &9063357953360444750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 507129212999559749}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93a7f4cd514c4bcb8b3ce6d90fa2ec25, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::GroundDepthSort
+  _sortingGroup: {fileID: 1766560733622652882}
+  _groundAnchor: {fileID: 2093801842020797496}
+  _groundYOffset: -0.6
+  _airborneOrderOffset: 0
 --- !u!1 &926124116160915674
 GameObject:
   m_ObjectHideFlags: 0

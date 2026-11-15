@@ -243,6 +243,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3602936820078517319, guid: 37ea0b470675065468357c4d437e78b2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5396709052890162443}
+    - targetCorrespondingSourceObject: {fileID: 3602936820078517319, guid: 37ea0b470675065468357c4d437e78b2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1797503922694193733}
+    - targetCorrespondingSourceObject: {fileID: 3602936820078517319, guid: 37ea0b470675065468357c4d437e78b2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3850807675996278221}
   m_SourcePrefab: {fileID: 100100000, guid: 37ea0b470675065468357c4d437e78b2, type: 3}
 --- !u!1 &375462895757625810 stripped
 GameObject:
@@ -298,6 +304,35 @@ MonoBehaviour:
   _wall: {fileID: 0}
   _building: {fileID: 5662239565360230059}
   _workAnchor: {fileID: 6815849552406236470}
+--- !u!210 &1797503922694193733
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 375462895757625810}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 10182
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 0
+--- !u!114 &3850807675996278221
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 375462895757625810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93a7f4cd514c4bcb8b3ce6d90fa2ec25, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::GroundDepthSort
+  _sortingGroup: {fileID: 1797503922694193733}
+  _groundAnchor: {fileID: 6815849552406236470}
+  _groundYOffset: 0
+  _airborneOrderOffset: 0
 --- !u!212 &2109018440359157560 stripped
 SpriteRenderer:
   m_CorrespondingSourceObject: {fileID: 3058339324800436909, guid: 37ea0b470675065468357c4d437e78b2, type: 3}
