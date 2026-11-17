@@ -1,3 +1,8 @@
+# 접수원 대사 말투 조정 — 2026-11-18
+
+- LocalizeData.csv의 접수원 인사·안내 질문·시설 설명·종료/거절 12문구를 귀찮음을 숨기지 않는 형식적인 존댓말과 혼잣말로 수정했다. 이름은 미정으로 유지하고 표시명·선택지·ID/key·게임 기능 설명은 보존했다.
+- 별도 author-unity-code 작업자가 CSV만 수정하고 루트가 실제 diff를 확인했다. CSV strict 파싱(46행, 각3열)과 diff check 통과. C#/배선 변경이 없는 문구 수정으로 별도 후보 코드 리뷰·재컴파일은 적용하지 않았다. 실제 Unity import·화면 줄바꿈은 미검증이다. 이번 수정은 커밋·푸시하지 않았다.
+
 # DefenseTest 편집 가능한 시작 튜토리얼 — 2026-11-18
 
 - 승인 계획에 따라 공통 GameTimeController의 token 정지, 재사용 SequenceRunner/Bindings/Definition, 말풍선·하단 대사창과 선택지, unscaled 카메라·외부 배우 연출을 추가했다. 대사·순서·표시·대상·시간은 CSV/SO/씬 바인딩에서 편집한다. 저장/PlayerPrefs는 추가하지 않았고 이어하기 연결은 TBD다.
