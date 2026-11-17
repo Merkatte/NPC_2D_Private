@@ -128,3 +128,7 @@ FarmSeedSource가 전달하는 공유 ResourceManager의 DeferNotifications 범�
 ## 대화·시간 정지 연결 — 2026-11-18
 
 FarmWorkSite의 씨앗 심기 명령은 중앙 게임 시간 정지 중 거부한다. 대화 UI를 우회한 즉시 상태 변경도 진행되지 않는다.
+
+## 성장용 기여량
+
+Farming 성공 결과는 최대 진행도 이내의 실제 증가분(FarmProgress), Harvest 성공 결과는 cargo가 받은 acceptedQuantity(HarvestItems)를 반환한다. 부분 수확은 해당 수락량만 인정하며 다음 수확에서는 남은 양만 계산한다. 작업·수확은 중앙 시간 정지와 유효하지 않은 strength를 거부한다. provider는 개인 숙련도를 변경하지 않는다.

@@ -16,7 +16,7 @@
 | 대기능 | 책임 |
 |---|---|
 | [Game Flow](GameFlow/README.md) | 중앙 시간 정지·대화/연출·시작 튜토리얼 |
-| [NPC](NPC/README.md) | NPC 개체의 공통 수명·판단·실행·표현 |
+| [NPC](NPC/README.md) | NPC 개체의 공통 수명·직업 성장·판단·실행·표현 |
 | [Settlement](Settlement/README.md) | 정착지 건설·건축가 작업·주거·시청 모집 |
 | [Economy](Economy/README.md) | 농사·아이템·공유 자원·물류·상단 거래 |
 | [Combat](Combat/README.md) | 공통 감지·공격·직군 판단과 성벽 방어 |

@@ -50,8 +50,9 @@ public sealed class BuildAction : DefaultAction
         if (seconds <= 0f) return;
         var request = new InteractionRequest(ActionType.Build, strength: _cost.Work.WorkPerSecond * seconds,
             reservation: _reservation);
-        if (!actionContext.InteractionProvider.TryInteract(request, out _))
+        if (!actionContext.InteractionProvider.TryInteract(request, out InteractionResult result))
         { if (!CheckReservation()) return; RequestReplan(); return; }
+        actionContext.Stat.ProfessionGrowth.Award(NPCType.Builder, result.ContributionKind, result.ContributionAmount);
         CheckReservation();
     }
     private bool CheckReservation()

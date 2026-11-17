@@ -28,6 +28,9 @@ public class WorkerNPC : MonoBehaviour
     private ResidentHousingState _residence;
     private float _reassessmentElapsed;
     public NPCComponent Component => _component;
+    public NPCType Profession => _npcType;
+    public NPCProfessionGrowth ProfessionGrowth => _isInitialized && isActiveAndEnabled ? _stat?.ProfessionGrowth : null;
+    public uint LifetimeVersion { get; private set; }
     public event System.Action<WorkerNPC> Disabled;
 
     private bool _isSpawnPresentationActive;
@@ -134,6 +137,7 @@ public class WorkerNPC : MonoBehaviour
 
     public void Init(NPCType npcType, NPCStat stat, BaseNPCActionSelector selector, ResidentHousingState residence)
     {
+        LifetimeVersion++;
         _residence = residence;
         _reassessmentElapsed = 0f;
         if (_isInitialized)
@@ -208,6 +212,7 @@ public class WorkerNPC : MonoBehaviour
 
     void OnDisable()
     {
+        LifetimeVersion++;
         // Defensive: a reserved-but-not-yet-committed worker (not _isInitialized) can still be
         // disabled, e.g. pool cleanup. CompleteSpawnPresentation is idempotent, so this never
         // conflicts with NPCManager.CommitReservation/CancelReservation calling it themselves.

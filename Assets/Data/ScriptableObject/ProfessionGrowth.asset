@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59078f1fe0f74d8f9b6be02c194574b0, type: 3}
+  m_Name: ProfessionGrowth
+  m_EditorClassIdentifier: Assembly-CSharp::ProfessionGrowthSettings
+  _professions:
+  - _profession: 0
+    _baseLevelCap: 5
+    _baseRequiredExperience: 100
+    _requiredExperiencePerLevel: 50
+    _farmProgressExperience: 0.5
+    _harvestItemExperience: 2
+    _constructionWorkExperience: 0
+    _repairedHealthExperience: 0
+    _maintenanceSecondExperience: 0
+    _damageExperience: 0
+  - _profession: 4
+    _baseLevelCap: 5
+    _baseRequiredExperience: 100
+    _requiredExperiencePerLevel: 50
+    _farmProgressExperience: 0
+    _harvestItemExperience: 0
+    _constructionWorkExperience: 0.2
+    _repairedHealthExperience: 0.1
+    _maintenanceSecondExperience: 2
+    _damageExperience: 0
+  - _profession: 1
+    _baseLevelCap: 5
+    _baseRequiredExperience: 100
+    _requiredExperiencePerLevel: 50
+    _farmProgressExperience: 0
+    _harvestItemExperience: 0
+    _constructionWorkExperience: 0
+    _repairedHealthExperience: 0
+    _maintenanceSecondExperience: 0
+    _damageExperience: 0.1
+  - _profession: 5
+    _baseLevelCap: 5
+    _baseRequiredExperience: 100
+    _requiredExperiencePerLevel: 50
+    _farmProgressExperience: 0
+    _harvestItemExperience: 0
+    _constructionWorkExperience: 0
+    _repairedHealthExperience: 0
+    _maintenanceSecondExperience: 0
+    _damageExperience: 0.3

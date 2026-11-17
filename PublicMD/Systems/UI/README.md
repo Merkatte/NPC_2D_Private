@@ -5,7 +5,7 @@
 | 변경 대상 | 하위 기능 |
 |---|---|
 | world pointer 입력, category registry, popup·hover lifecycle | [Framework](Framework/README.md) |
-| 씨앗 선택 창과 골드 HUD | [Views](Views/README.md) |
+| 씨앗 선택 창·골드 HUD·주민 성장 정보창 | [Views](Views/README.md) |
 | 공통 팝업 스타일·prefab 계층·WarmPixel·헤더 아이콘 | [Presentation](Presentation.md) |
 | CSV 문구·key 생성, 언어별 조회, Text/TMP 표시 | [Localization](Localization.md) |
 | 대화 말풍선·하단창·선택·입력 점유 | [Dialogue](Dialogue.md) |

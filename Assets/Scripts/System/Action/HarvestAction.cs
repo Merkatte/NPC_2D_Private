@@ -85,7 +85,7 @@ public class HarvestAction : BaseWorkingAction
             return;
         }
 
-        if (!_interactionProvider.TryInteract(_request, out _))
+        if (!_interactionProvider.TryInteract(_request, out InteractionResult result))
         {
             // Cargo is already full, or holds a different item type — normal, not a failure.
             RequestReplan();
@@ -94,6 +94,7 @@ public class HarvestAction : BaseWorkingAction
 
         // Reached even on a partial carry: the worker genuinely worked, so the cost applies
         // whether or not the whole yield fit in cargo this attempt.
+        actionContext.Stat.ProfessionGrowth.Award(NPCType.Farmer, result.ContributionKind, result.ContributionAmount);
         stat.ChangeFatigue(actionCost.FarmingActionPerFatigue);
         stat.ChangeHunger(actionCost.FarmingActionPerHunger);
         stat.ChangeThirst(actionCost.FarmingActionPerThirst);

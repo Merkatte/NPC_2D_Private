@@ -47,4 +47,12 @@ public enum LocalizeKey
     Tutorial_Finish = 1213,
     Tutorial_Decline = 1214,
     Tutorial_ClerkName = 1215,
+    UI_NPCProfession_Title = 1301,
+    UI_NPCProfession_Farmer = 1302,
+    UI_NPCProfession_Builder = 1303,
+    UI_NPCProfession_Guard = 1304,
+    UI_NPCProfession_Archer = 1305,
+    UI_NPCProfession_Level = 1306,
+    UI_NPCProfession_Experience = 1307,
+    UI_NPCProfession_CapReached = 1308,
 }

@@ -83,3 +83,7 @@ NPC·Enemy prefab의 sensor child에는 trigger `CircleCollider2D`와 `Proximity
 ## 일시적 target 불가와 재복구
 
 CombatPerception은 collider 진입 시 target/Unity owner를 한 번 캐시한다. Prune은 파괴된 owner만 제거하고 HP0/잠시 target 불가인 살아 있는 owner는 캐시에 남긴다. HasCandidate와 CopyCandidatesTo가 현재 validity를 필터링하므로 재건한 벽이 같은 trigger 안에서 다시 후보가 된다. Update에서 반복 GetComponent를 실행하지 않는다. Downed/적 제거/벽 HP 재초기화는 [Defense](Defense/README.md)가 소유한다.
+
+## 실제 피해 반환과 target 수명
+
+CombatTarget.ApplyDamage는 HP 차이를 반환하며 무적·비활성·사망·시간 정지·유효하지 않은 피해에는 0을 반환한다. 초과 피해는 남은 HP까지만 인정한다. LifetimeVersion은 Initialize/OnDisable에서 증가한다. DefenseProjectile은 이 번호를 발사 때 보관해 같은 CombatTarget 컴포넌트가 새 pool 수명으로 재사용되면 명중을 취소한다. 기존 호출자는 반환값을 무시해도 호환된다.

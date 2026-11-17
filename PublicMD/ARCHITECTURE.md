@@ -227,3 +227,7 @@ WorkerNPC queue lifecycle, provider transaction, DestinationDecider 판단 책�
 ## 공통 게임 흐름 (2026-11-18)
 
 GameTimeController는 씬 단위 정지 요청과 전역 시간 배율의 단일 writer다. DefenseGameSession은 방어/GameOver 정책과 기존 공개 API를 유지하며 공통 관리자에 위임한다. Tutorial startup → SequenceRunner → 독립 camera/actor action과 dialogue view 순으로 의존한다. 정의는 공유 SO/지역화 CSV, scene 참조는 ID 바인딩, 현재 진행과 token은 scene runtime이 소유한다. 일반 gameplay 입력은 GameplayInputGate를 따르며 대화 UI는 점유 범위 밖에 둔다. production은 TestOnly 카메라에 의존하지 않는다. 상세는 [Game Flow](Systems/GameFlow/README.md)와 [Dialogue UI](Systems/UI/Dialogue.md)를 따른다.
+
+## 직업별 성장 연결 (2026-11-18 승인)
+
+NPCStat은 분리된 NPCProfessionGrowth를 참조하고 NPCManager는 새 주민에게 새 기록을 구성한다. ProfessionGrowthSettings는 직업별 공유 계수·요구량·기본 상한, ProfessionGrowthManager는 씬의 상한 변경만 소유한다. provider의 InteractionResult는 실제 반영된 기여량을 반환하며 action이 성장 기록에 지급한다. CombatTarget은 실제 적용 피해를 반환하고 궁병 projectile은 발사 시점 직업/기록과 주민 수명을 확인한다. UI source/view는 읽기와 표시만 담당한다. 레벨에 따른 성능 보너스·대표 건물·전직·저장은 범위 밖이다. 상세 소유권은 [Profession Growth](Systems/NPC/Runtime/Profession_Growth.md)와 [NPC Profession UI](Systems/UI/Views/NPC_Profession.md)를 따른다.

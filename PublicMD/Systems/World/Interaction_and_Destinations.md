@@ -115,3 +115,7 @@ provider protocol, destination lookup, registry 조립, request/result shape 또
 InteractionRequest.Reservation은 선택적 IInteractionReservation이다. 실제 scene BuildingPlot이 provider이며 ConstructionReservation은 provider를 구현하지 않는다. selector에서 받은 lease를 BuildAction이 전달하면 부지가 발급자·현재 공사·작업 슬롯을 검증한다. 구체 공사 완료 상태는 reservation/부지 domain이 소유하며 InteractionResult에 건설 payload를 추가하지 않는다.
 
 시설 선택 후 타입으로 다시 검색하지 않는다. NPCDecision의 선택된 DestinationInfo/Provider를 queue에 그대로 전달한다. Farm/Guard는 시설 확정 후 해당 provider에서 작업 위치를 구하며 장기 GuardAction은 같은 시설 안에서 다음 순찰점을 선택한다. 동적 해제는 해당 인스턴스의 등록만 제거한다. 기존 호환 조회는 첫 유효 시설을 읽는 API이며 새 selector의 identity 경로를 대신하지 않는다. InteractableManager.TryGetRegisteredInteractionProvider는 살아 있는 등록 컴포넌트만 조회하고, 기존 TryGetInteractionProvider는 활성/CanInteract 검사 계약을 유지한다.
+
+## 실제 작업 기여 결과
+
+InteractionResult는 ActorEffect 외에 ContributionKind와 ContributionAmount를 전달한다. 기존 생성 호출은 None/0으로 호환한다. `Assets/Scripts/Enum/WorkContributionKind.cs`는 이 leaf가 주 소유하며 농장 진행도·수확 수량·공사 작업량·복구 HP·유지보수 시간·피해의 단위를 구분한다. provider는 실제 확정한 양만 반환하고 주민을 수정하지 않는다. action은 성공한 결과를 [직업 성장](../NPC/Runtime/Profession_Growth.md)에 지급한다. 실제 아이템 payload는 계속 요청의 Cargo로만 전달한다.

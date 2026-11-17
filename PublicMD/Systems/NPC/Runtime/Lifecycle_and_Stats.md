@@ -90,3 +90,7 @@ Worker Update와 AdvanceQueue는 Time.timeScale=0에서 실행하지 않는다. 
 ## 선택적 주거 연결
 
 Init의 선택적 ResidentHousingState는 selector와 NPCDissatisfaction에 전달한다. 기존 3인수 Init은 미연결 상태다. WorkerNPC는 selector.GetReassessmentSeconds 간격마다 ShouldReplan을 호출하고 true이면 기존 queue 취소/재요청만 수행한다. 업무·귀가·욕구 정책은 selector, 이동·체류는 HomeStayAction이 소유한다. Disabled 알림은 NPCManager 등록 해제로 연결되고 구독자 예외를 격리하여 local 참조 정리를 계속한다. 자세한 실행은 [Housing Life](../../Settlement/Housing/Life.md)를 따른다.
+
+## 직업 성장 연결
+
+NPCStat은 별도 NPCProfessionGrowth 참조를 소유한다. 생성자 선택 인수 또는 SetProfessionGrowth로 같은 주민의 기록을 새 stat에 전달할 수 있다. WorkerNPC는 Profession, ProfessionGrowth와 LifetimeVersion을 읽기 전용으로 공개한다. Init/OnDisable은 수명 번호를 증가시키며 비활성·미초기화 상태에서는 성장 참조를 공개하지 않는다. Downed의 실행 중단은 수명 번호·성장 기록을 유지한다. 성장 규칙·설정은 [Profession Growth](Profession_Growth.md)가 소유한다.

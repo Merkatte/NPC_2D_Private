@@ -78,7 +78,8 @@ public class AttackAction : DefaultAction
             }
 
             _timer -= interval;
-            handle.Target.ApplyDamage(_combatStat.AttackPower);
+            float damage = handle.Target.ApplyDamage(_combatStat.AttackPower);
+            actionContext.Stat.ProfessionGrowth.Award(NPCType.Guard, WorkContributionKind.Damage, damage);
             hits++;
 
             if (!handle.IsValid)

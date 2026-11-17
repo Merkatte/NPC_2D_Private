@@ -7,4 +7,5 @@ public enum PopupType
     Construction,
     Warehouse,
     House = 6,
+    NPCProfession = 7,
 }

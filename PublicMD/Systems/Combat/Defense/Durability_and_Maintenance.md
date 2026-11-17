@@ -46,3 +46,7 @@ HP·progress는 scene instance에 있고 SO를 변경하지 않는다. Time.time
 ## 검증·제약·관련 문서
 
 컴파일·기존 정적 검사·serialized 참조 확인과 사람 플레이 확인을 구분한다. 자동 Play/화면 확인은 제외한다. 복구/철거 추가 규칙은 [승인 계획](../../../Archive/Plans/Defense_Implementation_Plan.md)을 따른다. [Construction](../../Settlement/Construction/README.md), [Builder](../../Settlement/Construction/Builder.md), [Navigation](../../World/Navigation.md), [Housing](../../Settlement/Housing/README.md), [공유 자원](../../Economy/Inventory_and_Items/Shared_Resources.md)과 책임 경계를 함께 확인한다. HP/작업 API, priority, 기능 해제 목록, 배선이 바뀌면 갱신한다.
+
+## 성장용 유지보수 기여량
+
+DefenseMaintenanceSite는 수리 전후 실제 HP 차이를 RepairedHealth로 반환한다. 성벽 재건·잔해 정리는 완료 요구 시간까지 진행도를 clamp한 실제 증가분을 MaintenanceSeconds로 반환한다. 완료/종류 변경으로 진행도가 초기화되기 전에 결과를 확정한다. MaintenanceAction은 성공 결과만 Builder 성장 기록에 지급한 뒤 lease 완료를 처리한다. 이미 완료된 요청·유효하지 않은 lease는 지급되지 않는다.

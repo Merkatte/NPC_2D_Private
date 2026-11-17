@@ -226,12 +226,15 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
     protected override bool TryInteractCore(InteractionRequest request, out InteractionResult result)
     {
         result = default;
-        if (_isChanging || !(request.Reservation is ConstructionReservation reservation) || !IsReservationValid(reservation))
+        if (_isChanging || Time.timeScale <= 0f || request.Strength <= 0f || float.IsNaN(request.Strength) || float.IsInfinity(request.Strength) ||
+            !(request.Reservation is ConstructionReservation reservation) || !IsReservationValid(reservation))
             return false;
         _isChanging = true;
         try
         {
+            float previousWork = _construction.Work;
             _construction.Work = Mathf.Min(Definition.RequiredWork, _construction.Work + request.Strength);
+            result = new InteractionResult(null, WorkContributionKind.ConstructionWork, _construction.Work - previousWork);
             _construction.HasWorkStarted = true;
             if (_construction.Work >= Definition.RequiredWork)
                 CompleteFacility(out _);

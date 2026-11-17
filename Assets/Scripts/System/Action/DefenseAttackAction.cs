@@ -63,12 +63,14 @@ public sealed class DefenseAttackAction : DefaultAction
             {
                 if (!_actor.ProjectilePrefab) { Fail("Archer requires an explicit projectile prefab."); return; }
                 DefenseProjectile projectile = Object.Instantiate(_actor.ProjectilePrefab, _actor.Position, Quaternion.identity);
-                projectile.Launch(target.Target, target.Owner, _combat.AttackPower, _actor.Settings.ProjectileSpeed);
+                projectile.Launch(target.Target, target.Owner, _combat.AttackPower, _actor.Settings.ProjectileSpeed, _actor.Worker);
             }
             else
             {
                 if (_wall && ReferenceEquals(target.Target, _wall.Target)) _actor.CommittedWall = _wall;
-                target.Target.ApplyDamage(_combat.AttackPower);
+                float damage = target.Target.ApplyDamage(_combat.AttackPower);
+                if (_actor.Role == NPCType.Guard)
+                    actionContext.Stat.ProfessionGrowth.Award(NPCType.Guard, WorkContributionKind.Damage, damage);
             }
         }
         if (_elapsed >= interval) BeginSwing();

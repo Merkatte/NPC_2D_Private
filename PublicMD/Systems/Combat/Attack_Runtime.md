@@ -61,3 +61,7 @@ Enemy의 `AttackStyle`과 preferred range는 selector의 접근 거리 정책에
 ## 불만도·태업 연결
 
 Guard selector의 공격 context만 RequiresWorkAvailability를 설정한다. DefaultAction.Start와 AttackAction.Tick의 공통 태업 검사가 target 사용·damage 이전에 재판단한다. 이후 Guard selector가 target을 정리한다. Enemy의 기존 false context는 같은 AttackAction을 그대로 사용한다.
+
+## 실제 피해와 성장
+
+ICombatTarget.ApplyDamage는 실제 감소한 HP를 반환한다. AttackAction은 그 값을 Guard의 성장 기록에 전달한다. 기존 Enemy stat은 성장 설정이 없어 기록이 증가하지 않는다. Defense의 검병과 궁병 경로는 [Battlefield and Response](Defense/Battlefield_and_Response.md)를 따른다. 공격력·속도에 대한 레벨 보너스는 없다.

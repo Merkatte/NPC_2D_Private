@@ -84,3 +84,7 @@ Farming/Harvest action lifecycle, NPC 비용, 결과 보고 기준 또는 workin
 ## 불만도·태업 연결
 
 Farming/Harvest 및 업무 Move는 RequiresWorkAvailability=true다. 공통 Start와 각 Tick의 검사는 작업 모션/타이머/provider transaction보다 먼저 재판단한다. Stop/Clear는 기존 작업 표현을 정리하고 확정된 작물 progress·생산물·cargo를 지우지 않는다.
+
+## 직업 성장 지급
+
+FarmingAction/HarvestAction은 성공한 InteractionResult의 실제 기여 종류·양을 해당 stat의 NPCProfessionGrowth에 Farmer 기록으로 한 번 지급한다. 요청량·작업 모션·소요 시간으로 추정하지 않는다. 실패나 반복 완료에서는 지급하지 않으며 운반·입고에는 지급 연결이 없다. [Profession Growth](../../NPC/Runtime/Profession_Growth.md)를 따른다.

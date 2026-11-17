@@ -257,6 +257,7 @@ GameObject:
   - component: {fileID: 5099714119426819674}
   - component: {fileID: 9099376767127269782}
   - component: {fileID: 2622703381600639924}
+  - component: {fileID: 2096200010}
   m_Layer: 8
   m_Name: DefenseNPC
   m_TagString: Untagged
@@ -1101,3 +1102,16 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &2096200010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3262494035716902277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c85ff35d255a44be81466f0070e66d88, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::NPCProfessionPopupSource
+  _worker: {fileID: 8382603100193593009}

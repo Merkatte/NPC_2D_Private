@@ -59,7 +59,7 @@ public sealed class DefenseMaintenanceSite : BaseInteractionProvider
     protected override bool TryInteractCore(InteractionRequest request, out InteractionResult result)
     {
         result = default;
-        if (_isChanging || Time.timeScale <= 0f || request.Strength <= 0f || !(request.Reservation is MaintenanceLease lease) || !IsLeaseValid(lease)) return false;
+        if (_isChanging || Time.timeScale <= 0f || request.Strength <= 0f || float.IsNaN(request.Strength) || float.IsInfinity(request.Strength) || !(request.Reservation is MaintenanceLease lease) || !IsLeaseValid(lease)) return false;
         _isChanging = true;
         try
         {
@@ -73,12 +73,17 @@ public sealed class DefenseMaintenanceSite : BaseInteractionProvider
                 MaintenanceKind previousKind = _kind;
                 if (_kind == MaintenanceKind.Repair)
                 {
-                    if (_wall) _wall.ChangeHealth(_settings.RepairPerSecond * request.Strength);
-                    else _building.ChangeHealth(_settings.RepairPerSecond * request.Strength);
+                    float before = _wall ? _wall.CurrentHealth : _building.CurrentHealth;
+                    float after = _wall ? _wall.ChangeHealth(_settings.RepairPerSecond * request.Strength)
+                        : _building.ChangeHealth(_settings.RepairPerSecond * request.Strength);
+                    result = new InteractionResult(null, WorkContributionKind.RepairedHealth, after - before);
                 }
                 else
                 {
-                    _progress += request.Strength;
+                    float required = _kind == MaintenanceKind.RebuildWall ? _settings.WallRebuildSeconds : _settings.ClearRubbleSeconds;
+                    float before = _progress;
+                    _progress = Mathf.Min(required, _progress + request.Strength);
+                    result = new InteractionResult(null, WorkContributionKind.MaintenanceSeconds, _progress - before);
                     if (_kind == MaintenanceKind.RebuildWall && _progress >= _settings.WallRebuildSeconds) _wall.TryFinishRebuild();
                     else if (_kind == MaintenanceKind.ClearRubble && _progress >= _settings.ClearRubbleSeconds) _building.ClearRubble();
                 }

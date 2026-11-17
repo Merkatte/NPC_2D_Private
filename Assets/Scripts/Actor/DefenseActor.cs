@@ -30,6 +30,7 @@ public sealed class DefenseActor : MonoBehaviour
     public Vector3 ProjectilePosition => _projectileOrigin ? _projectileOrigin.position : Position;
     public CombatTarget Target => _combatTarget;
     public NPCStat Stat => _stat;
+    public WorkerNPC Worker => _worker;
     public INavigationService Navigation => _navigation;
     public bool IsEnemy => Role == NPCType.Enemy;
     public bool IsSoldier => Role == NPCType.Guard || Role == NPCType.Archer;

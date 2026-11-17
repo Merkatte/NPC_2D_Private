@@ -59,3 +59,7 @@ Build context는 RequiresWorkAvailability=true다. Start/Tick의 work predicate�
 ## 주거 연결
 
 HasAvailableWork는 navigation/cost가 준비되고 정책상 허용되며 예약 가능한 부지가 있는지만 읽으며 예약하지 않는다. 실제 queue 생성도 같은 정책으로 후보를 거른 뒤 기존 FIFO 예약을 수행한다. 주거가 주입되면 공사가 없을 때 귀가하고 새 공사가 생기면 selector hook으로 기존 생활/공사 판단을 다시 실행한다. 회복 속도는 명시적으로 전달한 HousingLifeSettings를 decider와 SleepAction이 함께 사용한다. [Housing Life](../Housing/Life.md)를 따른다.
+
+## 직업 성장 지급
+
+BuildAction은 성공한 작업 결과의 ContributionAmount를 Builder의 NPCProfessionGrowth에 지급한 뒤 예약 완료를 처리한다. 최종 요구량을 넘은 요청과 완공 재시도에는 추가 지급이 없다. 계산 규칙은 [Profession Growth](../../NPC/Runtime/Profession_Growth.md)가 소유한다.

@@ -68,3 +68,7 @@ Defense prefab의 worker/target/settings/presentation을 명시 연결한다. NP
 궁수 자리는 비용 지불 전에 예약한다. 벽이 부서졌어도 빈 자리 예약은 가능하고 Downed는 자리를 반납하지 않는다. disable/취소 시에만 해제한다. 전투는 태업에 의해 거절되지 않는다. paused 시간에는 queue 전진과 공격/화살 이동이 정지한다.
 
 실제 이동·공격 자세·Downed·도주 복귀는 사람 플레이 확인 항목이다. 기존 컴파일·정적 검사와 참조 검사는 실행 기록을 따르며 전용 테스트 도구를 추가하지 않는다. 정책·public API·상태 수명·prefab 연결이 변경되면 이 문서를 갱신한다.
+
+## 직업 성장과 화살 수명
+
+DefenseActor.Worker는 발사자 수명을 명시적으로 전달하는 읽기 전용 연결이다. DefenseAttackAction의 검병은 실제 피해를 Guard 기록에 지급한다. 궁병 화살은 발사자의 WorkerNPC, LifetimeVersion, NPCProfessionGrowth와 당시 Profession을 저장하고 명중한 실제 HP 피해만 Archer 기록에 지급한다. 발사자가 Downed여도 같은 주민이면 유지하며 disable/재초기화/성장 객체 교체 뒤에는 지급하지 않는다. target CombatTarget 수명도 검사하여 재사용된 다른 target에 명중하지 않는다. OnDisable에서 모든 발사·수명 참조를 정리한다. 적 projectile의 기존 4인수 Launch는 성장 지급 없이 호환된다.

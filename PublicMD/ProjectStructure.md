@@ -37,6 +37,7 @@ NPCManager / WorkerPool          생성과 조립
 
 | 작업 | 필수 기능 문서 | 조건부 추가 문서 |
 |---|---|---|
+| 직업 숙련도·레벨·성장 상한·기여 지급 | [Profession Growth](Systems/NPC/Runtime/Profession_Growth.md) | [주민 정보창](Systems/UI/Views/NPC_Profession.md), 기여하는 업무/전투 leaf |
 | queue 처리·공통 stat | [NPC Runtime](Systems/NPC/Runtime/Lifecycle_and_Stats.md) | [Action Runtime](Systems/NPC/Decision_and_Actions/Action_Runtime.md), [Spawning](Systems/NPC/Runtime/Spawning_and_Pooling.md) |
 | 불만 원인·누적·태업 | [NPC Dissatisfaction](Systems/NPC/Runtime/Dissatisfaction.md) | [NPC Runtime](Systems/NPC/Runtime/Lifecycle_and_Stats.md), [Selector and Queue](Systems/NPC/Decision_and_Actions/Selector_and_Queue.md), [Action Runtime](Systems/NPC/Decision_and_Actions/Action_Runtime.md), [NPC Messages](Systems/NPC/Presentation/Messages.md) |
 | utility·위험·look-ahead | [Decision Policy](Systems/NPC/Decision_and_Actions/Decision_Policy.md) | [Interaction](Systems/World/Interaction_and_Destinations.md), role 문서 |

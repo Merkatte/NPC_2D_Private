@@ -4,8 +4,9 @@ public class NPCStat : IStatView, IHealthState
 {
     public NPCStat(string name, float health, float healthMax, float moveSpeed,
         float fatigue, float hunger, float thirst, float fatigueMax, float hungerMax, float thirstMax,
-        DissatisfactionSettings? dissatisfactionSettings = null)
+        DissatisfactionSettings? dissatisfactionSettings = null, NPCProfessionGrowth professionGrowth = null)
     {
+        ProfessionGrowth = professionGrowth ?? new NPCProfessionGrowth();
         _name = name;
         _healthMax = Mathf.Max(0f, healthMax);
         _health = Mathf.Clamp(health, 0f, _healthMax);
@@ -20,6 +21,12 @@ public class NPCStat : IStatView, IHealthState
     }
 
     private string _name;
+
+    public NPCProfessionGrowth ProfessionGrowth { get; private set; }
+    public void SetProfessionGrowth(NPCProfessionGrowth growth)
+    {
+        ProfessionGrowth = growth ?? new NPCProfessionGrowth();
+    }
 
     public DissatisfactionState Dissatisfaction { get; }
     public float CurrentDissatisfaction => Dissatisfaction.Current;

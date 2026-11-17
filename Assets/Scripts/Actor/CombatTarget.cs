@@ -16,6 +16,8 @@ public sealed class CombatTarget : MonoBehaviour, ICombatTarget
     private bool _isInvulnerable;
     private bool _hasRaisedDied;
 
+    public uint LifetimeVersion { get; private set; }
+
     public event Action<float> Damaged;
     public event Action Died;
 
@@ -26,6 +28,7 @@ public sealed class CombatTarget : MonoBehaviour, ICombatTarget
 
     public void Initialize(IHealthState healthState)
     {
+        LifetimeVersion++;
         if (healthState == null)
         {
             Debug.LogError($"CombatTarget '{name}' cannot initialize without an IHealthState.", this);
@@ -40,6 +43,11 @@ public sealed class CombatTarget : MonoBehaviour, ICombatTarget
         _hasRaisedDied = false;
     }
 
+    private void OnDisable()
+    {
+        LifetimeVersion++;
+    }
+
     public void SetTargetable(bool isTargetable)
     {
         _isTargetable = isTargetable;
@@ -50,11 +58,11 @@ public sealed class CombatTarget : MonoBehaviour, ICombatTarget
         _isInvulnerable = isInvulnerable;
     }
 
-    public void ApplyDamage(float amount)
+    public float ApplyDamage(float amount)
     {
-        if (amount <= 0f || !CanBeTargeted || _isInvulnerable)
+        if (Time.timeScale <= 0f || amount <= 0f || float.IsNaN(amount) || float.IsInfinity(amount) || !CanBeTargeted || _isInvulnerable)
         {
-            return;
+            return 0f;
         }
 
         float previousHealth = _healthState.CurrentHealth;
@@ -63,7 +71,7 @@ public sealed class CombatTarget : MonoBehaviour, ICombatTarget
 
         if (appliedDamage <= 0f)
         {
-            return;
+            return 0f;
         }
 
         Damaged?.Invoke(appliedDamage);
@@ -73,5 +81,6 @@ public sealed class CombatTarget : MonoBehaviour, ICombatTarget
             _hasRaisedDied = true;
             Died?.Invoke();
         }
+        return appliedDamage;
     }
 }

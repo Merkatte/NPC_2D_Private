@@ -5,5 +5,5 @@ public interface ICombatTarget
     bool IsAlive { get; }
     bool CanBeTargeted { get; }
     Vector3 Position { get; }
-    void ApplyDamage(float amount);
+    float ApplyDamage(float amount);
 }

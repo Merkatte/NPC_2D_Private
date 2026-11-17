@@ -114,3 +114,7 @@ NPCGirl의 WorkerNPC `_dissatisfaction`은 같은 루트 NPCDissatisfaction과 �
 ## 주거 주민 등록
 
 NPCManager의 선택적 `_housingManager`가 활성·유효하면 커밋에서 주민별 ResidentHousingState를 만들어 worker Init에 전달한다. Residents는 읽기 전용이며 등록 순서와 입주 state를 보존한다. `_workers`와 Residents를 모두 확정한 뒤 예외를 격리한 ResidentsChanged를 발행하므로 HousingManager 배정은 첫 action 선택 전에 실행된다. 취소된 예약은 어느 목록에도 남지 않는다. WorkerNPC.Disabled는 UnregisterWorker와 연결되어 거주 점유와 목록을 해제한다. 입주·무주택 원인은 [Housing Occupancy](../../Settlement/Housing/Occupancy.md)가 소유한다. 주거 미연결 기존 씬의 생성 경로는 유지한다.
+
+## 선택적 직업 성장 조립
+
+NPCManager의 `_professionGrowthSettings`와 `_professionGrowthManager`는 선택적 참조다. 설정이 있는 씬의 신규 주민 예약은 새 NPCProfessionGrowth를 새 stat에 연결하며, 풀 객체가 재사용되어도 이전 주민의 기록을 재사용하지 않는다. Enemy는 제외한다. 설정 없는 기존 씬은 비활성 성장 객체로 기존 생성·업무 흐름을 유지한다. 상한 관리자에는 같은 설정 에셋을 연결한다. [Profession Growth](Profession_Growth.md)를 따른다.

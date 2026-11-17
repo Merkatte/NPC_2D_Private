@@ -44,3 +44,11 @@ Id,Key,ko
 1213,Tutorial_Finish,"이걸로 안내는 끝이에요. 건투를 빌게요, 이장님. …그럼 전 들어갈게요. 붙잡지 마시고요."
 1214,Tutorial_Decline,"…정말요? 아, 현명한 판단이세요. 건투를 빌게요, 이장님. 그럼 전 이만."
 1215,Tutorial_ClerkName,길드 접수원
+1301,UI_NPCProfession_Title,주민 성장
+1302,UI_NPCProfession_Farmer,농부
+1303,UI_NPCProfession_Builder,건설유닛
+1304,UI_NPCProfession_Guard,검병
+1305,UI_NPCProfession_Archer,궁병
+1306,UI_NPCProfession_Level,Lv.{0} / {1}
+1307,UI_NPCProfession_Experience,숙련도 {0:0.##} / {1:0.##}
+1308,UI_NPCProfession_CapReached,성장 상한 도달

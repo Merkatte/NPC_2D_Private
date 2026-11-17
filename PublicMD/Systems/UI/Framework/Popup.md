@@ -8,6 +8,8 @@
 
 IUIService.TryShow → UIManager → PopBase.TryBindSource → Open. 이미 열린 popup의 대상 변경도 바인딩 경로를 사용한다. PopupCanvasFit은 크기만 맞추며 위치는 PopBase가 소유한다.
 
+`PopupType.NPCProfession = 7`은 [주민 직업 성장 정보창](../Views/NPC_Profession.md)에 사용한다. 기존 category의 직렬화 값은 유지한다.
+
 완전히 닫힌 popup은 기존 화면 아래 시작 위치에서 진입한다. 닫기 tween 도중 Open이 들어오면
 퇴장 tween을 완료 콜백 없이 중단하고 현재 anchoredPosition에서 원래 위치로 복귀한다.
 이때 화면 아래 위치를 다시 설정하거나 OnBeforeOpen/OnOpened를 중복 호출하지 않는다.
@@ -41,7 +43,7 @@ ResourceCostRowView는 주어진 이름·아이콘·필요량·보유량만 표�
 
 ## 알려진 제약과 TBD
 
-- concrete popup은 MerchantPopup, TownHallPopup, SeedSelectionPopup, ConstructionPopup, WarehousePopup, HousePopup 여섯 종류다. 건설 UI는 [Construction UI](../../Settlement/Construction/UI.md), 창고 UI는 [Warehouse UI](../../Economy/Inventory_and_Items/Warehouse_UI.md), 주택 UI는 [Housing UI](../../Settlement/Housing/UI.md)가 주 소유한다. PopupType.House=6을 기존 값 뒤에 추가한다. 공통 UI는 source만 전달하며 씨앗 transaction은 [농장 runtime](../../Economy/Farming/Runtime_and_Transactions.md)이 소유한다.
+- concrete popup은 MerchantPopup, TownHallPopup, SeedSelectionPopup, ConstructionPopup, WarehousePopup, HousePopup, NPCProfessionPopup 일곱 종류다. 건설 UI는 [Construction UI](../../Settlement/Construction/UI.md), 창고 UI는 [Warehouse UI](../../Economy/Inventory_and_Items/Warehouse_UI.md), 주택 UI는 [Housing UI](../../Settlement/Housing/UI.md), 주민 성장 UI는 [NPC Profession](../Views/NPC_Profession.md)이 주 소유한다. PopupType.House=6과 NPCProfession=7은 기존 값 뒤에 추가한다. 공통 UI는 source만 전달하며 씨앗 transaction은 [농장 runtime](../../Economy/Farming/Runtime_and_Transactions.md)이 소유한다.
 
 ## 관련 문서
 

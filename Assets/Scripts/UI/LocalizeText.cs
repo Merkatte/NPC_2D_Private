@@ -1,3 +1,5 @@
+using System;
+using System.Globalization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,6 +13,8 @@ public sealed class LocalizeText : MonoBehaviour
     private bool _hasStarted;
     private bool _hasReportedConfiguration;
     private bool _hasReportedManager;
+    private bool _hasReportedFormat;
+    private object[] _formatArguments;
 
     private void Start()
     {
@@ -28,6 +32,13 @@ public sealed class LocalizeText : MonoBehaviour
     public void SetKey(LocalizeKey key)
     {
         _key = key;
+        if (_hasStarted)
+            Refresh();
+    }
+
+    public void SetFormatArguments(params object[] arguments)
+    {
+        _formatArguments = arguments;
         if (_hasStarted)
             Refresh();
     }
@@ -54,6 +65,19 @@ public sealed class LocalizeText : MonoBehaviour
         }
         else
             value = manager.GetText(_key);
+        if (_formatArguments != null && _formatArguments.Length > 0)
+        {
+            try
+            {
+                value = string.Format(CultureInfo.InvariantCulture, value, _formatArguments);
+            }
+            catch (FormatException)
+            {
+                if (!_hasReportedFormat)
+                    Debug.LogError($"LocalizeText '{name}': invalid format or arguments for key {_key}.", this);
+                _hasReportedFormat = true;
+            }
+        }
         if (_text)
             _text.text = value;
         else

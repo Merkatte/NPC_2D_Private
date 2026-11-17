@@ -69,6 +69,7 @@ LocalizeText.Start / OnEnable(두 번째부터) / SetKey
 - LocalizeText만 표시 adapter로서 싱글턴 접근을 사용한다. action/selector/provider에 접근 범위를 넓히지 않는다.
 - Text/TMP 참조는 정확히 하나만 필요하다. 최초 Start 이전 SetKey/Refresh는 조회를 지연한다.
   Manager는 UI 첫 Start 전에 Awake를 완료해야 한다. 뒤늦은 Manager 생성은 명시적 Refresh가 필요하다.
+- `LocalizeText.SetFormatArguments`는 선택적인 숫자·값 인수를 보관하고 번역 조회 뒤 invariant culture로 형식 문자열을 적용한다. 인수가 없으면 기존 문구를 그대로 표시하며, 최초 Start 전 호출도 지연된다. 형식 오류는 한 번 진단하고 원문을 표시한다. 초기 적용은 [주민 성장 정보창](Views/NPC_Profession.md)의 레벨·숙련도 표시이며, CSV 1301~1308이 제목·네 직업·형식 문자열·상한 도달 문구를 소유한다.
 - TryGetText 실패는 false/빈 문자열, GetText 실패는 `[Missing:키]`이며 키별 오류 로그를 억제한다.
 
 ## Unity 배선과 사용법

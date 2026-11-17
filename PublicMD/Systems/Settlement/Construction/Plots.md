@@ -49,3 +49,7 @@ IsAllowed와 Factory.CanStartNewConstruction은 빈 부지의 주택 건설을 �
 ## 대화·시간 정지 연결 — 2026-11-18
 
 BuildingPlot의 시작/취소/업그레이드 명령은 중앙 게임 시간 정지 중 거부한다. 대화 시 입력 차단과 별도로 즉시 transaction 진입을 보호한다.
+
+## 성장용 공사 기여량
+
+BuildingPlot은 유효 예약의 양수 작업만 수락하며 중앙 시간 정지 중에는 거부한다. RequiredWork 이내에서 실제 증가한 Work를 InteractionResult의 ConstructionWork로 반환한다. 신축과 업그레이드 모두 같은 경로다. 완공 호출 전에 증가량을 확정하므로 최종 작업도 정확히 지급하며 TryRetryCompletion은 새 작업 기여를 만들지 않는다. 주민 성장은 provider가 수정하지 않는다.

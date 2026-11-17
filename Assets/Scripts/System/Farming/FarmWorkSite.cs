@@ -194,9 +194,14 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
     {
         result = default;
 
+        if (Time.timeScale <= 0f || request.Strength <= 0f || float.IsNaN(request.Strength) || float.IsInfinity(request.Strength)) return false;
+        float amount;
         bool succeeded = request.Type == ActionType.Harvest
-            ? ApplyHarvestingWork(request.Strength, request.Cargo)
-            : ApplyGrowingWork(request.Strength);
+            ? ApplyHarvestingWork(request.Strength, request.Cargo, out amount)
+            : ApplyGrowingWork(request.Strength, out amount);
+        if (succeeded)
+            result = new InteractionResult(null, request.Type == ActionType.Harvest
+                ? WorkContributionKind.HarvestItems : WorkContributionKind.FarmProgress, amount);
 
         if (succeeded)
             PublishState();
@@ -310,11 +315,12 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
         => IsFinite(new Vector2(value.x, value.y))
             && !float.IsNaN(value.z) && !float.IsInfinity(value.z);
 
-    private bool ApplyGrowingWork(float workerEfficiency)
+    private bool ApplyGrowingWork(float workerEfficiency, out float contribution)
     {
         float previousProgress = _currentProgress;
         float delta = _currentDefinition.GrowthPerWork * workerEfficiency;
         _currentProgress = Mathf.Min(_currentDefinition.MaxProgress, _currentProgress + delta);
+        contribution = Mathf.Max(0f, _currentProgress - previousProgress);
 
         if (_currentProgress >= _currentDefinition.MaxProgress)
             _phase = FarmWorkPhase.Harvesting;
@@ -327,8 +333,9 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
         return true;
     }
 
-    private bool ApplyHarvestingWork(float workerEfficiency, ICarriedInventory destination)
+    private bool ApplyHarvestingWork(float workerEfficiency, ICarriedInventory destination, out float contribution)
     {
+        contribution = 0f;
         if (destination == null)
         {
             LogMissingHarvestCargoOnce();
@@ -353,6 +360,7 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
             return false;
 
         _pendingYield -= acceptedQuantity;
+        contribution = acceptedQuantity;
 
         // Any accepted quantity is a real, successful work outcome. Progress only moves once the
         // full pending yield has left the farm — this preserves the roll-once invariant (no

@@ -4,7 +4,7 @@ NPC 개체의 공통 수명, 행동 판단·실행과 표현을 연결한다. �
 
 | 변경 대상 | 하위 기능 |
 |---|---|
-| 생성·반환, queue 소비, 공통 stat, 불만도 | [Runtime](Runtime/README.md) |
+| 생성·반환, queue 소비, 공통 stat, 불만도, 직업 성장 | [Runtime](Runtime/README.md) |
 | utility, selector, action 계약, 이동·생활 실행 | [Decision and Actions](Decision_and_Actions/README.md) |
 | 이동·도구·운반물 표현, 생각·지정 대사 | [Presentation](Presentation/README.md) |
 

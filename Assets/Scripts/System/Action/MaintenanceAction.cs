@@ -30,8 +30,12 @@ public sealed class MaintenanceAction : DefaultAction
             if (!_follower.HasArrived) return;
             _arrived = true; actionContext.Component.SetWorking(true);
         }
-        if (!_site.TryInteract(new InteractionRequest(ActionType.Maintain, strength: Time.deltaTime, reservation: _lease), out _)) RequestReplan();
-        else if (_lease.IsCompleted) Complete();
+        if (!_site.TryInteract(new InteractionRequest(ActionType.Maintain, strength: Time.deltaTime, reservation: _lease), out InteractionResult result)) RequestReplan();
+        else
+        {
+            actionContext.Stat.ProfessionGrowth.Award(NPCType.Builder, result.ContributionKind, result.ContributionAmount);
+            if (_lease.IsCompleted) Complete();
+        }
     }
     private void Cleanup()
     { _follower.Clear(); _lease?.Dispose(); if (actionContext.Component) actionContext.Component.SetWorking(false); _arrived = false; }

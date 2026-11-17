@@ -79,7 +79,7 @@ public class FarmingAction : BaseWorkingAction
             return;
         }
 
-        if (!_interactionProvider.TryInteract(_request, out _))
+        if (!_interactionProvider.TryInteract(_request, out InteractionResult result))
         {
             // ApplyGrowingWork always succeeds internally, so a false result here can only mean
             // CanInteract flipped between Tick's check and this call — a normal race, not a failure.
@@ -87,6 +87,7 @@ public class FarmingAction : BaseWorkingAction
             return;
         }
 
+        actionContext.Stat.ProfessionGrowth.Award(NPCType.Farmer, result.ContributionKind, result.ContributionAmount);
         stat.ChangeFatigue(actionCost.FarmingActionPerFatigue);
         stat.ChangeHunger(actionCost.FarmingActionPerHunger);
         stat.ChangeThirst(actionCost.FarmingActionPerThirst);

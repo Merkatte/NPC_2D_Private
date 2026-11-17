@@ -8,6 +8,8 @@ public class NPCManager : MonoBehaviour
 
     [SerializeField] private HousingManager _housingManager;
     [SerializeField] private DefenseBattlefield _defenseBattlefield;
+    [SerializeField] private ProfessionGrowthSettings _professionGrowthSettings;
+    [SerializeField] private ProfessionGrowthManager _professionGrowthManager;
     public bool HasRecruitmentCapacity(NPCType type)
         => type != NPCType.Archer || (_defenseBattlefield && _defenseBattlefield.HasArcherSlot);
     private readonly List<ResidentHousingState> _residents = new List<ResidentHousingState>();
@@ -98,6 +100,9 @@ public class NPCManager : MonoBehaviour
             Debug.LogError($"NPCManager creation entry for {npcType} has an incompatible stat definition.");
             return false;
         }
+
+        if (_professionGrowthSettings && npcType != NPCType.Enemy)
+            stat.SetProfessionGrowth(new NPCProfessionGrowth(_professionGrowthSettings, _professionGrowthManager));
 
         DefenseArcherSlotLease archerSlot = null;
         if (npcType == NPCType.Archer && (!_defenseBattlefield || !_defenseBattlefield.TryReserveArcherSlot(out archerSlot))) return false;
