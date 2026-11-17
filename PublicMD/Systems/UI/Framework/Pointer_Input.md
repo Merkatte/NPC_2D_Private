@@ -74,3 +74,7 @@ PointerHoverRouter/PointerClickRouter에는 world camera, IUIService 구현 sour
 ## 문서 갱신 조건
 
 이 leaf의 실행 흐름, 주 소유 파일, 계약 또는 배선이 바뀌면 갱신한다.
+
+## 대화·시간 정지 연결 — 2026-11-18
+
+두 pointer router는 선택적으로 연결된 GameplayInputGate의 점유 동안 일반 월드 입력을 거부한다. hover는 점유 진입 시 기존 표시도 정리한다.

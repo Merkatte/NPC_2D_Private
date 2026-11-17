@@ -83,7 +83,9 @@ public static class DefenseSetup
         NPCManager npcs = One<NPCManager>(scene);
         ResourceManager resources = One<ResourceManager>(scene);
         GameObject root = Child(npcs.transform.parent, "Defense");
+        GameTimeController timeController = root.AddComponent<GameTimeController>();
         DefenseGameSession session = root.AddComponent<DefenseGameSession>();
+        Set(session, "_timeController", timeController);
         DefenseBattlefield battlefield = root.AddComponent<DefenseBattlefield>();
         DefenseMaintenanceRegistry maintenance = root.AddComponent<DefenseMaintenanceRegistry>();
         DefenseCombatSettings combat = NewAsset<DefenseCombatSettings>("CombatSettings.asset");

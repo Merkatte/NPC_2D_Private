@@ -29,3 +29,18 @@ Id,Key,ko
 1125,NPC_Thought_Strike_1,지금은 일할 기분이 아니야.
 1126,NPC_Thought_Strike_2,불만부터 해결해 줘!
 1127,NPC_Thought_Strike_3,당분간 일은 안 할래.
+1201,Tutorial_ClerkWelcome,"어서 오세요, 이장님. 길드에서 안내를 맡고 있는 접수원이에요."
+1202,Tutorial_OfferTour,마을 시설을 짧게 소개해 드릴까요?
+1203,Tutorial_Yes,"네, 부탁해요."
+1204,Tutorial_No,"아니요, 괜찮아요."
+1205,Tutorial_TownHall,시청에서는 새 주민을 모집할 수 있어요.
+1206,Tutorial_Farm,밭에 씨앗을 심으면 농부가 작물을 키우고 수확해요.
+1207,Tutorial_Warehouse,창고에는 수확한 작물과 마을 자원을 보관해요.
+1208,Tutorial_Restaurant,식당은 주민들이 식사하며 허기와 갈증을 해결하는 곳이에요.
+1209,Tutorial_Inn,여관은 주민들이 잠을 자고 피로를 회복하는 곳이에요.
+1210,Tutorial_GuardPost,초소는 경비병들이 마을을 지키는 거점이에요.
+1211,Tutorial_NorthWall,북쪽 성벽은 적의 습격을 막아 줘요. 궁수들이 성벽 위에서 방어해요.
+1212,Tutorial_MerchantLanding,여기는 상단이 방문하는 장소예요. 상단이 오면 창고의 작물을 팔 수 있어요.
+1213,Tutorial_Finish,"이걸로 안내는 끝이에요. 건투를 빌게요, 이장님."
+1214,Tutorial_Decline,"알겠어요. 그럼 바로 시작하시죠. 건투를 빌게요, 이장님."
+1215,Tutorial_ClerkName,길드 접수원

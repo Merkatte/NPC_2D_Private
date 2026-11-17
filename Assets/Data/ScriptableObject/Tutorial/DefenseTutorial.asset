@@ -1,0 +1,464 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b11a46a6509de4694991a428f0079486, type: 3}
+  m_Name: DefenseTutorial
+  m_EditorClassIdentifier: Assembly-CSharp::SequenceDefinition
+  _entryStepId: townhall_arrive
+  _steps:
+  - _id: townhall_arrive
+    _kind: 2
+    _nextId: clerk_enter
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: townhall
+    _duration: 2
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: clerk_enter
+    _kind: 3
+    _nextId: welcome
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: standing
+    _duration: 1
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: welcome
+    _kind: 0
+    _nextId: offer
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: 
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: offer
+    _kind: 1
+    _nextId: 
+    _textKey: 1202
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: 
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices:
+    - _id: yes
+      _textKey: 1203
+      _nextId: tour_townhall_camera
+    - _id: no
+      _textKey: 1204
+      _nextId: decline
+  - _id: tour_townhall_camera
+    _kind: 2
+    _nextId: tour_townhall_line
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: townhall
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_townhall_line
+    _kind: 0
+    _nextId: tour_farm_camera
+    _textKey: 1205
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 1
+    _actorId: clerk
+    _targetId: 
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_farm_camera
+    _kind: 2
+    _nextId: tour_farm_line
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: farm
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_farm_line
+    _kind: 0
+    _nextId: tour_warehouse_camera
+    _textKey: 1206
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 1
+    _actorId: clerk
+    _targetId: 
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_warehouse_camera
+    _kind: 2
+    _nextId: tour_warehouse_line
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: warehouse
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_warehouse_line
+    _kind: 0
+    _nextId: tour_restaurant_camera
+    _textKey: 1207
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 1
+    _actorId: clerk
+    _targetId: 
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_restaurant_camera
+    _kind: 2
+    _nextId: tour_restaurant_line
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: restaurant
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_restaurant_line
+    _kind: 0
+    _nextId: tour_inn_camera
+    _textKey: 1208
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 1
+    _actorId: clerk
+    _targetId: 
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_inn_camera
+    _kind: 2
+    _nextId: tour_inn_line
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: inn
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_inn_line
+    _kind: 0
+    _nextId: tour_guardpost_camera
+    _textKey: 1209
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 1
+    _actorId: clerk
+    _targetId: 
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_guardpost_camera
+    _kind: 2
+    _nextId: tour_guardpost_line
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: guardpost
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_guardpost_line
+    _kind: 0
+    _nextId: tour_northwall_camera
+    _textKey: 1210
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 1
+    _actorId: clerk
+    _targetId: 
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_northwall_camera
+    _kind: 2
+    _nextId: tour_northwall_line
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: northwall
+    _duration: 0.8
+    _orthographicSize: 8
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_northwall_line
+    _kind: 0
+    _nextId: tour_merchant_landing_camera
+    _textKey: 1211
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 1
+    _actorId: clerk
+    _targetId: 
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_merchant_landing_camera
+    _kind: 2
+    _nextId: tour_merchant_landing_line
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: merchant_landing
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: tour_merchant_landing_line
+    _kind: 0
+    _nextId: clerk_return_shot
+    _textKey: 1212
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 1
+    _actorId: clerk
+    _targetId: 
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: clerk_return_shot
+    _kind: 2
+    _nextId: finish
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: clerk_shot
+    _duration: 0.8
+    _orthographicSize: 2.7
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: finish
+    _kind: 0
+    _nextId: clerk_leave
+    _textKey: 1213
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: 
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: decline
+    _kind: 0
+    _nextId: clerk_leave
+    _textKey: 1214
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: 
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: clerk_leave
+    _kind: 3
+    _nextId: clerk_hide
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 0
+    _presentation: 0
+    _actorId: clerk
+    _targetId: door
+    _duration: 1
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 0
+    _actionId: 
+    _choices: []
+  - _id: clerk_hide
+    _kind: 3
+    _nextId: camera_restore
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: 
+    _duration: 0.8
+    _orthographicSize: 4.5
+    _restoreCamera: 0
+    _actorCommand: 2
+    _actionId: 
+    _choices: []
+  - _id: camera_restore
+    _kind: 2
+    _nextId: 
+    _textKey: 1201
+    _speakerKey: 1215
+    _autoAdvanceDelay: 3
+    _ease: 10
+    _faceLeft: 1
+    _presentation: 0
+    _actorId: clerk
+    _targetId: 
+    _duration: 1.2
+    _orthographicSize: 4.5
+    _restoreCamera: 1
+    _actorCommand: 0
+    _actionId: 
+    _choices: []

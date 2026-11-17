@@ -97,6 +97,7 @@ public sealed class MerchantTradeSite : MonoBehaviour
     /// </summary>
     public TradeResult TryTrade(IReadOnlyDictionary<int, int> quantitiesByItemId)
     {
+        if (Time.timeScale <= 0f) return TradeResult.InvalidRequest;
         if (!_isConfigured)
             return TradeResult.InvalidRequest;
 

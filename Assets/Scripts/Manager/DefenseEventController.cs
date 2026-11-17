@@ -5,6 +5,7 @@ using UnityEngine.Events;
 
 public sealed class DefenseEventController : MonoBehaviour
 {
+    [SerializeField] private GameplayInputGate _inputGate;
     [SerializeField] private DefenseGameSession _session;
     [SerializeField] private DefenseWaveController _waves;
     [SerializeField] private DefenseEventCatalog _catalog;
@@ -111,6 +112,7 @@ public sealed class DefenseEventController : MonoBehaviour
 
     public bool TryOpenPopup()
     {
+        if (_inputGate && _inputGate.IsBlocked) return false;
         if (!isActiveAndEnabled || !_isConfigured || !_session || !_waves || !_waves.IsResting ||
             _waves.HasFailed || _session.IsGameOver || !CurrentEvent || RemainingSeconds <= 0f) return false;
         if (IsPopupOpen) return true;
@@ -131,6 +133,7 @@ public sealed class DefenseEventController : MonoBehaviour
 
     public bool TryChoose(int choiceIndex)
     {
+        if (_inputGate && _inputGate.IsBlocked) return false;
         if (!isActiveAndEnabled || !_session || _session.IsGameOver || !IsPopupOpen || !CurrentEvent ||
             choiceIndex < 0 || choiceIndex >= CurrentEvent.Choices.Count) return false;
         string eventId = CurrentEvent.EventId;

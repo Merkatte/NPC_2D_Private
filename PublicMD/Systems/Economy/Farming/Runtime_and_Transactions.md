@@ -124,3 +124,7 @@ crop 선택, phase/progress, capability 게이트, 수확물 인도, 최종 cycl
 FarmSeedSource가 전달하는 공유 ResourceManager의 DeferNotifications 범위 안에서 씨앗 지출과 SetCrop을 완료한다. 수량 알림에서 다시 심기를 요청해도 이미 작물 상태가 확정돼 있다. SeedSelectionPopup은 자원 알림에 맞춰 재고를 표시하고 바인딩/닫기 수명을 정리한다.
 
 새 완공 Farm은 빈 밭으로 생성하며 Factory가 plot 외곽 작업 영역·공유 자원·catalog를 주입한 뒤 초기화한다. 작업 위치 난수와 수확량 난수는 별도 source다. 시설 후보 비교는 등록 anchor를 사용하고 작업점 난수는 선택 후 소비한다. 클릭 collider와 FarmSeedSource는 같은 오브젝트에 연결하며 부지의 공사 클릭 source는 완료 후 비활성이다.
+
+## 대화·시간 정지 연결 — 2026-11-18
+
+FarmWorkSite의 씨앗 심기 명령은 중앙 게임 시간 정지 중 거부한다. 대화 UI를 우회한 즉시 상태 변경도 진행되지 않는다.

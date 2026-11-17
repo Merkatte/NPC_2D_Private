@@ -8,6 +8,7 @@
 | 씨앗 선택 창과 골드 HUD | [Views](Views/README.md) |
 | 공통 팝업 스타일·prefab 계층·WarmPixel·헤더 아이콘 | [Presentation](Presentation.md) |
 | CSV 문구·key 생성, 언어별 조회, Text/TMP 표시 | [Localization](Localization.md) |
+| 대화 말풍선·하단창·선택·입력 점유 | [Dialogue](Dialogue.md) |
 | 테스트 씬 방향키 이동·휠 줌·UI 위 입력 차단 | [Camera Control](Camera_Control.md) |
 
 world 입력 → source 계약 → UI service → view 바인딩·표시 순서다. view는 domain의 조회와 명령을 사용하고 자원·주민·시설 상태를 직접 변경하지 않는다. 문구 표시는 지역화 조회를 사용하며 카메라 입력은 테스트용 독립 경로다.

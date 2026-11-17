@@ -20,6 +20,7 @@ using UnityEngine.UI;
 /// </summary>
 public class PointerClickRouter : MonoBehaviour
 {
+    [SerializeField] private GameplayInputGate _inputGate;
     [SerializeField] private Camera _worldCamera;
     [SerializeField] private MonoBehaviour _uiServiceSource;
     [SerializeField] private LayerMask _clickableMask;
@@ -52,6 +53,7 @@ public class PointerClickRouter : MonoBehaviour
 
     private void Update()
     {
+        if (_inputGate && _inputGate.IsBlocked) return;
         Mouse mouse = Mouse.current;
         if (mouse == null || !mouse.leftButton.wasPressedThisFrame)
             return;

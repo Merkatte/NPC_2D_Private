@@ -8,6 +8,7 @@ using UnityEngine.UI;
 // Keep these test-scene controls local until a real camera system replaces them.
 public class TestCameraArrowMove : MonoBehaviour
 {
+    [SerializeField] private GameplayInputGate _inputGate;
     [SerializeField] private float _moveSpeed = 8f;
     [SerializeField] private float _smoothTime = 0.2f;
     [SerializeField] private Vector2 _minBounds;
@@ -65,6 +66,7 @@ public class TestCameraArrowMove : MonoBehaviour
 
     private void Update()
     {
+        if (_inputGate && _inputGate.IsBlocked) { _currentVelocity = Vector2.zero; return; }
         Vector2 input = ReadArrowInput();
         Vector3 position = transform.position;
 

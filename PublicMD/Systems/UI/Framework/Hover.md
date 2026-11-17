@@ -98,3 +98,7 @@ NPCGirl source/anchor/Catalog와 별도 루트 LocalizeManager 배선은 [NPC Me
 ## 문서 갱신 조건
 
 이 leaf의 실행 흐름, 주 소유 파일, 계약 또는 배선이 바뀌면 갱신한다.
+
+## 대화·시간 정지 연결 — 2026-11-18
+
+NPCMessageHover의 글자 tween과 화면 경계 계산은 Dialogue UI 소유 MessageTyping/MessageBubblePosition을 공유한다. 기존 hover source 수명·재진입·위치 보정은 유지한다.

@@ -33,7 +33,7 @@ public sealed class MerchantArrivalScheduler : MonoBehaviour
 
     private void Update()
     {
-        if (_caravan.IsVisiting)
+        if (Time.timeScale <= 0f || !_caravan || _caravan.IsVisiting)
             return;
 
         _intervalRemaining -= Time.deltaTime;

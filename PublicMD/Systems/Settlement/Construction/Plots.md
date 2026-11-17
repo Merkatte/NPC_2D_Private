@@ -45,3 +45,7 @@ IsAllowed와 Factory.CanStartNewConstruction은 빈 부지의 주택 건설을 �
 ## Defense 시설 파괴
 
 `_initialFacility`는 scene-native 완공 시설을 Start에서 adopt하는 선택적 참조다. OnFacilityDestroyed(expectedFacility)는 같은 시설인지 검증하고 진행 중 공사/업그레이드 예약을 환불 없이 끝낸 뒤 Rubble 상태를 발행한다. ClearDestroyedFacility만 시설 참조를 제거하고 Empty로 되돌린다. Rubble은 Construction popup/신축을 허용하지 않는다. 잔해 progress·HP·기능 중단은 [Defense durability](../../Combat/Defense/Durability_and_Maintenance.md)가 소유한다.
+
+## 대화·시간 정지 연결 — 2026-11-18
+
+BuildingPlot의 시작/취소/업그레이드 명령은 중앙 게임 시간 정지 중 거부한다. 대화 시 입력 차단과 별도로 즉시 transaction 진입을 보호한다.

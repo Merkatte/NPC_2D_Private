@@ -210,3 +210,7 @@ ResourcesChanged는 목록·견적을 갱신하되 기존 선택을 즉시 줄�
 MerchantTradeSite._warehouse는 scene의 공유 ResourceManager다. 별도 골드 참조는 제거한다. MerchantPopup은 ResourcesChanged를 구독해 재고를 갱신하고 닫기/disable에서 해제한다. 자원 알림은 공급 목록과 견적을 갱신하되 판매 중인 카트를 수정하지 않는다. 성공 후 카트를 비우고, OutOfStock 결과일 때 최신 재고 이내로 카트를 조정한다. 현재 이관 검증은 PROGRESS를 따른다.
 
 2026-10-01 팝업 점검: 닫기 X는 실제 게시판 우측·상단에서 각각25만큼 안쪽에 둔다. 수량창 Blocker는 확장된 게시판 전체를 덮는다. Slider의 FillRect는 Fill(200028), HandleRect는 Handle(200030)을 참조하며 Handle Slide Area는 slider 너비에 맞춰 stretch한다. 확인·취소 버튼은 수량창 하단에서78 높이에 배치해 테두리와 여백을 확보했다. 실제 입력·화면 검증은 별도다.
+
+## 대화·시간 정지 연결 — 2026-11-18
+
+중앙 시간 정지 중 MerchantArrivalScheduler의 만료/즉시 방문과 MerchantCaravan.BeginVisit를 실행하지 않는다. MerchantTradeSite의 거래 명령도 정지 중 거부한다. 튜토리얼은 방문 장소만 비추며 상단을 강제로 등장시키지 않는다.

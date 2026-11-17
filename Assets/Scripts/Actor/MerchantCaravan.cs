@@ -84,7 +84,7 @@ public sealed class MerchantCaravan : MonoBehaviour
 
     public void BeginVisit()
     {
-        if (IsVisiting)
+        if (Time.timeScale <= 0f || IsVisiting)
             return;
 
         // SetActive must precede the _isConfigured check: the caravan sits disabled between

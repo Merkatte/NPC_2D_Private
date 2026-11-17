@@ -30,3 +30,7 @@ BuildingTest와 FarmerTest의 `Main Camera > Test Camera Arrow Move` Inspector�
 현재 화면의 uGUI GraphicRaycaster hit 위에서는 줌 입력을 무시하여 팝업의 목록 스크롤과 카메라 줌이 동시에 실행되지 않도록 한다. 카메라 조작은 domain 데이터나 팝업의 스크롤 상태를 변경하지 않는다.
 
 컴파일·직렬화 검토와 실제 Unity에서의 휠·팝업 스크롤 조작 검증은 구분한다. 실제 화면과 입력 검증은 사람이 확인한다.
+
+## 대화·시간 정지 연결 — 2026-11-18
+
+TestCameraArrowMove는 선택적 GameplayInputGate가 점유한 동안 수동 이동과 휠 입력을 실행하지 않는다. 재사용 연출은 GameFlow/Camera의 SequenceCameraDirector가 소유하며 production에서 TestOnly를 참조하지 않는다.

@@ -223,3 +223,7 @@ WorkerNPC queue lifecycle, provider transaction, DestinationDecider 판단 책�
 - 공유 CSV는 검증 성공 후 불변 정의로 공개한다. 생성 중인 시설은 dependency 주입 전에 활성화하지 않는다. 테스트 시작 자원/주민은 TestOnly에서 설정한다.
 
 상세 ownership은 Systems/Settlement/Construction, Systems/Economy/Inventory_and_Items, Systems/Settlement/Construction/Builder.md를 따른다. 현재 컴파일·배선·리뷰 결과는 PROGRESS와 승인된 상세 계획에 기록한다.
+
+## 공통 게임 흐름 (2026-11-18)
+
+GameTimeController는 씬 단위 정지 요청과 전역 시간 배율의 단일 writer다. DefenseGameSession은 방어/GameOver 정책과 기존 공개 API를 유지하며 공통 관리자에 위임한다. Tutorial startup → SequenceRunner → 독립 camera/actor action과 dialogue view 순으로 의존한다. 정의는 공유 SO/지역화 CSV, scene 참조는 ID 바인딩, 현재 진행과 token은 scene runtime이 소유한다. 일반 gameplay 입력은 GameplayInputGate를 따르며 대화 UI는 점유 범위 밖에 둔다. production은 TestOnly 카메라에 의존하지 않는다. 상세는 [Game Flow](Systems/GameFlow/README.md)와 [Dialogue UI](Systems/UI/Dialogue.md)를 따른다.

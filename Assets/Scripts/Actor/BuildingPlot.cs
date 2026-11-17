@@ -77,6 +77,7 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
     public bool TryStartUpgrade(out string reason)
     {
         reason = "지금은 업그레이드를 시작할 수 없습니다.";
+        if (Time.timeScale <= 0f) return false;
         if (_isChanging || State != BuildingPlotState.Completed || !isActiveAndEnabled)
             return false;
         if (!TryInitialize(out reason)) return false;
@@ -111,6 +112,7 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
     public bool TryStartConstruction(int buildingId, out string reason)
     {
         reason = "지금은 건설을 시작할 수 없습니다.";
+        if (Time.timeScale <= 0f) return false;
         if (_isChanging || State != BuildingPlotState.Empty || !isActiveAndEnabled || !TryInitialize(out reason)
             || !IsAllowed(buildingId) || !_dataManager.TryGetBuildingDefinition(buildingId, out var definition)
             || definition.MaxWorkers > _workPositions.Length)
@@ -149,6 +151,7 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
     public bool TryCancelConstruction(out string reason)
     {
         reason = "취소할 공사가 없습니다.";
+        if (Time.timeScale <= 0f) return false;
         if (_isChanging || State != BuildingPlotState.UnderConstruction || !_resources)
             return false;
         _isChanging = true;

@@ -112,7 +112,7 @@ tree/material/camera/project settings는 저장·수정하지 않는다. helper 
   `player-dotween-transparent.png`/`player-dotween-transparent-v2.png`, 상인의 `merchant-npc-female.png`,
   길드 직원 후보 `guild-receptionist-silver.png`가 있다. 기존 이미지와 `.meta`를 함께 이동해 GUID·slice·PPU를 유지했다.
   길드 직원은 은발 단발·반쯤 감긴 눈·작은 ㅅ 입·유니폼·앞으로 모은 손의 단일 투명 PNG다.
-  새 길드 직원의 importer 설정/씬 배선은 미적용이며 제안 설정과 검증은 `.harness-runs/guild-clerk-20260920/`에 기록한다.
+  길드 직원 importer는 실제 `_0` slice(1147×1150, PPU100, 중심 pivot)가 존재한다. DefenseTest 튜토리얼의 표시 전용 배우 배선은 GameFlow/Tutorial이 소유한다. 과거 제안 설정과 검증은 `.harness-runs/guild-clerk-20260920/`에 기록한다.
 
 - `Assets/Animation/NPCGirl_Move.controller`: `Speed`, `IsInsideBuilding`, `IsWorking` parameter와 상태 전이를 소유한다. 메인 Animator(`NPCGirl` 루트)가 사용하며 `Visual`/`Visual/ToolAnchor/Tool`만 바인딩한다. `SpawnLanding`은 착지 시 직접 재생되는 1회성 상태이고 끝나면 Idle로 돌아간다.
 - `Assets/Animation/DefaultAnim/*`: idle, move, building, tool animation clip.

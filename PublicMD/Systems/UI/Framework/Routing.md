@@ -52,3 +52,7 @@ DefenseTest의 BackBG는 Canvas 아래 PopupUI보다 앞선 sibling이며 자식
 ## 문서 갱신 조건
 
 이 leaf의 실행 흐름, 주 소유 파일, 계약 또는 배선이 바뀌면 갱신한다.
+
+## 대화·시간 정지 연결 — 2026-11-18
+
+대화 점유 중 UIManager는 일반 TryShow를 거부하며 GameplayInputGate가 즉시 닫기 경로로 기존 popup/hover를 정리한다. 일반 HideAll의 기존 동작과 구분한다.

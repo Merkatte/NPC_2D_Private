@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class UIManager : MonoBehaviour, IUIService
 {
+    [SerializeField] private GameplayInputGate _inputGate;
     [Header("Registries")]
     [SerializeField] private PopBase[] _popups;
     [SerializeField] private HoverBase[] _hovers;
@@ -50,6 +51,7 @@ public class UIManager : MonoBehaviour, IUIService
 
     public bool TryShow(PopupType popupType, IClickPopupSource source)
     {
+        if (_inputGate && _inputGate.IsBlocked) return false;
         if (!_popupRegistry.TryGetValue(popupType, out PopBase popup) || !popup)
             return false;
 
@@ -88,6 +90,7 @@ public class UIManager : MonoBehaviour, IUIService
 
     public bool TryShow(HoverType hoverType, IHoverInfoSource source)
     {
+        if (_inputGate && _inputGate.IsBlocked) return false;
         if (!_hoverRegistry.TryGetValue(hoverType, out HoverBase hover) || !hover)
             return false;
 
@@ -120,12 +123,19 @@ public class UIManager : MonoBehaviour, IUIService
         return true;
     }
 
-    public void HideAll()
+    public void HideAll() => HideAll(false);
+
+    public void HideAllImmediately() => HideAll(true);
+
+    private void HideAll(bool immediately)
     {
         foreach (PopBase popup in _popupRegistry.Values)
         {
             if (popup)
-                popup.Close();
+            {
+                if (immediately) popup.CloseImmediately();
+                else popup.Close();
+            }
         }
 
         _popupStack.Clear();

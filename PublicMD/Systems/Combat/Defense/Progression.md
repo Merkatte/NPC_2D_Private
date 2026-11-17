@@ -11,7 +11,7 @@
 
 | 파일 | 책임 |
 |---|---|
-| `Assets/Scripts/Manager/DefenseGameSession.cs` | 이유별 pause lease, 전역 시간 배율 복구, 한 번의 GameOver 확정 |
+| `Assets/Scripts/Manager/DefenseGameSession.cs` | 공통 시간 관리자 위임, 방어 pause lease와 한 번의 GameOver 확정 |
 | `Assets/Scripts/Manager/DefenseWaveController.cs` | 정비/습격 runtime 상태, production 적 생성과 예정/생존 수 동시 완료 판정 |
 | `Assets/Scripts/Manager/DefenseEventController.cs` | 이벤트 조건 평가·유효 시간·선택·pause lease 및 결과 callback |
 | `Assets/Scripts/UI/DefenseHUD.cs` | 웨이브/적/정비 시간·알림·GameOver 표시와 조기 시작/열기 명령 |
@@ -67,7 +67,7 @@ EventDefinition은 안정적인 ID, 등장 가능한 다음 웨이브 번호의 
 
 ## Pause와 UI lifecycle
 
-GameSession 하나가 이유 문자열을 가진 정수 lease를 발급한다. 최초 정지 시 기존 Time.timeScale을 저장하고, 마지막 lease가 반환되고 GameOver가 아닐 때만 복구한다. EndGame은 idempotent이며 이벤트가 lease를 반환해도 GameOver 정지는 유지된다. scene owner 비활성화/해제 시에는 다음 씬에 전역 정지가 남지 않도록 배율을 복구한다.
+GameSession은 [공통 시간 관리자](../../GameFlow/Time.md)에 이유 문자열의 정수 lease 발급을 위임한다. 최초 정지 시 기존 Time.timeScale을 저장하고, 마지막 lease가 반환되고 GameOver가 아닐 때만 복구한다. EndGame은 idempotent이며 이벤트가 lease를 반환해도 GameOver 정지는 유지된다. scene owner 비활성화/해제 시에는 다음 씬에 전역 정지가 남지 않도록 배율을 복구한다.
 
 웨이브/이벤트 timer는 scaled 시간만 사용한다. Update에서는 session pause와 Time.timeScale도 확인하므로 같은 프레임의 UI 입력 이후 진행하지 않는다. 기존 actor/provider gameplay loop의 정지 준수는 해당 owner가 맡는다. UI 버튼 입력과 event subscription에는 scaled timer를 쓰지 않는다.
 

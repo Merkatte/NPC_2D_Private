@@ -30,8 +30,7 @@ public sealed class NPCMessageHover : HoverBase
     private Tween _motionTween;
     private Text _typingText;
     private bool _isTypingPending;
-    private string _fullMessage;
-    private Tween _typingTween;
+    private readonly MessageTyping _typing = new MessageTyping();
 
     private void Awake()
     {
@@ -79,13 +78,13 @@ public sealed class NPCMessageHover : HoverBase
 
     protected override void OnShown()
     {
-        _typingTween?.Play();
+        _typing.Resume();
         PlayMotion(true);
     }
 
     protected override void BeginHide()
     {
-        _typingTween?.Pause();
+        _typing.Pause();
         if (!_isConfigured || !isActiveAndEnabled || !_trackingAnchor)
         {
             HideImmediately();
@@ -156,67 +155,22 @@ public sealed class NPCMessageHover : HoverBase
         // Wait until LateUpdate so LocalizeText's first Start has resolved its key.
         _isTypingPending = false;
         _messageText.Refresh();
-        _fullMessage = _typingText.text;
-        if (_characterInterval <= 0f || string.IsNullOrEmpty(_fullMessage))
-            return;
-        _typingText.text = string.Empty;
-        _typingTween = _typingText.DOText(_fullMessage, _fullMessage.Length * _characterInterval,
-                _typingText.supportRichText)
-            .SetEase(Ease.Linear)
-            .SetUpdate(true)
-            .OnComplete(() => _typingTween = null);
+        _typing.Begin(_typingText, _typingText.text, _characterInterval);
     }
 
     private void ResetTyping()
     {
-        _typingTween?.Kill();
-        _typingTween = null;
-        if (_typingText && _fullMessage != null)
-            _typingText.text = _fullMessage;
+        _typing.Reset();
         _isTypingPending = false;
-        _fullMessage = null;
     }
 
     private void UpdatePosition()
     {
-        Vector3 screenPosition = _worldCamera.WorldToScreenPoint(_trackingAnchor.position);
-        _canvasGroup.alpha = screenPosition.z > 0f ? _motionProgress : 0f;
-        if (screenPosition.z <= 0f)
-            return;
-        Camera uiCamera = _canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : _canvas.worldCamera;
-        if (!RectTransformUtility.ScreenPointToWorldPointInRectangle(_canvasRect, screenPosition, uiCamera, out Vector3 worldPosition))
-            return;
-        // Compose motion with this frame's tracked anchor, then clamp the animated bounds.
         _rect.localScale = _restingScale * Mathf.Lerp(Mathf.Clamp01(_hiddenScale), 1f, _motionProgress);
-        _rect.position = worldPosition + _canvasRect.TransformVector(Vector2.down *
-            (Mathf.Max(0f, _riseDistance) * (1f - _motionProgress)));
-
-        _rect.GetWorldCorners(_corners);
-        Vector2 minimum = _canvasRect.InverseTransformPoint(_corners[0]);
-        Vector2 maximum = minimum;
-        for (int i = 1; i < _corners.Length; ++i)
-        {
-            Vector2 corner = _canvasRect.InverseTransformPoint(_corners[i]);
-            minimum = Vector2.Min(minimum, corner);
-            maximum = Vector2.Max(maximum, corner);
-        }
-        Rect bounds = _canvasRect.rect;
-        Vector2 shift = new Vector2(
-            GetClampShift(minimum.x, maximum.x, bounds.xMin + _edgePadding, bounds.xMax - _edgePadding),
-            GetClampShift(minimum.y, maximum.y, bounds.yMin + _edgePadding, bounds.yMax - _edgePadding));
-        _rect.position += _canvasRect.TransformVector(shift);
-    }
-
-    private static float GetClampShift(float minimum, float maximum, float lower, float upper)
-    {
-        // An oversized bubble is centered instead of oscillating between both edges.
-        if (maximum - minimum > upper - lower)
-            return (lower + upper - minimum - maximum) * 0.5f;
-        if (minimum < lower)
-            return lower - minimum;
-        if (maximum > upper)
-            return upper - maximum;
-        return 0f;
+        bool visible = MessageBubblePosition.Apply(_rect, _canvasRect, _canvas, _worldCamera,
+            _trackingAnchor.position, _edgePadding, _corners,
+            Vector2.down * (Mathf.Max(0f, _riseDistance) * (1f - _motionProgress)));
+        _canvasGroup.alpha = visible ? _motionProgress : 0f;
     }
 
     private void OnValidate()

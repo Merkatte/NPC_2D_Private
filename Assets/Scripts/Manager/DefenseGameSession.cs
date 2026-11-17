@@ -4,68 +4,54 @@ using UnityEngine;
 
 public sealed class DefenseGameSession : MonoBehaviour
 {
-    private readonly Dictionary<int, string> _pauseLeases = new Dictionary<int, string>();
-    private int _nextLeaseId;
-    private float _resumeTimeScale;
-    private bool _hasCapturedTimeScale;
-
+    [SerializeField] private GameTimeController _timeController;
+    private readonly HashSet<int> _pauseLeases = new HashSet<int>();
+    private int _gameOverLease;
     public bool IsGameOver { get; private set; }
-    public bool IsPaused => IsGameOver || _pauseLeases.Count > 0;
+    public bool IsPaused => IsGameOver || (_timeController && _timeController.IsPaused);
     public event Action Changed;
 
     private void OnEnable()
     {
-        if (IsPaused) ApplyPause();
+        if (!_timeController)
+        {
+            Debug.LogError("DefenseGameSession: assign _timeController.", this);
+            enabled = false;
+            return;
+        }
+        _timeController.Changed += HandleTimeChanged;
+        if (IsGameOver) _gameOverLease = _timeController.AcquirePause("GameOver");
     }
-
+    private void HandleTimeChanged() => Changed?.Invoke();
     public int AcquirePause(string reason)
     {
-        if (!isActiveAndEnabled || IsGameOver || string.IsNullOrWhiteSpace(reason)) return 0;
-        do { _nextLeaseId = _nextLeaseId == int.MaxValue ? 1 : _nextLeaseId + 1; }
-        while (_pauseLeases.ContainsKey(_nextLeaseId));
-        _pauseLeases.Add(_nextLeaseId, reason);
-        ApplyPause();
-        Changed?.Invoke();
-        return _nextLeaseId;
+        if (!isActiveAndEnabled || IsGameOver || !_timeController) return 0;
+        int token = _timeController.AcquirePause(reason);
+        if (token != 0) _pauseLeases.Add(token);
+        return token;
     }
-
     public void ReleasePause(int leaseId)
     {
         if (!_pauseLeases.Remove(leaseId)) return;
-        if (!IsPaused) RestoreTimeScale();
-        Changed?.Invoke();
+        if (_timeController) _timeController.ReleasePause(leaseId);
     }
-
     public void EndGame()
     {
         if (IsGameOver) return;
         IsGameOver = true;
-        ApplyPause();
+        if (_timeController) _gameOverLease = _timeController.AcquirePause("GameOver");
         Changed?.Invoke();
     }
-
-    private void ApplyPause()
-    {
-        if (!_hasCapturedTimeScale)
-        {
-            _resumeTimeScale = Time.timeScale;
-            _hasCapturedTimeScale = true;
-        }
-        Time.timeScale = 0f;
-    }
-
-    private void RestoreTimeScale()
-    {
-        if (!_hasCapturedTimeScale) return;
-        Time.timeScale = _resumeTimeScale;
-        _hasCapturedTimeScale = false;
-    }
-
     private void OnDisable()
     {
+        if (_timeController)
+        {
+            _timeController.Changed -= HandleTimeChanged;
+            foreach (int lease in _pauseLeases) _timeController.ReleasePause(lease);
+            _timeController.ReleasePause(_gameOverLease);
+        }
         _pauseLeases.Clear();
-        // Time.timeScale is global: scene teardown must not leave the next scene paused.
-        RestoreTimeScale();
+        _gameOverLease = 0;
         Changed?.Invoke();
     }
 }

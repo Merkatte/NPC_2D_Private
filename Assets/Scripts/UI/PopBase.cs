@@ -89,6 +89,17 @@ public abstract class PopBase : MonoBehaviour
         });
     }
 
+    internal void CloseImmediately()
+    {
+        if (!IsOpen) return;
+        OnBeforeClose();
+        _motionTween?.Kill();
+        _motionTween = null;
+        _isClosing = false;
+        gameObject.SetActive(false);
+        OnClosed();
+    }
+
     protected virtual void OnBeforeOpen()
     {
     }

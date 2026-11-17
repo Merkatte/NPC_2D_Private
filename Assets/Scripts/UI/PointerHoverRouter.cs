@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,6 +6,7 @@ using UnityEngine.InputSystem;
 // Collider and IHoverInfoSource components must share a GameObject.
 public class PointerHoverRouter : MonoBehaviour
 {
+    [SerializeField] private GameplayInputGate _inputGate;
     private const float MinimumPollInterval = 0.02f;
     private const float SourceRetryInterval = 0.5f;
 
@@ -56,6 +57,7 @@ public class PointerHoverRouter : MonoBehaviour
 
     private void Update()
     {
+        if (_inputGate && _inputGate.IsBlocked) { ClearActiveHover(); return; }
         if (Time.unscaledTime < _nextPollTime)
             return;
         _nextPollTime = Time.unscaledTime + Mathf.Max(MinimumPollInterval, _pollInterval);

@@ -74,6 +74,7 @@ public class FarmWorkSite : BaseInteractionProvider, IHoverInfoSource
         out SeedPlantResult result)
     {
         result = SeedPlantResult.FarmUnavailable;
+        if (Time.timeScale <= 0f) return false;
         if (!isActiveAndEnabled || !warehouse || !warehouse.isActiveAndEnabled)
             return false;
 

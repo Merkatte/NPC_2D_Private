@@ -1,3 +1,12 @@
+# DefenseTest 편집 가능한 시작 튜토리얼 — 2026-11-18
+
+- 승인 계획에 따라 공통 GameTimeController의 token 정지, 재사용 SequenceRunner/Bindings/Definition, 말풍선·하단 대사창과 선택지, unscaled 카메라·외부 배우 연출을 추가했다. 대사·순서·표시·대상·시간은 CSV/SO/씬 바인딩에서 편집한다. 저장/PlayerPrefs는 추가하지 않았고 이어하기 연결은 TBD다.
+- DefenseTest에 기존 은발 접수원/공통 걷기 Animator, 분리된 문·대기 anchor, active TutorialUI와 초기 정의를 연결했다. 접수원에는 custom script/주민 AI가 없다. 수락/거절, 여덟 소개 대상(상단 방문 장소 포함), 귀환·카메라 복구 뒤 재개를 구성했다. TerrainTest는 공통 시간 참조14줄만 추가했다.
+- author-unity-code, assemble-unity-objects, create-project-sprites 역할을 분리했다. 기존 아트 재사용에 필요한 시각/측정 확인을 수행했고 새로운 PNG는 만들지 않았다. 코드 역할의 조립 helper를 연결 역할이 실행했다.
+- 초기 strict Unity CLI 컴파일 오류0/경고0, 기존 NPC 메시지22, 지역화38 pure/build consistency/6 Editor 검사 통과. 씬/prefab/SO import·저장 로그와 실제 serialized 참조를 확인했다. 독립 리뷰에서 선택지 템플릿 필수 참조 소실 시 pause 정리가 누락되는 Major를 찾아 correction1로 보완했다. 최종 수정 컴파일/리뷰 판정은 아래 상태를 따른다.
+- 상태: 구현·배선·최종 실제 Unity 컴파일·독립 리뷰 완료. `/root/tutorial_review` Approve, 미해결 Critical/Major 없음. 최종 근거 `final-import-editor.log`의 수정 source import/ExitCode0/Tundra 성공/assembly reload와 최종 씬 import·재열기를 확인했다. 최종 CLI wrapper의 검색 실패는 컴파일 성공과 구분한다. 작업 기록 `.harness-runs/tutorial-20261118/work-record.md`; `compile.json`, `npc-message-tests.json`, `localization-checks.log`, `assembly-editor.log`. 보정1/2 사용.
+- 자동 Play/게임 화면·새 검증 코드는 작성/실행하지 않았다. 실제 수락·거절, 키/선택, 겹친 정지, 긴 한글, 카메라/배우 표현은 사람 확인 항목이다. 커밋·푸시하지 않았다.
+
 # DefenseTest 깊이 정렬·팝업 가림 수정 — 2026-11-15
 
 - 웨이브 HUD가 일반 팝업을 덮던 Canvas 순서를 `HUDUI → HoveringUI → BackBG → PopupUI → DefenseUI`로 수정했다. 기존 여러 팝업 정책·DefenseUI 비활성 상태와 controller 참조를 보존했다. FarmGaugeHover는 부모 Canvas 평면 좌표로 투영하고, PopBase는 닫기 중 재열기를 현재 위치에서 이어간다.

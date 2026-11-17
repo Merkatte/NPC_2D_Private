@@ -1,4 +1,4 @@
-﻿# Project N — Phase Plan
+# Project N — Phase Plan
 
 > 문서 상태: 실행 계획 초안 0.3
 >
@@ -11,6 +11,10 @@
 > 진행 기준: 실제 코드와 `PublicMD/Status/PROGRESS.md`
 
 ## 0. 계획 원칙
+
+### 승인된 시작 튜토리얼 — 2026-11-18
+
+[DefenseTest 튜토리얼 계획](Archive/Plans/Defense_Tutorial_Implementation_Plan.md)에 따라 공통 시간 정지·편집 가능한 대화/연출·말풍선/하단창·카메라와 접수원 등장/귀환을 구현했다. 최종 Unity 컴파일·기존 검사·독립 리뷰 Approve를 확인했으며 실제 Play/화면은 사람 확인 항목이다. DefenseTest는 첫 적용 씬이며 상단 방문 장소를 포함한다. 저장 시스템은 제외하고 향후 이어하기 연결은 미정이다. 실제 완료와 검증은 PROGRESS를 따른다.
 
 ### 승인된 DefenseTest CSV 웨이브 — 2026-11-15
 
