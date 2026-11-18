@@ -64,6 +64,7 @@ public enum LocalizeKey
     TrainingActive = 1407,
     TrainingLevelLimit = 1408,
     TrainingChooseCandidate = 1409,
+    TrainingCompletion = 1410,
     ConstructionPrioritySet = 1501,
     ConstructionPriorityReplace = 1502,
     ConstructionPriorityClear = 1503,

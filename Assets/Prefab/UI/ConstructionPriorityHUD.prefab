@@ -10,6 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 3001}
   - component: {fileID: 3002}
+  - component: {fileID: 3003}
+  - component: {fileID: 3004}
   m_Layer: 5
   m_Name: ConstructionPriorityHUD
   m_TagString: Untagged
@@ -53,8 +55,35 @@ MonoBehaviour:
   _registry: {fileID: 0}
   _priorityRow: {fileID: 3100}
   _priorityLabel: {fileID: 3104}
+  _notifications: {fileID: 3003}
+--- !u!114 &3003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1507e12e6844727b151aebb1041eff8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::NotificationToastHUD
   _toastRoot: {fileID: 3301}
   _toastTemplate: {fileID: 3404}
+--- !u!114 &3004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 051b684120a04ae98164cfc99869c335, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::TrainingCompletionNotificationBinding
+  _battlefield: {fileID: 0}
+  _notifications: {fileID: 3003}
 --- !u!1 &3100
 GameObject:
   m_ObjectHideFlags: 0

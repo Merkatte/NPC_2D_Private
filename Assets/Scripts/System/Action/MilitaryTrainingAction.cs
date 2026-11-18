@@ -28,9 +28,26 @@ public sealed class MilitaryTrainingAction : DefaultAction
             RequestReplan();
             return;
         }
-        bool belowCap = actionContext.Stat.ProfessionGrowth.AwardTrainingExperience(_actor.Role,
-            experience, _facility.TrainingLevelCap);
-        if (finished || !belowCap) Complete();
+        NPCProfessionGrowth growth = actionContext.Stat.ProfessionGrowth;
+        int trainingCap = _facility.TrainingLevelCap;
+        bool belowCap = growth.AwardTrainingExperience(_actor.Role, experience, trainingCap);
+        if (!finished)
+        {
+            if (belowCap) return;
+            bool reachedCap = growth.TryGetProgress(_actor.Role, out ProfessionProgress progress) &&
+                (progress.IsAtCap || progress.Level >= trainingCap);
+            if (!reachedCap)
+            {
+                RequestReplan();
+                return;
+            }
+        }
+
+        Complete();
+        // A completion listener can immediately assign this trainee to the same facility.
+        MilitaryTrainingFacility facility = _facility;
+        _facility = null;
+        facility.CompleteTraining(_actor);
     }
 
     public override void Clear()

@@ -11,3 +11,5 @@ UI 영역이 직접 소유하는 씨앗 선택 창과 골드 표시를 안내한
 씨앗 선택은 [공통 popup](../Framework/Popup.md)으로 열고 [농장](../../Economy/Farming/README.md)에 심기 의도를 전달한다. 골드 HUD는 registry와 별도로 [공유 자원](../../Economy/Inventory_and_Items/Shared_Resources.md)의 알림을 구독한다. 두 view 모두 domain 상태를 직접 변경하지 않는다.
 
 새 표시 기능의 소유권이나 이 연결이 바뀌면 이 인덱스를 갱신한다.
+
+여러 기능이 함께 사용하는 완료 메시지와 연출은 [공통 알림 HUD](Notifications.md)를 따른다.

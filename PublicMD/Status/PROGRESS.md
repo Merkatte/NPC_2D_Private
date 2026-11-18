@@ -1,3 +1,13 @@
+# 공통 완료 알림과 군사훈련 — 2026-11-19
+
+- 건설·훈련 완료가 한 NotificationToastHUD에 순서대로 접수된다. 훈련 시간 만료 또는 현재 유효 상한 도달 시 병사 번호를 보존하여 1회 알리고 중단·실패는 조용히 해제한다. 연출·파일 소유는 [공통 알림 HUD](../Systems/UI/Views/Notifications.md) 참조.
+- DefenseTest에서 두 발행 경로의 HUD 참조 동일성과 전장 참조를 Unity CLI로 확인했다. 지역화 38 pure + 생성 일치 + Editor 6, 범위 diff 검사 통과. 최초 Unity strict 컴파일 오류·경고 0. 최종 유효 상한 보정 후 Assembly-CSharp 빌드 오류 0/기존 참조 경고 4, 독립 재리뷰 Approve. 최종 Unity CLI 재컴파일은 120초 타임아웃, 상태 기록 Temp/pipeline_recompile_status.json. 실제 화면·플레이 미검증.
+
+# 건설 완료 알림 DOTween — 2026-11-19
+
+- 기준 7666823. ConstructionPriorityHUD에서 등장·퇴장을 32 UI 단위 오른쪽 이동과 페이드로, 행 하강을 DOTween으로 구현했다. 각 이동은 UI 시간 0.18초이며 3행 제한과 표시 후 4초 만료를 유지한다. [건설 UI](../Systems/Settlement/Construction/UI.md) 참조.
+- Unity CLI strict 컴파일 오류·경고 0, 범위 diff 검사 통과. Temp/pipeline_recompile_status.json 확인, 독립 리뷰 Parfit Approve. 실제 게임 화면의 속도감은 사람 확인 항목이다.
+
 # 건설 공방·공사 우선순위 1차 — 2026-11-19
 
 - 기준 81d0a65의 기존 미커밋 군사훈련소와 .gitignore 변경을 보존했다. 공방 ID 11, 독립 비용·프리팹·두 건물 카탈로그, 공방당 1순위, 실제 작업 지점 경로에 따른 즉시 재배치, 신축·증축 팝업 및 우측 상단 HUD/완료 알림을 DefenseTest에 연결했다. [규칙과 소유 경계](../Systems/Settlement/Construction/Priority.md) 참조.

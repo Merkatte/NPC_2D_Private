@@ -112,6 +112,14 @@ public sealed class MilitaryTrainingFacility : MonoBehaviour, IClickPopupSource
         return true;
     }
 
+    internal void CompleteTraining(DefenseActor actor)
+    {
+        if (!_hasArrived || actor != _trainee.Actor) return;
+        string traineeLabel = _trainee.DisplayName;
+        Release(actor);
+        _battlefield.NotifyTrainingCompleted(traineeLabel);
+    }
+
     internal void Release(DefenseActor actor)
     {
         if (actor != _trainee.Actor) return;

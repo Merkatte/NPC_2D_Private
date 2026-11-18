@@ -30,3 +30,7 @@ DefenseTest의 군사훈련소는 현재 직업이 검병 또는 궁병인 주�
 | MilitaryTrainingPopup.cs | 클릭한 시설의 후보·상태 표시, 배정·중단 입력 |
 
 후보는 전장에 등록된 해당 주민의 번호로 구분한다. 팝업은 명단이 바뀌어도 같은 병사와 수명에 대한 선택을 유지하고, 선택한 병사가 사라진 뒤에는 플레이어가 다시 선택해야 한다.
+
+훈련 시간 만료와 훈련에 의한 상한 도달은 해당 병사의 표시 번호를 담아 [공통 알림 HUD](../../UI/Views/Notifications.md)에 알린다. 수동 중단·도착 실패·쓰러짐·시설 파괴는 완료 알림을 발행하지 않는다.
+
+TrainingCompletionNotificationBinding.cs는 전장의 TrainingCompleted를 구독해 병사 번호를 지역화된 훈련 완료 문구로 전달하는 UI 연결부다. 이 파일의 주 소유 문서는 이 leaf다.

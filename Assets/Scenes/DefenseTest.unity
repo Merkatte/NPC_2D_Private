@@ -9228,6 +9228,10 @@ PrefabInstance:
       propertyPath: _registry
       value:
       objectReference: {fileID: 1943480299}
+    - target: {fileID: 3004, guid: 059cddeb1008e7f4998c006f8bd03f2c, type: 3}
+      propertyPath: _battlefield
+      value:
+      objectReference: {fileID: 990738830}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

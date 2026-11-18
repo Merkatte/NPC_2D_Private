@@ -19,6 +19,7 @@ public sealed class DefenseBattlefield : MonoBehaviour
     public TilemapNavigation Navigation => _navigation;
     public IReadOnlyList<DefenseActor> Actors => _actorView ?? (_actorView = _actors.AsReadOnly());
     public event Action Changed;
+    public event Action<string> TrainingCompleted;
     internal long AllocateResidentNumber() => ++_lastResidentNumber;
     public int AliveEnemyCount
     {
@@ -67,6 +68,7 @@ public sealed class DefenseBattlefield : MonoBehaviour
     public DefenseActor FindActor(NPCComponent component)
     { foreach (DefenseActor actor in _actors) if (actor && actor.Component == component) return actor; return null; }
     public void NotifyChanged() { Changed?.Invoke(); }
+    internal void NotifyTrainingCompleted(string traineeLabel) => TrainingCompleted?.Invoke(traineeLabel);
     private void Update()
     {
         bool alert = IsAlert;
