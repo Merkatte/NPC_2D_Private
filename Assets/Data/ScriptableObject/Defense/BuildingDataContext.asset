@@ -44,3 +44,9 @@ MonoBehaviour:
   - _buildingId: 9
     _prefab: {fileID: 1686172617516599186, guid: e13b9b51340b09a4d840e97fc9c32f6e, type: 3}
     _icon: {fileID: 2574601015419066858, guid: 829a9b11eb3449b469113f926e7a37bb, type: 3}
+  - _buildingId: 10
+    _prefab: {fileID: 7157116538198339720, guid: 45003821ab114b33b51b38a52570a238, type: 3}
+    _icon: {fileID: 21300000, guid: 46fdc191d3fd26b46bb1ffe17f3403ca, type: 3}
+  - _buildingId: 11
+    _prefab: {fileID: 7157116538198339720, guid: 77821a8d19d3346439a2862971d4520f, type: 3}
+    _icon: {fileID: 21300000, guid: 9ed9b19b2d387be4ca8558dc16978070, type: 3}

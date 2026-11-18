@@ -1,3 +1,17 @@
+# 건설 공방·공사 우선순위 1차 — 2026-11-19
+
+- 기준 81d0a65의 기존 미커밋 군사훈련소와 .gitignore 변경을 보존했다. 공방 ID 11, 독립 비용·프리팹·두 건물 카탈로그, 공방당 1순위, 실제 작업 지점 경로에 따른 즉시 재배치, 신축·증축 팝업 및 우측 상단 HUD/완료 알림을 DefenseTest에 연결했다. [규칙과 소유 경계](../Systems/Settlement/Construction/Priority.md) 참조.
+- GPT-6.2 Astra/high 역할별 코드·그래픽·배선과 독립 검토를 수행했다. 초기 리뷰에서 대기 중인 여러 건설자가 한 자리 때문에 집을 나오는 문제와 등록 해제된 건설자가 예약할 수 있는 문제를 발견했다. 일반 작업 탐색과 순위 배정을 분리하고 등록/해제 시점 및 예약 직후 유효성 재검사를 보강했다. 독립 재리뷰 Approve.
+- 최종 Unity CLI 엄격 컴파일 오류·경고 0. 기존 건설 15/자원 6 및 씨앗 39, 경로 순수 검사 1446, 지역화 순수 38·생성 일치·Editor 6 통과. 중간 dotnet 빌드 오류 0 및 MSB3277 참조 경고 4. 사용자가 씬 재로딩 확인 후 DefenseTest가 clean이며 레지스트리·HUD·양쪽 팝업 버튼·공방 프리팹 스프라이트 실제 참조를 Unity CLI로 확인했다. 콘솔 로그는 %LOCALAPPDATA%/Unity/Editor/Editor.log, 컴파일 상태는 Temp/pipeline_recompile_status.json. 기존 건설/자원 검사는 .harness-runs/building-construction-20260927/tests/run-checks.eval.cs 재사용.
+- 자동 Play Mode·화면 검증은 수행하지 않았다. 사람 QA는 우회로와 정원을 반영한 즉시 재배치, 보호 행동 종료 후 충원, 공방 파괴·증축 지정 해제, 연속 완공 시 3개/4초/슬라이드 연출이다.
+
+# 군사훈련소 1차 — 2026-11-19
+
+- 기준 81d0a65. 기존 .gitignore 변경과 승인된 progression.png를 보존했다. DefenseTest의 건설·완공·폐허, 훈련소 팝업, 경비 AI와 직업 성장 연결을 구현했다. 규칙·사람 QA 수치는 [구현 계획](../Plans/Military_Training_Implementation_Plan.md), 신규 파일 소유 관계는 [군사훈련소](../Systems/Combat/Defense/Military_Training.md)를 따른다.
+- GPT-6.2 Astra/high 코드·조립 작업자가 이전 변경을 재확인했다. 독립 리뷰어 Kant의 첫 리뷰에서 동일 직업 식별, 명단 갱신 시 선택 변경, 시설의 직접 행동 큐 제어를 발견했다. 병사별 번호, 주민과 수명 기반 선택, DefenseActor의 배정·중단 재판단으로 수정하고 재리뷰 Approve를 받았다.
+- 최종 unity recompile --strict 오류·경고 0. dotnet build Assembly-CSharp.csproj 오류 0, MSB3277 참조 버전 경고 4. 기존 building-construction-20260927/tests/run-checks.eval.cs의 건설·자원 검사와 seedChecks 39 통과, 씬 상태 보존. Localize 검사 38 pure + 생성 정합성 + 6 Editor 통과. 에디터 출력은 %LOCALAPPDATA%/Unity/Editor/Editor.log, 컴파일 상태는 Temp/pipeline_recompile_status.json. 직렬화된 두 카탈로그·씬 팝업·훈련 지점·클릭·내구도 참조 검토, Unity CLI로 DefenseTest 활성 상태 및 양쪽 프리팹 컴포넌트 로드 확인.
+- 조립 작업자의 도구 승인 대기 이후 최종 검증은 루트가 수행했다. Play Mode와 실제 클릭·화면은 미검증이다. 습격 중 유지, 궁병 성벽 하강, 이동 취소와 15초 중단·정상 종료·상한 도달 시 실제 지급은 사람 확인 항목이다.
+
 # 직업별 숙련도·레벨 1차 — 2026-11-18
 
 - 사용자 승인 계획에 따라 농부·건설유닛·검병·궁병의 주민별·직업별 성장 기록, 자동 연속 레벨업·초과분 이월, 기본 Lv.5 상한, 씬 상한 조회/변경 API를 구현했다. 상한 하락과 직업 변경/휴식은 기존 기록을 보존한다. 대표 건물 시안은 보존하고 성능 보너스·전직·해금·저장·건물 구현은 추가하지 않았다.

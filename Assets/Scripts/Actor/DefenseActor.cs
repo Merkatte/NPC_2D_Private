@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using UnityEngine;
 
 public sealed class DefenseActor : MonoBehaviour
@@ -31,6 +32,8 @@ public sealed class DefenseActor : MonoBehaviour
     public CombatTarget Target => _combatTarget;
     public NPCStat Stat => _stat;
     public WorkerNPC Worker => _worker;
+    public MilitaryTrainingFacility TrainingFacility { get; private set; }
+    internal string ResidentLabel { get; private set; }
     public INavigationService Navigation => _navigation;
     public bool IsEnemy => Role == NPCType.Enemy;
     public bool IsSoldier => Role == NPCType.Guard || Role == NPCType.Archer;
@@ -59,6 +62,7 @@ public sealed class DefenseActor : MonoBehaviour
     public void AssignArcherSlot(DefenseArcherSlotLease slot) { _archerSlot = slot; }
     public void Initialize(NPCType role, NPCStat stat)
     {
+        CancelTrainingAssignment();
         if (_combatTarget) _combatTarget.Died -= OnHealthDepleted;
         if (_isRegistered && Battlefield) Battlefield.Unregister(this);
         _isRegistered = false;
@@ -70,6 +74,7 @@ public sealed class DefenseActor : MonoBehaviour
         EngagedOpponent = null; PlannedInside = false;
         if (!Battlefield || !_worker || !_combatTarget || !_settings)
         { Debug.LogError($"DefenseActor '{name}' requires battlefield, worker, target and settings.", this); return; }
+        ResidentLabel = IsEnemy ? null : "#" + Battlefield.AllocateResidentNumber().ToString(CultureInfo.InvariantCulture);
         _navigation = new NavigationAccessService(Battlefield.Navigation, IsEnemy ? NavigationAccess.Enemy : NavigationAccess.Friendly);
         _combatTarget.Initialize(stat);
         _combatTarget.Died += OnHealthDepleted;
@@ -77,6 +82,22 @@ public sealed class DefenseActor : MonoBehaviour
         _isRegistered = true;
         if (_presentation) { _presentation.ResetPose(); _presentation.SetRole(role); }
         if (stat.CurrentHealth <= 0f) OnHealthDepleted();
+    }
+    internal void AssignTrainingFacility(MilitaryTrainingFacility facility)
+    {
+        TrainingFacility = facility;
+        _worker.RequestActionReplan();
+    }
+    internal void CancelTrainingAssignment()
+    {
+        if (!TrainingFacility) return;
+        TrainingFacility.Release(this);
+        if (_worker) _worker.RequestActionReplan();
+    }
+    internal void ReleaseTrainingFacility(MilitaryTrainingFacility facility)
+    {
+        // A pooled action can release its reservation while the worker is returning the queue.
+        if (TrainingFacility == facility) TrainingFacility = null;
     }
     public void SetFleeing(bool fleeing)
     {
@@ -108,6 +129,7 @@ public sealed class DefenseActor : MonoBehaviour
     {
         if (State == DefenseActorState.Downed) return;
         State = DefenseActorState.Downed;
+        CancelTrainingAssignment();
         _combatTarget.SetTargetable(false);
         _worker.SetActionExecutionEnabled(false);
         _worker.Component.CombatRuntimeState.ClearTarget();
@@ -127,6 +149,8 @@ public sealed class DefenseActor : MonoBehaviour
     }
     public void Unbind()
     {
+        CancelTrainingAssignment();
+        ResidentLabel = null;
         if (_presentation) _presentation.ResetPose();
         if (_combatTarget) { _combatTarget.Died -= OnHealthDepleted; _combatTarget.SetTargetable(false); }
         if (_isRegistered && Battlefield) Battlefield.Unregister(this);

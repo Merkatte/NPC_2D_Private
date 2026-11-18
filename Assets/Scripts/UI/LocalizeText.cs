@@ -43,6 +43,12 @@ public sealed class LocalizeText : MonoBehaviour
             Refresh();
     }
 
+    public void SetFormattedKey(LocalizeKey key, params object[] arguments)
+    {
+        _key = key;
+        SetFormatArguments(arguments);
+    }
+
     public void Refresh()
     {
         if (!_hasStarted)
@@ -69,7 +75,7 @@ public sealed class LocalizeText : MonoBehaviour
         {
             try
             {
-                value = string.Format(CultureInfo.InvariantCulture, value, _formatArguments);
+                value = string.Format(CultureInfo.InvariantCulture, value, GetFormatArguments(manager));
             }
             catch (FormatException)
             {
@@ -82,5 +88,18 @@ public sealed class LocalizeText : MonoBehaviour
             _text.text = value;
         else
             _tmpText.text = value;
+    }
+
+    private object[] GetFormatArguments(LocalizeManager manager)
+    {
+        object[] resolved = _formatArguments;
+        for (int i = 0; i < _formatArguments.Length; ++i)
+        {
+            if (!(_formatArguments[i] is LocalizeKey key)) continue;
+            // Retain the original keys so a later refresh resolves them again.
+            if (ReferenceEquals(resolved, _formatArguments)) resolved = (object[])_formatArguments.Clone();
+            resolved[i] = manager ? manager.GetText(key) : "[Missing:" + key + "]";
+        }
+        return resolved;
     }
 }

@@ -6845,6 +6845,7 @@ RectTransform:
   - {fileID: 815211696}
   - {fileID: 640302145}
   - {fileID: 2096300001}
+  - {fileID: 2096400001}
   m_Father: {fileID: 1153680008}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -9215,6 +9216,28 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!1001 &2411190100
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2409300001}
+    m_Modifications:
+    - target: {fileID: 3002, guid: 059cddeb1008e7f4998c006f8bd03f2c, type: 3}
+      propertyPath: _registry
+      value:
+      objectReference: {fileID: 1943480299}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 059cddeb1008e7f4998c006f8bd03f2c, type: 3}
+--- !u!224 &2411190101 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 3001, guid: 059cddeb1008e7f4998c006f8bd03f2c, type: 3}
+  m_PrefabInstance: {fileID: 2411190100}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &852513710
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -50017,6 +50040,7 @@ MonoBehaviour:
   - {fileID: 866112447}
   - {fileID: 599642030}
   - {fileID: 2096300002}
+  - {fileID: 2096400002}
   _hovers:
   - {fileID: 7815464981047457933}
   - {fileID: 2095100004}
@@ -57857,6 +57881,7 @@ RectTransform:
   m_Children:
   - {fileID: 994651087}
   - {fileID: 852513711}
+  - {fileID: 2411190101}
   m_Father: {fileID: 1153680008}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -67747,6 +67772,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 078feaa46cdc4a8ea37dedf0ac2d3771, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::NPCProfessionPopup
+--- !u!1001 &2096400000
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 668758633}
+    m_Modifications: []
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 9530486a18904f46b09bb4755b194e19, type: 3}
+--- !u!224 &2096400001 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1001, guid: 9530486a18904f46b09bb4755b194e19, type: 3}
+  m_PrefabInstance: {fileID: 2096400000}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2096400002 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1002, guid: 9530486a18904f46b09bb4755b194e19, type: 3}
+  m_PrefabInstance: {fileID: 2096400000}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd6a48d7332a4caf96cf4668e086bb10, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::MilitaryTrainingPopup
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

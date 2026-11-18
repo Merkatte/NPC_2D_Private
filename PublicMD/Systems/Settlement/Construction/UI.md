@@ -31,3 +31,5 @@ DefenseTest는 WarmPixelConstructionPopup.prefab instance를 PopupUI 아래 비�
 2026-10-18에는 고정 창고/여섯 카드와 예시 보유량을 가진 시안이었다. 현재 목록·선택·상세·실제 비용·버튼은 controller에 연결되며 예시 내용은 사용하지 않는다. 옛 목재 프리팹용 조립 도구는 이번 전환에 실행하지 않는다.
 
 컴파일·직렬화 참조·독립 리뷰 결과는 PROGRESS와 작업 기록을 따른다. 실제 클릭·스크롤·공사·작은 화면 확인은 사람 QA이며 자동 Play/화면 검증은 실행하지 않는다.
+
+ConstructionPriorityControl.cs는 신축·증축 팝업에서 공사 식별자를 확인해 지정·교체·해제를 전달한다. ConstructionPriorityHUD.cs는 우측 상단 순위 표시와 건설 완료 알림 수명을 소유한다. 두 스크립트의 주 소유 문서는 이 leaf이며 배정 정책은 [우선 공사](Priority.md)를 따른다.

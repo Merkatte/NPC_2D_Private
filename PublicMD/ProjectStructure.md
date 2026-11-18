@@ -153,3 +153,7 @@ UI input -> IUIService <- domain IHoverInfoSource
 - 여러 시스템의 의존 방향 변경: `ARCHITECTURE.md`도 갱신한다.
 - 보편적 C# 작성 규칙 변경: `CodeConvention.md`도 갱신한다.
 - 문서와 코드가 다르면 코드를 현재 사실로 보고 같은 작업에서 문서를 교정한다.
+
+군사훈련소의 건설·병사 배정·숙련도 변경은 [군사훈련소](Systems/Combat/Defense/Military_Training.md)에서 시작한다.
+
+건설 공방과 우선 공사 배정은 [우선 공사](Systems/Settlement/Construction/Priority.md), 두 팝업과 완료 알림은 [건설 UI](Systems/Settlement/Construction/UI.md)에서 시작한다.

@@ -35,7 +35,8 @@ public static class BuildingDefinitionCsvMapper
             if (row.Length != 6 || !int.TryParse(row[0], out int id) || id <= 0 || !ids.Add(id)
                 || !Enum.TryParse(row[1], false, out BuildingType type) || !Enum.IsDefined(typeof(BuildingType), type)
                 || (type != BuildingType.Pub && type != BuildingType.Inn && type != BuildingType.Warehouse
-                    && type != BuildingType.GuardPost && type != BuildingType.Farm && type != BuildingType.House)
+                    && type != BuildingType.GuardPost && type != BuildingType.Farm && type != BuildingType.House
+                    && type != BuildingType.MilitaryTraining && type != BuildingType.ConstructionWorkshop)
                 || string.IsNullOrWhiteSpace(row[2])
                 || !float.TryParse(row[3], NumberStyles.Float, CultureInfo.InvariantCulture, out float work)
                 || work <= 0f || float.IsNaN(work) || float.IsInfinity(work)

@@ -8,6 +8,7 @@ public sealed class BuildAction : DefaultAction
     private Component _providerOwner;
     private BuildingPlot _plot;
     private bool _isWorking;
+    internal BuildingPlot ReservedPlot => _reservation != null && _reservation.IsValid ? _plot : null;
     public BuildAction() : base(ActionType.Build) { }
 
     public override void Init(ActionContext context)
@@ -66,7 +67,7 @@ public sealed class BuildAction : DefaultAction
     private void Cleanup()
     {
         _follower.Clear();
-        if (actionContext.Component) actionContext.Component.SetWorking(false);
+        if (_isWorking && actionContext.Component) actionContext.Component.SetWorking(false);
         _isWorking = false;
         _reservation?.Dispose();
     }

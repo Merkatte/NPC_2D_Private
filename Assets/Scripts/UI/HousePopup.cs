@@ -32,6 +32,8 @@ public sealed class HousePopup : PopBase
     [SerializeField] private Button _upgradeButton;
     [SerializeField] private Button _startButton;
     [SerializeField] private Button _cancelButton;
+    [SerializeField] private Button _priorityButton;
+    [SerializeField] private LocalizeText _priorityLabel;
     [SerializeField] private Button _retryButton;
     [SerializeField] private Button _collapseButton;
     [SerializeField] private Button _closeButton;
@@ -52,6 +54,7 @@ public sealed class HousePopup : PopBase
     private readonly List<HouseResidentView> _residents = new List<HouseResidentView>();
     private readonly List<ResourceCostRowView> _costs = new List<ResourceCostRowView>();
     private HousePopupSource _source;
+    private readonly ConstructionPriorityControl _priority = new ConstructionPriorityControl();
     private House _house;
     private BuildingPlot _plot;
     private ResourceManager _resources;
@@ -72,6 +75,7 @@ public sealed class HousePopup : PopBase
         _source = houseSource;
         _house = houseSource.House;
         _plot = houseSource.Plot;
+        _priority.Bind(_plot, _priorityButton, _priorityLabel);
         _resources = _plot.Resources;
         _house.Changed += Refresh;
         _plot.StateChanged += Refresh;
@@ -113,6 +117,7 @@ public sealed class HousePopup : PopBase
 
     private void ClearSource()
     {
+        _priority.Unbind();
         if (_house) _house.Changed -= Refresh;
         if (_plot) _plot.StateChanged -= Refresh;
         if (_resources) _resources.ResourcesChanged -= Refresh;

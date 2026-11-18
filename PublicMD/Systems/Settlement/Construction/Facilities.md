@@ -35,3 +35,5 @@ BuildingFactory의 DefenseBattlefield/DefenseMaintenanceRegistry/DefenseDurabili
 기존 GuardTest의 scene-native 농장은 씨앗 선택 source가 없는 구성을 유지한다. 새로 생성하는 Soil prefab 농장에는 collider와 같은 오브젝트의 FarmSeedSource가 필수다. GuardTest의 기존 Storage는 같은 오브젝트를 용량 제공자로 이관하며, 기존에 없던 입고 목적지나 클릭 collider를 추가하지 않는다.
 
 비-Play 단위 검사는 생산 코드의 정리 콜백을 명시적으로 호출하여 등록 해제·반복 정리·다른 시설 보존을 검증한다. Unity가 실제 플레이에서 삭제 콜백을 전달하는 동작은 이 검사 범위가 아니며 사람의 확인 항목으로 남긴다.
+
+군사훈련소 완공 시 Factory가 DefenseBattlefield를 주입하고 시설 클릭 가능 여부를 확인한다. 사용 흐름과 배정 상태는 [군사훈련소](../../Combat/Defense/Military_Training.md)가 소유한다.

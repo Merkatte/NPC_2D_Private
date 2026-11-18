@@ -52,3 +52,20 @@ Id,Key,ko
 1306,UI_NPCProfession_Level,Lv.{0} / {1}
 1307,UI_NPCProfession_Experience,숙련도 {0:0.##} / {1:0.##}
 1308,UI_NPCProfession_CapReached,성장 상한 도달
+1401,TrainingTitle,군사훈련소
+1402,TrainingAssign,훈련 배정
+1403,TrainingCancel,훈련 중단
+1404,TrainingEmpty,현재 훈련 후보인 검병이나 궁병이 없습니다.
+1405,TrainingCandidate,{0} · {1} Lv.{2}
+1406,TrainingWalking,{0} · 훈련소로 이동 중 · 남은 훈련 시간 {1}초
+1407,TrainingActive,{0} · 훈련 중 · 남은 시간 {1}초
+1408,TrainingLevelLimit,{0} · {1} Lv.{2} · 훈련 상한(Lv.{3})에 도달해 배정할 수 없습니다.
+1409,TrainingChooseCandidate,오른쪽 화살표를 눌러 훈련할 병사를 선택하세요.
+1501,ConstructionPrioritySet,1순위로 지정
+1502,ConstructionPriorityReplace,1순위 교체
+1503,ConstructionPriorityClear,1순위 해제
+1504,ConstructionPriorityEmpty,우선 공사 없음
+1505,ConstructionPriorityRank,{0}순위 · {1} · {2}
+1506,ConstructionNew,신축
+1507,ConstructionUpgrade,증축
+1508,ConstructionCompletion,{0} · {1} 완료

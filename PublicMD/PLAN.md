@@ -12,6 +12,10 @@
 
 ## 0. 계획 원칙
 
+### 승인된 군사훈련소 1차 — 2026-11-19
+
+[군사훈련소 구현 계획](Plans/Military_Training_Implementation_Plan.md)에 따라 DefenseTest에 건설 가능한 초기 훈련소와 병사 기초 훈련을 연결한다.
+
 ### 승인된 직업별 성장 1차 — 2026-11-18
 
 사용자 첨부 승인 계획에 따라 DefenseTest의 농부·건설유닛·검병·궁병에게 실제 기여량 기반 숙련도·자동 레벨업·직업별 기록 보존과 주민 클릭 정보창을 구현했다. 필수 기존 검사와 독립 리뷰 Approve를 확인했으며 실제 Play/화면은 사람 확인 항목이다. 기본 상한은 Lv.5이고 대표 건물은 시안만 유지하며 씬 상한 API를 준비한다. 성능 보너스·전직·저장·건물 구현은 제외한다. 현재 구현/검사 상태는 PROGRESS 및 `.harness-runs/profession-growth-20261118/work-record.md`에서 관리한다.
@@ -371,3 +375,7 @@ Phase A: 살아 움직이는 한 명
 [Grid Navigation 구현 계획](Plans/Grid_Navigation_Implementation_Plan.md)을 진행한다.
 구현 후보 이후 현재 컴파일/참조/구조 Gate/Play Mode와 독립 리뷰를 확인해야 완료다.
 실행 증거와 남은 검증은 Status/PROGRESS.md에서 추적한다.
+
+### 승인된 건설 공방 1차 — 2026-11-19
+
+DefenseTest에 한 채의 초기 공방, 우선순위 1칸과 현장 즉시 재배치, 건설 완료 알림을 연결한다. [기능 규칙](Systems/Settlement/Construction/Priority.md)을 적용한다. 상위 단계의 슬롯 증가는 후속 범위다.

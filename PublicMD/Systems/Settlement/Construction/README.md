@@ -14,3 +14,5 @@
 전체 흐름: DataManager 정의 조회 → 클릭한 BuildingPlot의 지불/공사 생성 → Builder selector의 FIFO 예약 → BuildAction 이동/작업 → Plot의 완공 요청 → Factory 조립/등록. 공용 재고는 [Inventory and Items](../../Economy/Inventory_and_Items/README.md), 건축가 실행은 [Builder](Builder.md), 다중 시설 조회와 provider 공통 계약은 [Interaction and Destinations](../../World/Interaction_and_Destinations.md)가 주 소유한다.
 
 한 production C#은 한 leaf만 주 소유한다. BuildAction/BuildActionCost는 Builder, IInteractionReservation/InteractionRequest는 공통 interaction 문서에 등록한다. 이 인덱스는 모든 코드를 먼저 읽으라는 목록이 아니다.
+
+건설 공방, 현장 우선 호출, 신축·증축 완료 알림은 [우선 공사](Priority.md)를 따른다.

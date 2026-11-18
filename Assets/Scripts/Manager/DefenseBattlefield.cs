@@ -14,10 +14,12 @@ public sealed class DefenseBattlefield : MonoBehaviour
     private readonly List<Vector3> _pathBuffer = new List<Vector3>();
     private IReadOnlyList<DefenseActor> _actorView;
     private int _nextGuardPosition;
+    private long _lastResidentNumber;
     private bool _lastAlert;
     public TilemapNavigation Navigation => _navigation;
     public IReadOnlyList<DefenseActor> Actors => _actorView ?? (_actorView = _actors.AsReadOnly());
     public event Action Changed;
+    internal long AllocateResidentNumber() => ++_lastResidentNumber;
     public int AliveEnemyCount
     {
         get { int count = 0; foreach (DefenseActor actor in _actors) if (actor && actor.IsEnemy && actor.CanAct) ++count; return count; }

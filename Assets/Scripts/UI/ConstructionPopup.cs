@@ -12,6 +12,8 @@ public sealed class ConstructionPopup : PopBase
     [SerializeField] private Text _result;
     [SerializeField] private Button _confirmButton;
     [SerializeField] private Button _cancelButton;
+    [SerializeField] private Button _priorityButton;
+    [SerializeField] private LocalizeText _priorityLabel;
     [SerializeField] private Button _closeButton;
     [System.Serializable]
     private struct ItemIconEntry
@@ -42,7 +44,9 @@ public sealed class ConstructionPopup : PopBase
     private readonly List<ResourceCostRowView> _costViews = new List<ResourceCostRowView>();
     private readonly List<ConstructionChoiceRow> _rows = new List<ConstructionChoiceRow>();
     private BuildingPlot _source;
+    private readonly ConstructionPriorityControl _priority = new ConstructionPriorityControl();
     private ResourceManager _resources;
+    private BuildingPlotRegistry _registry;
     private int _selectedId;
 
     internal override bool TryBindSource(IClickPopupSource source)
@@ -55,6 +59,8 @@ public sealed class ConstructionPopup : PopBase
         Unsubscribe();
         _source = plot;
         _resources = plot.Resources;
+        _registry = plot.Registry;
+        _priority.Bind(plot, _priorityButton, _priorityLabel);
         _selectedId = 0;
         _result.text = string.Empty;
         Subscribe();
@@ -73,12 +79,14 @@ public sealed class ConstructionPopup : PopBase
     }
     private void OnDisable()
     {
+        _priority.Unbind();
         if (_confirmButton) _confirmButton.onClick.RemoveListener(Confirm);
         if (_cancelButton) _cancelButton.onClick.RemoveListener(CancelConstruction);
         if (_closeButton) _closeButton.onClick.RemoveListener(RequestClose);
         Unsubscribe();
         _source = null;
         _resources = null;
+        _registry = null;
         _selectedId = 0;
         ResetCostScroll();
         ResetCostRows();
@@ -86,9 +94,11 @@ public sealed class ConstructionPopup : PopBase
     }
     protected override void OnBeforeClose()
     {
+        _priority.Unbind();
         Unsubscribe();
         _source = null;
         _resources = null;
+        _registry = null;
         _selectedId = 0;
         ResetCostScroll();
         ResetCostRows();
@@ -99,11 +109,13 @@ public sealed class ConstructionPopup : PopBase
     {
         Unsubscribe();
         if (_source) _source.StateChanged += Refresh;
+        if (_registry) _registry.ConstructionAvailabilityChanged += Refresh;
         if (_resources) _resources.ResourcesChanged += Refresh;
     }
     private void Unsubscribe()
     {
         if (_source) _source.StateChanged -= Refresh;
+        if (_registry) _registry.ConstructionAvailabilityChanged -= Refresh;
         if (_resources) _resources.ResourcesChanged -= Refresh;
     }
     private void Select(int id) { _selectedId = id; _result.text = string.Empty; Refresh(); ResetCostScroll(); }
@@ -155,7 +167,10 @@ public sealed class ConstructionPopup : PopBase
                     if (role.Type == selected.BuildingType) { text.AppendLine(role.Description); break; }
             if (selected.ProvidedCapacity > 0) text.AppendLine($"제공 용량 {selected.ProvidedCapacity}");
             _costHeading.text = "건설 비용 · 필요 / 보유";
-            _confirmButton.interactable = ShowCosts(selected.Cost);
+            bool affordable = ShowCosts(selected.Cost);
+            bool available = _source.IsAvailableInVillage(selected, out string reason);
+            if (!available) text.AppendLine(reason);
+            _confirmButton.interactable = affordable && available;
         }
         else if (empty)
         {

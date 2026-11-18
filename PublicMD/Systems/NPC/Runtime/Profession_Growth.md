@@ -54,3 +54,5 @@ NPCManager의 선택적 `_professionGrowthSettings`와 `_professionGrowthManager
 | 주민 정보 표시 | [UI](../../UI/README.md), WorkerNPC 공개 조회, ProfessionProgress |
 
 컴파일·기존 검사·직렬화 참조 검증과 사람 플레이 확인을 구분한다. 실제 업무 증가, 상한 표시, 늦은 화살 및 Downed/재사용은 사람 QA 항목이며 자동 Play Mode·새 검증 코드를 추가하지 않는다.
+
+군사 직업은 [초기 군사훈련소](../../Combat/Defense/Military_Training.md)에서 실제 훈련한 시간에 대해서도 숙련도를 얻는다. 시설의 훈련 상한은 개인 기록에 적용하는 지급 한도이며 마을의 직업 성장 상한과 별개다.

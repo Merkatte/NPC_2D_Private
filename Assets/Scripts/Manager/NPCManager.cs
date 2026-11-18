@@ -159,6 +159,7 @@ public class NPCManager : MonoBehaviour
             _workers.Add(reservation.NpcType, new List<WorkerNPC>());
 
         _workers[reservation.NpcType].Add(reservation.Worker);
+        reservation.Selector.RegisterWorker(reservation.Worker, reservation.Stat);
         PublishResidentsChanged();
         return true;
     }
@@ -182,7 +183,11 @@ public class NPCManager : MonoBehaviour
     {
         if (!worker) return;
         worker.Disabled -= UnregisterWorker;
-        foreach (var workers in _workers.Values) workers.Remove(worker);
+        foreach (var group in _workers)
+        {
+            if (group.Value.Remove(worker) && _entryLookup.TryGetValue(group.Key, out var entry) && entry.Selector)
+                entry.Selector.UnregisterWorker(worker);
+        }
         for (int i = _residents.Count - 1; i >= 0; --i)
         {
             ResidentHousingState resident = _residents[i];

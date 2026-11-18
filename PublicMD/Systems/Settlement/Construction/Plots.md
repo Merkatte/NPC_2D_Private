@@ -53,3 +53,5 @@ BuildingPlot의 시작/취소/업그레이드 명령은 중앙 게임 시간 정
 ## 성장용 공사 기여량
 
 BuildingPlot은 유효 예약의 양수 작업만 수락하며 중앙 시간 정지 중에는 거부한다. RequiredWork 이내에서 실제 증가한 Work를 InteractionResult의 ConstructionWork로 반환한다. 신축과 업그레이드 모두 같은 경로다. 완공 호출 전에 증가량을 확정하므로 최종 작업도 정확히 지급하며 TryRetryCompletion은 새 작업 기여를 만들지 않는다. 주민 성장은 provider가 수정하지 않는다.
+
+마을 단위 군사훈련소 제한은 착공 중부터 적용한다. 중복 신청의 비용 지출을 방지하고, 취소 또는 잔해 정리 후 재건설을 허용한다. [군사훈련소](../../Combat/Defense/Military_Training.md) 참조.

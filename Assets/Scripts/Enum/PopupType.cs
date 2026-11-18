@@ -8,4 +8,5 @@ public enum PopupType
     Warehouse,
     House = 6,
     NPCProfession = 7,
+    MilitaryTraining = 8,
 }

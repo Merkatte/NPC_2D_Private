@@ -63,3 +63,5 @@ HasAvailableWork는 navigation/cost가 준비되고 정책상 허용되며 예�
 ## 직업 성장 지급
 
 BuildAction은 성공한 작업 결과의 ContributionAmount를 Builder의 NPCProfessionGrowth에 지급한 뒤 예약 완료를 처리한다. 최종 요구량을 넘은 요청과 완공 재시도에는 추가 지급이 없다. 계산 규칙은 [Profession Growth](../../NPC/Runtime/Profession_Growth.md)가 소유한다.
+
+건설 공방이 운영되면 [우선 공사](Priority.md)의 빈 작업 자리 예약이 일반 FIFO보다 앞선다. 새 예약과 건설자 자격을 재확인한 뒤 행동을 넘긴다. 일반 주거 대기는 호출할 수 있고 최초 귀가·생활 행동은 보호한다.

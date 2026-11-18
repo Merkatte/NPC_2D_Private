@@ -16,7 +16,12 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
     private void Start()
     {
         if (_initialFacility && State == BuildingPlotState.Empty)
-        { CompletedFacility = _initialFacility; State = BuildingPlotState.Completed; PublishState(); }
+        {
+            CompletedFacility = _initialFacility;
+            State = BuildingPlotState.Completed;
+            CompletedFacility.BindWorkshopPlot(this);
+            PublishLifecycle();
+        }
     }
     public void OnFacilityDestroyed(CompletedBuildingFacility facility)
     {
@@ -25,17 +30,40 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
         _construction = null;
         CompletedFacility = facility;
         State = BuildingPlotState.Rubble;
-        PublishState();
+        PublishLifecycle();
     }
     public bool ClearDestroyedFacility(CompletedBuildingFacility facility)
     {
         if (State != BuildingPlotState.Rubble || CompletedFacility != facility) return false;
+        bool clearedSingleton = HasSingleton(BuildingType.MilitaryTraining) || HasSingleton(BuildingType.ConstructionWorkshop);
         CompletedFacility = null; _initialFacility = null; _construction = null;
-        State = BuildingPlotState.Empty; PublishState(); return true;
+        State = BuildingPlotState.Empty;
+        PublishLifecycle();
+        if (clearedSingleton && _registry) _registry.NotifyConstructionAvailabilityChanged();
+        return true;
     }
     private ConstructionState _construction;
     private long _nextConstructionId;
     private bool _isChanging;
+    private BuildingType _startingType;
+    internal bool HasSingleton(BuildingType type)
+    {
+        if (!IsSingletonType(type)) return false;
+        if (_startingType == type || Definition?.BuildingType == type) return true;
+        CompletedBuildingFacility facility = CompletedFacility ? CompletedFacility : _initialFacility;
+        return facility && (type == BuildingType.MilitaryTraining ? facility.IsMilitaryTraining : facility.IsConstructionWorkshop);
+    }
+
+    private static bool IsSingletonType(BuildingType type)
+        => type == BuildingType.MilitaryTraining || type == BuildingType.ConstructionWorkshop;
+
+    internal bool IsOperationalWorkshop => isActiveAndEnabled && State == BuildingPlotState.Completed
+        && CompletedFacility && CompletedFacility.IsConstructionWorkshop && CompletedFacility.isActiveAndEnabled;
+
+    internal void NotifyWorkshopActivityChanged(CompletedBuildingFacility facility)
+    {
+        if (facility == CompletedFacility && _registry) _registry.NotifyPlotLifecycleChanged(this);
+    }
     public BuildingPlotState State { get; private set; }
     public CompletedBuildingFacility CompletedFacility { get; private set; }
     public bool IsUpgrade => _construction != null && _construction.IsUpgrade;
@@ -63,6 +91,17 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
     public bool CanReserve => !_isChanging && isActiveAndEnabled && State == BuildingPlotState.UnderConstruction
         && _construction != null && _construction.Work < Definition.RequiredWork && ReservedWorkers < Definition.MaxWorkers;
     public event Action StateChanged;
+
+    internal BuildingPlotRegistry Registry => _registry;
+
+    internal bool IsAvailableInVillage(BuildingDefinition definition, out string reason)
+    {
+        reason = null;
+        if (!IsSingletonType(definition.BuildingType)) return true;
+        if (_registry) return _registry.CanStartSingleton(this, definition.BuildingType, out reason);
+        reason = "마을 건설 목록을 확인할 수 없습니다.";
+        return false;
+    }
 
     public bool IsAllowed(int id) => (_allowedBuildingIds.Length == 0 || Array.IndexOf(_allowedBuildingIds, id) >= 0)
         && _dataManager && _dataManager.TryGetBuildingDefinition(id, out var definition)
@@ -95,7 +134,7 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
                 _construction = new ConstructionState(definition, ++_nextConstructionId,
                     _registry.NextApplicationOrder(), true);
                 State = BuildingPlotState.UnderConstruction;
-                PublishState();
+                PublishLifecycle();
             }
             reason = null;
             return true;
@@ -113,11 +152,16 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
     {
         reason = "지금은 건설을 시작할 수 없습니다.";
         if (Time.timeScale <= 0f) return false;
-        if (_isChanging || State != BuildingPlotState.Empty || !isActiveAndEnabled || !TryInitialize(out reason)
-            || !IsAllowed(buildingId) || !_dataManager.TryGetBuildingDefinition(buildingId, out var definition)
+        if (_isChanging || State != BuildingPlotState.Empty || !isActiveAndEnabled || !TryInitialize(out reason))
+            return false;
+        reason = "이 부지에서 선택한 시설을 건설할 수 없습니다.";
+        if (!IsAllowed(buildingId) || !_dataManager.TryGetBuildingDefinition(buildingId, out var definition)
             || definition.MaxWorkers > _workPositions.Length)
             return false;
+        if (!IsAvailableInVillage(definition, out reason)) return false;
         _isChanging = true;
+        // Other plots in the same village must see the claim before payment or notifications.
+        _startingType = definition.BuildingType;
         try
         {
             using (_resources.DeferNotifications())
@@ -125,12 +169,17 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
                 if (!_resources.TrySpend(definition.Cost)) { reason = "자원이 부족합니다."; return false; }
                 _construction = new ConstructionState(definition, ++_nextConstructionId, _registry.NextApplicationOrder());
                 State = BuildingPlotState.UnderConstruction;
-                PublishState();
+                PublishLifecycle();
+                if (IsSingletonType(_startingType)) _registry.NotifyConstructionAvailabilityChanged();
             }
             reason = null;
             return true;
         }
-        finally { _isChanging = false; }
+        finally
+        {
+            _startingType = BuildingType.None;
+            _isChanging = false;
+        }
     }
 
     public IReadOnlyDictionary<int, int> GetExpectedRefund()
@@ -162,9 +211,11 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
                 if (!_resources.TryRefund(GetExpectedRefund())) { reason = "환불을 완료할 수 없습니다. 공사를 유지합니다."; return false; }
                 EndReservations(ConstructionReservationStatus.Cancelled);
                 bool wasUpgrade = IsUpgrade;
+                bool cancelledSingleton = IsSingletonType(Definition.BuildingType);
                 _construction = null;
                 State = wasUpgrade ? BuildingPlotState.Completed : BuildingPlotState.Empty;
-                PublishState();
+                PublishLifecycle();
+                if (cancelledSingleton) _registry.NotifyConstructionAvailabilityChanged();
             }
             reason = null;
             return true;
@@ -179,16 +230,33 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
             return false;
         for (int i = 0; i < _construction.Reservations.Length; ++i)
         {
-            if (_construction.Reservations[i] != null || !_workPositions[i])
-                continue;
-            reservation = new ConstructionReservation(this, _construction.Id, i, _workPositions[i].position);
-            _construction.Reservations[i] = reservation;
-            PublishState();
-            if (reservation.IsValid) return true;
-            reservation.Dispose();
-            reservation = null;
-            return false;
+            if (TryGetFreeWorkPosition(i, out _))
+                return TryReserve(ApplicationOrder, i, out reservation);
         }
+        return false;
+    }
+
+    internal bool TryGetFreeWorkPosition(int slot, out Vector3 position)
+    {
+        position = default;
+        if (!CanReserve || slot < 0 || slot >= _construction.Reservations.Length
+            || _construction.Reservations[slot] != null || !_workPositions[slot])
+            return false;
+        position = _workPositions[slot].position;
+        return true;
+    }
+
+    internal bool TryReserve(long applicationOrder, int slot, out ConstructionReservation reservation)
+    {
+        reservation = null;
+        if (applicationOrder != ApplicationOrder || !TryGetFreeWorkPosition(slot, out Vector3 position))
+            return false;
+        reservation = new ConstructionReservation(this, _construction.Id, slot, position);
+        _construction.Reservations[slot] = reservation;
+        PublishLifecycle();
+        if (reservation.IsValid) return true;
+        reservation.Dispose();
+        reservation = null;
         return false;
     }
 
@@ -206,7 +274,7 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
             && ReferenceEquals(_construction.Reservations[reservation.Slot], reservation))
             _construction.Reservations[reservation.Slot] = null;
         reservation.End(ConstructionReservationStatus.Released);
-        PublishState();
+        PublishLifecycle();
     }
 
     protected override bool SupportsCore(ActionType type) => type == ActionType.Build;
@@ -258,10 +326,16 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
     {
         using (_resources.DeferNotifications())
         {
+            ConstructionState project = _construction;
             CompletedBuildingFacility facility = CompletedFacility;
             bool success = IsUpgrade
                 ? _factory.TryUpgrade(CompletedFacility, Definition, out reason)
                 : _factory.TryCreate(Definition, transform, _entrance, _workArea, out facility, out reason);
+            if (_construction != project || State != BuildingPlotState.UnderConstruction)
+            {
+                reason = "The construction project ended during facility setup.";
+                return false;
+            }
             if (success && facility && facility.HousePopupSource)
                 facility.HousePopupSource.Configure(facility.House, this);
             _construction.CompletionFailure = success ? null : reason;
@@ -270,6 +344,12 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
             {
                 CompletedFacility = facility;
                 State = BuildingPlotState.Completed;
+                facility.BindWorkshopPlot(this);
+                _registry.NotifyProjectCompleted(this);
+            }
+            else
+            {
+                _registry.NotifyPlotLifecycleChanged(this);
             }
             return success;
         }
@@ -284,7 +364,16 @@ public sealed class BuildingPlot : BaseInteractionProvider, IClickPopupSource
             _construction.Reservations[i] = null;
         }
     }
-    private void OnDisable() { EndReservations(ConstructionReservationStatus.Released); PublishState(); }
+    private void OnEnable()
+    {
+        if (_registry) _registry.NotifyPlotLifecycleChanged(this);
+    }
+    private void OnDisable() { EndReservations(ConstructionReservationStatus.Released); PublishLifecycle(); }
+    private void PublishLifecycle()
+    {
+        if (_registry) _registry.NotifyPlotLifecycleChanged(this);
+        PublishState();
+    }
     private void PublishState()
     {
         if (StateChanged == null) return;

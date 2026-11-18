@@ -28,10 +28,53 @@ public sealed class DefenseSoldierActionSelector : BaseNPCActionSelector
         => stat != null && !stat.IsOnStrike && defenseResponse && defenseResponse.GetActor(component);
     public override Queue<IAction> RequestNewActionQueue(NPCStat stat, NPCType npcType, NPCComponent component)
         => RequestResidentialWorkQueue(stat, npcType, component, null);
+
+    internal Queue<IAction> BuildTrainingQueue(DefenseActor actor)
+    {
+        MilitaryTrainingFacility facility = actor.TrainingFacility;
+        actor.Component.CombatRuntimeState.ClearTarget();
+        actor.RefreshArcherWallOccupancy();
+        var queue = new Queue<IAction>();
+        if (!facility.CanTrain(actor))
+        {
+            facility.Release(actor);
+            return queue;
+        }
+
+        if (actor.RequiresArcherGroundExit)
+        {
+            queue = defenseResponse.BuildGroundExitQueue(this, actor);
+            if (queue.Count == 0)
+            {
+                facility.Release(actor);
+                return queue;
+            }
+        }
+
+        IAction movement = GetAction(ActionType.Move);
+        IAction training = GetAction(ActionType.MilitaryTraining);
+        if (movement == null || !(training is MilitaryTrainingAction trainingAction))
+        {
+            while (queue.Count > 0) ReturnAction(queue.Dequeue());
+            if (movement != null) ReturnAction(movement);
+            if (training != null) ReturnAction(training);
+            facility.Release(actor);
+            return queue;
+        }
+
+        movement.Init(new ActionContext(actor.Component, actor.Stat,
+            moveRequest: MoveRequest.Navigated(facility.TrainingPosition), navigation: actor.Navigation));
+        trainingAction.Init(new ActionContext(actor.Component, actor.Stat), actor, facility);
+        queue.Enqueue(movement);
+        queue.Enqueue(trainingAction);
+        return queue;
+    }
+
     protected override Queue<IAction> RequestResidentialWorkQueue(NPCStat stat, NPCType npcType,
         NPCComponent component, HousingLifeSettings life)
     {
         DefenseActor actor = defenseResponse ? defenseResponse.GetActor(component) : null;
+        if (actor && actor.TrainingFacility) return BuildTrainingQueue(actor);
         if (!actor || _decider == null || !_guardCost) return BuildFallbackIdleQueue(component, stat);
         NPCDecision decision = _decider.Decide(stat, NPCType.Guard, component.Position, _dutyCost,
             sleepRecoveryPerSecond: life?.InnFatigueRecoveryPerSecond ?? 0f,

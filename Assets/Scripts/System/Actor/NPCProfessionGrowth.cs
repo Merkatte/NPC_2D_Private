@@ -7,7 +7,7 @@ public sealed class NPCProfessionGrowth
     private sealed class Record
     {
         public int Level = 1;
-        public float Experience;
+        public double Experience;
     }
     private readonly Dictionary<NPCType, Record> _records = new Dictionary<NPCType, Record>();
     private readonly ProfessionGrowthSettings _settings;
@@ -25,7 +25,7 @@ public sealed class NPCProfessionGrowth
         if (!_settings || !_settings.TryGetRule(profession, out var rule)) return false;
         int cap = GetLevelCap(profession, rule);
         if (_records.TryGetValue(profession, out Record record))
-            progress = new ProfessionProgress(record.Level, record.Experience, cap, rule.RequiredExperience(record.Level));
+            progress = new ProfessionProgress(record.Level, (float)record.Experience, cap, rule.RequiredExperience(record.Level));
         else
             progress = new ProfessionProgress(1, 0f, cap, rule.RequiredExperience(1));
         return true;
@@ -37,12 +37,27 @@ public sealed class NPCProfessionGrowth
             !_settings || !_settings.TryGetRule(profession, out var rule)) return;
         float coefficient = rule.ExperiencePerUnit(kind);
         if (coefficient <= 0f) return;
+        AddExperience(profession, rule, (double)amount * coefficient, GetLevelCap(profession, rule));
+    }
+
+    // Training caps this one payment. Damage and other contributions retain the scene's cap.
+    // The return value indicates whether a subsequent award can still advance this record.
+    internal bool AwardTrainingExperience(NPCType profession, double experience, int trainingCap)
+    {
+        if (experience < 0d || double.IsNaN(experience) || double.IsInfinity(experience) ||
+            !_settings || !_settings.TryGetRule(profession, out var rule)) return false;
+        int cap = Math.Min(trainingCap, GetLevelCap(profession, rule));
+        return AddExperience(profession, rule, experience, cap);
+    }
+
+    private bool AddExperience(NPCType profession, ProfessionGrowthSettings.ProfessionRule rule,
+        double experience, int cap)
+    {
         if (!_records.TryGetValue(profession, out Record record))
         { record = new Record(); _records.Add(profession, record); }
-        int cap = GetLevelCap(profession, rule);
         // A lowered cap freezes the existing record without discarding its stored remainder.
-        if (record.Level >= cap) return;
-        double remaining = record.Experience + (double)amount * coefficient;
+        if (record.Level >= cap) return false;
+        double remaining = record.Experience + experience;
         while (record.Level < cap)
         {
             float required = rule.RequiredExperience(record.Level);
@@ -50,7 +65,8 @@ public sealed class NPCProfessionGrowth
             remaining -= required;
             record.Level++;
         }
-        record.Experience = record.Level >= cap ? 0f : (float)Math.Min(float.MaxValue, remaining);
+        record.Experience = record.Level >= cap ? 0d : remaining;
+        return record.Level < cap;
     }
 
     private int GetLevelCap(NPCType profession, ProfessionGrowthSettings.ProfessionRule rule)

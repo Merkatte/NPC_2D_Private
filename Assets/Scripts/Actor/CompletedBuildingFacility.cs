@@ -13,6 +13,9 @@ public sealed class CompletedBuildingFacility : MonoBehaviour
     [SerializeField] private House _house;
     [SerializeField] private SpriteRenderer _houseVisual;
     [SerializeField] private HousePopupSource _housePopupSource;
+    [SerializeField] private MilitaryTrainingFacility _militaryTraining;
+    [SerializeField] private bool _isConstructionWorkshop;
+    private BuildingPlot _workshopPlot;
     private DestinationDB _destinations;
     private InteractableManager _interactables;
     private DestinationInfo _registration;
@@ -20,6 +23,23 @@ public sealed class CompletedBuildingFacility : MonoBehaviour
     public House House => _house;
     public HousePopupSource HousePopupSource => _housePopupSource;
     public Transform Entrance => _entrance;
+    internal bool IsMilitaryTraining => _militaryTraining;
+    internal bool IsConstructionWorkshop => _isConstructionWorkshop;
+
+    internal void BindWorkshopPlot(BuildingPlot plot)
+    {
+        if (_isConstructionWorkshop) _workshopPlot = plot;
+    }
+
+    private void OnEnable()
+    {
+        if (_workshopPlot) _workshopPlot.NotifyWorkshopActivityChanged(this);
+    }
+
+    private void OnDisable()
+    {
+        if (_workshopPlot) _workshopPlot.NotifyWorkshopActivityChanged(this);
+    }
 
     internal bool TryConfigureHouse(HousingDataContext data, HouseTierDefinition tier,
         HousingManager manager, Sprite sprite, out string reason)
@@ -52,10 +72,15 @@ public sealed class CompletedBuildingFacility : MonoBehaviour
     public BaseInteractionProvider Provider => _provider;
 
     internal bool TryConfigure(BuildingDefinition definition, ResourceManager resources, ItemDataContext items,
-        CropCatalog crops, BoxCollider2D workArea, out string reason)
+        CropCatalog crops, BoxCollider2D workArea, DefenseBattlefield battlefield, out string reason)
     {
         reason = "Facility prefab has missing entrance or required components.";
         if (!_entrance) return false;
+        if (_isConstructionWorkshop != (definition.BuildingType == BuildingType.ConstructionWorkshop))
+        {
+            reason = "Construction workshop prefab and building definition must match.";
+            return false;
+        }
         switch (definition.BuildingType)
         {
             case BuildingType.Pub:
@@ -79,7 +104,16 @@ public sealed class CompletedBuildingFacility : MonoBehaviour
             case BuildingType.House:
                 if (!_house || _house.Tier == null || _provider) return false;
                 break;
+            case BuildingType.MilitaryTraining:
+                if (!_militaryTraining || !battlefield || _provider)
+                {
+                    reason = "Military training prefab requires a MilitaryTrainingFacility, a battlefield and no interaction provider.";
+                    return false;
+                }
+                _militaryTraining.Configure(battlefield);
+                break;
             case BuildingType.Inn:
+            case BuildingType.ConstructionWorkshop:
                 if (_provider) return false;
                 break;
             default: return false;
@@ -92,6 +126,8 @@ public sealed class CompletedBuildingFacility : MonoBehaviour
     internal bool TryRegister(BuildingType type, DestinationDB destinations, InteractableManager interactables)
     {
         if (type == BuildingType.House) return _house && _house.isActiveAndEnabled;
+        if (type == BuildingType.MilitaryTraining) return _militaryTraining && _militaryTraining.TryGetClickPopup(out _);
+        if (type == BuildingType.ConstructionWorkshop) return _isConstructionWorkshop && isActiveAndEnabled;
         _destinations = destinations;
         _interactables = interactables;
         if (_provider)

@@ -12,3 +12,5 @@ DefenseTest의 성벽 방어 확장은 기존 NPC queue·stat·navigation·시�
 흐름은 Battlefield 등록 → selector의 DefenseResponsePolicy 긴급 판단 → 기존 WorkerNPC queue 실행 → health owner 변경 → Downed/벽 통로/시설 잔해 변경이다. 벽 topology는 [Navigation](../../World/Navigation.md)의 revision을 통해 진행 중 경로에 반영한다. 공유 부지·신축·주택 수명은 [Construction](../../Settlement/Construction/README.md)과 [Housing](../../Settlement/Housing/README.md), HP adapter는 [Combat](../README.md)가 소유한다.
 
 밸런스·완료 조건은 [승인 계획](../../../Archive/Plans/Defense_Implementation_Plan.md), 검사 결과와 미검증 사항은 [PROGRESS](../../../Status/PROGRESS.md)를 따른다. 자동 Play Mode나 화면 검증은 실행하지 않는다.
+
+병사의 기초 훈련 배정·중단·숙련도 지급은 [군사훈련소](Military_Training.md)를 따른다.

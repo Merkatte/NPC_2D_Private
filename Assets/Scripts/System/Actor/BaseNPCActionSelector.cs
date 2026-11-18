@@ -14,6 +14,8 @@ public class BaseNPCActionSelector : MonoBehaviour
 
 
     protected virtual DestinationDecider HousingDecider => null;
+    internal virtual void RegisterWorker(WorkerNPC worker, NPCStat stat) { }
+    internal virtual void UnregisterWorker(WorkerNPC worker) { }
     public virtual bool HasAvailableWork(NPCStat stat, NPCComponent component) => false;
 
     public virtual float GetReassessmentSeconds(ResidentHousingState residence)

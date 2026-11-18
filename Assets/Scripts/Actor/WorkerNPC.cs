@@ -29,6 +29,13 @@ public class WorkerNPC : MonoBehaviour
     private float _reassessmentElapsed;
     public NPCComponent Component => _component;
     public NPCType Profession => _npcType;
+    internal IAction CurrentAction => _currentAction;
+    internal ResidentHousingState Residence => _residence;
+    internal uint ActionVersion { get; private set; }
+
+    internal bool CanReplaceCurrentAction => _isInitialized && _actionExecutionEnabled &&
+        isActiveAndEnabled && _currentAction != null && _currentAction.Result == ActionResult.Running &&
+        (_actionQueue == null || _actionQueue.Count == 0);
     public NPCProfessionGrowth ProfessionGrowth => _isInitialized && isActiveAndEnabled ? _stat?.ProfessionGrowth : null;
     public uint LifetimeVersion { get; private set; }
     public event System.Action<WorkerNPC> Disabled;
@@ -264,7 +271,30 @@ public class WorkerNPC : MonoBehaviour
         }
 
         _currentAction = _actionQueue.Dequeue();
+        ActionVersion++;
         _currentAction.Start();
+    }
+
+    // The caller has fully prepared the replacement. Commit ownership before Stop can
+    // notify observers, so a synchronous despawn/replan can also return the new rental.
+    internal bool TryReplaceCurrentAction(uint expectedVersion, IAction replacement)
+    {
+        if (replacement == null || !CanReplaceCurrentAction || ActionVersion != expectedVersion)
+            return false;
+        BaseNPCActionSelector owner = _selector;
+        IAction previous = _currentAction;
+        _currentAction = replacement;
+        uint committedVersion = ++ActionVersion;
+        _reassessmentElapsed = 0f;
+        previous.Stop();
+        owner.ReturnAction(previous);
+        if (_currentAction == replacement && ActionVersion == committedVersion) replacement.Start();
+        return true;
+    }
+
+    internal void RequestActionReplan()
+    {
+        if (_isInitialized) CancelAndReturnQueue();
     }
 
     private void CancelAndReturnQueue()

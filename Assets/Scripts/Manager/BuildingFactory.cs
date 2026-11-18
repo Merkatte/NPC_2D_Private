@@ -17,7 +17,9 @@ public sealed class BuildingFactory : MonoBehaviour
     [SerializeField] private DefenseGameSession _defenseSession;
 
     public bool CanStartNewConstruction(BuildingDefinition definition)
-        => definition != null && (definition.BuildingType != BuildingType.House
+        => definition != null && (_defenseBattlefield
+            || (definition.BuildingType != BuildingType.MilitaryTraining && definition.BuildingType != BuildingType.ConstructionWorkshop))
+            && (definition.BuildingType != BuildingType.House
             || (_housingDataContext && _housingManager
                 && _housingDataContext.TryGetTierByBuildingId(definition.Id, out var tier) && tier.Tier == 1));
 
@@ -65,7 +67,8 @@ public sealed class BuildingFactory : MonoBehaviour
                 && (!_housingDataContext.TryGetTierByBuildingId(definition.Id, out var tier)
                     || !created.TryConfigureHouse(_housingDataContext, tier, _housingManager, icon, out reason)))
                 return false;
-            if (!created.TryConfigure(definition, _resourceManager, _itemDataContext, _cropCatalog, workArea, out reason))
+            if (!created.TryConfigure(definition, _resourceManager, _itemDataContext, _cropCatalog,
+                    workArea, _defenseBattlefield, out reason))
                 return false;
             created.transform.SetParent(parent, false);
             created.transform.position += entrance.position - created.Entrance.position;

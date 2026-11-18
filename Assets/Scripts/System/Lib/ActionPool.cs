@@ -57,6 +57,9 @@ public class ActionPool : MonoBehaviour
     {
         switch (actionType)
         {
+            case ActionType.MilitaryTraining:
+                _actionDictionary[actionType].Enqueue(new MilitaryTrainingAction());
+                break;
             case ActionType.DefenseAttack:
                 _actionDictionary[actionType].Enqueue(new DefenseAttackAction());
                 break;

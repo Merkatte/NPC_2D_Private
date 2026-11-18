@@ -7,5 +7,7 @@ public enum BuildingType
     Farm,
     GuardPost,
     Warehouse,
-    House = 7
+    House = 7,
+    MilitaryTraining = 8,
+    ConstructionWorkshop = 9
 }

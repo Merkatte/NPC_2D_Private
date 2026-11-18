@@ -17,4 +17,5 @@ public enum ActionType
     DefenseStation,
     Flee,
     Maintain,
+    MilitaryTraining,
 }

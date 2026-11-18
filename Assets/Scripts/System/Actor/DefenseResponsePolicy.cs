@@ -53,6 +53,7 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
         }
         if (actor.IsSoldier)
         {
+            if (actor.TrainingFacility) return !actor.TrainingFacility.CanTrain(actor);
             actor.RefreshArcherWallOccupancy();
             // Finish the authorized access leg even if the nearest enemy changes or dies.
             if (current == ActionType.DefenseStation && actor.IsGroundExitActive) return false;
@@ -77,6 +78,11 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
         if (actor.IsSoldier)
         {
             actor.RefreshArcherWallOccupancy();
+            if (actor.TrainingFacility && selector is DefenseSoldierActionSelector soldier)
+            {
+                queue = soldier.BuildTrainingQueue(actor);
+                return true;
+            }
             CombatTarget target = SoldierTarget(actor);
             if (target && RequiresCombatGroundExit(actor, target))
             { queue = BuildGroundExitQueue(selector, actor); return true; }
@@ -145,7 +151,7 @@ public sealed class DefenseResponsePolicy : MonoBehaviour
         bool isEmergencyDuty = false)
         => BuildStationQueue(selector, actor, cost, isEmergencyDuty, false);
 
-    private Queue<IAction> BuildGroundExitQueue(BaseNPCActionSelector selector, DefenseActor actor)
+    internal Queue<IAction> BuildGroundExitQueue(BaseNPCActionSelector selector, DefenseActor actor)
         => BuildStationQueue(selector, actor, null, false, true);
 
     private Queue<IAction> BuildStationQueue(BaseNPCActionSelector selector, DefenseActor actor, GuardActionCost cost,
